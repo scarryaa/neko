@@ -19,6 +19,9 @@ void neko_buffer_insert(NekoBuffer *buffer, size_t pos, const char *text,
 // Get buffer content
 const char *neko_buffer_get_text(const NekoBuffer *buffer, size_t *out_len);
 
+// Free a string
+void neko_string_free(char *s);
+
 #ifdef __cplusplus
 }
 #endif

@@ -8,6 +8,7 @@ name = "neko_core"
 crate-type = ["staticlib"]
 
 [dependencies]
+crop = "0.4.3"
 
 [profile.release]
 opt-level = 3
