@@ -9,13 +9,6 @@ int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
 
   auto *buffer = neko_buffer_new();
-  neko_buffer_insert(buffer, 0, "Hello from Rust!", 16);
-
-  size_t len;
-  const char *text = neko_buffer_get_text(buffer, &len);
-  qDebug() << "Buffer content:" << QString::fromUtf8(text, len);
-  neko_string_free((char *)text);
-  neko_buffer_free(buffer);
 
   QTranslator translator;
   const QStringList uiLanguages = QLocale::system().uiLanguages();
@@ -26,7 +19,9 @@ int main(int argc, char *argv[]) {
       break;
     }
   }
+
   MainWindow w;
+
   w.show();
   return a.exec();
 }

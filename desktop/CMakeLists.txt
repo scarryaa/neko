@@ -6,6 +6,8 @@ qt_add_executable(neko
     src/main.cpp
     src/main_window.cpp
     src/main_window.h
+    src/editor_widget.cpp
+    src/editor_widget.h
 )
 
 qt_add_translations(
