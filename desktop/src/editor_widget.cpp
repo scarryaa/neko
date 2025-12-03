@@ -16,7 +16,9 @@ EditorWidget::EditorWidget(QWidget *parent) : QWidget(parent) {
 EditorWidget::~EditorWidget() {}
 
 void EditorWidget::keyPressEvent(QKeyEvent *event) {
-  neko_buffer_insert(buffer, 0, event->text().toStdString().c_str(), 1);
+  size_t len = event->text().size();
+
+  neko_buffer_insert(buffer, 0, event->text().toStdString().c_str(), len);
   repaint();
 }
 
