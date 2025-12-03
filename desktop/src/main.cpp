@@ -3,14 +3,11 @@
 #include <QApplication>
 #include <QLocale>
 #include <QTranslator>
-#include <neko_core.h>
 
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
-
-  auto *buffer = neko_buffer_new();
-
   QTranslator translator;
+
   const QStringList uiLanguages = QLocale::system().uiLanguages();
   for (const QString &locale : uiLanguages) {
     const QString baseName = "neko_" + QLocale(locale).name();

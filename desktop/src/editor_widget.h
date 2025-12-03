@@ -2,6 +2,7 @@
 #define EDITORWIDGET_H
 
 #include <QWidget>
+#include <neko_core.h>
 
 class EditorWidget : public QWidget {
   Q_OBJECT
@@ -16,6 +17,8 @@ protected:
 
 private:
   void drawText(QPainter *painter);
+
+  NekoBuffer *buffer;
 };
 
 #endif
