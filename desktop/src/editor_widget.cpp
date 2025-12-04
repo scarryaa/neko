@@ -42,10 +42,10 @@ void EditorWidget::handleViewportUpdate() {
   size_t line_count;
   neko_editor_get_line_count(editor, &line_count);
 
-  auto viewportHeight =
-      (line_count * font->pointSizeF()) - viewport()->height();
+  auto viewportHeight = (line_count * font->pointSizeF()) -
+                        viewport()->height() + VIEWPORT_PADDING;
   auto contentWidth = measureContent();
-  auto viewportWidth = contentWidth - viewport()->width();
+  auto viewportWidth = contentWidth - viewport()->width() + VIEWPORT_PADDING;
 
   horizontalScrollBar()->setRange(0, viewportWidth);
   verticalScrollBar()->setRange(0, viewportHeight);
@@ -203,10 +203,14 @@ void EditorWidget::drawCursor(QPainter *painter) {
   QString lineText = QString::fromStdString(line);
   neko_string_free((char *)line);
 
+  auto verticalOffset = verticalScrollBar()->value();
+  auto horizontalOffset = horizontalScrollBar()->value();
   QString textBeforeCursor = lineText.left(cursor_col_idx);
   qreal cursor_x = fontMetrics.horizontalAdvance(textBeforeCursor);
 
   painter->drawLine(
-      QLineF(QPointF(cursor_x, cursor_row_idx * font_size),
-             QPointF(cursor_x, (cursor_row_idx + 1) * font_size)));
+      QLineF(QPointF(cursor_x - horizontalOffset,
+                     (cursor_row_idx * font_size) - verticalOffset),
+             QPointF(cursor_x - horizontalOffset,
+                     ((cursor_row_idx + 1) * font_size) - verticalOffset)));
 }
