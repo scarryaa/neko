@@ -176,13 +176,13 @@ void EditorWidget::drawText(QPainter *painter) {
   size_t line_count;
   neko_editor_get_line_count(editor, &line_count);
 
-  auto verticalOffset = verticalScrollBar()->value() * font->pointSizeF();
-  auto horizontalOffset = horizontalScrollBar()->value() * font->pointSizeF();
+  auto verticalOffset = verticalScrollBar()->value();
+  auto horizontalOffset = horizontalScrollBar()->value();
 
   for (int i = 0; i < line_count; i++) {
     size_t len;
     const char *line = neko_editor_get_line(editor, i, &len);
-    auto actualY = (i + 1) * font->pointSizeF() - verticalOffset;
+    auto actualY = ((i + 1) * font->pointSizeF()) - verticalOffset;
 
     painter->drawText(QPointF(-horizontalOffset, actualY),
                       QString::fromStdString(line));
