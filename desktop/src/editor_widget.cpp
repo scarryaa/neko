@@ -66,7 +66,7 @@ void EditorWidget::drawText(QPainter *painter) {
 }
 
 void EditorWidget::drawCursor(QPainter *painter) {
-  painter->setPen(QColor(66, 181, 212));
+  painter->setPen(CURSOR_COLOR);
 
   size_t font_size = font->pointSizeF();
   size_t cursor_row_idx, cursor_col_idx;

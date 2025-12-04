@@ -25,6 +25,7 @@ private:
   QFontMetricsF *fontMetrics;
 
   double CURSOR_WIDTH = 2.0;
+  QColor CURSOR_COLOR = QColor(66, 181, 212);
 };
 
 #endif

@@ -12,55 +12,52 @@ impl Cursor {
     }
 
     pub fn move_right(&mut self, buffer: &Buffer) {
-        if self.row > buffer.line_count() {
+        if self.row >= buffer.line_count() {
             return;
         }
 
         if self.column < buffer.line_len(self.row) {
             self.column += 1;
-        } else {
+        } else if self.row + 1 < buffer.line_count() {
             self.row += 1;
-        }
-    }
-
-    pub fn move_left(&mut self, _buffer: &Buffer) {
-        if self.row == 0 && self.column == 0 {
-            return;
-        }
-
-        if self.column == 0 {
-            self.row -= 1;
-        } else {
-            self.column -= 1;
-        }
-    }
-
-    pub fn move_up(&mut self, buffer: &Buffer) {
-        if self.row == 0 {
             self.column = 0;
-            return;
         }
+    }
 
-        self.row -= 1;
-        let prev_line_len = buffer.line_len(self.row);
-
-        if self.column > prev_line_len {
-            self.column = prev_line_len;
+    pub fn move_left(&mut self, buffer: &Buffer) {
+        if self.column > 0 {
+            self.column -= 1;
+        } else if self.row > 0 {
+            self.row -= 1;
+            self.column = buffer.line_len(self.row);
         }
     }
 
     pub fn move_down(&mut self, buffer: &Buffer) {
-        let line_count = buffer.line_count();
-        if self.row >= line_count {
-            self.column = buffer.line_len(line_count);
-            return;
+        if self.row + 1 < buffer.line_count() {
+            self.row += 1;
+
+            let line_len = buffer.line_len(self.row);
+            if self.column > line_len {
+                self.column = line_len;
+            }
+        } else if self.row + 1 == buffer.line_count() {
+            let line_len = buffer.line_len(self.row);
+            self.column = line_len;
         }
+    }
 
-        self.row += 1;
-        let next_line_len = buffer.line_len(self.row);
+    pub fn move_up(&mut self, buffer: &Buffer) {
+        if self.row > 0 {
+            self.row -= 1;
 
-        if self.column > next_line_len {
-            self.column = next_line_len;
+            let line_len = buffer.line_len(self.row);
+            if self.column > line_len {
+                self.column = line_len;
+            }
+        } else {
+            self.row = 0;
+            self.column = 0;
         }
     }
 
@@ -83,4 +80,3 @@ impl Cursor {
         total
     }
 }
-
