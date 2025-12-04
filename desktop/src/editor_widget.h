@@ -2,6 +2,7 @@
 #define EDITORWIDGET_H
 
 #include <QScrollArea>
+#include <QScrollBar>
 #include <neko_core.h>
 
 class EditorWidget : public QScrollArea {
@@ -14,6 +15,8 @@ public:
 protected:
   void keyPressEvent(QKeyEvent *event) override;
   void paintEvent(QPaintEvent *event) override;
+  void mousePressEvent(QMouseEvent *event) override;
+  void wheelEvent(QWheelEvent *event) override;
 
 private:
   void drawText(QPainter *painter);
@@ -22,6 +25,9 @@ private:
   void increaseFontSize();
   void decreaseFontSize();
   void resetFontSize();
+
+  void handleViewportUpdate();
+  double measureContent();
 
   NekoEditor *editor;
   QFont *font;

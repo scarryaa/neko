@@ -4,6 +4,7 @@
 #include <QPainter>
 #include <QVBoxLayout>
 #include <QtDebug>
+#include <algorithm>
 #include <cstddef>
 #include <neko_core.h>
 
@@ -11,11 +12,60 @@ EditorWidget::EditorWidget(QWidget *parent)
     : QScrollArea(parent), font(new QFont("IBM Plex Mono", 15.0)),
       fontMetrics(*font) {
   setFocusPolicy(Qt::StrongFocus);
+  setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
   editor = neko_editor_new();
 }
 
 EditorWidget::~EditorWidget() { neko_editor_free(editor); }
+
+double EditorWidget::measureContent() {
+  double finalWidth = 0;
+  size_t lineCount = 0;
+  size_t len;
+
+  neko_editor_get_line_count(editor, &lineCount);
+
+  for (int i = 0; i < lineCount; i++) {
+    const char *line = neko_editor_get_line(editor, i, &len);
+    QString lineText = QString::fromStdString(line);
+    neko_string_free((char *)line);
+
+    finalWidth = std::max(fontMetrics.horizontalAdvance(lineText), finalWidth);
+  }
+
+  return finalWidth;
+}
+
+void EditorWidget::handleViewportUpdate() {
+  size_t line_count;
+  neko_editor_get_line_count(editor, &line_count);
+
+  auto viewportHeight =
+      (line_count * font->pointSizeF()) - viewport()->height();
+  auto contentWidth = measureContent();
+  auto viewportWidth = contentWidth - viewport()->width();
+
+  horizontalScrollBar()->setRange(0, viewportWidth);
+  verticalScrollBar()->setRange(0, viewportHeight);
+}
+
+void EditorWidget::mousePressEvent(QMouseEvent *event) {}
+
+void EditorWidget::wheelEvent(QWheelEvent *event) {
+  auto horizontalScrollOffset = horizontalScrollBar()->value();
+  auto verticalScrollOffset = verticalScrollBar()->value();
+  double verticalDelta = event->angleDelta().y() / 8.0;
+  double horizontallDelta = event->angleDelta().x() / 8.0;
+
+  auto newHorizontalScrollOffset = horizontalScrollOffset + horizontallDelta;
+  auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;
+
+  horizontalScrollBar()->setValue(newHorizontalScrollOffset);
+  verticalScrollBar()->setValue(newVerticalScrollOffset);
+  viewport()->repaint();
+}
 
 void EditorWidget::keyPressEvent(QKeyEvent *event) {
   size_t len = event->text().size();
@@ -36,15 +86,19 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
   case Qt::Key_Enter:
   case Qt::Key_Return:
     neko_editor_insert_newline(editor);
+    handleViewportUpdate();
     break;
   case Qt::Key_Backspace:
     neko_editor_backspace(editor);
+    handleViewportUpdate();
     break;
   case Qt::Key_Delete:
     neko_editor_delete(editor);
+    handleViewportUpdate();
     break;
   case Qt::Key_Tab:
     neko_editor_insert_tab(editor);
+    handleViewportUpdate();
     break;
   case Qt::Key_Escape:
     // TODO: Clear selection
@@ -56,6 +110,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
     }
+    handleViewportUpdate();
     break;
   case Qt::Key_Minus:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
@@ -63,6 +118,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
     }
+    handleViewportUpdate();
     break;
   case Qt::Key_0:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
@@ -70,10 +126,12 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
     }
+    handleViewportUpdate();
     break;
 
   default:
     neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+    handleViewportUpdate();
     break;
   }
 
@@ -118,10 +176,15 @@ void EditorWidget::drawText(QPainter *painter) {
   size_t line_count;
   neko_editor_get_line_count(editor, &line_count);
 
+  auto verticalOffset = verticalScrollBar()->value() * font->pointSizeF();
+  auto horizontalOffset = horizontalScrollBar()->value() * font->pointSizeF();
+
   for (int i = 0; i < line_count; i++) {
     size_t len;
     const char *line = neko_editor_get_line(editor, i, &len);
-    painter->drawText(QPointF(0, (i + 1) * font->pointSizeF()),
+    auto actualY = (i + 1) * font->pointSizeF() - verticalOffset;
+
+    painter->drawText(QPointF(-horizontalOffset, actualY),
                       QString::fromStdString(line));
 
     neko_string_free((char *)line);
