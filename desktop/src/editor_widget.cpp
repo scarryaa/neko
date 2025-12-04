@@ -23,10 +23,27 @@ EditorWidget::~EditorWidget() {
 void EditorWidget::keyPressEvent(QKeyEvent *event) {
   size_t idx;
   neko_cursor_get_idx(cursor, buffer, &idx);
-
   size_t len = event->text().size();
-  neko_buffer_insert(buffer, idx, event->text().toStdString().c_str(), len);
-  neko_cursor_move_right(cursor, buffer);
+
+  switch (event->key()) {
+  case Qt::Key_Left:
+    neko_cursor_move_left(cursor, buffer);
+    break;
+  case Qt::Key_Right:
+    neko_cursor_move_right(cursor, buffer);
+    break;
+  case Qt::Key_Up:
+    neko_cursor_move_up(cursor, buffer);
+    break;
+  case Qt::Key_Down:
+    neko_cursor_move_down(cursor, buffer);
+    break;
+  default:
+    neko_buffer_insert(buffer, idx, event->text().toStdString().c_str(), len);
+    neko_cursor_move_right(cursor, buffer);
+    break;
+  }
+
   repaint();
 }
 

@@ -91,6 +91,30 @@ pub extern "C" fn neko_string_free(s: *mut c_char) {
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn neko_cursor_move_left(cursor: *mut NekoCursor, buffer: &NekoBuffer) {
+    unsafe {
+        let cursor = &mut *cursor;
+        cursor.cursor.move_left(&buffer.buffer);
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_cursor_move_up(cursor: *mut NekoCursor, buffer: &NekoBuffer) {
+    unsafe {
+        let cursor = &mut *cursor;
+        cursor.cursor.move_up(&buffer.buffer);
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_cursor_move_down(cursor: *mut NekoCursor, buffer: &NekoBuffer) {
+    unsafe {
+        let cursor = &mut *cursor;
+        cursor.cursor.move_down(&buffer.buffer);
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn neko_cursor_move_right(cursor: *mut NekoCursor, buffer: &NekoBuffer) {
     unsafe {
         let cursor = &mut *cursor;
