@@ -15,6 +15,8 @@ void neko_buffer_free(NekoBuffer *buffer);
 // Insert text at position
 void neko_buffer_insert(NekoBuffer *buffer, size_t pos, const char *text,
                         size_t len);
+// Backspace text at position
+void neko_buffer_backspace(NekoBuffer *buffer, size_t pos);
 
 // Get buffer content
 const char *neko_buffer_get_text(const NekoBuffer *buffer, size_t *out_len);

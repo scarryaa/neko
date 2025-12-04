@@ -47,6 +47,10 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     neko_cursor_get_position(cursor, &row, &col);
     neko_cursor_set_position(cursor, row + 1, 0);
     break;
+  case Qt::Key_Backspace:
+    neko_buffer_backspace(buffer, idx);
+    neko_cursor_move_left(cursor, buffer);
+    break;
   default:
     neko_buffer_insert(buffer, idx, event->text().toStdString().c_str(), len);
     neko_cursor_move_right(cursor, buffer);

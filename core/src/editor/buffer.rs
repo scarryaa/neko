@@ -16,6 +16,14 @@ impl Buffer {
         self.content.insert(pos, text);
     }
 
+    pub fn backspace(&mut self, pos: usize) {
+        if pos == 0 {
+            return;
+        }
+
+        self.content.delete(pos - 1..pos);
+    }
+
     pub fn get_text(&self) -> String {
         self.content.to_string()
     }

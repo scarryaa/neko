@@ -52,6 +52,18 @@ pub extern "C" fn neko_buffer_insert(
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn neko_buffer_backspace(buffer: *mut NekoBuffer, pos: usize) {
+    if buffer.is_null() {
+        return;
+    }
+
+    unsafe {
+        let buffer = &mut *buffer;
+        buffer.buffer.backspace(pos);
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn neko_buffer_get_text(
     buffer: *const NekoBuffer,
     out_len: *mut usize,
