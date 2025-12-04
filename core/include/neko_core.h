@@ -18,6 +18,11 @@ void neko_buffer_insert(NekoBuffer *buffer, size_t pos, const char *text,
 
 // Get buffer content
 const char *neko_buffer_get_text(const NekoBuffer *buffer, size_t *out_len);
+const char *neko_buffer_get_line(const NekoBuffer *buffer,
+                                 const size_t line_idx, size_t *out_len);
+
+// Get buffer line count
+void neko_buffer_get_line_count(NekoBuffer *buffer, size_t *out_line_count);
 
 // Free a string
 void neko_string_free(char *s);

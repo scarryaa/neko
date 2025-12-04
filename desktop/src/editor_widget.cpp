@@ -66,11 +66,17 @@ void EditorWidget::drawText(QPainter *painter) {
   painter->setBrush(Qt::white);
   painter->setFont(*font);
 
-  size_t len;
-  const char *text = neko_buffer_get_text(buffer, &len);
-  painter->drawText(QPointF(0, font->pointSizeF()),
-                    QString::fromStdString(text));
-  neko_string_free((char *)text);
+  size_t line_count;
+  neko_buffer_get_line_count(buffer, &line_count);
+
+  for (int i = 0; i < line_count; i++) {
+    size_t len;
+    const char *line = neko_buffer_get_line(buffer, i, &len);
+    painter->drawText(QPointF(0, (i + 1) * font->pointSizeF()),
+                      QString::fromStdString(line));
+
+    neko_string_free((char *)line);
+  }
 }
 
 void EditorWidget::drawCursor(QPainter *painter) {

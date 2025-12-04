@@ -3,8 +3,8 @@ use std::{
     ptr,
 };
 
-use crate::Buffer;
 use crate::Cursor;
+use crate::{Buffer, editor::buffer};
 
 pub struct NekoBuffer {
     buffer: Buffer,
@@ -77,6 +77,60 @@ pub extern "C" fn neko_buffer_get_text(
         match CString::new(text) {
             Ok(c_string) => c_string.into_raw(),
             Err(_) => ptr::null_mut(),
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_buffer_get_line(
+    buffer: *const NekoBuffer,
+    line_idx: usize,
+    out_len: *mut usize,
+) -> *mut c_char {
+    if buffer.is_null() {
+        if !out_len.is_null() {
+            unsafe {
+                *out_len = 0;
+            }
+        }
+        return ptr::null_mut();
+    }
+
+    unsafe {
+        let buffer = &*buffer;
+        let line_text = buffer.buffer.get_line(line_idx);
+
+        if !out_len.is_null() {
+            *out_len = line_text.len();
+        }
+
+        // Create a C string that the caller must free
+        match CString::new(line_text) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_buffer_get_line_count(
+    buffer: *const NekoBuffer,
+    out_line_count: *mut usize,
+) {
+    if buffer.is_null() {
+        if !out_line_count.is_null() {
+            unsafe {
+                *out_line_count = 0;
+            }
+        }
+        return;
+    }
+
+    unsafe {
+        let buffer = &*buffer;
+
+        if !out_line_count.is_null() {
+            *out_line_count = buffer.buffer.line_count();
         }
     }
 }

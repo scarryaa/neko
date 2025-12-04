@@ -20,6 +20,10 @@ impl Buffer {
         self.content.to_string()
     }
 
+    pub fn get_line(&self, line_idx: usize) -> String {
+        self.content.line(line_idx).to_string()
+    }
+
     pub fn line_count(&self) -> usize {
         self.content.line_len()
     }
