@@ -40,6 +40,9 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
   case Qt::Key_Backspace:
     neko_editor_backspace(editor);
     break;
+  case Qt::Key_Delete:
+    neko_editor_delete(editor);
+    break;
   case Qt::Key_Tab:
     neko_editor_insert_tab(editor);
     break;
