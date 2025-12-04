@@ -42,7 +42,7 @@ void EditorWidget::handleViewportUpdate() {
   size_t line_count;
   neko_editor_get_line_count(editor, &line_count);
 
-  auto viewportHeight = (line_count * font->pointSizeF()) -
+  auto viewportHeight = (line_count * fontMetrics.height()) -
                         viewport()->height() + VIEWPORT_PADDING;
   auto contentWidth = measureContent();
   auto viewportWidth = contentWidth - viewport()->width() + VIEWPORT_PADDING;
@@ -182,7 +182,7 @@ void EditorWidget::drawText(QPainter *painter) {
   for (int i = 0; i < line_count; i++) {
     size_t len;
     const char *line = neko_editor_get_line(editor, i, &len);
-    auto actualY = ((i + 1) * font->pointSizeF()) - verticalOffset;
+    auto actualY = ((i + 1) * fontMetrics.height()) - verticalOffset;
 
     painter->drawText(QPointF(-horizontalOffset, actualY),
                       QString::fromStdString(line));
@@ -194,7 +194,7 @@ void EditorWidget::drawText(QPainter *painter) {
 void EditorWidget::drawCursor(QPainter *painter) {
   painter->setPen(CURSOR_COLOR);
 
-  size_t font_size = font->pointSizeF();
+  double lineHeight = fontMetrics.height();
   size_t cursor_row_idx, cursor_col_idx;
   neko_editor_get_cursor_position(editor, &cursor_row_idx, &cursor_col_idx);
 
@@ -210,7 +210,7 @@ void EditorWidget::drawCursor(QPainter *painter) {
 
   painter->drawLine(
       QLineF(QPointF(cursor_x - horizontalOffset,
-                     (cursor_row_idx * font_size) - verticalOffset),
+                     (cursor_row_idx * lineHeight) - verticalOffset),
              QPointF(cursor_x - horizontalOffset,
-                     ((cursor_row_idx + 1) * font_size) - verticalOffset)));
+                     ((cursor_row_idx + 1) * lineHeight) - verticalOffset)));
 }
