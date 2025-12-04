@@ -36,6 +36,7 @@ impl Cursor {
 
     pub fn insert_tab(&mut self, buffer: &mut Buffer) {
         let idx = self.get_idx(buffer);
+        // TODO: Make this configurable
         let tab_width = 4;
         let spaces = " ".repeat(tab_width);
 

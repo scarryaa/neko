@@ -3,72 +3,141 @@ use std::{
     ptr,
 };
 
-use crate::Buffer;
-use crate::Cursor;
+use crate::text::Editor;
 
-pub struct NekoBuffer {
-    buffer: Buffer,
-}
-
-pub struct NekoCursor {
-    cursor: Cursor,
+pub struct NekoEditor {
+    editor: Editor,
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn neko_buffer_new() -> *mut NekoBuffer {
-    let buffer = Box::new(NekoBuffer {
-        buffer: Buffer::new(),
+pub extern "C" fn neko_editor_new() -> *mut NekoEditor {
+    let editor = Box::new(NekoEditor {
+        editor: Editor::new(),
     });
-    Box::into_raw(buffer)
+    Box::into_raw(editor)
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn neko_buffer_free(buffer: *mut NekoBuffer) {
-    if !buffer.is_null() {
+pub extern "C" fn neko_editor_free(editor: *mut NekoEditor) {
+    if !editor.is_null() {
         unsafe {
-            let _ = Box::from_raw(buffer);
+            let _ = Box::from_raw(editor);
         }
     }
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn neko_buffer_insert(
-    buffer: *mut NekoBuffer,
-    pos: usize,
+pub extern "C" fn neko_editor_move_left(editor: *mut NekoEditor) {
+    if editor.is_null() {
+        return;
+    }
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.move_left();
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_move_right(editor: *mut NekoEditor) {
+    if editor.is_null() {
+        return;
+    }
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.move_right();
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_move_up(editor: *mut NekoEditor) {
+    if editor.is_null() {
+        return;
+    }
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.move_up();
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_move_down(editor: *mut NekoEditor) {
+    if editor.is_null() {
+        return;
+    }
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.move_down();
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_insert_text(
+    editor: *mut NekoEditor,
     text: *const c_char,
     len: usize,
 ) {
-    if buffer.is_null() || text.is_null() {
+    if editor.is_null() || text.is_null() {
         return;
     }
-
     unsafe {
-        let buffer = &mut *buffer;
+        let editor = &mut *editor;
         let text_slice = std::slice::from_raw_parts(text as *const u8, len);
         if let Ok(text_str) = std::str::from_utf8(text_slice) {
-            buffer.buffer.insert(pos, text_str);
+            editor.editor.insert_text(text_str);
         }
     }
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn neko_buffer_backspace(buffer: *mut NekoBuffer, pos: usize) {
-    if buffer.is_null() {
+pub extern "C" fn neko_editor_insert_newline(editor: *mut NekoEditor) {
+    if editor.is_null() {
         return;
     }
-
     unsafe {
-        let buffer = &mut *buffer;
-        buffer.buffer.backspace(pos);
+        let editor = &mut *editor;
+        editor.editor.insert_newline();
     }
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn neko_buffer_get_text(
-    buffer: *const NekoBuffer,
+pub extern "C" fn neko_editor_insert_tab(editor: *mut NekoEditor) {
+    if editor.is_null() {
+        return;
+    }
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.insert_tab();
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_backspace(editor: *mut NekoEditor) {
+    if editor.is_null() {
+        return;
+    }
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.backspace();
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_delete(editor: *mut NekoEditor) {
+    if editor.is_null() {
+        return;
+    }
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.delete();
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_get_text(
+    editor: *const NekoEditor,
     out_len: *mut usize,
 ) -> *mut c_char {
-    if buffer.is_null() {
+    if editor.is_null() {
         if !out_len.is_null() {
             unsafe {
                 *out_len = 0;
@@ -78,14 +147,13 @@ pub extern "C" fn neko_buffer_get_text(
     }
 
     unsafe {
-        let buffer = &*buffer;
-        let text = buffer.buffer.get_text();
+        let editor = &*editor;
+        let text = editor.editor.buffer().get_text();
 
         if !out_len.is_null() {
             *out_len = text.len();
         }
 
-        // Create a C string that the caller must free
         match CString::new(text) {
             Ok(c_string) => c_string.into_raw(),
             Err(_) => ptr::null_mut(),
@@ -94,12 +162,12 @@ pub extern "C" fn neko_buffer_get_text(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn neko_buffer_get_line(
-    buffer: *const NekoBuffer,
+pub extern "C" fn neko_editor_get_line(
+    editor: *const NekoEditor,
     line_idx: usize,
     out_len: *mut usize,
 ) -> *mut c_char {
-    if buffer.is_null() {
+    if editor.is_null() {
         if !out_len.is_null() {
             unsafe {
                 *out_len = 0;
@@ -109,14 +177,13 @@ pub extern "C" fn neko_buffer_get_line(
     }
 
     unsafe {
-        let buffer = &*buffer;
-        let line_text = buffer.buffer.get_line(line_idx);
+        let editor = &*editor;
+        let line_text = editor.editor.buffer().get_line(line_idx);
 
         if !out_len.is_null() {
             *out_len = line_text.len();
         }
 
-        // Create a C string that the caller must free
         match CString::new(line_text) {
             Ok(c_string) => c_string.into_raw(),
             Err(_) => ptr::null_mut(),
@@ -125,11 +192,11 @@ pub extern "C" fn neko_buffer_get_line(
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn neko_buffer_get_line_count(
-    buffer: *const NekoBuffer,
+pub extern "C" fn neko_editor_get_line_count(
+    editor: *const NekoEditor,
     out_line_count: *mut usize,
 ) {
-    if buffer.is_null() {
+    if editor.is_null() {
         if !out_line_count.is_null() {
             unsafe {
                 *out_line_count = 0;
@@ -139,10 +206,32 @@ pub extern "C" fn neko_buffer_get_line_count(
     }
 
     unsafe {
-        let buffer = &*buffer;
-
+        let editor = &*editor;
         if !out_line_count.is_null() {
-            *out_line_count = buffer.buffer.line_count();
+            *out_line_count = editor.editor.buffer().line_count();
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_get_cursor_position(
+    editor: *const NekoEditor,
+    out_row: *mut usize,
+    out_col: *mut usize,
+) {
+    if editor.is_null() {
+        return;
+    }
+
+    unsafe {
+        let editor = &*editor;
+        let cursor = editor.editor.cursor();
+
+        if !out_row.is_null() {
+            *out_row = cursor.get_row();
+        }
+        if !out_col.is_null() {
+            *out_col = cursor.get_col();
         }
     }
 }
@@ -152,122 +241,6 @@ pub extern "C" fn neko_string_free(s: *mut c_char) {
     if !s.is_null() {
         unsafe {
             let _ = CString::from_raw(s);
-        }
-    }
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn neko_cursor_move_left(cursor: *mut NekoCursor, buffer: &NekoBuffer) {
-    unsafe {
-        let cursor = &mut *cursor;
-        cursor.cursor.move_left(&buffer.buffer);
-    }
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn neko_cursor_move_up(cursor: *mut NekoCursor, buffer: &NekoBuffer) {
-    unsafe {
-        let cursor = &mut *cursor;
-        cursor.cursor.move_up(&buffer.buffer);
-    }
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn neko_cursor_move_down(cursor: *mut NekoCursor, buffer: &NekoBuffer) {
-    unsafe {
-        let cursor = &mut *cursor;
-        cursor.cursor.move_down(&buffer.buffer);
-    }
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn neko_cursor_move_right(cursor: *mut NekoCursor, buffer: &NekoBuffer) {
-    unsafe {
-        let cursor = &mut *cursor;
-        cursor.cursor.move_right(&buffer.buffer);
-    }
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn neko_cursor_new() -> *mut NekoCursor {
-    let cursor = Box::new(NekoCursor {
-        cursor: Cursor::new(),
-    });
-    Box::into_raw(cursor)
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn neko_cursor_get_position(
-    cursor: *const NekoCursor,
-    out_row: *mut usize,
-    out_col: *mut usize,
-) {
-    if cursor.is_null() {
-        return;
-    }
-
-    unsafe {
-        let cursor = &*cursor;
-        let row = cursor.cursor.get_row();
-        let col = cursor.cursor.get_col();
-
-        if !out_row.is_null() {
-            *out_row = row;
-        }
-
-        if !out_col.is_null() {
-            *out_col = col;
-        }
-    }
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn neko_cursor_set_position(
-    cursor: *mut NekoCursor,
-    new_row: usize,
-    new_col: usize,
-) {
-    if cursor.is_null() {
-        return;
-    }
-
-    unsafe {
-        let cursor = &mut *cursor;
-
-        cursor.cursor.set_row(new_row);
-        cursor.cursor.set_col(new_col);
-    }
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn neko_cursor_get_idx(
-    cursor: *const NekoCursor,
-    buffer: *const NekoBuffer,
-    out_idx: *mut usize,
-) {
-    if cursor.is_null() {
-        unsafe {
-            *out_idx = 0;
-            return;
-        }
-    }
-
-    unsafe {
-        let cursor = &*cursor;
-        let buffer = &*buffer;
-        let idx = cursor.cursor.get_idx(&buffer.buffer);
-
-        if !out_idx.is_null() {
-            *out_idx = idx;
-        }
-    }
-}
-
-#[unsafe(no_mangle)]
-pub extern "C" fn neko_cursor_free(cursor: *mut NekoCursor) {
-    if !cursor.is_null() {
-        unsafe {
-            let _ = Box::from_raw(cursor);
         }
     }
 }

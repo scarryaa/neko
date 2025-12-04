@@ -7,42 +7,38 @@
 extern "C" {
 #endif
 
-// Create a new text buffer
-typedef struct NekoBuffer NekoBuffer;
-NekoBuffer *neko_buffer_new(void);
-void neko_buffer_free(NekoBuffer *buffer);
+typedef struct NekoEditor NekoEditor;
+NekoEditor *neko_editor_new(void);
+void neko_editor_free(NekoEditor *editor);
 
 // Insert text at position
-void neko_buffer_insert(NekoBuffer *buffer, size_t pos, const char *text,
-                        size_t len);
-// Backspace text at position
-void neko_buffer_backspace(NekoBuffer *buffer, size_t pos);
+void neko_editor_insert_text(NekoEditor *editor, const char *text, size_t len);
+void neko_editor_insert_newline(NekoEditor *editor);
+void neko_editor_insert_tab(NekoEditor *editor);
 
-// Get buffer content
-const char *neko_buffer_get_text(const NekoBuffer *buffer, size_t *out_len);
-const char *neko_buffer_get_line(const NekoBuffer *buffer,
+// Backspace text at position
+void neko_editor_backspace(NekoEditor *editor);
+void neko_editor_delete(NekoEditor *editor);
+
+// Get content
+const char *neko_editor_get_text(const NekoEditor *editor, size_t *out_len);
+const char *neko_editor_get_line(const NekoEditor *editor,
                                  const size_t line_idx, size_t *out_len);
 
-// Get buffer line count
-void neko_buffer_get_line_count(NekoBuffer *buffer, size_t *out_line_count);
+// Get line count
+void neko_editor_get_line_count(NekoEditor *editor, size_t *out_line_count);
 
 // Free a string
 void neko_string_free(char *s);
 
+void neko_editor_move_left(const NekoEditor *editor);
+void neko_editor_move_right(const NekoEditor *editor);
+void neko_editor_move_up(const NekoEditor *editor);
+void neko_editor_move_down(const NekoEditor *editor);
+
 // Cursor methods
-typedef struct NekoCursor NekoCursor;
-NekoCursor *neko_cursor_new(void);
-void neko_cursor_free(NekoCursor *cursor);
-void neko_cursor_move_left(NekoCursor *cursor, const NekoBuffer *buffer);
-void neko_cursor_move_right(NekoCursor *cursor, const NekoBuffer *buffer);
-void neko_cursor_move_up(NekoCursor *cursor, const NekoBuffer *buffer);
-void neko_cursor_move_down(NekoCursor *cursor, const NekoBuffer *buffer);
-void neko_cursor_get_position(const NekoCursor *cursor, size_t *out_row,
-                              size_t *out_col);
-void neko_cursor_set_position(const NekoCursor *cursor, size_t new_row,
-                              size_t new_col);
-void neko_cursor_get_idx(const NekoCursor *cursor, const NekoBuffer *buffer,
-                         size_t *out_idx);
+void neko_editor_get_cursor_position(const NekoEditor *editor, size_t *out_row,
+                                     size_t *out_col);
 
 #ifdef __cplusplus
 }

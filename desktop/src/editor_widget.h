@@ -19,8 +19,7 @@ private:
   void drawText(QPainter *painter);
   void drawCursor(QPainter *painter);
 
-  NekoBuffer *buffer;
-  NekoCursor *cursor;
+  NekoEditor *editor;
   QFont *font;
   QFontMetricsF *fontMetrics;
 
