@@ -53,6 +53,17 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     neko_buffer_backspace(buffer, idx);
     break;
   }
+  case Qt::Key_Tab:
+    // TODO: Make this configurable
+    neko_buffer_insert(buffer, idx, "    ", 4);
+
+    size_t row, col;
+    neko_cursor_get_position(cursor, &row, &col);
+    neko_cursor_set_position(cursor, row, col + 4);
+    break;
+  case Qt::Key_Escape:
+    // TODO: Clear selection
+    break;
   default:
     neko_buffer_insert(buffer, idx, event->text().toStdString().c_str(), len);
     neko_cursor_move_right(cursor, buffer);
