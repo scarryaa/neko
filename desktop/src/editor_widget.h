@@ -1,10 +1,10 @@
 #ifndef EDITORWIDGET_H
 #define EDITORWIDGET_H
 
-#include <QWidget>
+#include <QScrollArea>
 #include <neko_core.h>
 
-class EditorWidget : public QWidget {
+class EditorWidget : public QScrollArea {
   Q_OBJECT
 
 public:

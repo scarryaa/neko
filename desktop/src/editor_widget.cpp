@@ -8,7 +8,7 @@
 #include <neko_core.h>
 
 EditorWidget::EditorWidget(QWidget *parent)
-    : QWidget(parent), font(new QFont("IBM Plex Mono", 15.0)),
+    : QScrollArea(parent), font(new QFont("IBM Plex Mono", 15.0)),
       fontMetrics(*font) {
   setFocusPolicy(Qt::StrongFocus);
 
@@ -77,14 +77,14 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     break;
   }
 
-  repaint();
+  viewport()->repaint();
 }
 
 void EditorWidget::resetFontSize() {
   font->setPointSizeF(DEFAULT_FONT_SIZE);
   fontMetrics = QFontMetricsF(*font);
 
-  repaint();
+  viewport()->repaint();
 }
 
 void EditorWidget::increaseFontSize() {
@@ -92,7 +92,7 @@ void EditorWidget::increaseFontSize() {
     font->setPointSizeF(font->pointSizeF() + FONT_STEP);
     fontMetrics = QFontMetricsF(*font);
 
-    repaint();
+    viewport()->repaint();
   }
 }
 
@@ -101,12 +101,12 @@ void EditorWidget::decreaseFontSize() {
     font->setPointSizeF(font->pointSizeF() - FONT_STEP);
     fontMetrics = QFontMetricsF(*font);
 
-    repaint();
+    viewport()->repaint();
   }
 }
 
 void EditorWidget::paintEvent(QPaintEvent *event) {
-  QPainter painter(this);
+  QPainter painter(viewport());
   drawText(&painter);
   drawCursor(&painter);
 }
