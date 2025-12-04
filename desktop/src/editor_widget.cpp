@@ -40,17 +40,19 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     neko_cursor_move_down(cursor, buffer);
     break;
   case Qt::Key_Enter:
-  case Qt::Key_Return:
+  case Qt::Key_Return: {
     neko_buffer_insert(buffer, idx, "\n", 1);
 
     size_t row, col;
     neko_cursor_get_position(cursor, &row, &col);
     neko_cursor_set_position(cursor, row + 1, 0);
     break;
-  case Qt::Key_Backspace:
-    neko_buffer_backspace(buffer, idx);
+  }
+  case Qt::Key_Backspace: {
     neko_cursor_move_left(cursor, buffer);
+    neko_buffer_backspace(buffer, idx);
     break;
+  }
   default:
     neko_buffer_insert(buffer, idx, event->text().toStdString().c_str(), len);
     neko_cursor_move_right(cursor, buffer);
