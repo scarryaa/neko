@@ -3,10 +3,15 @@ use std::{
     ptr,
 };
 
-use crate::Buffer;
+use crate::Cursor;
+use crate::{Buffer, editor::cursor};
 
 pub struct NekoBuffer {
     buffer: Buffer,
+}
+
+pub struct NekoCursor {
+    cursor: Cursor,
 }
 
 #[unsafe(no_mangle)]
@@ -81,6 +86,80 @@ pub extern "C" fn neko_string_free(s: *mut c_char) {
     if !s.is_null() {
         unsafe {
             let _ = CString::from_raw(s);
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_cursor_move_right(cursor: *mut NekoCursor, buffer: &NekoBuffer) {
+    unsafe {
+        let cursor = &mut *cursor;
+        cursor.cursor.move_right(&buffer.buffer);
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_cursor_new() -> *mut NekoCursor {
+    let cursor = Box::new(NekoCursor {
+        cursor: Cursor::new(),
+    });
+    Box::into_raw(cursor)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_cursor_get_position(
+    cursor: *const NekoCursor,
+    out_row: *mut usize,
+    out_col: *mut usize,
+) {
+    if cursor.is_null() {
+        return;
+    }
+
+    unsafe {
+        let cursor = &*cursor;
+        let row = cursor.cursor.get_row();
+        let col = cursor.cursor.get_col();
+
+        if !out_row.is_null() {
+            *out_row = row;
+        }
+
+        if !out_col.is_null() {
+            *out_col = col;
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_cursor_get_idx(
+    cursor: *const NekoCursor,
+    buffer: *const NekoBuffer,
+    out_idx: *mut usize,
+) {
+    if cursor.is_null() {
+        unsafe {
+            *out_idx = 0;
+            return;
+        }
+    }
+
+    unsafe {
+        let cursor = &*cursor;
+        let buffer = &*buffer;
+        let idx = cursor.cursor.get_idx(&buffer.buffer);
+
+        if !out_idx.is_null() {
+            *out_idx = idx;
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_cursor_free(cursor: *mut NekoCursor) {
+    if !cursor.is_null() {
+        unsafe {
+            let _ = Box::from_raw(cursor);
         }
     }
 }

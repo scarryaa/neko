@@ -19,6 +19,8 @@ private:
   void drawText(QPainter *painter);
 
   NekoBuffer *buffer;
+  NekoCursor *cursor;
+  QFont *font;
 };
 
 #endif
