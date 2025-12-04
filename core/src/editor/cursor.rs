@@ -61,6 +61,14 @@ impl Cursor {
         }
     }
 
+    pub fn set_row(&mut self, row: usize) {
+        self.row = row;
+    }
+
+    pub fn set_col(&mut self, col: usize) {
+        self.column = col;
+    }
+
     pub fn get_row(&self) -> usize {
         self.row
     }

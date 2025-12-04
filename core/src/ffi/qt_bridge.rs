@@ -3,8 +3,8 @@ use std::{
     ptr,
 };
 
+use crate::Buffer;
 use crate::Cursor;
-use crate::{Buffer, editor::cursor};
 
 pub struct NekoBuffer {
     buffer: Buffer,
@@ -152,6 +152,24 @@ pub extern "C" fn neko_cursor_get_position(
         if !out_col.is_null() {
             *out_col = col;
         }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_cursor_set_position(
+    cursor: *mut NekoCursor,
+    new_row: usize,
+    new_col: usize,
+) {
+    if cursor.is_null() {
+        return;
+    }
+
+    unsafe {
+        let cursor = &mut *cursor;
+
+        cursor.cursor.set_row(new_row);
+        cursor.cursor.set_col(new_col);
     }
 }
 

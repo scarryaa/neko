@@ -32,6 +32,8 @@ void neko_cursor_move_up(NekoCursor *cursor, const NekoBuffer *buffer);
 void neko_cursor_move_down(NekoCursor *cursor, const NekoBuffer *buffer);
 void neko_cursor_get_position(const NekoCursor *cursor, size_t *out_row,
                               size_t *out_col);
+void neko_cursor_set_position(const NekoCursor *cursor, size_t new_row,
+                              size_t new_col);
 void neko_cursor_get_idx(const NekoCursor *cursor, const NekoBuffer *buffer,
                          size_t *out_idx);
 
