@@ -35,6 +35,10 @@ impl Buffer {
     }
 
     pub fn get_line(&self, line_idx: usize) -> String {
+        if line_idx >= self.content.line_len() {
+            return "".to_string();
+        }
+
         self.content.line(line_idx).to_string()
     }
 

@@ -7,12 +7,12 @@
 #include <cstddef>
 #include <neko_core.h>
 
-EditorWidget::EditorWidget(QWidget *parent) : QWidget(parent) {
+EditorWidget::EditorWidget(QWidget *parent)
+    : QWidget(parent), font(new QFont("IBM Plex Mono", 15.0)),
+      fontMetrics(*font) {
   setFocusPolicy(Qt::StrongFocus);
 
   editor = neko_editor_new();
-  font = new QFont("IBM Plex Mono", 15.0);
-  fontMetrics = new QFontMetricsF(*font);
 }
 
 EditorWidget::~EditorWidget() { neko_editor_free(editor); }
@@ -49,12 +49,60 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
   case Qt::Key_Escape:
     // TODO: Clear selection
     break;
+
+  case Qt::Key_Equal:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
+      increaseFontSize();
+    } else {
+      neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+    }
+    break;
+  case Qt::Key_Minus:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
+      decreaseFontSize();
+    } else {
+      neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+    }
+    break;
+  case Qt::Key_0:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
+      resetFontSize();
+    } else {
+      neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+    }
+    break;
+
   default:
     neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
     break;
   }
 
   repaint();
+}
+
+void EditorWidget::resetFontSize() {
+  font->setPointSizeF(DEFAULT_FONT_SIZE);
+  fontMetrics = QFontMetricsF(*font);
+
+  repaint();
+}
+
+void EditorWidget::increaseFontSize() {
+  if (font->pointSizeF() < FONT_UPPER_LIMIT) {
+    font->setPointSizeF(font->pointSizeF() + FONT_STEP);
+    fontMetrics = QFontMetricsF(*font);
+
+    repaint();
+  }
+}
+
+void EditorWidget::decreaseFontSize() {
+  if (font->pointSizeF() > FONT_LOWER_LIMIT) {
+    font->setPointSizeF(font->pointSizeF() - FONT_STEP);
+    fontMetrics = QFontMetricsF(*font);
+
+    repaint();
+  }
 }
 
 void EditorWidget::paintEvent(QPaintEvent *event) {
@@ -87,12 +135,15 @@ void EditorWidget::drawCursor(QPainter *painter) {
   size_t cursor_row_idx, cursor_col_idx;
   neko_editor_get_cursor_position(editor, &cursor_row_idx, &cursor_col_idx);
 
-  // TODO: Make this depend on actual measurements (including unicode)
-  size_t char_width = fontMetrics->averageCharWidth();
+  size_t len;
+  const char *line = neko_editor_get_line(editor, cursor_row_idx, &len);
+  QString lineText = QString::fromStdString(line);
+  neko_string_free((char *)line);
+
+  QString textBeforeCursor = lineText.left(cursor_col_idx);
+  qreal cursor_x = fontMetrics.horizontalAdvance(textBeforeCursor);
 
   painter->drawLine(
-      QLineF(QPointF(cursor_col_idx * char_width,
-                     cursor_row_idx * font_size + CURSOR_WIDTH),
-             QPointF(cursor_col_idx * char_width,
-                     (cursor_row_idx + 1) * font_size + CURSOR_WIDTH)));
+      QLineF(QPointF(cursor_x, cursor_row_idx * font_size),
+             QPointF(cursor_x, (cursor_row_idx + 1) * font_size)));
 }

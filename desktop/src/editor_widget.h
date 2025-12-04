@@ -19,11 +19,18 @@ private:
   void drawText(QPainter *painter);
   void drawCursor(QPainter *painter);
 
+  void increaseFontSize();
+  void decreaseFontSize();
+  void resetFontSize();
+
   NekoEditor *editor;
   QFont *font;
-  QFontMetricsF *fontMetrics;
+  QFontMetricsF fontMetrics;
 
-  double CURSOR_WIDTH = 2.0;
+  double FONT_STEP = 2.0;
+  double DEFAULT_FONT_SIZE = 15.0;
+  double FONT_UPPER_LIMIT = 96.0;
+  double FONT_LOWER_LIMIT = 6.0;
   QColor CURSOR_COLOR = QColor(66, 181, 212);
 };
 
