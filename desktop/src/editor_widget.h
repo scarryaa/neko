@@ -17,10 +17,14 @@ protected:
 
 private:
   void drawText(QPainter *painter);
+  void drawCursor(QPainter *painter);
 
   NekoBuffer *buffer;
   NekoCursor *cursor;
   QFont *font;
+  QFontMetricsF *fontMetrics;
+
+  double CURSOR_WIDTH = 2.0;
 };
 
 #endif

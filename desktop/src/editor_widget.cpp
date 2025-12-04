@@ -13,6 +13,7 @@ EditorWidget::EditorWidget(QWidget *parent) : QWidget(parent) {
   buffer = neko_buffer_new();
   cursor = neko_cursor_new();
   font = new QFont("IBM Plex Mono", 15.0);
+  fontMetrics = new QFontMetricsF(*font);
 }
 
 EditorWidget::~EditorWidget() {
@@ -50,6 +51,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
 void EditorWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
   drawText(&painter);
+  drawCursor(&painter);
 }
 
 void EditorWidget::drawText(QPainter *painter) {
@@ -61,4 +63,21 @@ void EditorWidget::drawText(QPainter *painter) {
   painter->drawText(QPointF(0, font->pointSizeF()),
                     QString::fromStdString(text));
   neko_string_free((char *)text);
+}
+
+void EditorWidget::drawCursor(QPainter *painter) {
+  painter->setPen(QColor(66, 181, 212));
+
+  size_t font_size = font->pointSizeF();
+  size_t cursor_row_idx, cursor_col_idx;
+  neko_cursor_get_position(cursor, &cursor_row_idx, &cursor_col_idx);
+
+  // TODO: Make this depend on actual measurements (including unicode)
+  size_t char_width = fontMetrics->averageCharWidth();
+
+  painter->drawLine(
+      QLineF(QPointF(cursor_col_idx * char_width,
+                     cursor_row_idx * font_size + CURSOR_WIDTH),
+             QPointF(cursor_col_idx * char_width,
+                     (cursor_row_idx + 1) * font_size + CURSOR_WIDTH)));
 }
