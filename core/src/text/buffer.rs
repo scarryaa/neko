@@ -24,6 +24,12 @@ impl Buffer {
         self.content.delete(pos - 1..pos);
     }
 
+    pub fn delete_at(&mut self, pos: usize) {
+        if pos < self.content.byte_len() {
+            self.content.delete(pos..pos + 1);
+        }
+    }
+
     pub fn get_text(&self) -> String {
         self.content.to_string()
     }
@@ -38,5 +44,9 @@ impl Buffer {
 
     pub fn line_len(&self, line_idx: usize) -> usize {
         self.content.line(line_idx).byte_len()
+    }
+
+    pub fn byte_len(&self) -> usize {
+        self.content.byte_len()
     }
 }

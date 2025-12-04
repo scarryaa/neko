@@ -11,6 +11,56 @@ impl Cursor {
         Self { row: 0, column: 0 }
     }
 
+    pub fn insert_and_move(&mut self, buffer: &mut Buffer, text: &str) {
+        let idx = self.get_idx(buffer);
+        buffer.insert(idx, text);
+
+        // TODO: Make this faster
+        for ch in text.chars() {
+            if ch == '\n' {
+                self.row += 1;
+                self.column = 0;
+            } else {
+                self.column += 1;
+            }
+        }
+    }
+
+    pub fn insert_newline(&mut self, buffer: &mut Buffer) {
+        let idx = self.get_idx(buffer);
+        buffer.insert(idx, "\n");
+
+        self.row += 1;
+        self.column = 0;
+    }
+
+    pub fn insert_tab(&mut self, buffer: &mut Buffer) {
+        let idx = self.get_idx(buffer);
+        let tab_width = 4;
+        let spaces = " ".repeat(tab_width);
+
+        buffer.insert(idx, &spaces);
+
+        self.column += tab_width;
+    }
+
+    pub fn backspace_and_move(&mut self, buffer: &mut Buffer) {
+        let idx = self.get_idx(buffer);
+
+        if idx > 0 {
+            self.move_left(buffer);
+            buffer.backspace(idx);
+        }
+    }
+
+    pub fn delete_at_cursor(&mut self, buffer: &mut Buffer) {
+        let idx = self.get_idx(buffer);
+
+        if idx < buffer.byte_len() {
+            buffer.delete_at(idx);
+        }
+    }
+
     pub fn move_right(&mut self, buffer: &Buffer) {
         if self.row >= buffer.line_count() {
             return;

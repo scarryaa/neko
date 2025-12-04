@@ -4,3 +4,4 @@ pub mod editor;
 
 pub use buffer::Buffer;
 pub use cursor::Cursor;
+pub use editor::Editor;
