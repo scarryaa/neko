@@ -1,5 +1,5 @@
-pub mod editor;
 pub mod ffi;
+pub mod text;
 
-pub use editor::buffer::Buffer;
-pub use editor::cursor::Cursor;
+pub use text::buffer::Buffer;
+pub use text::cursor::Cursor;

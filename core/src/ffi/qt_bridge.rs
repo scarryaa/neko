@@ -3,8 +3,8 @@ use std::{
     ptr,
 };
 
+use crate::Buffer;
 use crate::Cursor;
-use crate::{Buffer, editor::buffer};
 
 pub struct NekoBuffer {
     buffer: Buffer,
