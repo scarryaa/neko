@@ -3,7 +3,7 @@ use std::{
     ptr,
 };
 
-use crate::text::{Editor, editor, selection};
+use crate::text::{Editor, buffer, editor, selection};
 
 pub struct NekoEditor {
     editor: Editor,
@@ -367,6 +367,50 @@ pub extern "C" fn neko_editor_get_selection_active(editor: *const NekoEditor) ->
     }
 }
 
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_paste(editor: *mut NekoEditor, text: *const c_char, len: usize) {
+    if !editor.is_null() && !text.is_null() {
+        unsafe {
+            let editor = &mut *editor;
+            let text_slice = std::slice::from_raw_parts(text as *const u8, len);
+            if let Ok(text_str) = std::str::from_utf8(text_slice) {
+                editor.editor.insert_text(text_str);
+            }
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_copy(editor: *const NekoEditor, out_len: *mut usize) -> *mut c_char {
+    if editor.is_null() {
+        if !out_len.is_null() {
+            unsafe {
+                *out_len = 0;
+            }
+        }
+        return ptr::null_mut();
+    }
+
+    unsafe {
+        let editor = &*editor;
+        let selection = editor.editor.selection();
+        let buffer = editor.editor.buffer();
+
+        let text = editor.editor.buffer().get_text_range(
+            selection.start().get_idx(buffer),
+            selection.end().get_idx(buffer),
+        );
+
+        if !out_len.is_null() {
+            *out_len = text.len();
+        }
+
+        match CString::new(text) {
+            Ok(c_string) => c_string.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    }
+}
 #[unsafe(no_mangle)]
 pub extern "C" fn neko_string_free(s: *mut c_char) {
     if !s.is_null() {

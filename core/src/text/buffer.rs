@@ -40,6 +40,10 @@ impl Buffer {
         self.content.to_string()
     }
 
+    pub fn get_text_range(&self, start_idx: usize, end_idx: usize) -> String {
+        self.content.byte_slice(start_idx..end_idx).to_string()
+    }
+
     pub fn get_line(&self, line_idx: usize) -> String {
         if line_idx >= self.content.line_len() {
             return "".to_string();

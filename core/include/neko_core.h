@@ -43,6 +43,9 @@ void neko_editor_select_up(NekoEditor *editor);
 void neko_editor_select_down(NekoEditor *editor);
 void neko_editor_clear_selection(NekoEditor *editor);
 
+char *neko_editor_copy(NekoEditor *editor, size_t *out_len);
+void neko_editor_paste(NekoEditor *editor, const char *text, size_t *out_len);
+
 // Cursor methods
 void neko_editor_get_cursor_position(const NekoEditor *editor, size_t *out_row,
                                      size_t *out_col);

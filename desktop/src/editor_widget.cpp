@@ -1,4 +1,6 @@
 #include "editor_widget.h"
+#include <QApplication>
+#include <QClipboard>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QPainter>
@@ -246,6 +248,52 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
       shouldScroll = true;
     }
+    shouldUpdateViewport = true;
+    break;
+
+  case Qt::Key_C:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
+      if (neko_editor_get_selection_active(editor)) {
+        size_t len;
+        char *text = neko_editor_copy(editor, &len);
+
+        if (text) {
+          QApplication::clipboard()->setText(QString::fromUtf8(text, len));
+          neko_string_free(text);
+        }
+      }
+    } else {
+      neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+    }
+    break;
+  case Qt::Key_V:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
+      QString text = QApplication::clipboard()->text();
+      QByteArray utf8 = text.toUtf8();
+      neko_editor_paste(editor, utf8.constData(), (size_t *)utf8.size());
+    } else {
+      neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+    }
+    shouldScroll = true;
+    shouldUpdateViewport = true;
+    break;
+  case Qt::Key_X:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
+      if (neko_editor_get_selection_active(editor)) {
+        size_t len;
+        char *text = neko_editor_copy(editor, &len);
+
+        if (text) {
+          QApplication::clipboard()->setText(QString::fromUtf8(text, len));
+          neko_string_free(text);
+        }
+
+        neko_editor_delete(editor);
+      }
+    } else {
+      neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+    }
+    shouldScroll = true;
     shouldUpdateViewport = true;
     break;
 
