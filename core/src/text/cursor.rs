@@ -113,7 +113,7 @@ impl Cursor {
     }
 
     pub fn move_to_end(&mut self, buffer: &Buffer) {
-        let last_line_idx = buffer.line_count();
+        let last_line_idx = buffer.line_count() - 1;
         self.row = last_line_idx;
         self.column = buffer.line_len(last_line_idx);
     }

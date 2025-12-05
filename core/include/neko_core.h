@@ -36,6 +36,12 @@ void neko_editor_move_right(const NekoEditor *editor);
 void neko_editor_move_up(const NekoEditor *editor);
 void neko_editor_move_down(const NekoEditor *editor);
 
+void neko_editor_select_all(NekoEditor *editor);
+void neko_editor_select_left(NekoEditor *editor);
+void neko_editor_select_right(NekoEditor *editor);
+void neko_editor_select_up(NekoEditor *editor);
+void neko_editor_select_down(NekoEditor *editor);
+
 // Cursor methods
 void neko_editor_get_cursor_position(const NekoEditor *editor, size_t *out_row,
                                      size_t *out_col);

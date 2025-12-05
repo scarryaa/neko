@@ -237,6 +237,66 @@ pub extern "C" fn neko_editor_get_cursor_position(
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_select_all(editor: *mut NekoEditor) {
+    if editor.is_null() {
+        return;
+    }
+
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.select_all();
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_select_left(editor: *mut NekoEditor) {
+    if editor.is_null() {
+        return;
+    }
+
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.select_left();
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_select_right(editor: *mut NekoEditor) {
+    if editor.is_null() {
+        return;
+    }
+
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.select_right();
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_select_up(editor: *mut NekoEditor) {
+    if editor.is_null() {
+        return;
+    }
+
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.select_up();
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_select_down(editor: *mut NekoEditor) {
+    if editor.is_null() {
+        return;
+    }
+
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.select_down();
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn neko_string_free(s: *mut c_char) {
     if !s.is_null() {
         unsafe {

@@ -119,17 +119,34 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
 
   switch (event->key()) {
   case Qt::Key_Left:
-    neko_editor_move_left(editor);
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
+      neko_editor_select_left(editor);
+    } else {
+      neko_editor_move_left(editor);
+    }
     break;
   case Qt::Key_Right:
-    neko_editor_move_right(editor);
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
+      neko_editor_select_right(editor);
+    } else {
+      neko_editor_move_right(editor);
+    }
     break;
   case Qt::Key_Up:
-    neko_editor_move_up(editor);
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
+      neko_editor_select_up(editor);
+    } else {
+      neko_editor_move_up(editor);
+    }
     break;
   case Qt::Key_Down:
-    neko_editor_move_down(editor);
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
+      neko_editor_select_down(editor);
+    } else {
+      neko_editor_move_down(editor);
+    }
     break;
+
   case Qt::Key_Enter:
   case Qt::Key_Return:
     neko_editor_insert_newline(editor);
@@ -170,6 +187,15 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
   case Qt::Key_0:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
       resetFontSize();
+    } else {
+      neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+    }
+    handleViewportUpdate();
+    break;
+
+  case Qt::Key_A:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
+      neko_editor_select_all(editor);
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
     }
