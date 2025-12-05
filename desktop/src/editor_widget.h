@@ -21,6 +21,7 @@ protected:
 private:
   void drawText(QPainter *painter);
   void drawCursor(QPainter *painter);
+  void drawSelection(QPainter *painter);
 
   void increaseFontSize();
   void decreaseFontSize();
@@ -38,6 +39,7 @@ private:
   double FONT_UPPER_LIMIT = 96.0;
   double FONT_LOWER_LIMIT = 6.0;
   QColor CURSOR_COLOR = QColor(66, 181, 212);
+  QColor SELECTION_COLOR = QColor(66, 181, 212, 50);
   double VIEWPORT_PADDING = 74.0;
 };
 

@@ -3,7 +3,7 @@ use std::{
     ptr,
 };
 
-use crate::text::Editor;
+use crate::text::{Editor, editor, selection};
 
 pub struct NekoEditor {
     editor: Editor,
@@ -305,6 +305,65 @@ pub extern "C" fn neko_editor_clear_selection(editor: *mut NekoEditor) {
     unsafe {
         let editor = &mut *editor;
         editor.editor.clear_selection();
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_get_selection_start(
+    editor: *const NekoEditor,
+    out_row: *mut usize,
+    out_col: *mut usize,
+) {
+    if editor.is_null() {
+        return;
+    }
+
+    unsafe {
+        let editor = &*editor;
+        let selection = editor.editor.selection();
+
+        if !out_row.is_null() {
+            *out_row = selection.start().get_row();
+        }
+        if !out_col.is_null() {
+            *out_col = selection.start().get_col();
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_get_selection_end(
+    editor: *const NekoEditor,
+    out_row: *mut usize,
+    out_col: *mut usize,
+) {
+    if editor.is_null() {
+        return;
+    }
+
+    unsafe {
+        let editor = &*editor;
+        let selection = editor.editor.selection();
+
+        if !out_row.is_null() {
+            *out_row = selection.end().get_row();
+        }
+        if !out_col.is_null() {
+            *out_col = selection.end().get_col();
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_get_selection_active(editor: *const NekoEditor) -> bool {
+    if editor.is_null() {
+        return false;
+    }
+
+    unsafe {
+        let editor = &*editor;
+        let selection = editor.editor.selection();
+        selection.is_active()
     }
 }
 

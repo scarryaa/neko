@@ -47,6 +47,12 @@ void neko_editor_clear_selection(NekoEditor *editor);
 void neko_editor_get_cursor_position(const NekoEditor *editor, size_t *out_row,
                                      size_t *out_col);
 
+void neko_editor_get_selection_start(const NekoEditor *editor, size_t *out_row,
+                                     size_t *out_col);
+void neko_editor_get_selection_end(const NekoEditor *editor, size_t *out_row,
+                                   size_t *out_col);
+bool neko_editor_get_selection_active(const NekoEditor *editor);
+
 #ifdef __cplusplus
 }
 #endif
