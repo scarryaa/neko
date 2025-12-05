@@ -418,6 +418,11 @@ void EditorWidget::drawSelection(QPainter *painter) {
     // First line
     const char *line = neko_editor_get_line(editor, selection_start_row, &len);
     auto text = QString(line);
+
+    if (text.isEmpty()) {
+      text = QString(" ");
+    }
+
     auto text_length = text.length();
 
     QString selection_text =
@@ -439,6 +444,11 @@ void EditorWidget::drawSelection(QPainter *painter) {
 
       auto text = QString::fromStdString(line);
       neko_string_free((char *)line);
+
+      if (text.isEmpty()) {
+        text = QString(" ");
+      }
+
       double x1 = fontMetrics.horizontalAdvance(text);
 
       painter->drawRect(QRectF(QPointF(0, i * lineHeight),
