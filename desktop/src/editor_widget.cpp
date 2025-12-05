@@ -203,7 +203,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     break;
 
   default:
-    if (event->modifiers() != Qt::NoModifier) {
+    if (event->text().isEmpty()) {
       return;
     }
 
