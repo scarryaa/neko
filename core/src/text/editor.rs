@@ -141,4 +141,8 @@ impl Editor {
         self.cursor.move_to_end(&self.buffer);
         self.selection.update(&self.cursor, &self.buffer);
     }
+
+    pub fn clear_selection(&mut self) {
+        self.selection.clear();
+    }
 }

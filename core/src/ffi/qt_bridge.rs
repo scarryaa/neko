@@ -280,7 +280,7 @@ pub extern "C" fn neko_editor_select_up(editor: *mut NekoEditor) {
 
     unsafe {
         let editor = &mut *editor;
-        editor.editor.select_up();
+        editor.editor.select_left();
     }
 }
 
@@ -293,6 +293,18 @@ pub extern "C" fn neko_editor_select_down(editor: *mut NekoEditor) {
     unsafe {
         let editor = &mut *editor;
         editor.editor.select_down();
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_clear_selection(editor: *mut NekoEditor) {
+    if editor.is_null() {
+        return;
+    }
+
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.clear_selection();
     }
 }
 

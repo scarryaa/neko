@@ -165,7 +165,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     handleViewportUpdate();
     break;
   case Qt::Key_Escape:
-    // TODO: Clear selection
+    neko_editor_clear_selection(editor);
     break;
 
   case Qt::Key_Equal:
