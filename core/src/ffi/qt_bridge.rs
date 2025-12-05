@@ -3,7 +3,7 @@ use std::{
     ptr,
 };
 
-use crate::text::{Editor, buffer, editor, selection};
+use crate::text::Editor;
 
 pub struct NekoEditor {
     editor: Editor,

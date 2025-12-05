@@ -8,7 +8,7 @@ pub struct Buffer {
 impl Buffer {
     pub fn new() -> Self {
         Self {
-            content: Rope::new(),
+            content: Rope::from("\n"),
         }
     }
 

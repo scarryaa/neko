@@ -105,6 +105,7 @@ void EditorWidget::scrollToCursor() {
   double verticalScrollOffset = verticalScrollBar()->value();
 
   double targetY = targetRow * lineHeight;
+  double targetYBottom = targetY + lineHeight;
   double targetX = fontMetrics.horizontalAdvance(textBeforeCursor);
 
   if (targetX > viewportWidth - VIEWPORT_PADDING + horizontalScrollOffset) {
@@ -113,8 +114,10 @@ void EditorWidget::scrollToCursor() {
     horizontalScrollBar()->setValue(targetX - VIEWPORT_PADDING);
   }
 
-  if (targetY > viewportHeight - VIEWPORT_PADDING + verticalScrollOffset) {
-    verticalScrollBar()->setValue(targetY - viewportHeight + VIEWPORT_PADDING);
+  if (targetYBottom >
+      viewportHeight - VIEWPORT_PADDING + verticalScrollOffset) {
+    verticalScrollBar()->setValue(targetYBottom - viewportHeight +
+                                  VIEWPORT_PADDING);
   } else if (targetY < verticalScrollOffset + VIEWPORT_PADDING) {
     verticalScrollBar()->setValue(targetY - VIEWPORT_PADDING);
   }
