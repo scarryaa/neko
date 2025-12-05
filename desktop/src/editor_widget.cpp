@@ -203,6 +203,10 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     break;
 
   default:
+    if (event->modifiers() != Qt::NoModifier) {
+      return;
+    }
+
     neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
     handleViewportUpdate();
     break;
@@ -256,7 +260,12 @@ void EditorWidget::drawText(QPainter *painter) {
   for (int i = 0; i < line_count; i++) {
     size_t len;
     const char *line = neko_editor_get_line(editor, i, &len);
-    auto actualY = ((i + 1) * fontMetrics.height()) - verticalOffset;
+
+    auto actualY =
+        (i * fontMetrics.height()) +
+        (fontMetrics.height() + fontMetrics.ascent() - fontMetrics.descent()) /
+            2.0 -
+        verticalOffset;
 
     painter->drawText(QPointF(-horizontalOffset, actualY),
                       QString::fromStdString(line));
@@ -271,7 +280,7 @@ void EditorWidget::drawSelection(QPainter *painter) {
   }
 
   painter->setBrush(SELECTION_COLOR);
-  painter->setPen(nullptr);
+  painter->setPen(QColor(0, 0, 0, 0));
 
   double lineHeight = fontMetrics.height();
   size_t lineCount;
@@ -364,12 +373,13 @@ void EditorWidget::drawCursor(QPainter *painter) {
 
   auto verticalOffset = verticalScrollBar()->value();
   auto horizontalOffset = horizontalScrollBar()->value();
+
   QString textBeforeCursor = lineText.left(cursor_col_idx);
   qreal cursor_x = fontMetrics.horizontalAdvance(textBeforeCursor);
 
-  painter->drawLine(
-      QLineF(QPointF(cursor_x - horizontalOffset,
-                     (cursor_row_idx * lineHeight) - verticalOffset),
-             QPointF(cursor_x - horizontalOffset,
-                     ((cursor_row_idx + 1) * lineHeight) - verticalOffset)));
+  double topY = (cursor_row_idx * lineHeight) - verticalOffset;
+  double bottomY = ((cursor_row_idx + 1) * lineHeight) - verticalOffset;
+
+  painter->drawLine(QLineF(QPointF(cursor_x - horizontalOffset, topY),
+                           QPointF(cursor_x - horizontalOffset, bottomY)));
 }
