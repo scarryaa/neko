@@ -280,7 +280,7 @@ pub extern "C" fn neko_editor_select_up(editor: *mut NekoEditor) {
 
     unsafe {
         let editor = &mut *editor;
-        editor.editor.select_left();
+        editor.editor.select_up();
     }
 }
 
