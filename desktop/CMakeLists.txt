@@ -4,10 +4,12 @@ qt_standard_project_setup()
 qt_add_executable(neko
     WIN32 MACOSX_BUNDLE
     src/main.cpp
-    src/main_window.cpp
-    src/main_window.h
-    src/editor_widget.cpp
-    src/editor_widget.h
+    src/features/main_window/main_window.cpp
+    src/features/main_window/main_window.h
+    src/features/editor/editor_widget.cpp
+    src/features/editor/editor_widget.h
+    src/features/file_explorer/file_explorer_widget.cpp
+    src/features/file_explorer/file_explorer_widget.h
 )
 
 qt_add_translations(
