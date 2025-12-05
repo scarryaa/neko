@@ -397,6 +397,9 @@ void EditorWidget::drawSelection(QPainter *painter) {
                                   &selection_start_col);
   neko_editor_get_selection_end(editor, &selection_end_row, &selection_end_col);
 
+  auto verticalOffset = verticalScrollBar()->value();
+  auto horizontalOffset = horizontalScrollBar()->value();
+
   if (selection_start_row == selection_end_row) {
     // Single line selection
     const char *line = neko_editor_get_line(editor, selection_start_row, &len);
@@ -409,10 +412,11 @@ void EditorWidget::drawSelection(QPainter *painter) {
     double width = fontMetrics.horizontalAdvance(selection_text);
     double widthBefore = fontMetrics.horizontalAdvance(selection_before_text);
 
-    painter->drawRect(
-        QRectF(QPointF(widthBefore, selection_start_row * lineHeight),
-               QPointF(widthBefore + width,
-                       ((selection_start_row + 1) * lineHeight))));
+    painter->drawRect(QRectF(
+        QPointF(widthBefore - horizontalOffset,
+                (selection_start_row * lineHeight) - verticalOffset),
+        QPointF(widthBefore + width - horizontalOffset,
+                (((selection_start_row + 1) * lineHeight) - verticalOffset))));
   } else {
     // Multi line selection
     // First line
@@ -433,10 +437,11 @@ void EditorWidget::drawSelection(QPainter *painter) {
     double width = fontMetrics.horizontalAdvance(selection_text);
     double widthBefore = fontMetrics.horizontalAdvance(selection_before_text);
 
-    painter->drawRect(
-        QRectF(QPointF(widthBefore, selection_start_row * lineHeight),
-               QPointF(widthBefore + width,
-                       ((selection_start_row + 1) * lineHeight))));
+    painter->drawRect(QRectF(
+        QPointF(widthBefore - horizontalOffset,
+                selection_start_row * lineHeight - verticalOffset),
+        QPointF(widthBefore + width - horizontalOffset,
+                ((selection_start_row + 1) * lineHeight) - verticalOffset)));
 
     // Middle lines
     for (int i = selection_start_row + 1; i < selection_end_row; i++) {
@@ -451,8 +456,10 @@ void EditorWidget::drawSelection(QPainter *painter) {
 
       double x1 = fontMetrics.horizontalAdvance(text);
 
-      painter->drawRect(QRectF(QPointF(0, i * lineHeight),
-                               QPointF(x1, ((i + 1) * lineHeight))));
+      painter->drawRect(
+          QRectF(QPointF(0 - horizontalOffset, i * lineHeight - verticalOffset),
+                 QPointF(x1 - horizontalOffset,
+                         ((i + 1) * lineHeight) - verticalOffset)));
     }
 
     // Last line
@@ -466,9 +473,11 @@ void EditorWidget::drawSelection(QPainter *painter) {
 
       double width = fontMetrics.horizontalAdvance(selection_text);
 
-      painter->drawRect(
-          QRectF(QPointF(0, selection_end_row * lineHeight),
-                 QPointF(width, ((selection_end_row + 1) * lineHeight))));
+      painter->drawRect(QRectF(
+          QPointF(0 - horizontalOffset,
+                  selection_end_row * lineHeight - verticalOffset),
+          QPointF(width - horizontalOffset,
+                  ((selection_end_row + 1) * lineHeight) - verticalOffset)));
     }
   }
 }
