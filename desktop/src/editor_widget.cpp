@@ -74,6 +74,7 @@ double EditorWidget::measureContent() {
 
   neko_editor_get_line_count(editor, &lineCount);
 
+  // TODO: Make this faster
   for (int i = 0; i < lineCount; i++) {
     const char *line = neko_editor_get_line(editor, i, &len);
     QString lineText = QString::fromStdString(line);
@@ -83,6 +84,38 @@ double EditorWidget::measureContent() {
   }
 
   return finalWidth;
+}
+
+void EditorWidget::scrollToCursor() {
+  size_t targetRow, targetCol, len;
+  neko_editor_get_cursor_position(editor, &targetRow, &targetCol);
+
+  double lineHeight = fontMetrics.height();
+  const char *line = neko_editor_get_line(editor, targetRow, &len);
+  QString lineText = QString::fromStdString(line);
+  QString textBeforeCursor = lineText.mid(0, targetCol);
+
+  neko_string_free((char *)line);
+
+  double viewportWidth = viewport()->width();
+  double viewportHeight = viewport()->height();
+  double horizontalScrollOffset = horizontalScrollBar()->value();
+  double verticalScrollOffset = verticalScrollBar()->value();
+
+  double targetY = targetRow * lineHeight;
+  double targetX = fontMetrics.horizontalAdvance(textBeforeCursor);
+
+  if (targetX > viewportWidth - VIEWPORT_PADDING + horizontalScrollOffset) {
+    horizontalScrollBar()->setValue(targetX - viewportWidth + VIEWPORT_PADDING);
+  } else if (targetX < horizontalScrollOffset + VIEWPORT_PADDING) {
+    horizontalScrollBar()->setValue(targetX - VIEWPORT_PADDING);
+  }
+
+  if (targetY > viewportHeight - VIEWPORT_PADDING + verticalScrollOffset) {
+    verticalScrollBar()->setValue(targetY - viewportHeight + VIEWPORT_PADDING);
+  } else if (targetY < verticalScrollOffset + VIEWPORT_PADDING) {
+    verticalScrollBar()->setValue(targetY - VIEWPORT_PADDING);
+  }
 }
 
 void EditorWidget::handleViewportUpdate() {
@@ -124,6 +157,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_move_left(editor);
     }
+    scrollToCursor();
     break;
   case Qt::Key_Right:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
@@ -131,6 +165,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_move_right(editor);
     }
+    scrollToCursor();
     break;
   case Qt::Key_Up:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
@@ -138,6 +173,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_move_up(editor);
     }
+    scrollToCursor();
     break;
   case Qt::Key_Down:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
@@ -145,24 +181,29 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_move_down(editor);
     }
+    scrollToCursor();
     break;
 
   case Qt::Key_Enter:
   case Qt::Key_Return:
     neko_editor_insert_newline(editor);
     handleViewportUpdate();
+    scrollToCursor();
     break;
   case Qt::Key_Backspace:
     neko_editor_backspace(editor);
     handleViewportUpdate();
+    scrollToCursor();
     break;
   case Qt::Key_Delete:
     neko_editor_delete(editor);
     handleViewportUpdate();
+    scrollToCursor();
     break;
   case Qt::Key_Tab:
     neko_editor_insert_tab(editor);
     handleViewportUpdate();
+    scrollToCursor();
     break;
   case Qt::Key_Escape:
     neko_editor_clear_selection(editor);
@@ -173,6 +214,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
       increaseFontSize();
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+      scrollToCursor();
     }
     handleViewportUpdate();
     break;
@@ -181,6 +223,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
       decreaseFontSize();
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+      scrollToCursor();
     }
     handleViewportUpdate();
     break;
@@ -189,6 +232,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
       resetFontSize();
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+      scrollToCursor();
     }
     handleViewportUpdate();
     break;
@@ -198,6 +242,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
       neko_editor_select_all(editor);
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+      scrollToCursor();
     }
     handleViewportUpdate();
     break;
@@ -209,6 +254,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
 
     neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
     handleViewportUpdate();
+    scrollToCursor();
     break;
   }
 

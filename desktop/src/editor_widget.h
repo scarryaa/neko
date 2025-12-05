@@ -28,6 +28,7 @@ private:
   void resetFontSize();
 
   void handleViewportUpdate();
+  void scrollToCursor();
   double measureContent();
 
   NekoEditor *editor;
