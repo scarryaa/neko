@@ -149,6 +149,8 @@ void EditorWidget::wheelEvent(QWheelEvent *event) {
 
 void EditorWidget::keyPressEvent(QKeyEvent *event) {
   size_t len = event->text().size();
+  bool shouldScroll = false;
+  bool shouldUpdateViewport = false;
 
   switch (event->key()) {
   case Qt::Key_Left:
@@ -157,7 +159,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_move_left(editor);
     }
-    scrollToCursor();
+    shouldScroll = true;
     break;
   case Qt::Key_Right:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
@@ -165,7 +167,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_move_right(editor);
     }
-    scrollToCursor();
+    shouldScroll = true;
     break;
   case Qt::Key_Up:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
@@ -173,7 +175,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_move_up(editor);
     }
-    scrollToCursor();
+    shouldScroll = true;
     break;
   case Qt::Key_Down:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
@@ -181,29 +183,29 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_move_down(editor);
     }
-    scrollToCursor();
+    shouldScroll = true;
     break;
 
   case Qt::Key_Enter:
   case Qt::Key_Return:
     neko_editor_insert_newline(editor);
-    handleViewportUpdate();
-    scrollToCursor();
+    shouldUpdateViewport = true;
+    shouldScroll = true;
     break;
   case Qt::Key_Backspace:
     neko_editor_backspace(editor);
-    handleViewportUpdate();
-    scrollToCursor();
+    shouldUpdateViewport = true;
+    shouldScroll = true;
     break;
   case Qt::Key_Delete:
     neko_editor_delete(editor);
-    handleViewportUpdate();
-    scrollToCursor();
+    shouldUpdateViewport = true;
+    shouldScroll = true;
     break;
   case Qt::Key_Tab:
     neko_editor_insert_tab(editor);
-    handleViewportUpdate();
-    scrollToCursor();
+    shouldUpdateViewport = true;
+    shouldScroll = true;
     break;
   case Qt::Key_Escape:
     neko_editor_clear_selection(editor);
@@ -214,27 +216,27 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
       increaseFontSize();
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
-      scrollToCursor();
+      shouldScroll = true;
     }
-    handleViewportUpdate();
+    shouldUpdateViewport = true;
     break;
   case Qt::Key_Minus:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
       decreaseFontSize();
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
-      scrollToCursor();
+      shouldScroll = true;
     }
-    handleViewportUpdate();
+    shouldUpdateViewport = true;
     break;
   case Qt::Key_0:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
       resetFontSize();
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
-      scrollToCursor();
+      shouldScroll = true;
     }
-    handleViewportUpdate();
+    shouldUpdateViewport = true;
     break;
 
   case Qt::Key_A:
@@ -242,9 +244,9 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
       neko_editor_select_all(editor);
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
-      scrollToCursor();
+      shouldScroll = true;
     }
-    handleViewportUpdate();
+    shouldUpdateViewport = true;
     break;
 
   default:
@@ -253,9 +255,17 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     }
 
     neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
-    handleViewportUpdate();
-    scrollToCursor();
+    shouldUpdateViewport = true;
+    shouldScroll = true;
     break;
+  }
+
+  if (shouldUpdateViewport) {
+    handleViewportUpdate();
+  }
+
+  if (shouldScroll) {
+    scrollToCursor();
   }
 
   viewport()->repaint();
