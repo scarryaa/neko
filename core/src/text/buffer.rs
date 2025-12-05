@@ -30,6 +30,12 @@ impl Buffer {
         }
     }
 
+    pub fn delete_range(&mut self, start_pos: usize, end_pos: usize) {
+        if start_pos < self.content.byte_len() && end_pos < self.content.byte_len() {
+            self.content.delete(start_pos..end_pos);
+        }
+    }
+
     pub fn get_text(&self) -> String {
         self.content.to_string()
     }

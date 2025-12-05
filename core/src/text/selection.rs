@@ -1,0 +1,69 @@
+use super::{Buffer, Cursor};
+
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct Selection {
+    start: Cursor,
+    end: Cursor,
+    anchor: Cursor,
+    active: bool,
+}
+
+impl Selection {
+    pub fn new() -> Self {
+        Self {
+            start: Cursor::new(),
+            end: Cursor::new(),
+            anchor: Cursor::new(),
+            active: false,
+        }
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.active && self.start != self.end
+    }
+
+    pub fn start(&self) -> &Cursor {
+        &self.start
+    }
+
+    pub fn end(&self) -> &Cursor {
+        &self.end
+    }
+
+    pub fn begin(&mut self, cursor: &Cursor) {
+        self.anchor = cursor.clone();
+        self.start = cursor.clone();
+        self.end = cursor.clone();
+        self.active = true;
+    }
+
+    pub fn update(&mut self, cursor: &Cursor, buffer: &Buffer) {
+        if !self.active {
+            return;
+        }
+
+        let anchor_idx = self.anchor.get_idx(buffer);
+        let cursor_idx = cursor.get_idx(buffer);
+
+        if cursor_idx < anchor_idx {
+            self.start = cursor.clone();
+            self.end = self.anchor.clone();
+        } else {
+            self.start = self.anchor.clone();
+            self.end = cursor.clone();
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.active = false;
+        self.start = Cursor::new();
+        self.end = Cursor::new();
+    }
+
+    pub fn delete(&mut self, buffer: &mut Buffer) {
+        if self.is_active() {
+            buffer.delete_range(self.start.get_idx(buffer), self.end.get_idx(buffer));
+            self.clear();
+        }
+    }
+}

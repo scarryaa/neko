@@ -1,6 +1,6 @@
 use super::Buffer;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct Cursor {
     row: usize,
     column: usize,
@@ -110,6 +110,17 @@ impl Cursor {
             self.row = 0;
             self.column = 0;
         }
+    }
+
+    pub fn move_to_end(&mut self, buffer: &Buffer) {
+        let last_line_idx = buffer.line_count();
+        self.row = last_line_idx;
+        self.column = buffer.line_len(last_line_idx);
+    }
+
+    pub fn move_to_start(&mut self) {
+        self.row = 0;
+        self.column = 0;
     }
 
     pub fn set_row(&mut self, row: usize) {
