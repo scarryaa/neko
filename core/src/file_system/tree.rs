@@ -1,6 +1,8 @@
 use std::{
+    collections::HashMap,
     ffi::{CString, c_char},
-    fs, io,
+    fs::{self, DirEntry},
+    io,
     path::PathBuf,
 };
 
@@ -12,6 +14,32 @@ pub struct FileNode {
     pub is_hidden: bool,
     pub size: u64,
     pub modified: u64,
+}
+
+impl FileNode {
+    pub fn from_entry(entry: DirEntry) -> Option<Self> {
+        let path = entry.path();
+        let metadata = entry.metadata().ok()?;
+        let file_name = path.file_name()?.to_string_lossy().into_owned();
+
+        Some(FileNode {
+            path: CString::new(path.to_string_lossy().as_ref())
+                .ok()?
+                .into_raw(),
+            name: CString::new(path.file_name()?.to_string_lossy().as_ref())
+                .ok()?
+                .into_raw(),
+            is_dir: metadata.is_dir(),
+            is_hidden: file_name.starts_with('.'),
+            size: metadata.len(),
+            modified: metadata
+                .modified()
+                .ok()?
+                .duration_since(std::time::UNIX_EPOCH)
+                .ok()?
+                .as_secs(),
+        })
+    }
 }
 
 impl Drop for FileNode {
@@ -32,6 +60,7 @@ impl Drop for FileNode {
 pub struct FileTree {
     nodes: Vec<FileNode>,
     root_path: PathBuf,
+    expanded: HashMap<PathBuf, Vec<FileNode>>,
 }
 
 impl FileTree {
@@ -71,6 +100,25 @@ impl FileTree {
         Ok(Self {
             nodes,
             root_path: PathBuf::from(root),
+            expanded: HashMap::new(),
+        })
+    }
+
+    pub fn get_children(&mut self, path: &str) -> &[FileNode] {
+        let path_buf = PathBuf::from(path);
+
+        self.expanded.entry(path_buf.clone()).or_insert_with(|| {
+            fs::read_dir(path)
+                .ok()
+                .map(|entries| {
+                    entries
+                        .filter_map(|entry| {
+                            let entry = entry.ok()?;
+                            FileNode::from_entry(entry)
+                        })
+                        .collect()
+                })
+                .unwrap_or_default()
         })
     }
 }

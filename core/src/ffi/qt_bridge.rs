@@ -457,4 +457,24 @@ pub extern "C" fn neko_file_tree_get_children(
     out_nodes: *mut *const FileNode,
     out_count: *mut usize,
 ) {
+    if tree.is_null() || path.is_null() {
+        return;
+    }
+
+    unsafe {
+        let tree = &mut *tree;
+        let c_str = CStr::from_ptr(path);
+
+        if let Ok(path_str) = c_str.to_str() {
+            let children = tree.get_children(path_str);
+
+            if !out_nodes.is_null() {
+                *out_nodes = children.as_ptr();
+            }
+
+            if !out_count.is_null() {
+                *out_count = children.len();
+            }
+        }
+    }
 }

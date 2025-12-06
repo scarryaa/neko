@@ -1,6 +1,7 @@
 #ifndef NEKO_CORE_H
 #define NEKO_CORE_H
 
+#include <cstdint>
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -9,6 +10,14 @@ extern "C" {
 
 typedef struct NekoEditor NekoEditor;
 typedef struct FileTree FileTree;
+typedef struct FileNode {
+  const char *path;
+  const char *name;
+  bool is_dir;
+  bool is_hidden;
+  uint64_t size;
+  uint64_t modified;
+} FileNode;
 
 NekoEditor *neko_editor_new(void);
 void neko_editor_free(NekoEditor *editor);
@@ -59,6 +68,8 @@ void neko_editor_get_selection_end(const NekoEditor *editor, size_t *out_row,
 bool neko_editor_get_selection_active(const NekoEditor *editor);
 
 FileTree *neko_file_tree_new(const char *root_path);
+void neko_file_tree_get_children(FileTree *tree, const char *path,
+                                 const FileNode **out_nodes, size_t *out_count);
 void neko_file_tree_free(FileTree *tree);
 
 #ifdef __cplusplus
