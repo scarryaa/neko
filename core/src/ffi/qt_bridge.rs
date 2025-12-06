@@ -1,9 +1,9 @@
 use std::{
-    ffi::{CString, c_char},
+    ffi::{CStr, CString, c_char},
     ptr,
 };
 
-use crate::text::Editor;
+use crate::{FileNode, FileTree, text::Editor};
 
 pub struct NekoEditor {
     editor: Editor,
@@ -411,6 +411,7 @@ pub extern "C" fn neko_editor_copy(editor: *const NekoEditor, out_len: *mut usiz
         }
     }
 }
+
 #[unsafe(no_mangle)]
 pub extern "C" fn neko_string_free(s: *mut c_char) {
     if !s.is_null() {
@@ -418,4 +419,42 @@ pub extern "C" fn neko_string_free(s: *mut c_char) {
             let _ = CString::from_raw(s);
         }
     }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_new(root_path: *const c_char) -> *mut FileTree {
+    if root_path.is_null() {
+        return ptr::null_mut();
+    }
+
+    unsafe {
+        let c_str = CStr::from_ptr(root_path);
+        let path_str = match c_str.to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+
+        match FileTree::new(path_str) {
+            Ok(tree) => Box::into_raw(Box::new(tree)),
+            Err(_) => ptr::null_mut(),
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_free(tree: *mut FileTree) {
+    if !tree.is_null() {
+        unsafe {
+            let _ = Box::from_raw(tree);
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_get_children(
+    tree: *mut FileTree,
+    path: *const c_char,
+    out_nodes: *mut *const FileNode,
+    out_count: *mut usize,
+) {
 }

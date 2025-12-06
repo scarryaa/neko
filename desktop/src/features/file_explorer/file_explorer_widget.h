@@ -1,4 +1,9 @@
+#ifndef FILEEXPLORERWIDGET_H
+#define FILEEXPLORERWIDGET_H
+
 #include <QScrollArea>
+
+struct FileTree;
 
 class FileExplorerWidget : public QScrollArea {
   Q_OBJECT
@@ -9,4 +14,7 @@ public:
 
 protected:
 private:
+  FileTree *tree;
 };
+
+#endif
