@@ -29,6 +29,8 @@ private:
   void drawFile(QPainter *painter, double x, double y, std::string fileName);
   void loadDirectory(const std::string path);
   void initialize(std::string path);
+  double measureContent();
+  void handleViewportUpdate();
 
   FileTree *tree;
   size_t fileCount = 0;
@@ -36,6 +38,8 @@ private:
   QPushButton *directorySelectionButton;
   QFont *font;
   QFontMetricsF fontMetrics;
+
+  double VIEWPORT_PADDING = 74.0;
 };
 
 #endif
