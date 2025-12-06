@@ -158,6 +158,12 @@ void FileExplorerWidget::selectNextNode() {
   auto currentPath = neko_file_tree_get_current(tree);
 
   if (currentPath == nullptr) {
+    if (fileNodes == nullptr) {
+      return;
+    }
+
+    neko_file_tree_set_current(tree, fileNodes[0].path);
+    neko_string_free(const_cast<char *>(currentPath));
     return;
   }
 
@@ -173,6 +179,12 @@ void FileExplorerWidget::selectPrevNode() {
   auto currentPath = neko_file_tree_get_current(tree);
 
   if (currentPath == nullptr) {
+    if (fileNodes == nullptr) {
+      return;
+    }
+
+    neko_file_tree_set_current(tree, fileNodes[0].path);
+    neko_string_free(const_cast<char *>(currentPath));
     return;
   }
 
@@ -188,6 +200,12 @@ void FileExplorerWidget::toggleSelectNode() {
   auto currentPath = neko_file_tree_get_current(tree);
 
   if (currentPath == nullptr) {
+    if (fileNodes == nullptr) {
+      return;
+    }
+
+    neko_file_tree_set_current(tree, fileNodes[0].path);
+    neko_string_free(const_cast<char *>(currentPath));
     return;
   }
 
@@ -196,13 +214,7 @@ void FileExplorerWidget::toggleSelectNode() {
   neko_string_free(const_cast<char *>(currentPath));
 }
 
-void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
-  if (fileNodes == nullptr) {
-    return;
-  }
-
-  neko_file_tree_set_current(tree, fileNodes[0].path);
-}
+void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {}
 
 void FileExplorerWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(viewport());
