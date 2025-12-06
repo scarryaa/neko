@@ -12,6 +12,7 @@
 #include <QVBoxLayout>
 #include <QWheelEvent>
 #include <neko_core.h>
+#include <vector>
 
 struct FileTree;
 
@@ -30,13 +31,15 @@ protected:
 
 private:
   void drawFiles(QPainter *painter, size_t count, const FileNode *nodes);
-  void drawFile(QPainter *painter, double x, double y, std::string fileName);
+  void drawFile(QPainter *painter, double x, double y, size_t idx,
+                std::string fileName);
   void loadDirectory(const std::string path);
   void initialize(std::string path);
   double measureContent();
   void handleViewportUpdate();
 
   FileTree *tree;
+  std::vector<const FileNode *> selectedNodes;
   size_t fileCount = 0;
   const FileNode *fileNodes = nullptr;
   QPushButton *directorySelectionButton;
@@ -44,6 +47,7 @@ private:
   QFontMetricsF fontMetrics;
 
   double VIEWPORT_PADDING = 74.0;
+  QColor SELECTION_COLOR = QColor(66, 181, 212, 50);
 };
 
 #endif

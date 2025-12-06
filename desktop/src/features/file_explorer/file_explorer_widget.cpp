@@ -1,7 +1,7 @@
 #include "file_explorer_widget.h"
 
 FileExplorerWidget::FileExplorerWidget(QWidget *parent)
-    : QScrollArea(parent), tree(nullptr),
+    : QScrollArea(parent), tree(nullptr), selectedNodes(),
       font(new QFont("IBM Plex Sans", 15.0)),
       fontMetrics(QFontMetricsF(*font)) {
   setFocusPolicy(Qt::StrongFocus);
@@ -147,7 +147,9 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   viewport()->repaint();
 }
 
-void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {}
+void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
+  selectedNodes.push_back(&fileNodes[0]);
+}
 
 void FileExplorerWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(viewport());
@@ -157,9 +159,6 @@ void FileExplorerWidget::paintEvent(QPaintEvent *event) {
 
 void FileExplorerWidget::drawFiles(QPainter *painter, size_t count,
                                    const FileNode *nodes) {
-  painter->setBrush(Qt::white);
-  painter->setPen(Qt::white);
-
   double lineHeight = fontMetrics.height();
 
   double verticalOffset = verticalScrollBar()->value();
@@ -172,11 +171,28 @@ void FileExplorerWidget::drawFiles(QPainter *painter, size_t count,
             2.0 -
         verticalOffset;
 
-    drawFile(painter, -horizontalOffset, actualY, nodes[i].name);
+    drawFile(painter, -horizontalOffset, actualY, i, nodes[i].name);
   }
 }
 
 void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
-                                  std::string fileName) {
+                                  size_t idx, std::string fileName) {
+  painter->setFont(*font);
+
+  double viewportWidth = viewport()->width();
+  double lineHeight = fontMetrics.height();
+
+  if (!selectedNodes.empty() && idx < selectedNodes.size() &&
+      selectedNodes[idx] != nullptr && selectedNodes[idx]->name == fileName) {
+    painter->setBrush(SELECTION_COLOR);
+    painter->setPen(QColor(0, 0, 0, 0));
+
+    painter->drawRect(
+        QRectF(QPointF(x, y - lineHeight), QPointF(x + viewportWidth, y)));
+  }
+
+  painter->setBrush(Qt::white);
+  painter->setPen(Qt::white);
+
   painter->drawText(QPointF(x, y), QString::fromStdString(fileName));
 }
