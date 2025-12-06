@@ -12,7 +12,6 @@
 #include <QVBoxLayout>
 #include <QWheelEvent>
 #include <neko_core.h>
-#include <vector>
 
 struct FileTree;
 
@@ -31,21 +30,19 @@ protected:
 
 private:
   void drawFiles(QPainter *painter, size_t count, const FileNode *nodes);
-  void drawFile(QPainter *painter, double x, double y, size_t idx,
-                std::string fileName);
+  void drawFile(QPainter *painter, double x, double y, const FileNode *node);
+
   void loadDirectory(const std::string path);
   void initialize(std::string path);
+
   double measureContent();
   void handleViewportUpdate();
+
   void selectNextNode();
   void selectPrevNode();
-  void selectNode();
-  void unselectNode();
   void toggleSelectNode();
 
   FileTree *tree;
-  std::vector<const FileNode *> selectedNodes;
-  const FileNode *currentSelectedNode;
   size_t fileCount = 0;
   const FileNode *fileNodes = nullptr;
   QPushButton *directorySelectionButton;

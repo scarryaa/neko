@@ -3,8 +3,8 @@
 #include <neko_core.h>
 
 FileExplorerWidget::FileExplorerWidget(QWidget *parent)
-    : QScrollArea(parent), tree(nullptr), currentSelectedNode(nullptr),
-      selectedNodes(), font(new QFont("IBM Plex Sans", 15.0)),
+    : QScrollArea(parent), tree(nullptr),
+      font(new QFont("IBM Plex Sans", 15.0)),
       fontMetrics(QFontMetricsF(*font)) {
   setFocusPolicy(Qt::StrongFocus);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -156,63 +156,30 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
 }
 
 void FileExplorerWidget::selectNextNode() {
-  if (currentSelectedNode != nullptr) {
-    const FileNode *nextNode =
-        neko_file_tree_next(tree, currentSelectedNode->path);
+  auto currentPath = neko_file_tree_get_current(tree);
+  auto next = neko_file_tree_next(tree, currentPath);
+  neko_file_tree_set_current(tree, next->path);
 
-    if (nextNode != nullptr) {
-      currentSelectedNode = nextNode;
-    }
-  }
+  neko_string_free(const_cast<char *>(currentPath));
 }
 
 void FileExplorerWidget::selectPrevNode() {
-  if (currentSelectedNode != nullptr) {
-    const FileNode *prevNode =
-        neko_file_tree_prev(tree, currentSelectedNode->path);
+  auto currentPath = neko_file_tree_get_current(tree);
+  auto prev = neko_file_tree_prev(tree, currentPath);
+  neko_file_tree_set_current(tree, prev->path);
 
-    if (prevNode != nullptr) {
-      currentSelectedNode = prevNode;
-    }
-  }
-}
-
-void FileExplorerWidget::selectNode() {
-  for (const auto *node : selectedNodes) {
-    if (node->path == currentSelectedNode->path) {
-      return;
-    }
-  }
-
-  selectedNodes.push_back(currentSelectedNode);
-}
-
-void FileExplorerWidget::unselectNode() {
-  for (auto it = selectedNodes.begin(); it != selectedNodes.end(); ++it) {
-    if ((*it)->path == currentSelectedNode->path) {
-      selectedNodes.erase(it);
-      return;
-    }
-  }
+  neko_string_free(const_cast<char *>(currentPath));
 }
 
 void FileExplorerWidget::toggleSelectNode() {
-  auto it = std::find_if(selectedNodes.begin(), selectedNodes.end(),
-                         [this](const FileNode *node) {
-                           return node->path == currentSelectedNode->path;
-                         });
+  auto currentPath = neko_file_tree_get_current(tree);
+  neko_file_tree_toggle_select(tree, currentPath);
 
-  if (it != selectedNodes.end()) {
-    selectedNodes.erase(it);
-  } else {
-    selectedNodes.push_back(currentSelectedNode);
-  }
+  neko_string_free(const_cast<char *>(currentPath));
 }
 
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
-  currentSelectedNode = &fileNodes[0];
-  selectedNodes.push_back(&fileNodes[0]);
-  viewport()->repaint();
+  neko_file_tree_set_current(tree, fileNodes[0].path);
 }
 
 void FileExplorerWidget::paintEvent(QPaintEvent *event) {
@@ -223,36 +190,26 @@ void FileExplorerWidget::paintEvent(QPaintEvent *event) {
 
 void FileExplorerWidget::drawFiles(QPainter *painter, size_t count,
                                    const FileNode *nodes) {
-  double lineHeight = fontMetrics.height();
-
   double verticalOffset = verticalScrollBar()->value();
   double horizontalOffset = horizontalScrollBar()->value();
 
   for (size_t i = 0; i < count; i++) {
     auto actualY =
-        (i * fontMetrics.height()) +
-        (fontMetrics.height() + fontMetrics.ascent() - fontMetrics.descent()) /
-            2.0 -
-        verticalOffset;
-
-    drawFile(painter, -horizontalOffset, actualY, i, nodes[i].name);
+        (i * fontMetrics.height() +
+         (fontMetrics.ascent() - fontMetrics.descent()) / 2.0 - verticalOffset);
+    drawFile(painter, -horizontalOffset, actualY, &nodes[i]);
   }
 }
 
 void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
-                                  size_t idx, std::string fileName) {
+                                  const FileNode *node) {
   painter->setFont(*font);
 
   double viewportWidth = viewport()->width();
   double lineHeight = fontMetrics.height();
-  bool isSelected = false;
 
-  for (const auto *selectedNode : selectedNodes) {
-    if (selectedNode && selectedNode->name == fileName) {
-      isSelected = true;
-      break;
-    }
-  }
+  bool isSelected = neko_file_tree_is_selected(tree, node->path);
+  bool isCurrent = neko_file_tree_is_current(tree, node->path);
 
   if (isSelected) {
     painter->setBrush(SELECTION_COLOR);
@@ -262,7 +219,7 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
         QRectF(QPointF(x, y - lineHeight), QPointF(x + viewportWidth, y)));
   }
 
-  if (currentSelectedNode && currentSelectedNode->name == fileName) {
+  if (isCurrent) {
     painter->setBrush(QColor(0, 0, 0, 0));
     painter->setPen(SELECTION_PEN);
 
@@ -273,5 +230,5 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   painter->setBrush(Qt::white);
   painter->setPen(Qt::white);
 
-  painter->drawText(QPointF(x, y), QString::fromStdString(fileName));
+  painter->drawText(QPointF(x, y), QString::fromStdString(node->name));
 }

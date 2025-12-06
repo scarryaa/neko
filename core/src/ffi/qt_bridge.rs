@@ -522,3 +522,83 @@ pub extern "C" fn neko_file_tree_prev(
             .unwrap_or(ptr::null())
     }
 }
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_toggle_select(tree: *mut FileTree, path: *const c_char) {
+    if tree.is_null() || path.is_null() {
+        return;
+    }
+
+    unsafe {
+        let tree = &mut *tree;
+        if let Ok(path_str) = CStr::from_ptr(path).to_str() {
+            tree.toggle_select(path_str);
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_set_current(tree: *mut FileTree, path: *const c_char) {
+    if tree.is_null() || path.is_null() {
+        return;
+    }
+
+    unsafe {
+        let tree = &mut *tree;
+        if let Ok(path_str) = CStr::from_ptr(path).to_str() {
+            tree.set_current(path_str);
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_get_current(tree: *const FileTree) -> *const c_char {
+    if tree.is_null() {
+        return ptr::null();
+    }
+
+    unsafe {
+        let tree = &*tree;
+
+        match tree.get_current() {
+            Some(path_buf) => match path_buf.to_str() {
+                Some(path_str) => match CString::new(path_str) {
+                    Ok(cstr) => cstr.into_raw(),
+                    Err(_) => ptr::null(),
+                },
+                None => ptr::null(),
+            },
+            None => ptr::null(),
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_is_selected(tree: *mut FileTree, path: *const c_char) -> bool {
+    if tree.is_null() || path.is_null() {
+        return false;
+    }
+
+    unsafe {
+        let tree = &*tree;
+        CStr::from_ptr(path)
+            .to_str()
+            .map(|p| tree.is_selected(p))
+            .unwrap_or(false)
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_is_current(tree: *mut FileTree, path: *const c_char) -> bool {
+    if tree.is_null() || path.is_null() {
+        return false;
+    }
+
+    unsafe {
+        let tree = &*tree;
+        CStr::from_ptr(path)
+            .to_str()
+            .map(|p| tree.is_current(p))
+            .unwrap_or(false)
+    }
+}

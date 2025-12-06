@@ -1,9 +1,9 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     ffi::{CStr, CString, c_char},
     fs::{self, DirEntry},
     io,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 #[repr(C)]
@@ -65,6 +65,8 @@ pub struct FileTree {
     nodes: Vec<FileNode>,
     root_path: PathBuf,
     expanded: HashMap<PathBuf, Vec<FileNode>>,
+    selected: HashSet<PathBuf>,
+    current: Option<PathBuf>,
 }
 
 impl FileTree {
@@ -105,6 +107,8 @@ impl FileTree {
             nodes,
             root_path: PathBuf::from(root),
             expanded: HashMap::new(),
+            selected: HashSet::new(),
+            current: None,
         })
     }
 
@@ -168,5 +172,47 @@ impl FileTree {
 
     pub fn is_expanded(&self, path: &str) -> bool {
         self.expanded.contains_key(&PathBuf::from(path))
+    }
+
+    pub fn select(&mut self, path: &str) {
+        self.selected.insert(PathBuf::from(path));
+    }
+
+    pub fn unselect(&mut self, path: &str) {
+        self.selected.remove(&PathBuf::from(path));
+    }
+
+    pub fn toggle_select(&mut self, path: &str) {
+        let path_buf = PathBuf::from(path);
+
+        if self.selected.contains(&path_buf) {
+            self.selected.remove(&path_buf);
+        } else {
+            self.selected.insert(path_buf);
+        }
+    }
+
+    pub fn set_current(&mut self, path: &str) {
+        self.current = Some(PathBuf::from(path));
+    }
+
+    pub fn is_selected(&self, path: &str) -> bool {
+        self.selected.contains(&PathBuf::from(path))
+    }
+
+    pub fn get_selected(&self) -> Vec<&PathBuf> {
+        self.selected.iter().collect()
+    }
+
+    pub fn is_current(&self, path: &str) -> bool {
+        self.current.as_deref() == Some(Path::new(path))
+    }
+
+    pub fn get_current(&self) -> Option<PathBuf> {
+        self.current.clone()
+    }
+
+    pub fn clear_selection(&mut self) {
+        self.selected.clear();
     }
 }

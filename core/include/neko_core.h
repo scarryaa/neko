@@ -73,6 +73,11 @@ void neko_file_tree_get_children(FileTree *tree, const char *path,
 void neko_file_tree_free(FileTree *tree);
 const FileNode *neko_file_tree_next(FileTree *tree, const char *current_path);
 const FileNode *neko_file_tree_prev(FileTree *tree, const char *current_path);
+void neko_file_tree_toggle_select(FileTree *tree, const char *path);
+void neko_file_tree_set_current(FileTree *tree, const char *path);
+const char *neko_file_tree_get_current(FileTree *tree);
+bool neko_file_tree_is_selected(FileTree *tree, const char *path);
+bool neko_file_tree_is_current(FileTree *tree, const char *path);
 
 #ifdef __cplusplus
 }
