@@ -1,7 +1,9 @@
 #include "file_explorer_widget.h"
 
 FileExplorerWidget::FileExplorerWidget(QWidget *parent)
-    : QScrollArea(parent), tree(nullptr) {
+    : QScrollArea(parent), tree(nullptr),
+      font(new QFont("IBM Plex Sans", 15.0)),
+      fontMetrics(QFontMetricsF(*font)) {
   directorySelectionButton = new QPushButton("Select a directory");
 
   auto layout = new QVBoxLayout();
@@ -45,8 +47,19 @@ void FileExplorerWidget::drawFiles(QPainter *painter, size_t count,
   painter->setBrush(Qt::white);
   painter->setPen(Qt::white);
 
+  double lineHeight = fontMetrics.height();
+
+  double verticalOffset = verticalScrollBar()->value();
+  double horizontalOffset = horizontalScrollBar()->value();
+
   for (size_t i = 0; i < count; i++) {
-    drawFile(painter, 20, 20, nodes[i].name);
+    auto actualY =
+        (i * fontMetrics.height()) +
+        (fontMetrics.height() + fontMetrics.ascent() - fontMetrics.descent()) /
+            2.0 -
+        verticalOffset;
+
+    drawFile(painter, -horizontalOffset, actualY, nodes[i].name);
   }
 }
 

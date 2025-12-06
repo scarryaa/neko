@@ -2,10 +2,13 @@
 #define FILEEXPLORERWIDGET_H
 
 #include <QFileDialog>
+#include <QFont>
+#include <QFontMetricsF>
 #include <QPainter>
 #include <QPoint>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QVBoxLayout>
 #include <neko_core.h>
 
@@ -31,6 +34,8 @@ private:
   size_t fileCount = 0;
   const FileNode *fileNodes = nullptr;
   QPushButton *directorySelectionButton;
+  QFont *font;
+  QFontMetricsF fontMetrics;
 };
 
 #endif
