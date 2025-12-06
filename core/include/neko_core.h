@@ -1,7 +1,6 @@
 #ifndef NEKO_CORE_H
 #define NEKO_CORE_H
 
-#include "features/file_explorer/file_explorer_widget.h"
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -9,6 +8,8 @@ extern "C" {
 #endif
 
 typedef struct NekoEditor NekoEditor;
+typedef struct FileTree FileTree;
+
 NekoEditor *neko_editor_new(void);
 void neko_editor_free(NekoEditor *editor);
 
@@ -58,7 +59,7 @@ void neko_editor_get_selection_end(const NekoEditor *editor, size_t *out_row,
 bool neko_editor_get_selection_active(const NekoEditor *editor);
 
 FileTree *neko_file_tree_new(const char *root_path);
-void neko_flie_tree_free(FileTree *tree);
+void neko_file_tree_free(FileTree *tree);
 
 #ifdef __cplusplus
 }
