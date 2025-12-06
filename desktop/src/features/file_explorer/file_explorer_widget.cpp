@@ -212,14 +212,14 @@ void FileExplorerWidget::paintEvent(QPaintEvent *event) {
 
 void FileExplorerWidget::drawFiles(QPainter *painter, size_t count,
                                    const FileNode *nodes) {
+  double lineHeight = fontMetrics.height();
   double verticalOffset = verticalScrollBar()->value();
   double horizontalOffset = horizontalScrollBar()->value();
 
   for (size_t i = 0; i < count; i++) {
-    auto actualY =
-        (i * fontMetrics.height() +
-         (fontMetrics.ascent() - fontMetrics.descent()) / 2.0 - verticalOffset);
-    drawFile(painter, -horizontalOffset, actualY, &nodes[i]);
+    double y = (i * lineHeight) - verticalOffset;
+
+    drawFile(painter, -horizontalOffset, y, &nodes[i]);
   }
 }
 
@@ -228,29 +228,30 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   painter->setFont(*font);
 
   double viewportWidth = viewport()->width();
+  // Adjusted to avoid overlapping with the splitter
+  double viewportWidthAdjusted = viewportWidth - 1.0;
   double lineHeight = fontMetrics.height();
 
   bool isSelected = neko_file_tree_is_selected(tree, node->path);
   bool isCurrent = neko_file_tree_is_current(tree, node->path);
 
+  // Selection background
   if (isSelected) {
     painter->setBrush(SELECTION_COLOR);
-    painter->setPen(QColor(0, 0, 0, 0));
-
-    painter->drawRect(
-        QRectF(QPointF(x, y - lineHeight), QPointF(x + viewportWidth, y)));
+    painter->setPen(Qt::NoPen);
+    painter->drawRect(QRectF(x, y, viewportWidth, lineHeight));
   }
 
+  // Current item border
   if (isCurrent) {
-    painter->setBrush(QColor(0, 0, 0, 0));
+    painter->setBrush(Qt::NoBrush);
     painter->setPen(SELECTION_PEN);
-
-    painter->drawRect(
-        QRectF(QPointF(x, y - lineHeight), QPointF(x + viewportWidth, y)));
+    painter->drawRect(QRectF(x, y, viewportWidthAdjusted, lineHeight));
   }
 
+  // Draw text
   painter->setBrush(Qt::white);
   painter->setPen(Qt::white);
-
-  painter->drawText(QPointF(x, y), QString::fromStdString(node->name));
+  painter->drawText(QPointF(x, y + fontMetrics.ascent()),
+                    QString::fromUtf8(node->name));
 }
