@@ -1,6 +1,7 @@
 #ifndef NEKO_CORE_H
 #define NEKO_CORE_H
 
+#include "features/file_explorer/file_explorer_widget.h"
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -55,6 +56,9 @@ void neko_editor_get_selection_start(const NekoEditor *editor, size_t *out_row,
 void neko_editor_get_selection_end(const NekoEditor *editor, size_t *out_row,
                                    size_t *out_col);
 bool neko_editor_get_selection_active(const NekoEditor *editor);
+
+FileTree *neko_file_tree_new(const char *root_path);
+void neko_flie_tree_free(FileTree *tree);
 
 #ifdef __cplusplus
 }
