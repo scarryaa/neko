@@ -121,6 +121,34 @@ void FileExplorerWidget::wheelEvent(QWheelEvent *event) {
   viewport()->repaint();
 }
 
+void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
+  bool shouldScroll = false;
+  bool shouldUpdateViewport = false;
+
+  switch (event->key()) {
+  case Qt::Key_Up:
+    break;
+  case Qt::Key_Down:
+    break;
+  case Qt::Key_Left:
+    break;
+  case Qt::Key_Right:
+    break;
+  }
+
+  if (shouldUpdateViewport) {
+    handleViewportUpdate();
+  }
+
+  // if (shouldScroll) {
+  //   scrollToCursor();
+  // }
+
+  viewport()->repaint();
+}
+
+void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {}
+
 void FileExplorerWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(viewport());
 
