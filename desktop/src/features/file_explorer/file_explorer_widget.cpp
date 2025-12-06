@@ -1,5 +1,4 @@
 #include "file_explorer_widget.h"
-#include <cstddef>
 #include <neko_core.h>
 
 FileExplorerWidget::FileExplorerWidget(QWidget *parent)
@@ -157,28 +156,51 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
 
 void FileExplorerWidget::selectNextNode() {
   auto currentPath = neko_file_tree_get_current(tree);
-  auto next = neko_file_tree_next(tree, currentPath);
-  neko_file_tree_set_current(tree, next->path);
 
-  neko_string_free(const_cast<char *>(currentPath));
+  if (currentPath == nullptr) {
+    return;
+  }
+
+  auto next = neko_file_tree_next(tree, currentPath);
+  if (next != nullptr) {
+    neko_file_tree_set_current(tree, next->path);
+
+    neko_string_free(const_cast<char *>(currentPath));
+  }
 }
 
 void FileExplorerWidget::selectPrevNode() {
   auto currentPath = neko_file_tree_get_current(tree);
-  auto prev = neko_file_tree_prev(tree, currentPath);
-  neko_file_tree_set_current(tree, prev->path);
 
-  neko_string_free(const_cast<char *>(currentPath));
+  if (currentPath == nullptr) {
+    return;
+  }
+
+  auto prev = neko_file_tree_prev(tree, currentPath);
+  if (prev != nullptr) {
+    neko_file_tree_set_current(tree, prev->path);
+
+    neko_string_free(const_cast<char *>(currentPath));
+  }
 }
 
 void FileExplorerWidget::toggleSelectNode() {
   auto currentPath = neko_file_tree_get_current(tree);
+
+  if (currentPath == nullptr) {
+    return;
+  }
+
   neko_file_tree_toggle_select(tree, currentPath);
 
   neko_string_free(const_cast<char *>(currentPath));
 }
 
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
+  if (fileNodes == nullptr) {
+    return;
+  }
+
   neko_file_tree_set_current(tree, fileNodes[0].path);
 }
 
