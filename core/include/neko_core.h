@@ -71,6 +71,8 @@ FileTree *neko_file_tree_new(const char *root_path);
 void neko_file_tree_get_children(FileTree *tree, const char *path,
                                  const FileNode **out_nodes, size_t *out_count);
 void neko_file_tree_free(FileTree *tree);
+const FileNode *neko_file_tree_next(FileTree *tree, const char *current_path);
+const FileNode *neko_file_tree_prev(FileTree *tree, const char *current_path);
 
 #ifdef __cplusplus
 }

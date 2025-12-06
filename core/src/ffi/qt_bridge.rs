@@ -478,3 +478,47 @@ pub extern "C" fn neko_file_tree_get_children(
         }
     }
 }
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_next(
+    tree: *mut FileTree,
+    current_path: *const c_char,
+) -> *const FileNode {
+    if tree.is_null() || current_path.is_null() {
+        return ptr::null();
+    }
+
+    unsafe {
+        let tree = &*tree;
+        let path = match CStr::from_ptr(current_path).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null(),
+        };
+
+        tree.next(path)
+            .map(|node| node as *const FileNode)
+            .unwrap_or(ptr::null())
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_prev(
+    tree: *mut FileTree,
+    current_path: *const c_char,
+) -> *const FileNode {
+    if tree.is_null() || current_path.is_null() {
+        return ptr::null();
+    }
+
+    unsafe {
+        let tree = &*tree;
+        let path = match CStr::from_ptr(current_path).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null(),
+        };
+
+        tree.prev(path)
+            .map(|node| node as *const FileNode)
+            .unwrap_or(ptr::null())
+    }
+}

@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    ffi::{CString, c_char},
+    ffi::{CStr, CString, c_char},
     fs::{self, DirEntry},
     io,
     path::PathBuf,
@@ -39,6 +39,10 @@ impl FileNode {
                 .ok()?
                 .as_secs(),
         })
+    }
+
+    pub fn path_str(&self) -> String {
+        unsafe { CStr::from_ptr(self.path).to_string_lossy().into_owned() }
     }
 }
 
@@ -120,5 +124,49 @@ impl FileTree {
                 })
                 .unwrap_or_default()
         })
+    }
+
+    pub fn get_visible_nodes(&self) -> Vec<&FileNode> {
+        let mut visible = Vec::new();
+        self.collect_visible(&self.root_path, &mut visible, 0);
+        visible
+    }
+
+    pub fn collect_visible<'a>(
+        &'a self,
+        path: &PathBuf,
+        visible: &mut Vec<&'a FileNode>,
+        depth: usize,
+    ) {
+        if let Some(children) = self.expanded.get(path) {
+            for node in children {
+                visible.push(node);
+
+                let node_path = PathBuf::from(node.path_str());
+                if node.is_dir && self.expanded.contains_key(&node_path) {
+                    self.collect_visible(&node_path, visible, depth + 1);
+                }
+            }
+        }
+    }
+
+    pub fn next(&self, current_path: &str) -> Option<&FileNode> {
+        let visible = self.get_visible_nodes();
+        let current_idx = visible.iter().position(|n| n.path_str() == current_path)?;
+        visible.get(current_idx + 1).copied()
+    }
+
+    pub fn prev(&self, current_path: &str) -> Option<&FileNode> {
+        let visible = self.get_visible_nodes();
+        let current_idx = visible.iter().position(|n| n.path_str() == current_path)?;
+        if current_idx > 0 {
+            visible.get(current_idx - 1).copied()
+        } else {
+            None
+        }
+    }
+
+    pub fn is_expanded(&self, path: &str) -> bool {
+        self.expanded.contains_key(&PathBuf::from(path))
     }
 }

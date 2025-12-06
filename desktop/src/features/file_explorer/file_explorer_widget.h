@@ -37,9 +37,15 @@ private:
   void initialize(std::string path);
   double measureContent();
   void handleViewportUpdate();
+  void selectNextNode();
+  void selectPrevNode();
+  void selectNode();
+  void unselectNode();
+  void toggleSelectNode();
 
   FileTree *tree;
   std::vector<const FileNode *> selectedNodes;
+  const FileNode *currentSelectedNode;
   size_t fileCount = 0;
   const FileNode *fileNodes = nullptr;
   QPushButton *directorySelectionButton;
@@ -48,6 +54,7 @@ private:
 
   double VIEWPORT_PADDING = 74.0;
   QColor SELECTION_COLOR = QColor(66, 181, 212, 50);
+  QPen SELECTION_PEN = QPen(QColor(66, 181, 212, 175), 1.5);
 };
 
 #endif

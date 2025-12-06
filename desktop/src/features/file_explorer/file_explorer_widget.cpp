@@ -1,8 +1,10 @@
 #include "file_explorer_widget.h"
+#include <cstddef>
+#include <neko_core.h>
 
 FileExplorerWidget::FileExplorerWidget(QWidget *parent)
-    : QScrollArea(parent), tree(nullptr), selectedNodes(),
-      font(new QFont("IBM Plex Sans", 15.0)),
+    : QScrollArea(parent), tree(nullptr), currentSelectedNode(nullptr),
+      selectedNodes(), font(new QFont("IBM Plex Sans", 15.0)),
       fontMetrics(QFontMetricsF(*font)) {
   setFocusPolicy(Qt::StrongFocus);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -127,12 +129,18 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
 
   switch (event->key()) {
   case Qt::Key_Up:
+    selectPrevNode();
     break;
-  case Qt::Key_Down:
+  case Qt::Key_Down: {
+    selectNextNode();
     break;
+  }
   case Qt::Key_Left:
     break;
   case Qt::Key_Right:
+    break;
+  case Qt::Key_Space:
+    toggleSelectNode();
     break;
   }
 
@@ -147,8 +155,64 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   viewport()->repaint();
 }
 
+void FileExplorerWidget::selectNextNode() {
+  if (currentSelectedNode != nullptr) {
+    const FileNode *nextNode =
+        neko_file_tree_next(tree, currentSelectedNode->path);
+
+    if (nextNode != nullptr) {
+      currentSelectedNode = nextNode;
+    }
+  }
+}
+
+void FileExplorerWidget::selectPrevNode() {
+  if (currentSelectedNode != nullptr) {
+    const FileNode *prevNode =
+        neko_file_tree_prev(tree, currentSelectedNode->path);
+
+    if (prevNode != nullptr) {
+      currentSelectedNode = prevNode;
+    }
+  }
+}
+
+void FileExplorerWidget::selectNode() {
+  for (const auto *node : selectedNodes) {
+    if (node->path == currentSelectedNode->path) {
+      return;
+    }
+  }
+
+  selectedNodes.push_back(currentSelectedNode);
+}
+
+void FileExplorerWidget::unselectNode() {
+  for (auto it = selectedNodes.begin(); it != selectedNodes.end(); ++it) {
+    if ((*it)->path == currentSelectedNode->path) {
+      selectedNodes.erase(it);
+      return;
+    }
+  }
+}
+
+void FileExplorerWidget::toggleSelectNode() {
+  auto it = std::find_if(selectedNodes.begin(), selectedNodes.end(),
+                         [this](const FileNode *node) {
+                           return node->path == currentSelectedNode->path;
+                         });
+
+  if (it != selectedNodes.end()) {
+    selectedNodes.erase(it);
+  } else {
+    selectedNodes.push_back(currentSelectedNode);
+  }
+}
+
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
+  currentSelectedNode = &fileNodes[0];
   selectedNodes.push_back(&fileNodes[0]);
+  viewport()->repaint();
 }
 
 void FileExplorerWidget::paintEvent(QPaintEvent *event) {
@@ -181,11 +245,26 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
 
   double viewportWidth = viewport()->width();
   double lineHeight = fontMetrics.height();
+  bool isSelected = false;
 
-  if (!selectedNodes.empty() && idx < selectedNodes.size() &&
-      selectedNodes[idx] != nullptr && selectedNodes[idx]->name == fileName) {
+  for (const auto *selectedNode : selectedNodes) {
+    if (selectedNode && selectedNode->name == fileName) {
+      isSelected = true;
+      break;
+    }
+  }
+
+  if (isSelected) {
     painter->setBrush(SELECTION_COLOR);
     painter->setPen(QColor(0, 0, 0, 0));
+
+    painter->drawRect(
+        QRectF(QPointF(x, y - lineHeight), QPointF(x + viewportWidth, y)));
+  }
+
+  if (currentSelectedNode && currentSelectedNode->name == fileName) {
+    painter->setBrush(QColor(0, 0, 0, 0));
+    painter->setPen(SELECTION_PEN);
 
     painter->drawRect(
         QRectF(QPointF(x, y - lineHeight), QPointF(x + viewportWidth, y)));
