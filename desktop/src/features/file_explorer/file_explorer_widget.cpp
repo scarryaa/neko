@@ -107,6 +107,20 @@ void FileExplorerWidget::handleViewportUpdate() {
   verticalScrollBar()->setRange(0, viewportHeight);
 }
 
+void FileExplorerWidget::wheelEvent(QWheelEvent *event) {
+  auto horizontalScrollOffset = horizontalScrollBar()->value();
+  auto verticalScrollOffset = verticalScrollBar()->value();
+  double verticalDelta = event->angleDelta().y() / 8.0;
+  double horizontallDelta = event->angleDelta().x() / 8.0;
+
+  auto newHorizontalScrollOffset = horizontalScrollOffset + horizontallDelta;
+  auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;
+
+  horizontalScrollBar()->setValue(newHorizontalScrollOffset);
+  verticalScrollBar()->setValue(newVerticalScrollOffset);
+  viewport()->repaint();
+}
+
 void FileExplorerWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(viewport());
 

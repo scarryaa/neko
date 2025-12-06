@@ -10,6 +10,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QVBoxLayout>
+#include <QWheelEvent>
 #include <neko_core.h>
 
 struct FileTree;
@@ -23,6 +24,7 @@ public:
 
 protected:
   void paintEvent(QPaintEvent *event) override;
+  void wheelEvent(QWheelEvent *event) override;
 
 private:
   void drawFiles(QPainter *painter, size_t count, const FileNode *nodes);
