@@ -168,7 +168,6 @@ void FileExplorerWidget::selectNextNode() {
     }
 
     neko_file_tree_set_current(tree, fileNodes[0].path);
-    neko_string_free(const_cast<char *>(currentPath));
     return;
   }
 
@@ -189,7 +188,6 @@ void FileExplorerWidget::selectPrevNode() {
     }
 
     neko_file_tree_set_current(tree, fileNodes[0].path);
-    neko_string_free(const_cast<char *>(currentPath));
     return;
   }
 
@@ -210,7 +208,6 @@ void FileExplorerWidget::toggleSelectNode() {
     }
 
     neko_file_tree_set_current(tree, fileNodes[0].path);
-    neko_string_free(const_cast<char *>(currentPath));
     return;
   }
 
@@ -228,11 +225,11 @@ void FileExplorerWidget::toggleExpandNode() {
     }
 
     neko_file_tree_set_current(tree, fileNodes[0].path);
-    neko_string_free(const_cast<char *>(currentPath));
     return;
   }
 
   neko_file_tree_toggle_expanded(tree, currentPath);
+  loadDirectory(rootPath);
 
   neko_string_free(const_cast<char *>(currentPath));
 }
@@ -262,6 +259,7 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
                                   const FileNode *node) {
   painter->setFont(*font);
 
+  double indent = node->depth * 20.0;
   double viewportWidth = viewport()->width();
   // Adjusted to avoid overlapping with the splitter
   double viewportWidthAdjusted = viewportWidth - 1.0;
@@ -298,8 +296,8 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   int iconSize = lineHeight - 2;
   QPixmap pixmap = icon.pixmap(iconSize, iconSize);
 
-  // Draw icon
-  double iconX = x + 2;
+  // Draw icon with indentation
+  double iconX = x + indent + 2;
   double iconY = y + (lineHeight - iconSize) / 2;
   painter->drawPixmap(QPointF(iconX, iconY), pixmap);
 

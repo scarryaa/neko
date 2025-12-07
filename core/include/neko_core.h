@@ -18,6 +18,7 @@ typedef struct FileNode {
   bool is_hidden;
   uint64_t size;
   uint64_t modified;
+  uint64_t depth;
 } FileNode;
 
 NekoEditor *neko_editor_new(void);

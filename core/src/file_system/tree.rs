@@ -15,6 +15,7 @@ pub struct FileNode {
     pub is_hidden: bool,
     pub size: u64,
     pub modified: u64,
+    pub depth: usize,
 }
 
 impl FileNode {
@@ -39,6 +40,7 @@ impl FileNode {
                 .duration_since(std::time::UNIX_EPOCH)
                 .ok()?
                 .as_secs(),
+            depth: 0,
         })
     }
 
@@ -72,6 +74,7 @@ pub struct FileTree {
     expanded: HashMap<PathBuf, Vec<FileNode>>,
     selected: HashSet<PathBuf>,
     current: Option<PathBuf>,
+    pub cached_visible: Vec<FileNode>,
 }
 
 impl FileTree {
@@ -104,6 +107,7 @@ impl FileTree {
                         .duration_since(std::time::UNIX_EPOCH)
                         .ok()?
                         .as_secs(),
+                    depth: 1,
                 })
             })
             .collect();
@@ -114,6 +118,7 @@ impl FileTree {
             expanded: HashMap::new(),
             selected: HashSet::new(),
             current: None,
+            cached_visible: Vec::new(),
         })
     }
 
@@ -170,6 +175,38 @@ impl FileTree {
         }
     }
 
+    pub fn collect_visible_owned(&self, path: &PathBuf, visible: &mut Vec<FileNode>, depth: usize) {
+        if let Some(children) = self.expanded.get(path) {
+            for node in children {
+                let path_string = node.path_str().to_string();
+                let name_string = node.name_str().to_string();
+
+                let node_with_depth = FileNode {
+                    path: CString::new(path_string).unwrap().into_raw(),
+                    name: CString::new(name_string).unwrap().into_raw(),
+                    is_dir: node.is_dir,
+                    is_hidden: node.is_hidden,
+                    size: node.size,
+                    modified: node.modified,
+                    depth,
+                };
+
+                visible.push(node_with_depth);
+
+                let node_path = PathBuf::from(node.path_str());
+                if node.is_dir && self.expanded.contains_key(&node_path) {
+                    self.collect_visible_owned(&node_path, visible, depth + 1);
+                }
+            }
+        }
+    }
+
+    pub fn get_visible_nodes_owned(&self) -> Vec<FileNode> {
+        let mut visible = Vec::new();
+        self.collect_visible_owned(&self.root_path, &mut visible, 0);
+        visible
+    }
+
     pub fn next(&self, current_path: &str) -> Option<&FileNode> {
         let visible = self.get_visible_nodes();
         let current_idx = visible.iter().position(|n| n.path_str() == current_path)?;
@@ -188,6 +225,10 @@ impl FileTree {
 
     pub fn toggle_expanded(&mut self, path: &str) {
         let path_buf = PathBuf::from(path);
+
+        if !path_buf.is_dir() {
+            return;
+        }
 
         if self.is_expanded(path) {
             self.expanded.remove(&path_buf);
