@@ -12,6 +12,8 @@ public:
   explicit EditorWidget(NekoEditor *editor, QWidget *parent = nullptr);
   ~EditorWidget();
 
+  void updateDimensionsAndRepaint();
+
 protected:
   void keyPressEvent(QKeyEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;

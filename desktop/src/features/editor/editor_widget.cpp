@@ -134,6 +134,11 @@ void EditorWidget::handleViewportUpdate() {
   verticalScrollBar()->setRange(0, viewportHeight);
 }
 
+void EditorWidget::updateDimensionsAndRepaint() {
+  handleViewportUpdate();
+  viewport()->repaint();
+}
+
 void EditorWidget::mousePressEvent(QMouseEvent *event) {}
 
 void EditorWidget::wheelEvent(QWheelEvent *event) {

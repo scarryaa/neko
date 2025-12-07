@@ -1,6 +1,8 @@
 #ifndef MAIN_WINDOW_H
 #define MAIN_WINDOW_H
 
+#include "features/editor/editor_widget.h"
+#include "features/file_explorer/file_explorer_widget.h"
 #include <QMainWindow>
 #include <neko_core.h>
 
@@ -11,7 +13,13 @@ public:
   MainWindow(QWidget *parent = nullptr);
   ~MainWindow();
 
+private slots:
+  void onFileSelected(const std::string);
+  void onDirectorySelected(const std::string);
+
 private:
   NekoAppState *appState;
+  FileExplorerWidget *fileExplorerWidget;
+  EditorWidget *editorWidget;
 };
 #endif // MAIN_WINDOW_H

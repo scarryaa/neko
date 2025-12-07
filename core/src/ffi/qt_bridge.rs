@@ -1,3 +1,4 @@
+use core::ffi::c_str;
 use std::{
     ffi::{CStr, CString, c_char},
     path::PathBuf,
@@ -524,6 +525,21 @@ pub extern "C" fn neko_file_tree_free(tree: *mut FileTree) {
     if !tree.is_null() {
         unsafe {
             let _ = Box::from_raw(tree);
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_set_root_path(tree: *mut FileTree, path: *const c_char) {
+    if path.is_null() {
+        return;
+    }
+
+    unsafe {
+        let tree = &mut *tree;
+        let c_str = CStr::from_ptr(path);
+        if let Ok(s) = c_str.to_str() {
+            tree.set_root_path(s)
         }
     }
 }

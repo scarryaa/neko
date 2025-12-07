@@ -4,6 +4,7 @@
 #include <QSplitter>
 #include <QVBoxLayout>
 #include <neko_core.h>
+#include <string>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   appState = neko_app_state_new(nullptr);
@@ -11,8 +12,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   NekoEditor *editor = neko_app_state_get_editor(appState);
   FileTree *fileTree = neko_app_state_get_file_tree(appState);
 
-  auto *fileExplorerWidget = new FileExplorerWidget(fileTree, this);
-  auto *editorWidget = new EditorWidget(editor, this);
+  fileExplorerWidget = new FileExplorerWidget(fileTree, this);
+  editorWidget = new EditorWidget(editor, this);
+
+  connect(fileExplorerWidget, &FileExplorerWidget::fileSelected, this,
+          &MainWindow::onFileSelected);
+  connect(fileExplorerWidget, &FileExplorerWidget::directorySelected, this,
+          &MainWindow::onDirectorySelected);
 
   auto *splitter = new QSplitter(Qt::Horizontal, this);
   splitter->addWidget(fileExplorerWidget);
@@ -33,5 +39,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
 MainWindow::~MainWindow() {
   if (appState) {
+    neko_app_state_free(appState);
   }
 }
+
+void MainWindow::onFileSelected(const std::string filePath) {
+  if (neko_app_state_open_file(appState, filePath.c_str())) {
+    editorWidget->updateDimensionsAndRepaint();
+  }
+}
+
+void MainWindow::onDirectorySelected(const std::string directoryPath) {}

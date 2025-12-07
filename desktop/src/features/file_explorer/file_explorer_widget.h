@@ -26,18 +26,23 @@ public:
   explicit FileExplorerWidget(FileTree *tree, QWidget *parent = nullptr);
   ~FileExplorerWidget();
 
+  void initialize(std::string path);
+
 protected:
   void keyPressEvent(QKeyEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
   void paintEvent(QPaintEvent *event) override;
   void wheelEvent(QWheelEvent *event) override;
 
+signals:
+  void directorySelected(const std::string path);
+  void fileSelected(const std::string path);
+
 private:
   void drawFiles(QPainter *painter, size_t count, const FileNode *nodes);
   void drawFile(QPainter *painter, double x, double y, const FileNode *node);
 
   void loadDirectory(const std::string path);
-  void initialize(std::string path);
 
   double measureContent();
   void handleViewportUpdate();
@@ -45,8 +50,6 @@ private:
   void handleEnter();
   void handleLeft();
   void handleRight();
-
-  void openInEditor();
 
   void selectNextNode();
   void selectPrevNode();

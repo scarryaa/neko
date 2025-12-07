@@ -135,6 +135,10 @@ impl FileTree {
         })
     }
 
+    pub fn set_root_path(&mut self, path: &str) {
+        self.root_path = path.into();
+    }
+
     pub fn get_children(&mut self, path: &str) -> &[FileNode] {
         let path_buf = PathBuf::from(path);
 

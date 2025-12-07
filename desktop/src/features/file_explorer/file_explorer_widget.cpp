@@ -63,6 +63,7 @@ FileExplorerWidget::FileExplorerWidget(FileTree *tree, QWidget *parent)
         QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
     if (!dir.isEmpty()) {
+      initialize(dir.toStdString());
       rootPath = dir.toStdString();
       directorySelectionButton->hide();
     }
@@ -72,14 +73,14 @@ FileExplorerWidget::FileExplorerWidget(FileTree *tree, QWidget *parent)
 FileExplorerWidget::~FileExplorerWidget() {}
 
 void FileExplorerWidget::initialize(std::string path) {
-  tree = neko_file_tree_new(path.c_str());
+  neko_file_tree_set_root_path(tree, path.c_str());
+  directorySelected(path);
   loadDirectory(path);
   handleViewportUpdate();
 }
 
 void FileExplorerWidget::loadDirectory(const std::string path) {
   neko_file_tree_get_children(tree, path.c_str(), &fileNodes, &fileCount);
-
   viewport()->repaint();
 }
 
@@ -228,6 +229,7 @@ void FileExplorerWidget::handleEnter() {
     } else {
       // Otherwise, open the file in the editor
       if (currentFile != nullptr) {
+        fileSelected(currentPath);
       }
     }
   } else {
@@ -240,8 +242,6 @@ void FileExplorerWidget::handleEnter() {
 
   neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
 }
-
-void FileExplorerWidget::openInEditor() {}
 
 void FileExplorerWidget::selectNextNode() {
   auto currentPath = neko_file_tree_get_current(tree);
