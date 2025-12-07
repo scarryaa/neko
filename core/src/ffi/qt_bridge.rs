@@ -549,17 +549,16 @@ pub extern "C" fn neko_file_tree_get_visible_nodes(
     unsafe {
         let tree = &mut *tree;
 
-        let old_cached = std::mem::take(&mut tree.cached_visible);
+        let new_visible = tree.get_visible_nodes_owned();
 
-        tree.cached_visible = tree.get_visible_nodes_owned();
+        *out_count = new_visible.len();
+        *out_nodes = new_visible.as_ptr();
 
-        *out_count = tree.cached_visible.len();
-        *out_nodes = tree.cached_visible.as_ptr();
-
-        for node in &old_cached {
-            let _ = CString::from_raw(node.path as *mut c_char);
-            let _ = CString::from_raw(node.name as *mut c_char);
+        for mut node in std::mem::take(&mut tree.cached_visible) {
+            node.free_strings();
         }
+
+        tree.cached_visible = new_visible;
     }
 }
 

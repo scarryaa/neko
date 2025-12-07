@@ -51,18 +51,20 @@ impl FileNode {
     pub fn name_str(&self) -> String {
         unsafe { CStr::from_ptr(self.name).to_string_lossy().into_owned() }
     }
-}
 
-impl Drop for FileNode {
-    fn drop(&mut self) {
-        unsafe {
-            if !self.path.is_null() {
-                let _ = CString::from_raw(self.path as *mut c_char);
-            }
-
-            if !self.name.is_null() {
-                let _ = CString::from_raw(self.name as *mut c_char);
-            }
+    /// Returns the free strings of this [`FileNode`].
+    ///
+    /// # Safety
+    ///
+    /// Call this manually when C side is done with the strings
+    pub unsafe fn free_strings(&mut self) {
+        if !self.path.is_null() {
+            let _ = unsafe { CString::from_raw(self.path as *mut c_char) };
+            self.path = std::ptr::null();
+        }
+        if !self.name.is_null() {
+            let _ = unsafe { CString::from_raw(self.name as *mut c_char) };
+            self.name = std::ptr::null();
         }
     }
 }
@@ -281,5 +283,32 @@ impl FileTree {
 
     pub fn clear_selection(&mut self) {
         self.selected.clear();
+    }
+}
+
+impl Drop for FileTree {
+    fn drop(&mut self) {
+        // Free all cached visible strings
+        for mut node in std::mem::take(&mut self.cached_visible) {
+            unsafe {
+                node.free_strings();
+            }
+        }
+
+        // Free strings in expanded nodes
+        for (_, nodes) in std::mem::take(&mut self.expanded) {
+            for mut node in nodes {
+                unsafe {
+                    node.free_strings();
+                }
+            }
+        }
+
+        // Free strings in root nodes
+        for mut node in std::mem::take(&mut self.nodes) {
+            unsafe {
+                node.free_strings();
+            }
+        }
     }
 }
