@@ -7,6 +7,7 @@ use std::{
 };
 
 #[repr(C)]
+#[derive(Clone)]
 pub struct FileNode {
     pub path: *const c_char,
     pub name: *const c_char,
@@ -182,6 +183,16 @@ impl FileTree {
             visible.get(current_idx - 1).copied()
         } else {
             None
+        }
+    }
+
+    pub fn toggle_expanded(&mut self, path: &str) {
+        let path_buf = PathBuf::from(path);
+
+        if self.is_expanded(path) {
+            self.expanded.remove(&path_buf);
+        } else {
+            self.get_children(path);
         }
     }
 

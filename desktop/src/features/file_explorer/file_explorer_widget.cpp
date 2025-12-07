@@ -65,6 +65,7 @@ FileExplorerWidget::FileExplorerWidget(QWidget *parent)
 
     if (!dir.isEmpty()) {
       initialize(dir.toStdString());
+      rootPath = dir.toStdString();
       directorySelectionButton->hide();
     }
   });
@@ -137,6 +138,10 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   case Qt::Key_Left:
     break;
   case Qt::Key_Right:
+    toggleExpandNode();
+    neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
+
+    shouldUpdateViewport = true;
     break;
   case Qt::Key_Space:
     toggleSelectNode();
@@ -210,6 +215,24 @@ void FileExplorerWidget::toggleSelectNode() {
   }
 
   neko_file_tree_toggle_select(tree, currentPath);
+
+  neko_string_free(const_cast<char *>(currentPath));
+}
+
+void FileExplorerWidget::toggleExpandNode() {
+  auto currentPath = neko_file_tree_get_current(tree);
+
+  if (currentPath == nullptr) {
+    if (fileNodes == nullptr) {
+      return;
+    }
+
+    neko_file_tree_set_current(tree, fileNodes[0].path);
+    neko_string_free(const_cast<char *>(currentPath));
+    return;
+  }
+
+  neko_file_tree_toggle_expanded(tree, currentPath);
 
   neko_string_free(const_cast<char *>(currentPath));
 }

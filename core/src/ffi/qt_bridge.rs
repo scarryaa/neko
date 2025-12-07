@@ -524,6 +524,41 @@ pub extern "C" fn neko_file_tree_prev(
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_toggle_expanded(tree: *mut FileTree, path: *const c_char) {
+    if tree.is_null() || path.is_null() {
+        return;
+    }
+
+    unsafe {
+        let tree = &mut *tree;
+        if let Ok(path_str) = CStr::from_ptr(path).to_str() {
+            tree.toggle_expanded(path_str);
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_get_visible_nodes(
+    tree: *mut FileTree,
+    nodes_out: *mut *const FileNode,
+    count_out: *mut usize,
+) {
+    if tree.is_null() || nodes_out.is_null() || count_out.is_null() {
+        return;
+    }
+
+    unsafe {
+        let tree = &*tree;
+        let visible = tree.get_visible_nodes();
+        *count_out = visible.len();
+
+        let owned: Vec<FileNode> = visible.into_iter().cloned().collect();
+        *nodes_out = owned.as_ptr();
+        std::mem::forget(owned);
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn neko_file_tree_toggle_select(tree: *mut FileTree, path: *const c_char) {
     if tree.is_null() || path.is_null() {
         return;

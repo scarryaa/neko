@@ -15,6 +15,7 @@
 #include <QVBoxLayout>
 #include <QWheelEvent>
 #include <neko_core.h>
+#include <string>
 
 struct FileTree;
 
@@ -44,10 +45,12 @@ private:
   void selectNextNode();
   void selectPrevNode();
   void toggleSelectNode();
+  void toggleExpandNode();
 
   FileTree *tree;
   size_t fileCount = 0;
   const FileNode *fileNodes = nullptr;
+  std::string rootPath;
   QPushButton *directorySelectionButton;
   QFont *font;
   QFontMetricsF fontMetrics;
