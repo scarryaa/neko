@@ -1,4 +1,3 @@
-use core::ffi::c_str;
 use std::{
     ffi::{CStr, CString, c_char},
     path::PathBuf,
@@ -589,7 +588,7 @@ pub extern "C" fn neko_file_tree_get_node(
             Err(_) => return ptr::null(),
         };
 
-        tree.prev(path)
+        tree.get_node(path)
             .map(|node| node as *const FileNode)
             .unwrap_or(ptr::null())
     }
