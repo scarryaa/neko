@@ -193,7 +193,10 @@ void FileExplorerWidget::handleRight() {
     size_t childCount = 0;
 
     neko_file_tree_get_children(tree, currentPath, &children, &childCount);
-    neko_file_tree_set_current(tree, children[0].path);
+
+    if (childCount > 0) {
+      neko_file_tree_set_current(tree, children[0].path);
+    }
   }
 
   if (currentPath != nullptr) {
