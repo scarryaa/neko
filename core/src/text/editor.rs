@@ -28,6 +28,11 @@ impl Editor {
         &self.selection
     }
 
+    pub fn load_file(&mut self, content: &str) {
+        self.buffer.clear();
+        self.buffer.insert(0, content);
+    }
+
     pub fn insert_text(&mut self, text: &str) {
         if self.selection.is_active() {
             self.cursor = self.selection.start().clone();

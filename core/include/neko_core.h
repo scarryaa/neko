@@ -9,6 +9,7 @@
 extern "C" {
 #endif
 
+typedef struct NekoAppState NekoAppState;
 typedef struct NekoEditor NekoEditor;
 typedef struct FileTree FileTree;
 typedef struct FileNode {
@@ -20,6 +21,11 @@ typedef struct FileNode {
   uint64_t modified;
   uint64_t depth;
 } FileNode;
+
+NekoAppState *neko_app_state_new(const char *root_path);
+bool neko_app_state_open_file(NekoAppState *app, const char *path);
+NekoEditor *neko_app_state_get_editor(NekoAppState *app);
+FileTree *neko_app_state_get_file_tree(NekoAppState *app);
 
 NekoEditor *neko_editor_new(void);
 void neko_editor_free(NekoEditor *editor);

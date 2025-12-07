@@ -1,7 +1,9 @@
+pub mod app;
 pub mod ffi;
 pub mod file_system;
 pub mod text;
 
+pub use app::AppState;
 pub use file_system::{
     operations,
     tree::{FileNode, FileTree},

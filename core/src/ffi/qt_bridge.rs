@@ -4,7 +4,72 @@ use std::{
     ptr,
 };
 
-use crate::{FileNode, FileTree, text::Editor};
+use crate::{AppState, FileNode, FileTree, text::Editor};
+
+#[repr(C)]
+pub struct NekoAppState {
+    state: AppState,
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_new(root_path: *const c_char) -> *mut NekoAppState {
+    if root_path.is_null() {
+        return ptr::null_mut();
+    }
+
+    unsafe {
+        let path_str = match CStr::from_ptr(root_path).to_str() {
+            Ok(s) => s,
+            Err(_) => return ptr::null_mut(),
+        };
+
+        match AppState::new(path_str) {
+            Ok(state) => Box::into_raw(Box::new(NekoAppState { state })),
+            Err(_) => ptr::null_mut(),
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_open_file(app: *mut NekoAppState, path: *const c_char) -> bool {
+    if app.is_null() || path.is_null() {
+        return false;
+    }
+
+    unsafe {
+        let app = &mut *app;
+        let path_str = match CStr::from_ptr(path).to_str() {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+
+        app.state.open_file(path_str).is_ok()
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_get_editor(app: *mut NekoAppState) -> *mut Editor {
+    if app.is_null() {
+        return ptr::null_mut();
+    }
+
+    unsafe {
+        let app = &mut *app;
+        &mut *app.state.get_editor_mut()
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_get_file_tree(app: *mut NekoAppState) -> *mut FileTree {
+    if app.is_null() {
+        return ptr::null_mut();
+    }
+
+    unsafe {
+        let app = &mut *app;
+        &mut *app.state.get_file_tree_mut()
+    }
+}
 
 pub struct NekoEditor {
     editor: Editor,

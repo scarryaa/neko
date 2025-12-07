@@ -16,6 +16,10 @@ impl Buffer {
         self.content.insert(pos, text);
     }
 
+    pub fn clear(&mut self) {
+        self.content.delete(0..);
+    }
+
     pub fn backspace(&mut self, pos: usize) {
         if pos == 0 {
             return;
