@@ -383,7 +383,7 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   }
 
   // Current item border
-  if (isCurrent) {
+  if (isCurrent && hasFocus()) {
     painter->setBrush(Qt::NoBrush);
     painter->setPen(SELECTION_PEN);
     painter->drawRect(

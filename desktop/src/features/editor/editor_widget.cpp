@@ -492,7 +492,7 @@ void EditorWidget::drawSelection(QPainter *painter) {
 }
 
 void EditorWidget::drawCursor(QPainter *painter) {
-  if (editor == nullptr) {
+  if (editor == nullptr || !hasFocus()) {
     return;
   }
 
