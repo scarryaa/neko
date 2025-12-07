@@ -57,6 +57,9 @@ EditorWidget::EditorWidget(NekoEditor *editor, QWidget *parent)
       "}"
       "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
       "  background: none;"
+      "}"
+      "EditorWidget {"
+      "  background: black;"
       "}");
 
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,

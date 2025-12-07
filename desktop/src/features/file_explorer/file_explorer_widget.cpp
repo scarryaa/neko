@@ -48,9 +48,14 @@ FileExplorerWidget::FileExplorerWidget(FileTree *tree, QWidget *parent)
       "}"
       "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
       "  background: none;"
+      "}"
+      "FileExplorerWidget {"
+      "  background: black;"
       "}");
 
   directorySelectionButton = new QPushButton("Select a directory");
+  directorySelectionButton->setStyleSheet(
+      "QPushButton { background: #202020; }");
 
   auto layout = new QVBoxLayout();
   layout->addWidget(directorySelectionButton);
