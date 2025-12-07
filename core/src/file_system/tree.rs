@@ -239,6 +239,22 @@ impl FileTree {
         }
     }
 
+    pub fn set_collapsed(&mut self, path: &str) {
+        let path_buf = PathBuf::from(path);
+
+        if path_buf.is_dir() && self.is_expanded(path) {
+            self.expanded.remove(&path_buf);
+        }
+    }
+
+    pub fn set_expanded(&mut self, path: &str) {
+        let path_buf = PathBuf::from(path);
+
+        if path_buf.is_dir() && !self.is_expanded(path) {
+            self.get_children(path);
+        }
+    }
+
     pub fn is_expanded(&self, path: &str) -> bool {
         self.expanded.contains_key(&PathBuf::from(path))
     }

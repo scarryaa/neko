@@ -538,6 +538,34 @@ pub extern "C" fn neko_file_tree_toggle_expanded(tree: *mut FileTree, path: *con
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_set_expanded(tree: *mut FileTree, path: *const c_char) {
+    if tree.is_null() || path.is_null() {
+        return;
+    }
+
+    unsafe {
+        let tree = &mut *tree;
+        if let Ok(path_str) = CStr::from_ptr(path).to_str() {
+            tree.set_expanded(path_str);
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_set_collapsed(tree: *mut FileTree, path: *const c_char) {
+    if tree.is_null() || path.is_null() {
+        return;
+    }
+
+    unsafe {
+        let tree = &mut *tree;
+        if let Ok(path_str) = CStr::from_ptr(path).to_str() {
+            tree.set_collapsed(path_str);
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn neko_file_tree_get_visible_nodes(
     tree: *mut FileTree,
     out_nodes: *mut *const FileNode,

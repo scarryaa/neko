@@ -45,7 +45,8 @@ private:
   void selectNextNode();
   void selectPrevNode();
   void toggleSelectNode();
-  void toggleExpandNode();
+  void expandNode();
+  void collapseNode();
 
   FileTree *tree;
   size_t fileCount = 0;

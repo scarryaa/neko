@@ -136,11 +136,11 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
     break;
   }
   case Qt::Key_Left:
+    collapseNode();
+    shouldUpdateViewport = true;
     break;
   case Qt::Key_Right:
-    toggleExpandNode();
-    neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
-
+    expandNode();
     shouldUpdateViewport = true;
     break;
   case Qt::Key_Space:
@@ -216,7 +216,7 @@ void FileExplorerWidget::toggleSelectNode() {
   neko_string_free(const_cast<char *>(currentPath));
 }
 
-void FileExplorerWidget::toggleExpandNode() {
+void FileExplorerWidget::expandNode() {
   auto currentPath = neko_file_tree_get_current(tree);
 
   if (currentPath == nullptr) {
@@ -228,10 +228,30 @@ void FileExplorerWidget::toggleExpandNode() {
     return;
   }
 
-  neko_file_tree_toggle_expanded(tree, currentPath);
+  neko_file_tree_set_expanded(tree, currentPath);
   loadDirectory(rootPath);
 
   neko_string_free(const_cast<char *>(currentPath));
+  neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
+}
+
+void FileExplorerWidget::collapseNode() {
+  auto currentPath = neko_file_tree_get_current(tree);
+
+  if (currentPath == nullptr) {
+    if (fileNodes == nullptr) {
+      return;
+    }
+
+    neko_file_tree_set_current(tree, fileNodes[0].path);
+    return;
+  }
+
+  neko_file_tree_set_collapsed(tree, currentPath);
+  loadDirectory(rootPath);
+
+  neko_string_free(const_cast<char *>(currentPath));
+  neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
 }
 
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {}
