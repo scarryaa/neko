@@ -331,6 +331,7 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   // Adjusted to avoid overlapping with the splitter
   double viewportWidthAdjusted = viewportWidth - 1.0;
   double lineHeight = fontMetrics.height();
+  double horizontalOffset = horizontalScrollBar()->value();
 
   bool isSelected = neko_file_tree_is_selected(tree, node->path);
   bool isCurrent = neko_file_tree_is_current(tree, node->path);
@@ -339,14 +340,16 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   if (isSelected) {
     painter->setBrush(SELECTION_COLOR);
     painter->setPen(Qt::NoPen);
-    painter->drawRect(QRectF(x, y, viewportWidth, lineHeight));
+    painter->drawRect(
+        QRectF(x, y, viewportWidth + horizontalOffset, lineHeight));
   }
 
   // Current item border
   if (isCurrent) {
     painter->setBrush(Qt::NoBrush);
     painter->setPen(SELECTION_PEN);
-    painter->drawRect(QRectF(x, y, viewportWidthAdjusted, lineHeight));
+    painter->drawRect(
+        QRectF(x, y, viewportWidthAdjusted + horizontalOffset, lineHeight));
   }
 
   // Get appropriate icon
