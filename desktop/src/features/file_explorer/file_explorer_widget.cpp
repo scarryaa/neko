@@ -261,9 +261,29 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
     painter->drawRect(QRectF(x, y, viewportWidthAdjusted, lineHeight));
   }
 
-  // Draw text
+  // Get appropriate icon
+  QIcon icon;
+  if (node->is_dir) {
+    icon = QIcon::fromTheme(
+        "folder", QApplication::style()->standardIcon(QStyle::SP_DirIcon));
+  } else {
+    icon = QIcon::fromTheme(
+        "text-x-generic",
+        QApplication::style()->standardIcon(QStyle::SP_FileIcon));
+  }
+
+  int iconSize = lineHeight - 2;
+  QPixmap pixmap = icon.pixmap(iconSize, iconSize);
+
+  // Draw icon
+  double iconX = x + 2;
+  double iconY = y + (lineHeight - iconSize) / 2;
+  painter->drawPixmap(QPointF(iconX, iconY), pixmap);
+
+  // Draw text after icon
+  double textX = iconX + iconSize + 4;
   painter->setBrush(Qt::white);
   painter->setPen(Qt::white);
-  painter->drawText(QPointF(x, y + fontMetrics.ascent()),
+  painter->drawText(QPointF(textX, y + fontMetrics.ascent()),
                     QString::fromUtf8(node->name));
 }

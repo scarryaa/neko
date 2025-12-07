@@ -1,14 +1,17 @@
 #ifndef FILEEXPLORERWIDGET_H
 #define FILEEXPLORERWIDGET_H
 
+#include <QApplication>
 #include <QFileDialog>
 #include <QFont>
 #include <QFontMetricsF>
+#include <QIcon>
 #include <QPainter>
 #include <QPoint>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QStyle>
 #include <QVBoxLayout>
 #include <QWheelEvent>
 #include <neko_core.h>
