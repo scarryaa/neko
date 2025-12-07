@@ -123,6 +123,8 @@ void FileExplorerWidget::wheelEvent(QWheelEvent *event) {
   viewport()->repaint();
 }
 
+void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {}
+
 void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   bool shouldScroll = false;
   bool shouldUpdateViewport = false;
@@ -266,7 +268,6 @@ void FileExplorerWidget::toggleSelectNode() {
 
 void FileExplorerWidget::expandNode() {
   auto currentPath = neko_file_tree_get_current(tree);
-
   if (currentPath == nullptr) {
     if (fileNodes == nullptr) {
       return;
@@ -277,16 +278,14 @@ void FileExplorerWidget::expandNode() {
   }
 
   neko_file_tree_set_expanded(tree, currentPath);
-  loadDirectory(rootPath);
+  neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
 
   neko_string_free(const_cast<char *>(currentPath));
-  neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
   handleViewportUpdate();
 }
 
 void FileExplorerWidget::collapseNode() {
   auto currentPath = neko_file_tree_get_current(tree);
-
   if (currentPath == nullptr) {
     if (fileNodes == nullptr) {
       return;
@@ -297,14 +296,11 @@ void FileExplorerWidget::collapseNode() {
   }
 
   neko_file_tree_set_collapsed(tree, currentPath);
-  loadDirectory(rootPath);
+  neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
 
   neko_string_free(const_cast<char *>(currentPath));
-  neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
   handleViewportUpdate();
 }
-
-void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {}
 
 void FileExplorerWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(viewport());
@@ -358,12 +354,12 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   // Get appropriate icon
   QIcon icon;
   if (node->is_dir) {
-    icon = QIcon::fromTheme(
-        "folder", QApplication::style()->standardIcon(QStyle::SP_DirIcon));
+    bool isExpanded = neko_file_tree_is_expanded(tree, node->path);
+
+    icon = QApplication::style()->standardIcon(
+        isExpanded ? QStyle::SP_DirOpenIcon : QStyle::SP_DirIcon);
   } else {
-    icon = QIcon::fromTheme(
-        "text-x-generic",
-        QApplication::style()->standardIcon(QStyle::SP_FileIcon));
+    icon = QApplication::style()->standardIcon(QStyle::SP_FileIcon);
   }
 
   int iconSize = lineHeight - 2;
