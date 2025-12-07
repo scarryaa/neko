@@ -23,7 +23,7 @@ class FileExplorerWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit FileExplorerWidget(QWidget *parent = nullptr);
+  explicit FileExplorerWidget(FileTree *tree, QWidget *parent = nullptr);
   ~FileExplorerWidget();
 
 protected:

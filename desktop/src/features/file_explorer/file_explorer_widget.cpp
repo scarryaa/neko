@@ -1,9 +1,8 @@
 #include "file_explorer_widget.h"
 #include <neko_core.h>
 
-FileExplorerWidget::FileExplorerWidget(QWidget *parent)
-    : QScrollArea(parent), tree(nullptr),
-      font(new QFont("IBM Plex Sans", 15.0)),
+FileExplorerWidget::FileExplorerWidget(FileTree *tree, QWidget *parent)
+    : QScrollArea(parent), tree(tree), font(new QFont("IBM Plex Sans", 15.0)),
       fontMetrics(QFontMetricsF(*font)) {
   setFocusPolicy(Qt::StrongFocus);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -64,14 +63,13 @@ FileExplorerWidget::FileExplorerWidget(QWidget *parent)
         QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
     if (!dir.isEmpty()) {
-      initialize(dir.toStdString());
       rootPath = dir.toStdString();
       directorySelectionButton->hide();
     }
   });
 }
 
-FileExplorerWidget::~FileExplorerWidget() { neko_file_tree_free(tree); }
+FileExplorerWidget::~FileExplorerWidget() {}
 
 void FileExplorerWidget::initialize(std::string path) {
   tree = neko_file_tree_new(path.c_str());

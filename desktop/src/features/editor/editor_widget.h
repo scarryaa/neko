@@ -9,7 +9,7 @@ class EditorWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit EditorWidget(QWidget *parent = nullptr);
+  explicit EditorWidget(NekoEditor *editor, QWidget *parent = nullptr);
   ~EditorWidget();
 
 protected:

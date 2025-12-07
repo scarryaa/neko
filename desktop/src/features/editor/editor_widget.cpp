@@ -10,9 +10,9 @@
 #include <cstddef>
 #include <neko_core.h>
 
-EditorWidget::EditorWidget(QWidget *parent)
-    : QScrollArea(parent), font(new QFont("IBM Plex Mono", 15.0)),
-      fontMetrics(*font) {
+EditorWidget::EditorWidget(NekoEditor *editor, QWidget *parent)
+    : QScrollArea(parent), editor(editor),
+      font(new QFont("IBM Plex Mono", 15.0)), fontMetrics(*font) {
   setFocusPolicy(Qt::StrongFocus);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -59,15 +59,13 @@ EditorWidget::EditorWidget(QWidget *parent)
       "  background: none;"
       "}");
 
-  editor = neko_editor_new();
-
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
           [this]() { viewport()->repaint(); });
   connect(horizontalScrollBar(), &QScrollBar::valueChanged, this,
           [this]() { viewport()->repaint(); });
 }
 
-EditorWidget::~EditorWidget() { neko_editor_free(editor); }
+EditorWidget::~EditorWidget() {}
 
 double EditorWidget::measureContent() {
   double finalWidth = 0;
@@ -486,6 +484,10 @@ void EditorWidget::drawSelection(QPainter *painter) {
 }
 
 void EditorWidget::drawCursor(QPainter *painter) {
+  if (editor == nullptr) {
+    return;
+  }
+
   painter->setPen(CURSOR_COLOR);
 
   double lineHeight = fontMetrics.height();

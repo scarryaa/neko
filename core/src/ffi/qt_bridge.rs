@@ -14,8 +14,11 @@ pub struct NekoAppState {
 #[unsafe(no_mangle)]
 pub extern "C" fn neko_app_state_new(root_path: *const c_char) -> *mut NekoAppState {
     if root_path.is_null() {
-        return ptr::null_mut();
-    }
+        return match AppState::new(None) {
+            Ok(state) => Box::into_raw(Box::new(NekoAppState { state })),
+            Err(_) => ptr::null_mut(),
+        };
+    };
 
     unsafe {
         let path_str = match CStr::from_ptr(root_path).to_str() {
@@ -23,9 +26,18 @@ pub extern "C" fn neko_app_state_new(root_path: *const c_char) -> *mut NekoAppSt
             Err(_) => return ptr::null_mut(),
         };
 
-        match AppState::new(path_str) {
+        match AppState::new(Some(path_str)) {
             Ok(state) => Box::into_raw(Box::new(NekoAppState { state })),
             Err(_) => ptr::null_mut(),
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_free(app: *mut NekoAppState) {
+    if !app.is_null() {
+        unsafe {
+            let _ = Box::from_raw(app);
         }
     }
 }
@@ -500,7 +512,7 @@ pub extern "C" fn neko_file_tree_new(root_path: *const c_char) -> *mut FileTree 
             Err(_) => return ptr::null_mut(),
         };
 
-        match FileTree::new(path_str) {
+        match FileTree::new(Some(path_str)) {
             Ok(tree) => Box::into_raw(Box::new(tree)),
             Err(_) => ptr::null_mut(),
         }

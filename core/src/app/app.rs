@@ -9,7 +9,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(root_path: &str) -> Result<Self, std::io::Error> {
+    pub fn new(root_path: Option<&str>) -> Result<Self, std::io::Error> {
         Ok(Self {
             editor: Editor::new(),
             file_tree: FileTree::new(root_path)?,

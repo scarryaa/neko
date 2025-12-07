@@ -80,8 +80,19 @@ pub struct FileTree {
 }
 
 impl FileTree {
-    pub fn new(root: &str) -> Result<Self, io::Error> {
-        let entries = fs::read_dir(root)?;
+    pub fn new(root: Option<&str>) -> Result<Self, io::Error> {
+        if root.is_none() {
+            return Ok(Self {
+                nodes: Vec::new(),
+                root_path: PathBuf::new(),
+                expanded: HashMap::new(),
+                selected: HashSet::new(),
+                current: None,
+                cached_visible: Vec::new(),
+            });
+        }
+
+        let entries = fs::read_dir(root.unwrap_or(""))?;
 
         let nodes: Vec<FileNode> = entries
             .filter_map(|entry| {
@@ -116,7 +127,7 @@ impl FileTree {
 
         Ok(Self {
             nodes,
-            root_path: PathBuf::from(root),
+            root_path: PathBuf::from(root.unwrap_or("")),
             expanded: HashMap::new(),
             selected: HashSet::new(),
             current: None,

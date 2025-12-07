@@ -6,8 +6,13 @@
 #include <neko_core.h>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
-  auto *fileExplorerWidget = new FileExplorerWidget();
-  auto *editorWidget = new EditorWidget();
+  appState = neko_app_state_new(nullptr);
+
+  NekoEditor *editor = neko_app_state_get_editor(appState);
+  FileTree *fileTree = neko_app_state_get_file_tree(appState);
+
+  auto *fileExplorerWidget = new FileExplorerWidget(fileTree, this);
+  auto *editorWidget = new EditorWidget(editor, this);
 
   auto *splitter = new QSplitter(Qt::Horizontal, this);
   splitter->addWidget(fileExplorerWidget);
@@ -26,4 +31,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   setCentralWidget(splitter);
 }
 
-MainWindow::~MainWindow() {}
+MainWindow::~MainWindow() {
+  if (appState) {
+  }
+}
