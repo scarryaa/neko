@@ -44,6 +44,10 @@ impl FileNode {
     pub fn path_str(&self) -> String {
         unsafe { CStr::from_ptr(self.path).to_string_lossy().into_owned() }
     }
+
+    pub fn name_str(&self) -> String {
+        unsafe { CStr::from_ptr(self.name).to_string_lossy().into_owned() }
+    }
 }
 
 impl Drop for FileNode {
@@ -116,7 +120,7 @@ impl FileTree {
         let path_buf = PathBuf::from(path);
 
         self.expanded.entry(path_buf.clone()).or_insert_with(|| {
-            fs::read_dir(path)
+            let mut children: Vec<FileNode> = fs::read_dir(path)
                 .ok()
                 .map(|entries| {
                     entries
@@ -126,7 +130,18 @@ impl FileTree {
                         })
                         .collect()
                 })
-                .unwrap_or_default()
+                .unwrap_or_default();
+
+            children.sort_by(|a, b| match (a.is_dir, b.is_dir) {
+                (true, false) => std::cmp::Ordering::Less,
+                (false, true) => std::cmp::Ordering::Greater,
+                _ => a
+                    .name_str()
+                    .to_lowercase()
+                    .cmp(&b.name_str().to_lowercase()),
+            });
+
+            children
         })
     }
 
