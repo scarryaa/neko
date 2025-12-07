@@ -136,12 +136,10 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
     break;
   }
   case Qt::Key_Left:
-    collapseNode();
-    shouldUpdateViewport = true;
+    handleLeft();
     break;
   case Qt::Key_Right:
-    expandNode();
-    shouldUpdateViewport = true;
+    handleRight();
     break;
   case Qt::Key_Space:
     toggleSelectNode();
@@ -157,6 +155,53 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   // }
 
   viewport()->repaint();
+}
+
+void FileExplorerWidget::handleLeft() {
+  auto currentPath = neko_file_tree_get_current(tree);
+
+  // If focused node is collapsed, go to parent and collapse
+  if (!neko_file_tree_is_expanded(tree, currentPath)) {
+    auto parent = neko_file_tree_get_parent(tree, currentPath);
+    if (parent != nullptr && parent != rootPath) {
+      neko_file_tree_set_current(tree, parent);
+      neko_file_tree_set_collapsed(tree, parent);
+      neko_string_free(parent);
+    }
+  } else {
+    // Otherwise, collapse focused node and stay put
+    collapseNode();
+  }
+
+  if (currentPath != nullptr) {
+    neko_string_free(const_cast<char *>(currentPath));
+  }
+
+  neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
+  handleViewportUpdate();
+}
+
+void FileExplorerWidget::handleRight() {
+  auto currentPath = neko_file_tree_get_current(tree);
+
+  // If focused node is collapsed, expand and stay put
+  if (!neko_file_tree_is_expanded(tree, currentPath)) {
+    expandNode();
+  } else {
+    // Otherwise, go to first child
+    const FileNode *children;
+    size_t childCount = 0;
+
+    neko_file_tree_get_children(tree, currentPath, &children, &childCount);
+    neko_file_tree_set_current(tree, children[0].path);
+  }
+
+  if (currentPath != nullptr) {
+    neko_string_free(const_cast<char *>(currentPath));
+  }
+
+  neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
+  handleViewportUpdate();
 }
 
 void FileExplorerWidget::selectNextNode() {
@@ -233,6 +278,7 @@ void FileExplorerWidget::expandNode() {
 
   neko_string_free(const_cast<char *>(currentPath));
   neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
+  handleViewportUpdate();
 }
 
 void FileExplorerWidget::collapseNode() {
@@ -252,6 +298,7 @@ void FileExplorerWidget::collapseNode() {
 
   neko_string_free(const_cast<char *>(currentPath));
   neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
+  handleViewportUpdate();
 }
 
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {}

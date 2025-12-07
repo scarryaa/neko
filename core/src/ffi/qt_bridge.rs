@@ -1,5 +1,6 @@
 use std::{
     ffi::{CStr, CString, c_char},
+    path::PathBuf,
     ptr,
 };
 
@@ -524,6 +525,35 @@ pub extern "C" fn neko_file_tree_prev(
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_get_parent(
+    tree: *mut FileTree,
+    path: *const c_char,
+) -> *mut c_char {
+    if tree.is_null() || path.is_null() {
+        return std::ptr::null_mut();
+    }
+
+    unsafe {
+        let path_str = match CStr::from_ptr(path).to_str() {
+            Ok(s) => s,
+            Err(_) => return std::ptr::null_mut(),
+        };
+
+        let path_buf = PathBuf::from(path_str);
+
+        let parent = match path_buf.parent() {
+            Some(p) => p,
+            None => return std::ptr::null_mut(),
+        };
+
+        match CString::new(parent.to_string_lossy().as_ref()) {
+            Ok(cstring) => cstring.into_raw(),
+            Err(_) => std::ptr::null_mut(),
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn neko_file_tree_toggle_expanded(tree: *mut FileTree, path: *const c_char) {
     if tree.is_null() || path.is_null() {
         return;
@@ -637,6 +667,21 @@ pub extern "C" fn neko_file_tree_get_current(tree: *const FileTree) -> *const c_
             },
             None => ptr::null(),
         }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_is_expanded(tree: *mut FileTree, path: *const c_char) -> bool {
+    if tree.is_null() || path.is_null() {
+        return false;
+    }
+
+    unsafe {
+        let tree = &*tree;
+        CStr::from_ptr(path)
+            .to_str()
+            .map(|p| tree.is_expanded(p))
+            .unwrap_or(false)
     }
 }
 

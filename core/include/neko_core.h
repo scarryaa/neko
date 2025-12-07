@@ -81,10 +81,12 @@ void neko_file_tree_set_collapsed(FileTree *tree, const char *path);
 void neko_file_tree_toggle_select(FileTree *tree, const char *path);
 void neko_file_tree_set_current(FileTree *tree, const char *path);
 const char *neko_file_tree_get_current(FileTree *tree);
+char *neko_file_tree_get_parent(FileTree *tree, const char *current_path);
 void neko_file_tree_get_visible_nodes(FileTree *tree,
                                       const FileNode **out_nodes,
                                       size_t *out_count);
 bool neko_file_tree_is_selected(FileTree *tree, const char *path);
+bool neko_file_tree_is_expanded(FileTree *tree, const char *path);
 bool neko_file_tree_is_current(FileTree *tree, const char *path);
 
 #ifdef __cplusplus
