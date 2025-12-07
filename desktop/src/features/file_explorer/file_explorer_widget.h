@@ -42,8 +42,11 @@ private:
   double measureContent();
   void handleViewportUpdate();
 
+  void handleEnter();
   void handleLeft();
   void handleRight();
+
+  void openInEditor();
 
   void selectNextNode();
   void selectPrevNode();

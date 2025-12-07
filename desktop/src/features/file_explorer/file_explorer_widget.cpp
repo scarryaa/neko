@@ -133,10 +133,9 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   case Qt::Key_Up:
     selectPrevNode();
     break;
-  case Qt::Key_Down: {
+  case Qt::Key_Down:
     selectNextNode();
     break;
-  }
   case Qt::Key_Left:
     handleLeft();
     break;
@@ -145,6 +144,10 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
     break;
   case Qt::Key_Space:
     toggleSelectNode();
+    break;
+  case Qt::Key_Enter:
+  case Qt::Key_Return:
+    handleEnter();
     break;
   }
 
@@ -208,6 +211,39 @@ void FileExplorerWidget::handleRight() {
   neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
   handleViewportUpdate();
 }
+
+void FileExplorerWidget::handleEnter() {
+  auto currentPath = neko_file_tree_get_current(tree);
+
+  // If focused node exists
+  if (currentPath != nullptr) {
+    // If focused node is a directory, toggle expansion
+    const FileNode *currentFile = neko_file_tree_get_node(tree, currentPath);
+    bool isDir = currentFile->is_dir;
+
+    if (isDir) {
+      if (!neko_file_tree_is_expanded(tree, currentPath)) {
+        expandNode();
+      } else {
+        collapseNode();
+      }
+    } else {
+      // Otherwise, open the file in the editor
+      if (currentFile != nullptr) {
+      }
+    }
+  } else {
+    neko_file_tree_set_current(tree, fileNodes[0].path);
+  }
+
+  if (currentPath != nullptr) {
+    neko_string_free(const_cast<char *>(currentPath));
+  }
+
+  neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
+}
+
+void FileExplorerWidget::openInEditor() {}
 
 void FileExplorerWidget::selectNextNode() {
   auto currentPath = neko_file_tree_get_current(tree);

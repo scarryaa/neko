@@ -209,6 +209,12 @@ impl FileTree {
         visible
     }
 
+    pub fn get_node(&self, current_path: &str) -> Option<&FileNode> {
+        let visible = self.get_visible_nodes();
+        let current_idx = visible.iter().position(|n| n.path_str() == current_path)?;
+        visible.get(current_idx).copied()
+    }
+
     pub fn next(&self, current_path: &str) -> Option<&FileNode> {
         let visible = self.get_visible_nodes();
         let current_idx = visible.iter().position(|n| n.path_str() == current_path)?;
