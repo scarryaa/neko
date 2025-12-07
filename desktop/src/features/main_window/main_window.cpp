@@ -46,6 +46,7 @@ MainWindow::~MainWindow() {
 void MainWindow::onFileSelected(const std::string filePath) {
   if (neko_app_state_open_file(appState, filePath.c_str())) {
     editorWidget->updateDimensionsAndRepaint();
+    editorWidget->setFocus();
   }
 }
 
