@@ -484,6 +484,10 @@ void EditorWidget::drawSingleLineSelection(QPainter *painter,
 void EditorWidget::drawFirstLineSelection(QPainter *painter,
                                           const ViewportContext &ctx,
                                           size_t startRow, size_t startCol) {
+  if (startRow > ctx.lastVisibleLine || startRow < ctx.firstVisibleLine) {
+    return;
+  }
+
   size_t len;
   const char *line = neko_editor_get_line(editor, startRow, &len);
   QString text = QString(line);
@@ -509,6 +513,10 @@ void EditorWidget::drawMiddleLinesSelection(QPainter *painter,
                                             const ViewportContext &ctx,
                                             size_t startRow, size_t endRow) {
   for (size_t i = startRow + 1; i < endRow; i++) {
+    if (i > ctx.lastVisibleLine || i < ctx.firstVisibleLine) {
+      continue;
+    }
+
     size_t len;
     const char *line = neko_editor_get_line(editor, i, &len);
     QString text = QString(line);
@@ -528,6 +536,10 @@ void EditorWidget::drawMiddleLinesSelection(QPainter *painter,
 void EditorWidget::drawLastLineSelection(QPainter *painter,
                                          const ViewportContext &ctx,
                                          size_t endRow, size_t endCol) {
+  if (endRow > ctx.lastVisibleLine || endRow < ctx.firstVisibleLine) {
+    return;
+  }
+
   size_t len;
   const char *line = neko_editor_get_line(editor, endRow, &len);
   QString text = QString(line);
