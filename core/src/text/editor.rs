@@ -41,6 +41,8 @@ impl Editor {
     pub fn load_file(&mut self, content: &str) {
         self.buffer.clear();
         self.buffer.insert(0, content);
+        self.cursor = Cursor::new();
+        self.selection = Selection::new();
 
         // Resize line_widths to match buffer
         let line_count = self.buffer.line_count();
