@@ -369,6 +369,27 @@ void EditorWidget::decreaseFontSize() {
   }
 }
 
+double EditorWidget::getLineTopY(size_t lineIndex,
+                                 const ViewportContext &ctx) const {
+  return (lineIndex * ctx.lineHeight) - ctx.verticalOffset;
+}
+
+double EditorWidget::getLineBottomY(size_t lineIndex,
+                                    const ViewportContext &ctx) const {
+  return ((lineIndex + 1) * ctx.lineHeight) - ctx.verticalOffset;
+}
+
+double EditorWidget::getTextWidth(const QString &text,
+                                  double horizontalOffset) const {
+  return fontMetrics.horizontalAdvance(text) - horizontalOffset;
+}
+
+QRectF EditorWidget::getLineRect(size_t lineIndex, double x1, double x2,
+                                 const ViewportContext &ctx) const {
+  return QRectF(QPointF(x1, getLineTopY(lineIndex, ctx)),
+                QPointF(x2, getLineBottomY(lineIndex, ctx)));
+}
+
 void EditorWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(viewport());
   size_t line_count;
@@ -422,137 +443,130 @@ void EditorWidget::drawSelections(QPainter *painter,
   }
 
   painter->setBrush(SELECTION_COLOR);
-  painter->setPen(QColor(0, 0, 0, 0));
+  painter->setPen(Qt::transparent);
 
-  size_t lineCount;
-  size_t len;
-  neko_editor_get_line_count(editor, &lineCount);
+  size_t startRow, startCol, endRow, endCol;
+  neko_editor_get_selection_start(editor, &startRow, &startCol);
+  neko_editor_get_selection_end(editor, &endRow, &endCol);
 
-  size_t selection_start_row, selection_start_col, selection_end_row,
-      selection_end_col;
-  neko_editor_get_selection_start(editor, &selection_start_row,
-                                  &selection_start_col);
-  neko_editor_get_selection_end(editor, &selection_end_row, &selection_end_col);
-
-  if (selection_start_row == selection_end_row) {
-    // Single line selection
-    const char *line = neko_editor_get_line(editor, selection_start_row, &len);
-    auto text = QString(line);
-    QString selection_text =
-        text.mid(selection_start_col, selection_end_col - selection_start_col);
-    QString selection_before_text = text.mid(0, selection_start_col);
-
-    neko_string_free((char *)line);
-
-    double width = fontMetrics.horizontalAdvance(selection_text);
-    double widthBefore = fontMetrics.horizontalAdvance(selection_before_text);
-
-    double x1 = widthBefore - ctx.horizontalOffset;
-    double x2 = widthBefore + width - ctx.horizontalOffset;
-    double y1 = (selection_start_row * ctx.lineHeight) - ctx.verticalOffset;
-    double y2 =
-        ((selection_start_row + 1) * ctx.lineHeight) - ctx.verticalOffset;
-
-    drawSelection(painter, x1, x2, y1, y2);
+  if (startRow == endRow) {
+    drawSingleLineSelection(painter, ctx, startRow, startCol, endCol);
   } else {
-    // Multi line selection
-    // First line
-    {
-      const char *line =
-          neko_editor_get_line(editor, selection_start_row, &len);
-      auto text = QString(line);
-
-      if (text.isEmpty()) {
-        text = QString(" ");
-      }
-
-      auto text_length = text.length();
-
-      QString selection_text =
-          text.mid(selection_start_col, text_length - selection_start_col);
-      QString selection_before_text = text.mid(0, selection_start_col);
-      neko_string_free((char *)line);
-
-      double width = fontMetrics.horizontalAdvance(selection_text);
-      double widthBefore = fontMetrics.horizontalAdvance(selection_before_text);
-
-      double x1 = widthBefore - ctx.horizontalOffset;
-      double x2 = widthBefore + width - ctx.horizontalOffset;
-      double y1 = (selection_start_row * ctx.lineHeight) - ctx.verticalOffset;
-      double y2 =
-          ((selection_start_row + 1) * ctx.lineHeight) - ctx.verticalOffset;
-
-      drawSelection(painter, x1, x2, y1, y2);
-    }
-
-    // Middle lines
-    {
-      for (int i = selection_start_row + 1; i < selection_end_row; i++) {
-        const char *line = neko_editor_get_line(editor, i, &len);
-        auto text = QString::fromStdString(line);
-
-        neko_string_free((char *)line);
-
-        if (text.isEmpty()) {
-          text = QString(" ");
-        }
-
-        double x1 = -ctx.horizontalOffset;
-        double x2 = fontMetrics.horizontalAdvance(text) - ctx.horizontalOffset;
-        double y1 = (i * ctx.lineHeight) - ctx.verticalOffset;
-        double y2 = ((i + 1) * ctx.lineHeight) - ctx.verticalOffset;
-
-        drawSelection(painter, x1, x2, y1, y2);
-      }
-    }
-
-    // Last line
-    {
-      const char *line = neko_editor_get_line(editor, selection_end_row, &len);
-      auto text = QString(line);
-      auto text_length = text.length();
-
-      QString selection_text = text.mid(0, selection_end_col);
-      neko_string_free((char *)line);
-
-      double width = fontMetrics.horizontalAdvance(selection_text);
-
-      painter->drawRect(QRectF(
-          QPointF(0 - ctx.horizontalOffset,
-                  selection_end_row * ctx.lineHeight - ctx.verticalOffset),
-          QPointF(width - ctx.horizontalOffset,
-                  ((selection_end_row + 1) * ctx.lineHeight) -
-                      ctx.verticalOffset)));
-    }
+    drawFirstLineSelection(painter, ctx, startRow, startCol);
+    drawMiddleLinesSelection(painter, ctx, startRow, endRow);
+    drawLastLineSelection(painter, ctx, endRow, endCol);
   }
 }
 
-void EditorWidget::drawSelection(QPainter *painter, double x1, double x2,
-                                 double y1, double y2) {
-  painter->drawRect(QRectF(QPointF(x1, y1), QPointF(x2, y2)));
+void EditorWidget::drawSingleLineSelection(QPainter *painter,
+                                           const ViewportContext &ctx,
+                                           size_t startRow, size_t startCol,
+                                           size_t endCol) {
+  size_t len;
+  const char *line = neko_editor_get_line(editor, startRow, &len);
+  QString text = QString(line);
+
+  QString selection_text = text.mid(startCol, endCol - startCol);
+  QString selection_before_text = text.mid(0, startCol);
+
+  neko_string_free((char *)line);
+
+  double width = fontMetrics.horizontalAdvance(selection_text);
+  double widthBefore = fontMetrics.horizontalAdvance(selection_before_text);
+
+  double x1 = widthBefore - ctx.horizontalOffset;
+  double x2 = widthBefore + width - ctx.horizontalOffset;
+
+  painter->drawRect(getLineRect(startRow, x1, x2, ctx));
+}
+
+void EditorWidget::drawFirstLineSelection(QPainter *painter,
+                                          const ViewportContext &ctx,
+                                          size_t startRow, size_t startCol) {
+  size_t len;
+  const char *line = neko_editor_get_line(editor, startRow, &len);
+  QString text = QString(line);
+
+  if (text.isEmpty())
+    text = " ";
+
+  neko_string_free((char *)line);
+
+  QString selectionText = text.mid(startCol);
+  QString beforeText = text.mid(0, startCol);
+
+  double widthBefore = fontMetrics.horizontalAdvance(beforeText);
+  double width = fontMetrics.horizontalAdvance(selectionText);
+
+  double x1 = widthBefore - ctx.horizontalOffset;
+  double x2 = widthBefore + width - ctx.horizontalOffset;
+
+  painter->drawRect(getLineRect(startRow, x1, x2, ctx));
+}
+
+void EditorWidget::drawMiddleLinesSelection(QPainter *painter,
+                                            const ViewportContext &ctx,
+                                            size_t startRow, size_t endRow) {
+  for (size_t i = startRow + 1; i < endRow; i++) {
+    size_t len;
+    const char *line = neko_editor_get_line(editor, i, &len);
+    QString text = QString(line);
+
+    if (text.isEmpty())
+      text = " ";
+
+    neko_string_free((char *)line);
+
+    double x1 = -ctx.horizontalOffset;
+    double x2 = fontMetrics.horizontalAdvance(text) - ctx.horizontalOffset;
+
+    painter->drawRect(getLineRect(i, x1, x2, ctx));
+  }
+}
+
+void EditorWidget::drawLastLineSelection(QPainter *painter,
+                                         const ViewportContext &ctx,
+                                         size_t endRow, size_t endCol) {
+  size_t len;
+  const char *line = neko_editor_get_line(editor, endRow, &len);
+  QString text = QString(line);
+  QString selectionText = text.mid(0, endCol);
+
+  neko_string_free((char *)line);
+
+  double width = fontMetrics.horizontalAdvance(selectionText);
+
+  painter->drawRect(getLineRect(endRow, -ctx.horizontalOffset,
+                                width - ctx.horizontalOffset, ctx));
 }
 
 void EditorWidget::drawCursor(QPainter *painter, const ViewportContext &ctx) {
-  if (editor == nullptr || !hasFocus()) {
+  if (!editor || !hasFocus()) {
+    return;
+  }
+
+  size_t cursorRow, cursorCol;
+  neko_editor_get_cursor_position(editor, &cursorRow, &cursorCol);
+
+  if (cursorRow < ctx.firstVisibleLine || cursorRow > ctx.lastVisibleLine) {
+    return;
+  }
+
+  size_t len;
+  const char *line = neko_editor_get_line(editor, cursorRow, &len);
+  QString textBeforeCursor = QString(line).left(cursorCol);
+
+  qreal cursorX = fontMetrics.horizontalAdvance(textBeforeCursor);
+
+  neko_string_free((char *)line);
+
+  if (cursorX < 0 || cursorX > viewport()->width() + ctx.horizontalOffset) {
     return;
   }
 
   painter->setPen(CURSOR_COLOR);
 
-  size_t cursor_row_idx, cursor_col_idx;
-  neko_editor_get_cursor_position(editor, &cursor_row_idx, &cursor_col_idx);
-
-  size_t len;
-  const char *line = neko_editor_get_line(editor, cursor_row_idx, &len);
-  QString lineText = QString::fromStdString(line);
-  neko_string_free((char *)line);
-
-  QString textBeforeCursor = lineText.left(cursor_col_idx);
-  qreal cursor_x = fontMetrics.horizontalAdvance(textBeforeCursor);
-
-  double topY = (cursor_row_idx * ctx.lineHeight) - ctx.verticalOffset;
-  double bottomY = ((cursor_row_idx + 1) * ctx.lineHeight) - ctx.verticalOffset;
-
-  painter->drawLine(QLineF(QPointF(cursor_x - ctx.horizontalOffset, topY),
-                           QPointF(cursor_x - ctx.horizontalOffset, bottomY)));
+  double x = cursorX - ctx.horizontalOffset;
+  painter->drawLine(QLineF(QPointF(x, getLineTopY(cursorRow, ctx)),
+                           QPointF(x, getLineBottomY(cursorRow, ctx))));
 }

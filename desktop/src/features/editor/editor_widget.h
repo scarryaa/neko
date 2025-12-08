@@ -33,11 +33,24 @@ private:
     double horizontalOffset;
   };
 
+  double getLineTopY(size_t lineIndex, const ViewportContext &ctx) const;
+  double getLineBottomY(size_t lineIndex, const ViewportContext &ctx) const;
+  double getTextWidth(const QString &text, double horizontalOffset) const;
+  QRectF getLineRect(size_t lineIndex, double x1, double x2,
+                     const ViewportContext &ctx) const;
+
   void drawText(QPainter *painter, const ViewportContext &ctx);
   void drawCursor(QPainter *painter, const ViewportContext &ctx);
   void drawSelections(QPainter *painter, const ViewportContext &ctx);
-  void drawSelection(QPainter *painter, double x1, double x2, double y1,
-                     double y2);
+
+  void drawSingleLineSelection(QPainter *painter, const ViewportContext &ctx,
+                               size_t startRow, size_t startCol, size_t endCol);
+  void drawFirstLineSelection(QPainter *painter, const ViewportContext &ctx,
+                              size_t startRow, size_t startCol);
+  void drawMiddleLinesSelection(QPainter *painter, const ViewportContext &ctx,
+                                size_t startRow, size_t endRow);
+  void drawLastLineSelection(QPainter *painter, const ViewportContext &ctx,
+                             size_t endRow, size_t endCol);
 
   void increaseFontSize();
   void decreaseFontSize();
