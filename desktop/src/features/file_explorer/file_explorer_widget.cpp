@@ -54,11 +54,25 @@ FileExplorerWidget::FileExplorerWidget(FileTree *tree, QWidget *parent)
       "}");
 
   directorySelectionButton = new QPushButton("Select a directory");
-  directorySelectionButton->setStyleSheet(
-      "QPushButton { background: #202020; }");
+  directorySelectionButton->setStyleSheet("QPushButton {"
+                                          "  background-color: #202020;"
+                                          "  color: #e0e0e0;"
+                                          "  border-radius: 6px;"
+                                          "  padding: 8px 16px;"
+                                          "  font-size: 13px;"
+                                          "}"
+                                          "QPushButton:hover {"
+                                          "  background-color: #444444;"
+                                          "  border-color: #555555;"
+                                          "}"
+                                          "QPushButton:pressed {"
+                                          "  background-color: #222222;"
+                                          "  border-color: #333333;"
+                                          "}");
 
   auto layout = new QVBoxLayout();
-  layout->addWidget(directorySelectionButton);
+
+  layout->addWidget(directorySelectionButton, 0, Qt::AlignCenter);
 
   setLayout(layout);
 
