@@ -19,6 +19,7 @@ protected:
   void mousePressEvent(QMouseEvent *event) override;
   void paintEvent(QPaintEvent *event) override;
   void wheelEvent(QWheelEvent *event) override;
+  bool focusNextPrevChild(bool next) override;
 
 signals:
   void fontSizeChanged(qreal newSize);

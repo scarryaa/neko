@@ -158,6 +158,8 @@ void EditorWidget::wheelEvent(QWheelEvent *event) {
   viewport()->repaint();
 }
 
+bool EditorWidget::focusNextPrevChild(bool next) { return false; }
+
 void EditorWidget::keyPressEvent(QKeyEvent *event) {
   size_t len = event->text().size();
   bool shouldScroll = false;
@@ -221,6 +223,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     neko_editor_insert_tab(editor);
     shouldUpdateViewport = true;
     shouldScroll = true;
+
     break;
   case Qt::Key_Escape:
     neko_editor_clear_selection(editor);

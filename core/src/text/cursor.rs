@@ -51,7 +51,7 @@ impl Cursor {
         let tab_width = 4;
         let spaces = " ".repeat(tab_width);
 
-        buffer.insert(self.idx + 1, &spaces);
+        buffer.insert(self.idx - 1, &spaces);
 
         self.column += tab_width;
         self.sticky_column += self.column;
