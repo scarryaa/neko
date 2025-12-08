@@ -72,6 +72,7 @@ void GutterWidget::onEditorFontSizeChanged(qreal newSize) {
 
 void GutterWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(viewport());
+
   drawText(&painter);
 }
 
@@ -84,25 +85,32 @@ void GutterWidget::drawText(QPainter *painter) {
 
   auto verticalOffset = verticalScrollBar()->value();
   auto horizontalOffset = horizontalScrollBar()->value();
+  double viewportHeight = viewport()->height();
+  double viewportWidth = viewport()->width();
 
   int maxLineNumber = line_count;
   int maxLineWidth =
       fontMetrics.horizontalAdvance(QString::number(maxLineNumber));
   double numWidth = fontMetrics.horizontalAdvance(QString::number(1));
 
-  for (int i = 0; i < line_count; i++) {
-    auto actualY =
-        (i * fontMetrics.height()) +
+  double lineHeight = fontMetrics.height();
+  int firstVisibleLine = verticalOffset / lineHeight;
+  int visibleLineCount = viewportHeight / lineHeight;
+  int lastVisibleLine =
+      qMin(firstVisibleLine + visibleLineCount + 1, (int)line_count - 1);
+
+  for (int line = firstVisibleLine; line <= lastVisibleLine; ++line) {
+    auto y =
+        (line * fontMetrics.height()) +
         (fontMetrics.height() + fontMetrics.ascent() - fontMetrics.descent()) /
             2.0 -
         verticalOffset;
 
-    QString lineNum = QString::number(i + 1);
+    QString lineNum = QString::number(line + 1);
     int lineNumWidth = fontMetrics.horizontalAdvance(lineNum);
-
     double x = (width() - maxLineWidth - numWidth) / 2.0 +
                (maxLineWidth - lineNumWidth) - horizontalOffset;
 
-    painter->drawText(QPointF(x, actualY), lineNum);
+    painter->drawText(QPointF(x, y), lineNum);
   }
 }

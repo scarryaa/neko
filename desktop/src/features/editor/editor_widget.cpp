@@ -371,6 +371,7 @@ void EditorWidget::decreaseFontSize() {
 
 void EditorWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(viewport());
+
   drawText(&painter);
   drawCursor(&painter);
   drawSelection(&painter);
@@ -385,21 +386,30 @@ void EditorWidget::drawText(QPainter *painter) {
 
   auto verticalOffset = verticalScrollBar()->value();
   auto horizontalOffset = horizontalScrollBar()->value();
+  double viewportHeight = viewport()->height();
+  double viewportWidth = viewport()->width();
 
-  for (int i = 0; i < line_count; i++) {
+  double lineHeight = fontMetrics.height();
+
+  int firstVisibleLine = verticalOffset / lineHeight;
+  int visibleLineCount = viewportHeight / lineHeight;
+  int lastVisibleLine =
+      qMin(firstVisibleLine + visibleLineCount + 1, (int)line_count);
+
+  for (int line = firstVisibleLine; line <= lastVisibleLine; line++) {
     size_t len;
-    const char *line = neko_editor_get_line(editor, i, &len);
+    const char *lineText = neko_editor_get_line(editor, line, &len);
 
     auto actualY =
-        (i * fontMetrics.height()) +
+        (line * fontMetrics.height()) +
         (fontMetrics.height() + fontMetrics.ascent() - fontMetrics.descent()) /
             2.0 -
         verticalOffset;
 
     painter->drawText(QPointF(-horizontalOffset, actualY),
-                      QString::fromStdString(line));
+                      QString::fromStdString(lineText));
 
-    neko_string_free((char *)line);
+    neko_string_free((char *)lineText);
   }
 }
 
