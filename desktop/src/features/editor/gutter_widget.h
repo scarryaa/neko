@@ -30,6 +30,7 @@ private:
   QFontMetricsF fontMetrics;
 
   double VIEWPORT_PADDING = 74.0;
+  QColor TEXT_COLOR = QColor(80, 80, 80);
 };
 
 #endif // GUTTERWIDGET_H

@@ -42,6 +42,7 @@ private:
   double FONT_UPPER_LIMIT = 96.0;
   double FONT_LOWER_LIMIT = 6.0;
   QColor CURSOR_COLOR = QColor(66, 181, 212);
+  QColor TEXT_COLOR = QColor(235, 235, 235);
   QColor SELECTION_COLOR = QColor(66, 181, 212, 50);
   double VIEWPORT_PADDING = 74.0;
 };

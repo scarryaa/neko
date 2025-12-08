@@ -361,7 +361,7 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
 }
 
 void EditorWidget::drawText(QPainter *painter) {
-  painter->setBrush(Qt::white);
+  painter->setPen(TEXT_COLOR);
   painter->setFont(*font);
 
   size_t line_count;

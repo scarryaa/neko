@@ -55,7 +55,7 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
 }
 
 void GutterWidget::drawText(QPainter *painter) {
-  painter->setBrush(Qt::gray);
+  painter->setPen(TEXT_COLOR);
   painter->setFont(*font);
 
   size_t line_count;
