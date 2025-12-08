@@ -211,6 +211,49 @@ pub extern "C" fn neko_editor_delete(editor: *mut NekoEditor) {
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_get_max_width(editor: *mut NekoEditor) -> f64 {
+    if editor.is_null() {
+        return 0.0;
+    }
+
+    unsafe {
+        let editor = &*editor;
+        editor.editor.max_width()
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_set_line_width(
+    editor: *mut NekoEditor,
+    line_idx: usize,
+    line_width: usize,
+) {
+    if editor.is_null() {
+        return;
+    }
+
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.update_line_width(line_idx, line_width as f64);
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_needs_width_measurement(
+    editor: *const NekoEditor,
+    line_idx: usize,
+) -> bool {
+    if editor.is_null() {
+        return false;
+    }
+
+    unsafe {
+        let editor = &*editor;
+        editor.editor.needs_width_measurement(line_idx)
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn neko_editor_get_text(
     editor: *const NekoEditor,
     out_len: *mut usize,
@@ -472,12 +515,11 @@ pub extern "C" fn neko_editor_copy(editor: *const NekoEditor, out_len: *mut usiz
     unsafe {
         let editor = &*editor;
         let selection = editor.editor.selection();
-        let buffer = editor.editor.buffer();
 
-        let text = editor.editor.buffer().get_text_range(
-            selection.start().get_idx(buffer),
-            selection.end().get_idx(buffer),
-        );
+        let text = editor
+            .editor
+            .buffer()
+            .get_text_range(selection.start().get_idx(), selection.end().get_idx());
 
         if !out_len.is_null() {
             *out_len = text.len();

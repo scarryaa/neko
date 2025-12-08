@@ -29,7 +29,7 @@ impl Buffer {
     }
 
     pub fn delete_at(&mut self, pos: usize) {
-        if pos < self.content.byte_len() {
+        if pos < self.content.byte_len() && self.content.byte_len() != 1 {
             self.content.delete(pos..pos + 1);
         }
     }

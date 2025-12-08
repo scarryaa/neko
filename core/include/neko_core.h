@@ -62,6 +62,10 @@ void neko_editor_select_right(NekoEditor *editor);
 void neko_editor_select_up(NekoEditor *editor);
 void neko_editor_select_down(NekoEditor *editor);
 void neko_editor_clear_selection(NekoEditor *editor);
+double neko_editor_get_max_width(NekoEditor *editor);
+bool neko_editor_needs_width_measurement(NekoEditor *editor, size_t line_idx);
+void neko_editor_set_line_width(NekoEditor *editor, size_t line_idx,
+                                size_t width);
 
 char *neko_editor_copy(NekoEditor *editor, size_t *out_len);
 void neko_editor_paste(NekoEditor *editor, const char *text, size_t *out_len);

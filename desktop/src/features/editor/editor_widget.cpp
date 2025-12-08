@@ -6,7 +6,6 @@
 #include <QPainter>
 #include <QVBoxLayout>
 #include <QtDebug>
-#include <algorithm>
 #include <cstddef>
 #include <neko_core.h>
 
@@ -71,22 +70,21 @@ EditorWidget::EditorWidget(NekoEditor *editor, QWidget *parent)
 EditorWidget::~EditorWidget() {}
 
 double EditorWidget::measureContent() {
-  double finalWidth = 0;
   size_t lineCount = 0;
-  size_t len;
-
   neko_editor_get_line_count(editor, &lineCount);
 
-  // TODO: Make this faster
-  for (int i = 0; i < lineCount; i++) {
-    const char *line = neko_editor_get_line(editor, i, &len);
-    QString lineText = QString::fromStdString(line);
-    neko_string_free((char *)line);
+  for (size_t i = 0; i < lineCount; i++) {
+    if (neko_editor_needs_width_measurement(editor, i)) {
+      size_t len;
+      const char *line(neko_editor_get_line(editor, i, &len));
+      double width = fontMetrics.horizontalAdvance(QString(line));
+      neko_editor_set_line_width(editor, i, width);
 
-    finalWidth = std::max(fontMetrics.horizontalAdvance(lineText), finalWidth);
+      neko_string_free((char *)line);
+    }
   }
 
-  return finalWidth;
+  return neko_editor_get_max_width(editor);
 }
 
 void EditorWidget::scrollToCursor() {
