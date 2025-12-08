@@ -8,27 +8,40 @@
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   appState = neko_app_state_new(nullptr);
-
   NekoEditor *editor = neko_app_state_get_editor(appState);
   FileTree *fileTree = neko_app_state_get_file_tree(appState);
 
   fileExplorerWidget = new FileExplorerWidget(fileTree, this);
   editorWidget = new EditorWidget(editor, this);
+  gutterWidget = new GutterWidget(editor, this);
 
   connect(fileExplorerWidget, &FileExplorerWidget::fileSelected, this,
           &MainWindow::onFileSelected);
   connect(fileExplorerWidget, &FileExplorerWidget::directorySelected, this,
           &MainWindow::onDirectorySelected);
+  connect(gutterWidget->horizontalScrollBar(), &QScrollBar::valueChanged,
+          editorWidget->horizontalScrollBar(), &QScrollBar::setValue);
+  connect(editorWidget->horizontalScrollBar(), &QScrollBar::valueChanged,
+          gutterWidget->horizontalScrollBar(), &QScrollBar::setValue);
+  connect(gutterWidget->verticalScrollBar(), &QScrollBar::valueChanged,
+          editorWidget->verticalScrollBar(), &QScrollBar::setValue);
+  connect(editorWidget->verticalScrollBar(), &QScrollBar::valueChanged,
+          gutterWidget->verticalScrollBar(), &QScrollBar::setValue);
+
+  QWidget *editorContainer = new QWidget(this);
+  QHBoxLayout *editorLayout = new QHBoxLayout(editorContainer);
+  editorLayout->setContentsMargins(0, 0, 0, 0);
+  editorLayout->setSpacing(0);
+  editorLayout->addWidget(gutterWidget, 0);
+  editorLayout->addWidget(editorWidget, 1);
 
   auto *splitter = new QSplitter(Qt::Horizontal, this);
   splitter->addWidget(fileExplorerWidget);
-  splitter->addWidget(editorWidget);
+  splitter->addWidget(editorContainer);
   splitter->setStretchFactor(0, 0);
   splitter->setStretchFactor(1, 1);
   splitter->setSizes({250, 600});
-
   splitter->setHandleWidth(1);
-
   splitter->setStyleSheet("QSplitter::handle {"
                           "  background-color: #3c3c3c;"
                           "  margin: 0px;"
@@ -47,6 +60,7 @@ void MainWindow::onFileSelected(const std::string filePath) {
   if (neko_app_state_open_file(appState, filePath.c_str())) {
     editorWidget->updateDimensionsAndRepaint();
     editorWidget->setFocus();
+    gutterWidget->updateDimensionsAndRepaint();
   }
 }
 

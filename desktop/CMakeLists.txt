@@ -8,6 +8,8 @@ qt_add_executable(neko
     src/features/main_window/main_window.h
     src/features/editor/editor_widget.cpp
     src/features/editor/editor_widget.h
+    src/features/editor/gutter_widget.cpp
+    src/features/editor/gutter_widget.h
     src/features/file_explorer/file_explorer_widget.cpp
     src/features/file_explorer/file_explorer_widget.h
 )

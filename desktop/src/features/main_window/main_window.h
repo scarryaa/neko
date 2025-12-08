@@ -2,6 +2,7 @@
 #define MAIN_WINDOW_H
 
 #include "features/editor/editor_widget.h"
+#include "features/editor/gutter_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
 #include <QMainWindow>
 #include <neko_core.h>
@@ -21,5 +22,7 @@ private:
   NekoAppState *appState;
   FileExplorerWidget *fileExplorerWidget;
   EditorWidget *editorWidget;
+  GutterWidget *gutterWidget;
 };
+
 #endif // MAIN_WINDOW_H
