@@ -25,9 +25,19 @@ signals:
   void lineCountChanged();
 
 private:
-  void drawText(QPainter *painter);
-  void drawCursor(QPainter *painter);
-  void drawSelection(QPainter *painter);
+  struct ViewportContext {
+    double lineHeight;
+    int firstVisibleLine;
+    int lastVisibleLine;
+    double verticalOffset;
+    double horizontalOffset;
+  };
+
+  void drawText(QPainter *painter, const ViewportContext &ctx);
+  void drawCursor(QPainter *painter, const ViewportContext &ctx);
+  void drawSelections(QPainter *painter, const ViewportContext &ctx);
+  void drawSelection(QPainter *painter, double x1, double x2, double y1,
+                     double y2);
 
   void increaseFontSize();
   void decreaseFontSize();
@@ -41,6 +51,7 @@ private:
   QFont *font;
   QFontMetricsF fontMetrics;
 
+  int EXTRA_VERTICAL_LINES = 1;
   double FONT_STEP = 2.0;
   double DEFAULT_FONT_SIZE = 15.0;
   double FONT_UPPER_LIMIT = 96.0;
