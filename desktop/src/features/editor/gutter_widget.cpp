@@ -31,6 +31,18 @@ double GutterWidget::measureContent() const {
   return fontMetrics.horizontalAdvance(QString::number(lineCount));
 }
 
+void GutterWidget::wheelEvent(QWheelEvent *event) {
+  auto horizontalScrollOffset = horizontalScrollBar()->value();
+  auto verticalScrollOffset = verticalScrollBar()->value();
+  double verticalDelta =
+      (event->isInverted() ? -1 : 1) * event->angleDelta().y() / 4.0;
+
+  auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;
+
+  verticalScrollBar()->setValue(newVerticalScrollOffset);
+  viewport()->repaint();
+}
+
 void GutterWidget::handleViewportUpdate() {
   size_t line_count;
   neko_editor_get_line_count(editor, &line_count);

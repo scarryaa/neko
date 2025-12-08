@@ -5,6 +5,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QString>
+#include <QWheelEvent>
 #include <neko_core.h>
 
 class GutterWidget : public QScrollArea {
@@ -19,6 +20,7 @@ public:
 protected:
   QSize sizeHint() const override;
   void paintEvent(QPaintEvent *event) override;
+  void wheelEvent(QWheelEvent *event) override;
 
 private:
   double measureContent() const;

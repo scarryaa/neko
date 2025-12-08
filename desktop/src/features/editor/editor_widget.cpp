@@ -148,9 +148,9 @@ void EditorWidget::wheelEvent(QWheelEvent *event) {
   auto horizontalScrollOffset = horizontalScrollBar()->value();
   auto verticalScrollOffset = verticalScrollBar()->value();
   double verticalDelta =
-      (event->isInverted() ? -1 : 1) * event->angleDelta().y() / 8.0;
+      (event->isInverted() ? -1 : 1) * event->angleDelta().y() / 4.0;
   double horizontallDelta =
-      (event->isInverted() ? -1 : 1) * event->angleDelta().x() / 8.0;
+      (event->isInverted() ? -1 : 1) * event->angleDelta().x() / 4.0;
 
   auto newHorizontalScrollOffset = horizontalScrollOffset + horizontallDelta;
   auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;

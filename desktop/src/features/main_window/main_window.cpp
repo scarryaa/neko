@@ -19,10 +19,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
           &MainWindow::onFileSelected);
   connect(fileExplorerWidget, &FileExplorerWidget::directorySelected, this,
           &MainWindow::onDirectorySelected);
-  connect(gutterWidget->horizontalScrollBar(), &QScrollBar::valueChanged,
-          editorWidget->horizontalScrollBar(), &QScrollBar::setValue);
-  connect(editorWidget->horizontalScrollBar(), &QScrollBar::valueChanged,
-          gutterWidget->horizontalScrollBar(), &QScrollBar::setValue);
   connect(gutterWidget->verticalScrollBar(), &QScrollBar::valueChanged,
           editorWidget->verticalScrollBar(), &QScrollBar::setValue);
   connect(editorWidget->verticalScrollBar(), &QScrollBar::valueChanged,
