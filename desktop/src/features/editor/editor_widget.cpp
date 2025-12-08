@@ -335,6 +335,7 @@ void EditorWidget::resetFontSize() {
   fontMetrics = QFontMetricsF(*font);
 
   viewport()->repaint();
+  emit fontSizeChanged(font->pointSizeF());
 }
 
 void EditorWidget::increaseFontSize() {
@@ -343,6 +344,7 @@ void EditorWidget::increaseFontSize() {
     fontMetrics = QFontMetricsF(*font);
 
     viewport()->repaint();
+    emit fontSizeChanged(font->pointSizeF());
   }
 }
 
@@ -352,6 +354,7 @@ void EditorWidget::decreaseFontSize() {
     fontMetrics = QFontMetricsF(*font);
 
     viewport()->repaint();
+    emit fontSizeChanged(font->pointSizeF());
   }
 }
 

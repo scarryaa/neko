@@ -61,6 +61,12 @@ void GutterWidget::updateDimensionsAndRepaint() {
   viewport()->repaint();
 }
 
+void GutterWidget::onEditorFontSizeChanged(qreal newSize) {
+  font->setPointSizeF(newSize);
+  fontMetrics = QFontMetricsF(*font);
+  updateDimensionsAndRepaint();
+}
+
 void GutterWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(viewport());
   drawText(&painter);

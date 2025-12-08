@@ -20,6 +20,9 @@ protected:
   void paintEvent(QPaintEvent *event) override;
   void wheelEvent(QWheelEvent *event) override;
 
+signals:
+  void fontSizeChanged(qreal newSize);
+
 private:
   void drawText(QPainter *painter);
   void drawCursor(QPainter *painter);
