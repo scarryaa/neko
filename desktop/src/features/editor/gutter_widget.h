@@ -24,6 +24,7 @@ protected:
 
 public slots:
   void onEditorFontSizeChanged(qreal newSize);
+  void onEditorLineCountChanged();
 
 private:
   double measureContent() const;

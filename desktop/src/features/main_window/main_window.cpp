@@ -25,6 +25,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
           gutterWidget->verticalScrollBar(), &QScrollBar::setValue);
   connect(editorWidget, &EditorWidget::fontSizeChanged, gutterWidget,
           &GutterWidget::onEditorFontSizeChanged);
+  connect(editorWidget, &EditorWidget::lineCountChanged, gutterWidget,
+          &GutterWidget::onEditorLineCountChanged);
 
   QWidget *editorContainer = new QWidget(this);
   QHBoxLayout *editorLayout = new QHBoxLayout(editorContainer);

@@ -22,6 +22,7 @@ protected:
 
 signals:
   void fontSizeChanged(qreal newSize);
+  void lineCountChanged();
 
 private:
   void drawText(QPainter *painter);

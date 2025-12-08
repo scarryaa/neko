@@ -164,6 +164,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
   size_t len = event->text().size();
   bool shouldScroll = false;
   bool shouldUpdateViewport = false;
+  bool shouldUpdateLineCount = false;
 
   switch (event->key()) {
   case Qt::Key_Left:
@@ -204,16 +205,19 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     neko_editor_insert_newline(editor);
     shouldUpdateViewport = true;
     shouldScroll = true;
+    shouldUpdateLineCount = true;
     break;
   case Qt::Key_Backspace:
     neko_editor_backspace(editor);
     shouldUpdateViewport = true;
     shouldScroll = true;
+    shouldUpdateLineCount = true;
     break;
   case Qt::Key_Delete:
     neko_editor_delete(editor);
     shouldUpdateViewport = true;
     shouldScroll = true;
+    shouldUpdateLineCount = true;
     break;
   case Qt::Key_Tab:
     neko_editor_insert_tab(editor);
@@ -287,6 +291,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     }
     shouldScroll = true;
     shouldUpdateViewport = true;
+    shouldUpdateLineCount = true;
     break;
   case Qt::Key_X:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
@@ -306,6 +311,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     }
     shouldScroll = true;
     shouldUpdateViewport = true;
+    shouldUpdateLineCount = true;
     break;
 
   default:
@@ -316,11 +322,16 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
     shouldUpdateViewport = true;
     shouldScroll = true;
+    shouldUpdateLineCount = true;
     break;
   }
 
   if (shouldUpdateViewport) {
     handleViewportUpdate();
+  }
+
+  if (shouldUpdateLineCount) {
+    emit lineCountChanged();
   }
 
   if (shouldScroll) {
