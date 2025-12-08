@@ -235,6 +235,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
       shouldScroll = true;
+      shouldUpdateLineCount = true;
     }
     shouldUpdateViewport = true;
     break;
@@ -244,6 +245,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
       shouldScroll = true;
+      shouldUpdateLineCount = true;
     }
     shouldUpdateViewport = true;
     break;
@@ -253,6 +255,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
       shouldScroll = true;
+      shouldUpdateLineCount = true;
     }
     shouldUpdateViewport = true;
     break;
@@ -263,6 +266,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
       shouldScroll = true;
+      shouldUpdateLineCount = true;
     }
     shouldUpdateViewport = true;
     break;
@@ -280,6 +284,9 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
       }
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+      shouldUpdateViewport = true;
+      shouldScroll = true;
+      shouldUpdateLineCount = true;
     }
     break;
   case Qt::Key_V:
@@ -309,6 +316,9 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
       }
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+      shouldUpdateViewport = true;
+      shouldScroll = true;
+      shouldUpdateLineCount = true;
     }
     shouldScroll = true;
     shouldUpdateViewport = true;
