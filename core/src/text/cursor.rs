@@ -23,18 +23,19 @@ impl Cursor {
     pub fn insert_and_move(&mut self, buffer: &mut Buffer, text: &str) {
         buffer.insert(self.idx - 1, text);
 
-        // TODO: Make this faster
-        for ch in text.chars() {
-            if ch == '\n' {
-                self.row += 1;
-                self.column = 0;
-                self.sticky_column = 0;
-            } else {
-                self.column += 1;
-                self.sticky_column = self.column;
+        self.idx += text.len();
+        let newlines = text.chars().filter(|&c| c == '\n').count();
+
+        if newlines == 0 {
+            self.column += text.len();
+        } else {
+            self.row += newlines;
+            if let Some(last_line) = text.split('\n').next_back() {
+                self.column = last_line.len();
             }
-            self.idx += 1;
         }
+
+        self.sticky_column = self.column;
     }
 
     pub fn insert_newline(&mut self, buffer: &mut Buffer) {
