@@ -48,6 +48,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
                           "}");
 
   setCentralWidget(splitter);
+  editorWidget->setFocus();
 }
 
 MainWindow::~MainWindow() {
