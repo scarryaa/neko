@@ -9,7 +9,7 @@ TitleBarWidget::TitleBarWidget(QWidget *parent) : QWidget(parent) {
                                             "  background-color: transparent;"
                                             "  color: #a0a0a0;"
                                             "  border-radius: 6px;"
-                                            "  padding: 4px 16px;"
+                                            "  padding: 4px 8px;"
                                             "  font-size: 13px;"
                                             "}"
                                             "QPushButton:hover {"
