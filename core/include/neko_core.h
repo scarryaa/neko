@@ -24,6 +24,8 @@ typedef struct FileNode {
 
 NekoAppState *neko_app_state_new(const char *root_path);
 bool neko_app_state_open_file(NekoAppState *app, const char *path);
+bool neko_app_state_save_file(NekoAppState *app);
+bool neko_app_state_save_and_set_path(NekoAppState *app, const char *path);
 NekoEditor *neko_app_state_get_editor(NekoAppState *app);
 FileTree *neko_app_state_get_file_tree(NekoAppState *app);
 void neko_app_state_free(NekoAppState *app);

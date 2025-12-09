@@ -60,6 +60,38 @@ pub extern "C" fn neko_app_state_open_file(app: *mut NekoAppState, path: *const 
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_save_file(app: *mut NekoAppState) -> bool {
+    if app.is_null() {
+        return false;
+    }
+
+    unsafe {
+        let app = &mut *app;
+        app.state.save_file().is_ok()
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_save_and_set_path(
+    app: *mut NekoAppState,
+    path: *const c_char,
+) -> bool {
+    if app.is_null() || path.is_null() {
+        return false;
+    }
+
+    unsafe {
+        let app = &mut *app;
+        let path_str = match CStr::from_ptr(path).to_str() {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+
+        app.state.save_and_set_path(path_str).is_ok()
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn neko_app_state_get_editor(app: *mut NekoAppState) -> *mut Editor {
     if app.is_null() {
         return ptr::null_mut();

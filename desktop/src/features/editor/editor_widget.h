@@ -27,6 +27,7 @@ signals:
   void fontSizeChanged(qreal newSize);
   void lineCountChanged();
   void cursorPositionChanged();
+  void saveRequested(bool isSaveAs = false);
 
 private:
   struct RowCol {

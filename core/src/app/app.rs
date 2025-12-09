@@ -1,4 +1,7 @@
-use std::path::PathBuf;
+use std::{
+    io::{Error, ErrorKind},
+    path::PathBuf,
+};
 
 use crate::{FileTree, text::Editor};
 
@@ -28,8 +31,21 @@ impl AppState {
         if let Some(path) = &self.current_file_path {
             let content = self.editor.buffer().get_text();
             std::fs::write(path, content)?;
+            Ok(())
+        } else {
+            Err(Error::new(ErrorKind::NotFound, "No current file"))
         }
-        Ok(())
+    }
+
+    pub fn save_and_set_path(&mut self, path: &str) -> Result<(), std::io::Error> {
+        if !path.is_empty() {
+            let content = self.editor.buffer().get_text();
+            std::fs::write(path, content)?;
+            self.current_file_path = Some(path.into());
+            Ok(())
+        } else {
+            Err(Error::new(ErrorKind::NotFound, "Save as failed"))
+        }
     }
 
     pub fn get_editor(&self) -> &Editor {

@@ -41,6 +41,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
           fileExplorerWidget, &FileExplorerWidget::directorySelectionRequested);
   connect(editorWidget, &EditorWidget::cursorPositionChanged, gutterWidget,
           &GutterWidget::onEditorCursorPositionChanged);
+  connect(editorWidget, &EditorWidget::saveRequested, this,
+          &MainWindow::onFileSaved);
 
   QWidget *mainContainer = new QWidget(this);
   QVBoxLayout *mainLayout = new QVBoxLayout(mainContainer);
@@ -86,5 +88,31 @@ void MainWindow::onFileSelected(const std::string filePath) {
     editorWidget->updateDimensionsAndRepaint();
     editorWidget->setFocus();
     gutterWidget->updateDimensionsAndRepaint();
+  }
+}
+
+void MainWindow::onFileSaved(bool isSaveAs) {
+  if (isSaveAs) {
+    saveAs();
+  } else {
+    if (neko_app_state_save_file(appState)) {
+      // Save successful
+    } else {
+      // Save failed, fallback to save as
+      saveAs();
+    }
+  }
+}
+
+void MainWindow::saveAs() {
+  QString filePath =
+      QFileDialog::getSaveFileName(this, "Save As", QDir::homePath());
+
+  if (!filePath.isEmpty()) {
+    if (neko_app_state_save_and_set_path(appState,
+                                         filePath.toStdString().c_str())) {
+    } else {
+      qDebug() << "Save as failed";
+    }
   }
 }

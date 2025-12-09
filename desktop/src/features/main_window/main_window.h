@@ -17,8 +17,11 @@ public:
 
 private slots:
   void onFileSelected(const std::string);
+  void onFileSaved(bool isSaveAs);
 
 private:
+  void saveAs();
+
   NekoAppState *appState;
   FileExplorerWidget *fileExplorerWidget;
   EditorWidget *editorWidget;
