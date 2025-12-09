@@ -665,6 +665,7 @@ void EditorWidget::drawCursor(QPainter *painter, const ViewportContext &ctx) {
   }
 
   painter->setPen(CURSOR_COLOR);
+  painter->setBrush(Qt::NoBrush);
 
   double x = cursorX - ctx.horizontalOffset;
   painter->drawLine(QLineF(QPointF(x, getLineTopY(cursorRow, ctx)),

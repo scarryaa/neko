@@ -21,6 +21,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   editorWidget = new EditorWidget(editor, this);
   gutterWidget = new GutterWidget(editor, this);
 
+  editorWidget->setFrameShape(QFrame::NoFrame);
+  gutterWidget->setFrameShape(QFrame::NoFrame);
+
   connect(fileExplorerWidget, &FileExplorerWidget::fileSelected, this,
           &MainWindow::onFileSelected);
   connect(fileExplorerWidget, &FileExplorerWidget::directorySelected,
