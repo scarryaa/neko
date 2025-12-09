@@ -17,6 +17,7 @@ public:
 protected:
   void keyPressEvent(QKeyEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
+  void mouseMoveEvent(QMouseEvent *event) override;
   void paintEvent(QPaintEvent *event) override;
   void wheelEvent(QWheelEvent *event) override;
   bool focusNextPrevChild(bool next) override;
@@ -34,11 +35,17 @@ private:
     double horizontalOffset;
   };
 
+  struct RowCol {
+    int row;
+    int col;
+  };
+
   double getLineTopY(size_t lineIndex, const ViewportContext &ctx) const;
   double getLineBottomY(size_t lineIndex, const ViewportContext &ctx) const;
   double getTextWidth(const QString &text, double horizontalOffset) const;
   QRectF getLineRect(size_t lineIndex, double x1, double x2,
                      const ViewportContext &ctx) const;
+  RowCol convertMousePositionToRowCol(double x, double y);
 
   void drawText(QPainter *painter, const ViewportContext &ctx);
   void drawCursor(QPainter *painter, const ViewportContext &ctx);

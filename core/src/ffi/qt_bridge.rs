@@ -112,7 +112,19 @@ pub extern "C" fn neko_editor_move_to(editor: *mut NekoEditor, row: usize, col: 
 
     unsafe {
         let editor = &mut *editor;
-        editor.editor.move_to(row, col);
+        editor.editor.move_to(row, col, true);
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_select_to(editor: *mut NekoEditor, to_row: usize, to_col: usize) {
+    if editor.is_null() {
+        return;
+    }
+
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.select_to(to_row, to_col);
     }
 }
 

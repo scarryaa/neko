@@ -142,6 +142,24 @@ void EditorWidget::updateDimensionsAndRepaint() {
 }
 
 void EditorWidget::mousePressEvent(QMouseEvent *event) {
+  RowCol rc = convertMousePositionToRowCol(event->pos().x(), event->pos().y());
+
+  neko_editor_move_to(editor, rc.row, rc.col);
+  viewport()->repaint();
+}
+
+void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
+  if (event->buttons() == Qt::LeftButton) {
+    RowCol rc =
+        convertMousePositionToRowCol(event->pos().x(), event->pos().y());
+
+    neko_editor_select_to(editor, rc.row, rc.col);
+    viewport()->repaint();
+  }
+}
+
+EditorWidget::RowCol EditorWidget::convertMousePositionToRowCol(double x,
+                                                                double y) {
   const double lineHeight = fontMetrics.height();
   const int scrollX = horizontalScrollBar()->value();
   const int scrollY = verticalScrollBar()->value();
@@ -149,17 +167,16 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
   size_t lineCount;
   neko_editor_get_line_count(editor, &lineCount);
 
-  const size_t targetRow = (event->pos().y() + scrollY) / lineHeight;
+  const size_t targetRow = (y + scrollY) / lineHeight;
   const size_t lastRow = lineCount - 1;
 
   // Handle clicks beyond the last line
   if (targetRow > lastRow) {
     size_t lastRowLen;
     const char *str = neko_editor_get_line(editor, lastRow, &lastRowLen);
-    neko_editor_move_to(editor, lastRow, lastRowLen);
     neko_string_free((char *)str);
-    viewport()->repaint();
-    return;
+
+    return {(int)lastRow, (int)lastRowLen};
   }
 
   const size_t clampedRow = std::min(targetRow, lastRow);
@@ -170,7 +187,7 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
   neko_string_free((char *)targetLineStr);
 
   // Find the closest character position to the click
-  const double targetX = event->pos().x() + scrollX;
+  const double targetX = x + scrollX;
   size_t charPos = 0;
 
   for (size_t i = 0; i < targetLineLen; ++i) {
@@ -187,8 +204,7 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
     charPos = i + 1;
   }
 
-  neko_editor_move_to(editor, clampedRow, charPos);
-  viewport()->repaint();
+  return {(int)clampedRow, (int)charPos};
 }
 
 void EditorWidget::wheelEvent(QWheelEvent *event) {

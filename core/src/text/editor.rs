@@ -137,9 +137,12 @@ impl Editor {
         self.selection.clear();
     }
 
-    pub fn move_to(&mut self, row: usize, col: usize) {
+    pub fn move_to(&mut self, row: usize, col: usize, clear_selection: bool) {
         self.cursor.move_to(&self.buffer, row, col);
-        self.selection.clear();
+
+        if clear_selection {
+            self.selection.clear();
+        }
     }
 
     pub fn move_left(&mut self) {
@@ -160,6 +163,14 @@ impl Editor {
     pub fn move_down(&mut self) {
         self.cursor.move_down(&self.buffer);
         self.selection.clear();
+    }
+
+    pub fn select_to(&mut self, row: usize, col: usize) {
+        if !self.selection.is_active() {
+            self.selection.begin(&self.cursor);
+        }
+        self.move_to(row, col, false);
+        self.selection.update(&self.cursor);
     }
 
     pub fn select_left(&mut self) {
