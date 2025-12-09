@@ -1,10 +1,39 @@
 #include "titlebar_widget.h"
-#include <QMouseEvent>
-#include <QPainter>
 
 TitleBarWidget::TitleBarWidget(QWidget *parent) : QWidget(parent) {
   setFixedHeight(TITLEBAR_HEIGHT);
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+  m_directorySelectionButton = new QPushButton("Select a directory");
+  m_directorySelectionButton->setStyleSheet("QPushButton {"
+                                            "  background-color: transparent;"
+                                            "  color: #a0a0a0;"
+                                            "  border-radius: 6px;"
+                                            "  padding: 4px 16px;"
+                                            "  font-size: 13px;"
+                                            "}"
+                                            "QPushButton:hover {"
+                                            "  background-color: #131313;"
+                                            "}"
+                                            "QPushButton:pressed {"
+                                            "  background-color: #222222;"
+                                            "}");
+
+  connect(m_directorySelectionButton, &QPushButton::clicked, this,
+          &TitleBarWidget::onDirectorySelectionButtonPressed);
+
+  QHBoxLayout *layout = new QHBoxLayout(this);
+
+  int leftMargin = 10;
+  int rightMargin = 10;
+
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+  leftMargin = 84;
+#endif
+
+  layout->setContentsMargins(leftMargin, 5, rightMargin, 5);
+  layout->addWidget(m_directorySelectionButton);
+  layout->addStretch();
 }
 
 TitleBarWidget::~TitleBarWidget() {}
@@ -23,6 +52,17 @@ void TitleBarWidget::mouseMoveEvent(QMouseEvent *event) {
 
     event->accept();
   }
+}
+
+void TitleBarWidget::onDirectorySelectionButtonPressed() {
+  emit directorySelectionButtonPressed();
+}
+
+void TitleBarWidget::onDirChanged(std::string newDir) {
+  QString newDirQStr = QString::fromStdString(newDir);
+
+  m_currentDir = newDirQStr;
+  m_directorySelectionButton->setText(newDirQStr.split('/').last());
 }
 
 void TitleBarWidget::paintEvent(QPaintEvent *event) {

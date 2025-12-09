@@ -76,20 +76,23 @@ FileExplorerWidget::FileExplorerWidget(FileTree *tree, QWidget *parent)
 
   setLayout(layout);
 
-  connect(directorySelectionButton, &QPushButton::clicked, this, [this]() {
-    QString dir = QFileDialog::getExistingDirectory(
-        this, "Select a directory", QDir::homePath(),
-        QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-
-    if (!dir.isEmpty()) {
-      initialize(dir.toStdString());
-      rootPath = dir.toStdString();
-      directorySelectionButton->hide();
-    }
-  });
+  connect(directorySelectionButton, &QPushButton::clicked, this,
+          [this]() { directorySelectionRequested(); });
 }
 
 FileExplorerWidget::~FileExplorerWidget() {}
+
+void FileExplorerWidget::directorySelectionRequested() {
+  QString dir = QFileDialog::getExistingDirectory(
+      this, "Select a directory", QDir::homePath(),
+      QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+
+  if (!dir.isEmpty()) {
+    initialize(dir.toStdString());
+    rootPath = dir.toStdString();
+    directorySelectionButton->hide();
+  }
+}
 
 void FileExplorerWidget::initialize(std::string path) {
   neko_file_tree_set_root_path(tree, path.c_str());

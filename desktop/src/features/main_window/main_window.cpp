@@ -23,8 +23,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
   connect(fileExplorerWidget, &FileExplorerWidget::fileSelected, this,
           &MainWindow::onFileSelected);
-  connect(fileExplorerWidget, &FileExplorerWidget::directorySelected, this,
-          &MainWindow::onDirectorySelected);
+  connect(fileExplorerWidget, &FileExplorerWidget::directorySelected,
+          titleBarWidget, &TitleBarWidget::onDirChanged);
   connect(gutterWidget->verticalScrollBar(), &QScrollBar::valueChanged,
           editorWidget->verticalScrollBar(), &QScrollBar::setValue);
   connect(editorWidget->verticalScrollBar(), &QScrollBar::valueChanged,
@@ -33,6 +33,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
           &GutterWidget::onEditorFontSizeChanged);
   connect(editorWidget, &EditorWidget::lineCountChanged, gutterWidget,
           &GutterWidget::onEditorLineCountChanged);
+  connect(titleBarWidget, &TitleBarWidget::directorySelectionButtonPressed,
+          fileExplorerWidget, &FileExplorerWidget::directorySelectionRequested);
 
   QWidget *mainContainer = new QWidget(this);
   QVBoxLayout *mainLayout = new QVBoxLayout(mainContainer);
@@ -80,5 +82,3 @@ void MainWindow::onFileSelected(const std::string filePath) {
     gutterWidget->updateDimensionsAndRepaint();
   }
 }
-
-void MainWindow::onDirectorySelected(const std::string directoryPath) {}

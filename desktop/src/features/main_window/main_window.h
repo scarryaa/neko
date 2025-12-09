@@ -17,7 +17,6 @@ public:
 
 private slots:
   void onFileSelected(const std::string);
-  void onDirectorySelected(const std::string);
 
 private:
   NekoAppState *appState;

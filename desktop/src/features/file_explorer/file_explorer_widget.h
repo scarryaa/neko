@@ -38,6 +38,9 @@ signals:
   void directorySelected(const std::string path);
   void fileSelected(const std::string path);
 
+public slots:
+  void directorySelectionRequested();
+
 private:
   void drawFiles(QPainter *painter, size_t count, const FileNode *nodes);
   void drawFile(QPainter *painter, double x, double y, const FileNode *node);
