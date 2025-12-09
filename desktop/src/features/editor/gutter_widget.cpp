@@ -1,4 +1,5 @@
 #include "gutter_widget.h"
+#include <neko_core.h>
 
 GutterWidget::GutterWidget(NekoEditor *editor, QWidget *parent)
     : QScrollArea(parent), editor(editor),
@@ -110,6 +111,12 @@ void GutterWidget::drawText(QPainter *painter, const ViewportContext &ctx,
   size_t cursorRow, cursorCol;
   neko_editor_get_cursor_position(editor, &cursorRow, &cursorCol);
 
+  size_t selectionStartRow, selectionStartCol, selectionEndRow, selectionEndCol;
+  neko_editor_get_selection_start(editor, &selectionStartRow,
+                                  &selectionStartCol);
+  neko_editor_get_selection_end(editor, &selectionEndRow, &selectionEndCol);
+  bool selectionActive = neko_editor_get_selection_active(editor);
+
   for (int line = ctx.firstVisibleLine; line <= ctx.lastVisibleLine; ++line) {
     auto y =
         (line * fontMetrics.height()) +
@@ -122,7 +129,8 @@ void GutterWidget::drawText(QPainter *painter, const ViewportContext &ctx,
     double x = (width() - maxLineWidth - numWidth) / 2.0 +
                (maxLineWidth - lineNumWidth) - horizontalOffset;
 
-    if (line == cursorRow) {
+    if (line == cursorRow || (selectionActive && line >= selectionStartRow &&
+                              line <= selectionEndRow)) {
       painter->setPen(CURRENT_LINE_COLOR);
     } else {
       painter->setPen(TEXT_COLOR);
