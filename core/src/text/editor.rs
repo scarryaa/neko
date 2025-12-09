@@ -137,6 +137,11 @@ impl Editor {
         self.selection.clear();
     }
 
+    pub fn move_to(&mut self, row: usize, col: usize) {
+        self.cursor.move_to(&self.buffer, row, col);
+        self.selection.clear();
+    }
+
     pub fn move_left(&mut self) {
         self.cursor.move_left(&self.buffer);
         self.selection.clear();

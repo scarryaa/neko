@@ -72,6 +72,29 @@ impl Cursor {
         }
     }
 
+    pub fn move_to(&mut self, buffer: &Buffer, row: usize, col: usize) {
+        if row >= buffer.line_count() {
+            self.row = buffer.line_count() - 1;
+        } else {
+            self.row = row;
+        }
+
+        if col > buffer.line_len(self.row) {
+            self.column = buffer.line_len(self.row);
+        } else {
+            self.column = col;
+        }
+        self.sticky_column = self.column;
+
+        self.idx = 0;
+        // +1 for newlines
+        for i in 0..self.row {
+            let len = buffer.line_len(i) + 1;
+            self.idx += len;
+        }
+        self.idx += self.column + 1;
+    }
+
     pub fn move_right(&mut self, buffer: &Buffer) {
         if self.row >= buffer.line_count() {
             return;

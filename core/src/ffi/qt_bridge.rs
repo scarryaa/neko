@@ -105,6 +105,18 @@ pub extern "C" fn neko_editor_free(editor: *mut NekoEditor) {
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn neko_editor_move_to(editor: *mut NekoEditor, row: usize, col: usize) {
+    if editor.is_null() {
+        return;
+    }
+
+    unsafe {
+        let editor = &mut *editor;
+        editor.editor.move_to(row, col);
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn neko_editor_move_left(editor: *mut NekoEditor) {
     if editor.is_null() {
         return;

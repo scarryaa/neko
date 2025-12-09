@@ -6,6 +6,7 @@
 #include <QPainter>
 #include <QVBoxLayout>
 #include <QtDebug>
+#include <algorithm>
 #include <cstddef>
 #include <neko_core.h>
 
@@ -140,7 +141,55 @@ void EditorWidget::updateDimensionsAndRepaint() {
   viewport()->repaint();
 }
 
-void EditorWidget::mousePressEvent(QMouseEvent *event) {}
+void EditorWidget::mousePressEvent(QMouseEvent *event) {
+  const double lineHeight = fontMetrics.height();
+  const int scrollX = horizontalScrollBar()->value();
+  const int scrollY = verticalScrollBar()->value();
+
+  size_t lineCount;
+  neko_editor_get_line_count(editor, &lineCount);
+
+  const size_t targetRow = (event->pos().y() + scrollY) / lineHeight;
+  const size_t lastRow = lineCount - 1;
+
+  // Handle clicks beyond the last line
+  if (targetRow > lastRow) {
+    size_t lastRowLen;
+    const char *str = neko_editor_get_line(editor, lastRow, &lastRowLen);
+    neko_editor_move_to(editor, lastRow, lastRowLen);
+    neko_string_free((char *)str);
+    viewport()->repaint();
+    return;
+  }
+
+  const size_t clampedRow = std::min(targetRow, lastRow);
+  size_t targetLineLen;
+  const char *targetLineStr =
+      neko_editor_get_line(editor, clampedRow, &targetLineLen);
+  const QString targetLine = QString::fromUtf8(targetLineStr, targetLineLen);
+  neko_string_free((char *)targetLineStr);
+
+  // Find the closest character position to the click
+  const double targetX = event->pos().x() + scrollX;
+  size_t charPos = 0;
+
+  for (size_t i = 0; i < targetLineLen; ++i) {
+    const double currentWidth =
+        fontMetrics.horizontalAdvance(targetLine.left(i));
+    const double nextWidth =
+        fontMetrics.horizontalAdvance(targetLine.left(i + 1));
+    const double midpoint = (currentWidth + nextWidth) / 2.0;
+
+    if (targetX < midpoint) {
+      charPos = i;
+      break;
+    }
+    charPos = i + 1;
+  }
+
+  neko_editor_move_to(editor, clampedRow, charPos);
+  viewport()->repaint();
+}
 
 void EditorWidget::wheelEvent(QWheelEvent *event) {
   auto horizontalScrollOffset = horizontalScrollBar()->value();
