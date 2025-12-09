@@ -1,16 +1,22 @@
 #include "main_window.h"
 #include "features/editor/editor_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
+#include "utils/mac_utils.h"
 #include <QSplitter>
 #include <QVBoxLayout>
 #include <neko_core.h>
 #include <string>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
+  setupMacOSTitleBar(this);
+  setAttribute(Qt::WA_NativeWindow);
+  setAttribute(Qt::WA_LayoutOnEntireRect);
+
   appState = neko_app_state_new(nullptr);
   NekoEditor *editor = neko_app_state_get_editor(appState);
   FileTree *fileTree = neko_app_state_get_file_tree(appState);
 
+  titleBarWidget = new TitleBarWidget(this);
   fileExplorerWidget = new FileExplorerWidget(fileTree, this);
   editorWidget = new EditorWidget(editor, this);
   gutterWidget = new GutterWidget(editor, this);
@@ -28,6 +34,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   connect(editorWidget, &EditorWidget::lineCountChanged, gutterWidget,
           &GutterWidget::onEditorLineCountChanged);
 
+  QWidget *mainContainer = new QWidget(this);
+  QVBoxLayout *mainLayout = new QVBoxLayout(mainContainer);
+  mainLayout->setContentsMargins(0, 0, 0, 0);
+  mainLayout->setSpacing(0);
+
+  mainLayout->addWidget(titleBarWidget);
+
   QWidget *editorContainer = new QWidget(this);
   QHBoxLayout *editorLayout = new QHBoxLayout(editorContainer);
   editorLayout->setContentsMargins(0, 0, 0, 0);
@@ -38,6 +51,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   auto *splitter = new QSplitter(Qt::Horizontal, this);
   splitter->addWidget(fileExplorerWidget);
   splitter->addWidget(editorContainer);
+
   splitter->setStretchFactor(0, 0);
   splitter->setStretchFactor(1, 1);
   splitter->setSizes({250, 600});
@@ -47,7 +61,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
                           "  margin: 0px;"
                           "}");
 
-  setCentralWidget(splitter);
+  mainLayout->addWidget(splitter);
+
+  setCentralWidget(mainContainer);
   editorWidget->setFocus();
 }
 

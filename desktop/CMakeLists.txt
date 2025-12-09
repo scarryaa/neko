@@ -1,17 +1,32 @@
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets LinguistTools)
 qt_standard_project_setup()
 
+if(APPLE)
+  find_library(COCOA_LIB Cocoa)
+
+  list(APPEND PLATFORM_SRCS
+    src/utils/mac_utils.mm
+    src/utils/mac_utils.h
+  )
+
+  list(APPEND PLATFORM_LIBS ${COCOA_LIB})
+endif()
+
 qt_add_executable(neko
     WIN32 MACOSX_BUNDLE
     src/main.cpp
     src/features/main_window/main_window.cpp
     src/features/main_window/main_window.h
+    src/features/titlebar/titlebar_widget.cpp
+    src/features/titlebar/titlebar_widget.h
     src/features/editor/editor_widget.cpp
     src/features/editor/editor_widget.h
     src/features/editor/gutter_widget.cpp
     src/features/editor/gutter_widget.h
     src/features/file_explorer/file_explorer_widget.cpp
     src/features/file_explorer/file_explorer_widget.h
+
+    ${PLATFORM_SRCS}
 )
 
 qt_add_translations(
@@ -24,6 +39,8 @@ target_link_libraries(neko
         Qt::Core
         Qt::Widgets
         neko_core  # Link the Rust library
+
+        ${PLATFORM_LIBS}
 )
 
 target_include_directories(neko PRIVATE
