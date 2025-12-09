@@ -26,6 +26,9 @@ qt_add_executable(neko
     src/features/file_explorer/file_explorer_widget.cpp
     src/features/file_explorer/file_explorer_widget.h
 
+    src/utils/editor_utils.cpp
+    src/utils/editor_utils.h
+
     ${PLATFORM_SRCS}
 )
 

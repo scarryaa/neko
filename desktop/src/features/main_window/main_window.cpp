@@ -35,6 +35,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
           &GutterWidget::onEditorLineCountChanged);
   connect(titleBarWidget, &TitleBarWidget::directorySelectionButtonPressed,
           fileExplorerWidget, &FileExplorerWidget::directorySelectionRequested);
+  connect(editorWidget, &EditorWidget::cursorPositionChanged, gutterWidget,
+          &GutterWidget::onEditorCursorPositionChanged);
 
   QWidget *mainContainer = new QWidget(this);
   QVBoxLayout *mainLayout = new QVBoxLayout(mainContainer);

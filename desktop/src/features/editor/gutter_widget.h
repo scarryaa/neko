@@ -1,6 +1,7 @@
 #ifndef GUTTERWIDGET_H
 #define GUTTERWIDGET_H
 
+#include "utils/editor_utils.h"
 #include <QPainter>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -25,11 +26,13 @@ protected:
 public slots:
   void onEditorFontSizeChanged(qreal newSize);
   void onEditorLineCountChanged();
+  void onEditorCursorPositionChanged();
 
 private:
   double measureContent() const;
   void handleViewportUpdate();
-  void drawText(QPainter *painter);
+  void drawText(QPainter *painter, const ViewportContext &ctx, int lineCount);
+  void drawLineHighlight(QPainter *painter, const ViewportContext &ctx);
 
   void decreaseFontSize();
   void increaseFontSize();
@@ -45,6 +48,7 @@ private:
   double FONT_LOWER_LIMIT = 6.0;
   double VIEWPORT_PADDING = 74.0;
   QColor TEXT_COLOR = QColor(80, 80, 80);
+  QColor LINE_HIGHLIGHT_COLOR = QColor(255, 255, 255, 25);
 };
 
 #endif // GUTTERWIDGET_H

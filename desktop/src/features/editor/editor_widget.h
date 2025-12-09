@@ -1,6 +1,7 @@
 #ifndef EDITORWIDGET_H
 #define EDITORWIDGET_H
 
+#include "utils/editor_utils.h"
 #include <QScrollArea>
 #include <QScrollBar>
 #include <neko_core.h>
@@ -25,26 +26,15 @@ protected:
 signals:
   void fontSizeChanged(qreal newSize);
   void lineCountChanged();
+  void cursorPositionChanged();
 
 private:
-  struct ViewportContext {
-    double lineHeight;
-    int firstVisibleLine;
-    int lastVisibleLine;
-    double verticalOffset;
-    double horizontalOffset;
-  };
-
   struct RowCol {
     int row;
     int col;
   };
 
-  double getLineTopY(size_t lineIndex, const ViewportContext &ctx) const;
-  double getLineBottomY(size_t lineIndex, const ViewportContext &ctx) const;
   double getTextWidth(const QString &text, double horizontalOffset) const;
-  QRectF getLineRect(size_t lineIndex, double x1, double x2,
-                     const ViewportContext &ctx) const;
   RowCol convertMousePositionToRowCol(double x, double y);
 
   void drawText(QPainter *painter, const ViewportContext &ctx);
@@ -78,6 +68,7 @@ private:
   double FONT_UPPER_LIMIT = 96.0;
   double FONT_LOWER_LIMIT = 6.0;
   QColor CURSOR_COLOR = QColor(66, 181, 212);
+  QColor LINE_HIGHLIGHT_COLOR = QColor(255, 255, 255, 25);
   QColor TEXT_COLOR = QColor(235, 235, 235);
   QColor SELECTION_COLOR = QColor(66, 181, 212, 50);
   double VIEWPORT_PADDING = 74.0;

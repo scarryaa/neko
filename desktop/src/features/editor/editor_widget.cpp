@@ -145,6 +145,7 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
   RowCol rc = convertMousePositionToRowCol(event->pos().x(), event->pos().y());
 
   neko_editor_move_to(editor, rc.row, rc.col);
+  emit cursorPositionChanged();
   viewport()->repaint();
 }
 
@@ -154,6 +155,7 @@ void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
 
     neko_editor_select_to(editor, rc.row, rc.col);
+    emit cursorPositionChanged();
     viewport()->repaint();
   }
 }
@@ -227,6 +229,7 @@ bool EditorWidget::focusNextPrevChild(bool next) { return false; }
 
 void EditorWidget::keyPressEvent(QKeyEvent *event) {
   size_t len = event->text().size();
+  bool cursorChanged = false;
   bool shouldScroll = false;
   bool shouldUpdateViewport = false;
   bool shouldUpdateLineCount = false;
@@ -238,6 +241,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_move_left(editor);
     }
+    cursorChanged = true;
     shouldScroll = true;
     break;
   case Qt::Key_Right:
@@ -246,6 +250,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_move_right(editor);
     }
+    cursorChanged = true;
     shouldScroll = true;
     break;
   case Qt::Key_Up:
@@ -254,6 +259,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_move_up(editor);
     }
+    cursorChanged = true;
     shouldScroll = true;
     break;
   case Qt::Key_Down:
@@ -262,6 +268,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_move_down(editor);
     }
+    cursorChanged = true;
     shouldScroll = true;
     break;
 
@@ -271,12 +278,14 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     shouldUpdateViewport = true;
     shouldScroll = true;
     shouldUpdateLineCount = true;
+    cursorChanged = true;
     break;
   case Qt::Key_Backspace:
     neko_editor_backspace(editor);
     shouldUpdateViewport = true;
     shouldScroll = true;
     shouldUpdateLineCount = true;
+    cursorChanged = true;
     break;
   case Qt::Key_Delete:
     neko_editor_delete(editor);
@@ -288,6 +297,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     neko_editor_insert_tab(editor);
     shouldUpdateViewport = true;
     shouldScroll = true;
+    cursorChanged = true;
 
     break;
   case Qt::Key_Escape:
@@ -300,6 +310,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
       shouldScroll = true;
+      cursorChanged = true;
       shouldUpdateLineCount = true;
     }
     shouldUpdateViewport = true;
@@ -310,6 +321,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
       shouldScroll = true;
+      cursorChanged = true;
       shouldUpdateLineCount = true;
     }
     shouldUpdateViewport = true;
@@ -320,6 +332,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
       shouldScroll = true;
+      cursorChanged = true;
       shouldUpdateLineCount = true;
     }
     shouldUpdateViewport = true;
@@ -333,6 +346,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
       shouldScroll = true;
       shouldUpdateLineCount = true;
     }
+    cursorChanged = true;
     shouldUpdateViewport = true;
     break;
 
@@ -351,6 +365,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
       shouldUpdateViewport = true;
       shouldScroll = true;
+      cursorChanged = true;
       shouldUpdateLineCount = true;
     }
     break;
@@ -362,6 +377,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
     }
+    cursorChanged = true;
     shouldScroll = true;
     shouldUpdateViewport = true;
     shouldUpdateLineCount = true;
@@ -386,6 +402,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
       shouldUpdateLineCount = true;
     }
     shouldScroll = true;
+    cursorChanged = true;
     shouldUpdateViewport = true;
     shouldUpdateLineCount = true;
     break;
@@ -399,7 +416,12 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     shouldUpdateViewport = true;
     shouldScroll = true;
     shouldUpdateLineCount = true;
+    cursorChanged = true;
     break;
+  }
+
+  if (cursorChanged) {
+    emit cursorPositionChanged();
   }
 
   if (shouldUpdateViewport) {
@@ -445,25 +467,9 @@ void EditorWidget::decreaseFontSize() {
   }
 }
 
-double EditorWidget::getLineTopY(size_t lineIndex,
-                                 const ViewportContext &ctx) const {
-  return (lineIndex * ctx.lineHeight) - ctx.verticalOffset;
-}
-
-double EditorWidget::getLineBottomY(size_t lineIndex,
-                                    const ViewportContext &ctx) const {
-  return ((lineIndex + 1) * ctx.lineHeight) - ctx.verticalOffset;
-}
-
 double EditorWidget::getTextWidth(const QString &text,
                                   double horizontalOffset) const {
   return fontMetrics.horizontalAdvance(text) - horizontalOffset;
-}
-
-QRectF EditorWidget::getLineRect(size_t lineIndex, double x1, double x2,
-                                 const ViewportContext &ctx) const {
-  return QRectF(QPointF(x1, getLineTopY(lineIndex, ctx)),
-                QPointF(x2, getLineBottomY(lineIndex, ctx)));
 }
 
 void EditorWidget::paintEvent(QPaintEvent *event) {
@@ -629,14 +635,20 @@ void EditorWidget::drawLastLineSelection(QPainter *painter,
 }
 
 void EditorWidget::drawCursor(QPainter *painter, const ViewportContext &ctx) {
-  if (!editor || !hasFocus()) {
-    return;
-  }
-
   size_t cursorRow, cursorCol;
   neko_editor_get_cursor_position(editor, &cursorRow, &cursorCol);
 
   if (cursorRow < ctx.firstVisibleLine || cursorRow > ctx.lastVisibleLine) {
+    return;
+  }
+
+  // Draw line highlight
+  painter->setPen(Qt::NoPen);
+  painter->setBrush(QBrush(LINE_HIGHLIGHT_COLOR));
+  painter->drawRect(getLineRect(
+      cursorRow, 0, viewport()->width() + ctx.horizontalOffset, ctx));
+
+  if (!editor || !hasFocus()) {
     return;
   }
 

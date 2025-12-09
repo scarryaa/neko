@@ -63,6 +63,8 @@ void GutterWidget::updateDimensionsAndRepaint() {
 
 void GutterWidget::onEditorLineCountChanged() { updateDimensionsAndRepaint(); }
 
+void GutterWidget::onEditorCursorPositionChanged() { viewport()->repaint(); }
+
 void GutterWidget::onEditorFontSizeChanged(qreal newSize) {
   font->setPointSizeF(newSize);
   fontMetrics = QFontMetricsF(*font);
@@ -73,33 +75,39 @@ void GutterWidget::onEditorFontSizeChanged(qreal newSize) {
 void GutterWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(viewport());
 
-  drawText(&painter);
+  size_t lineCount;
+  neko_editor_get_line_count(editor, &lineCount);
+
+  double lineHeight = fontMetrics.height();
+  double verticalOffset = verticalScrollBar()->value();
+  double viewportHeight = viewport()->height();
+  double horizontalOffset = horizontalScrollBar()->value();
+  int firstVisibleLine = verticalOffset / lineHeight;
+  int visibleLineCount = viewportHeight / lineHeight;
+  int lastVisibleLine =
+      qMin(firstVisibleLine + visibleLineCount + 1, (int)lineCount - 1);
+  ViewportContext ctx = {lineHeight, firstVisibleLine, lastVisibleLine,
+                         verticalOffset, horizontalOffset};
+
+  drawText(&painter, ctx, lineCount);
+  drawLineHighlight(&painter, ctx);
 }
 
-void GutterWidget::drawText(QPainter *painter) {
+void GutterWidget::drawText(QPainter *painter, const ViewportContext &ctx,
+                            int lineCount) {
   painter->setPen(TEXT_COLOR);
   painter->setFont(*font);
 
-  size_t line_count;
-  neko_editor_get_line_count(editor, &line_count);
-
   auto verticalOffset = verticalScrollBar()->value();
   auto horizontalOffset = horizontalScrollBar()->value();
-  double viewportHeight = viewport()->height();
   double viewportWidth = viewport()->width();
 
-  int maxLineNumber = line_count;
+  int maxLineNumber = lineCount;
   int maxLineWidth =
       fontMetrics.horizontalAdvance(QString::number(maxLineNumber));
   double numWidth = fontMetrics.horizontalAdvance(QString::number(1));
 
-  double lineHeight = fontMetrics.height();
-  int firstVisibleLine = verticalOffset / lineHeight;
-  int visibleLineCount = viewportHeight / lineHeight;
-  int lastVisibleLine =
-      qMin(firstVisibleLine + visibleLineCount + 1, (int)line_count - 1);
-
-  for (int line = firstVisibleLine; line <= lastVisibleLine; ++line) {
+  for (int line = ctx.firstVisibleLine; line <= ctx.lastVisibleLine; ++line) {
     auto y =
         (line * fontMetrics.height()) +
         (fontMetrics.height() + fontMetrics.ascent() - fontMetrics.descent()) /
@@ -113,4 +121,20 @@ void GutterWidget::drawText(QPainter *painter) {
 
     painter->drawText(QPointF(x, y), lineNum);
   }
+}
+
+void GutterWidget::drawLineHighlight(QPainter *painter,
+                                     const ViewportContext &ctx) {
+  size_t cursorRow, cursorCol;
+  neko_editor_get_cursor_position(editor, &cursorRow, &cursorCol);
+
+  if (cursorRow < ctx.firstVisibleLine || cursorRow > ctx.lastVisibleLine) {
+    return;
+  }
+
+  // Draw line highlight
+  painter->setPen(Qt::NoPen);
+  painter->setBrush(QBrush(LINE_HIGHLIGHT_COLOR));
+  painter->drawRect(getLineRect(
+      cursorRow, 0, viewport()->width() + ctx.horizontalOffset, ctx));
 }
