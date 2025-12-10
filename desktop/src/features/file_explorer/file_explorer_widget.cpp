@@ -88,6 +88,10 @@ FileExplorerWidget::FileExplorerWidget(FileTree *tree, QWidget *parent)
 
 FileExplorerWidget::~FileExplorerWidget() {}
 
+void FileExplorerWidget::resizeEvent(QResizeEvent *event) {
+  handleViewportUpdate();
+}
+
 void FileExplorerWidget::loadSavedDir() {
   QString savedDir =
       ConfigManager::getInstance().getConfig().fileExplorerDirectory;

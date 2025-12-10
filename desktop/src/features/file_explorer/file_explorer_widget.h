@@ -34,6 +34,7 @@ protected:
   void mousePressEvent(QMouseEvent *event) override;
   void paintEvent(QPaintEvent *event) override;
   void wheelEvent(QWheelEvent *event) override;
+  void resizeEvent(QResizeEvent *event) override;
 
 signals:
   void directorySelected(const std::string path);
