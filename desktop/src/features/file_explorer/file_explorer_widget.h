@@ -51,6 +51,7 @@ private:
 
   double measureContent();
   void handleViewportUpdate();
+  void scrollToNode(int index);
 
   void handleEnter();
   void handleLeft();

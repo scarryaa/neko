@@ -84,6 +84,10 @@ FileExplorerWidget::FileExplorerWidget(FileTree *tree, QWidget *parent)
 
   connect(directorySelectionButton, &QPushButton::clicked, this,
           [this]() { directorySelectionRequested(); });
+  connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
+          [this]() { viewport()->repaint(); });
+  connect(horizontalScrollBar(), &QScrollBar::valueChanged, this,
+          [this]() { viewport()->repaint(); });
 }
 
 FileExplorerWidget::~FileExplorerWidget() {}
@@ -154,8 +158,10 @@ void FileExplorerWidget::handleViewportUpdate() {
 void FileExplorerWidget::wheelEvent(QWheelEvent *event) {
   auto horizontalScrollOffset = horizontalScrollBar()->value();
   auto verticalScrollOffset = verticalScrollBar()->value();
-  double verticalDelta = event->angleDelta().y() / 8.0;
-  double horizontallDelta = event->angleDelta().x() / 8.0;
+  double verticalDelta =
+      (event->isInverted() ? -1 : 1) * event->angleDelta().y() / 4.0;
+  double horizontallDelta =
+      (event->isInverted() ? -1 : 1) * event->angleDelta().x() / 4.0;
 
   auto newHorizontalScrollOffset = horizontalScrollOffset + horizontallDelta;
   auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;
@@ -170,7 +176,7 @@ void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
     return;
 
   int row = convertMousePositionToRow(event->pos().y());
-  if (row > fileCount) {
+  if (row >= fileCount) {
     neko_file_tree_clear_current(tree);
     viewport()->repaint();
     return;
@@ -210,15 +216,19 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   switch (event->key()) {
   case Qt::Key_Up:
     selectPrevNode();
+    shouldScroll = true;
     break;
   case Qt::Key_Down:
     selectNextNode();
+    shouldScroll = true;
     break;
   case Qt::Key_Left:
     handleLeft();
+    shouldScroll = true;
     break;
   case Qt::Key_Right:
     handleRight();
+    shouldScroll = true;
     break;
   case Qt::Key_Space:
     toggleSelectNode();
@@ -233,9 +243,10 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
     handleViewportUpdate();
   }
 
-  // if (shouldScroll) {
-  //   scrollToCursor();
-  // }
+  if (shouldScroll) {
+    int index = neko_file_tree_get_index(tree);
+    scrollToNode(index);
+  }
 
   viewport()->repaint();
 }
@@ -413,6 +424,22 @@ void FileExplorerWidget::collapseNode() {
 
   neko_string_free(const_cast<char *>(currentPath));
   handleViewportUpdate();
+}
+
+void FileExplorerWidget::scrollToNode(int index) {
+  if (tree == nullptr)
+    return;
+
+  const double viewportHeight = viewport()->height();
+  const double lineHeight = fontMetrics.height();
+  const int scrollY = verticalScrollBar()->value();
+  const size_t nodeY = (index * lineHeight);
+
+  if (nodeY + lineHeight > viewportHeight + scrollY) {
+    verticalScrollBar()->setValue(nodeY - viewportHeight + lineHeight);
+  } else if (nodeY < scrollY) {
+    verticalScrollBar()->setValue(nodeY);
+  }
 }
 
 void FileExplorerWidget::paintEvent(QPaintEvent *event) {

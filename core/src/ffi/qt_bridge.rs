@@ -1028,6 +1028,18 @@ pub extern "C" fn neko_file_tree_clear_current(tree: *mut FileTree) {
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_get_index(tree: *mut FileTree) -> usize {
+    if tree.is_null() {
+        return 0;
+    }
+
+    unsafe {
+        let tree = &*tree;
+        tree.get_index()
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn neko_file_tree_get_current(tree: *const FileTree) -> *const c_char {
     if tree.is_null() {
         return ptr::null();

@@ -325,6 +325,14 @@ impl FileTree {
     pub fn clear_selection(&mut self) {
         self.selected.clear();
     }
+
+    pub fn get_index(&self) -> usize {
+        let visible = self.get_visible_nodes();
+        visible
+            .iter()
+            .position(|n| n.path_str() == self.current.clone().unwrap().to_str().unwrap())
+            .unwrap()
+    }
 }
 
 impl Drop for FileTree {
