@@ -41,6 +41,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
           &MainWindow::onNewTabRequested);
   connect(editorWidget, &EditorWidget::closeTabRequested, this,
           &MainWindow::onActiveTabCloseRequested);
+  connect(editorWidget, &EditorWidget::bufferChanged, this,
+          &MainWindow::onBufferChanged);
 
   QWidget *mainContainer = new QWidget(this);
   QVBoxLayout *mainLayout = new QVBoxLayout(mainContainer);
@@ -190,6 +192,13 @@ void MainWindow::setupKeyboardShortcuts() {
   addAction(prevTabAction);
 }
 
+void MainWindow::onBufferChanged() {
+  int activeIndex = neko_app_state_get_active_tab_index(appState);
+  bool modified = neko_app_state_get_tab_modified(appState, activeIndex);
+
+  tabBarWidget->setTabModified(activeIndex, modified);
+}
+
 void MainWindow::onActiveTabCloseRequested() {
   int activeIndex = neko_app_state_get_active_tab_index(appState);
 
@@ -254,7 +263,10 @@ void MainWindow::updateTabBar() {
     tabTitles.append(QString::fromUtf8(titles[i]));
   }
 
-  tabBarWidget->setTabs(tabTitles);
+  bool *modifieds = nullptr;
+  neko_app_state_get_tab_modified_states(appState, &modifieds, &count);
+
+  tabBarWidget->setTabs(tabTitles, modifieds);
   tabBarWidget->setCurrentIndex(neko_app_state_get_active_tab_index(appState));
 
   neko_app_state_free_tab_titles(titles, count);
@@ -277,6 +289,8 @@ void MainWindow::onFileSaved(bool isSaveAs) {
   } else {
     if (neko_app_state_save_file(appState)) {
       // Save successful
+      int activeIndex = neko_app_state_get_active_tab_index(appState);
+      tabBarWidget->setTabModified(activeIndex, false);
     } else {
       // Save failed, fallback to save as
       saveAs();
@@ -291,6 +305,8 @@ void MainWindow::saveAs() {
   if (!filePath.isEmpty()) {
     if (neko_app_state_save_and_set_path(appState,
                                          filePath.toStdString().c_str())) {
+      int activeIndex = neko_app_state_get_active_tab_index(appState);
+      tabBarWidget->setTabModified(activeIndex, false);
     } else {
       qDebug() << "Save as failed";
     }

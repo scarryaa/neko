@@ -12,6 +12,7 @@ public:
   explicit TabWidget(const QString &title, int index,
                      QWidget *parent = nullptr);
   void setActive(bool active);
+  void setModified(bool modified);
 
 signals:
   void clicked();
@@ -28,6 +29,7 @@ private:
   double measureText(QString text);
 
   QString title;
+  bool isModified = false;
   int index;
   bool isActive;
   bool isHovered = false;

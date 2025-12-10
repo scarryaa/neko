@@ -13,9 +13,9 @@ pub struct AppState {
 
 pub struct Tab {
     editor: Editor,
+    original_content: Option<String>,
     file_path: Option<PathBuf>,
     title: String,
-    is_modified: bool,
 }
 
 impl AppState {
@@ -34,9 +34,9 @@ impl AppState {
     pub fn new_tab(&mut self) -> usize {
         let tab = Tab {
             editor: Editor::new(),
+            original_content: Some("\n".to_owned()),
             file_path: None,
             title: "Untitled".to_string(),
-            is_modified: false,
         };
         self.tabs.push(tab);
         self.active_tab_index = self.tabs.len() - 1;
@@ -84,10 +84,29 @@ impl AppState {
         self.tabs.iter().map(|t| t.title.clone()).collect()
     }
 
+    pub fn get_tab_modified_states(&self) -> Vec<bool> {
+        self.tabs
+            .iter()
+            .map(|t| {
+                t.original_content.clone().unwrap_or("".to_string()) != t.editor.buffer().get_text()
+            })
+            .collect()
+    }
+
+    pub fn get_tab_modified(&self, index: usize) -> bool {
+        self.tabs
+            .get(index)
+            .map(|t| {
+                t.original_content.clone().unwrap_or("".to_string()) != t.editor.buffer().get_text()
+            })
+            .unwrap()
+    }
+
     pub fn open_file(&mut self, path: &str) -> Result<(), std::io::Error> {
         let content = std::fs::read_to_string(path)?;
         if let Some(t) = self.tabs.get_mut(self.active_tab_index) {
             t.editor.load_file(&content);
+            t.original_content = Some(content);
             t.file_path = Some(path.into());
             t.title = path.split('/').next_back().unwrap().to_string();
         }
@@ -106,8 +125,8 @@ impl AppState {
             .ok_or_else(|| Error::new(ErrorKind::NotFound, "No current file"))?;
 
         let content = tab.editor.buffer().get_text();
+        tab.original_content = Some(content.clone());
         std::fs::write(path, content)?;
-        tab.is_modified = false;
         Ok(())
     }
 
@@ -122,9 +141,9 @@ impl AppState {
             .ok_or_else(|| Error::new(ErrorKind::NotFound, "No active tab"))?;
 
         let content = tab.editor.buffer().get_text();
+        tab.original_content = Some(content.clone());
         std::fs::write(path, content)?;
         tab.file_path = Some(PathBuf::from(path));
-        tab.is_modified = false;
 
         if let Some(filename) = PathBuf::from(path).file_name() {
             tab.title = filename.to_string_lossy().to_string();

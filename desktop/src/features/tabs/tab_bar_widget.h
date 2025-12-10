@@ -21,8 +21,9 @@ public:
   explicit TabBarWidget(QWidget *parent = nullptr);
   ~TabBarWidget();
 
-  void setTabs(QStringList titles);
+  void setTabs(QStringList titles, bool *modifiedStates);
   void setCurrentIndex(size_t index);
+  void setTabModified(int index, bool modified);
 
 signals:
   void currentChanged(int index);

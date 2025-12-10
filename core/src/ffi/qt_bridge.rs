@@ -157,6 +157,48 @@ pub extern "C" fn neko_app_state_free_tab_titles(titles: *mut *mut c_char, count
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_get_tab_modified_states(
+    app: *mut NekoAppState,
+    modifieds: *mut *mut bool,
+    count: *mut usize,
+) {
+    if app.is_null() || modifieds.is_null() || count.is_null() {
+        return;
+    }
+    unsafe {
+        let app = &*app;
+        let tab_modifieds = app.state.get_tab_modified_states();
+        *count = tab_modifieds.len();
+
+        let boxed_slice = tab_modifieds.into_boxed_slice();
+        let ptr = Box::into_raw(boxed_slice) as *mut bool;
+        *modifieds = ptr;
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_get_tab_modified(app: *mut NekoAppState, index: usize) -> bool {
+    if app.is_null() {
+        return false;
+    }
+
+    unsafe {
+        let app = &*app;
+        app.state.get_tab_modified(index)
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_free_tab_modified_states(modifieds: *mut bool, count: usize) {
+    if modifieds.is_null() {
+        return;
+    }
+    unsafe {
+        let _ = Box::from_raw(std::slice::from_raw_parts_mut(modifieds, count));
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn neko_app_state_get_tab_count(app: *mut NekoAppState) -> usize {
     if app.is_null() {
         return 0;

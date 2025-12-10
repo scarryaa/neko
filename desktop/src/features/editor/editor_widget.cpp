@@ -480,6 +480,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     scrollToCursor();
   }
 
+  emit bufferChanged();
   viewport()->repaint();
 }
 

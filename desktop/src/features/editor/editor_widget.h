@@ -31,6 +31,7 @@ signals:
   void saveRequested(bool isSaveAs = false);
   void newTabRequested();
   void closeTabRequested();
+  void bufferChanged();
 
 private:
   struct RowCol {

@@ -16,6 +16,11 @@ void TabWidget::setActive(bool active) {
   update();
 }
 
+void TabWidget::setModified(bool modified) {
+  isModified = modified;
+  update();
+}
+
 double TabWidget::measureText(QString text) {
   return fontMetrics().horizontalAdvance(text);
 }
@@ -50,6 +55,14 @@ void TabWidget::paintEvent(QPaintEvent *event) {
   QRect textRect = rect().adjusted(12, 0, -30, 0);
   painter.setPen(isActive ? Qt::white : QColor(180, 180, 180));
   painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, title);
+
+  // Modified marker
+  if (isModified) {
+    QRect modifiedRect(width() - 37, (height() - 6) / 2, 6, 6);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QBrush(QColor(165, 137, 209)));
+    painter.drawEllipse(modifiedRect);
+  }
 
   // Close button hover rect
   QRect closeRect(width() - 24, (height() - 12) / 2, 12, 12);

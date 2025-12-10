@@ -24,7 +24,11 @@ TabBarWidget::TabBarWidget(QWidget *parent) : QScrollArea(parent) {
 
 TabBarWidget::~TabBarWidget() {}
 
-void TabBarWidget::setTabs(QStringList titles) {
+void TabBarWidget::setTabModified(int index, bool modified) {
+  tabs[index]->setModified(modified);
+}
+
+void TabBarWidget::setTabs(QStringList titles, bool *modifiedStates) {
   QLayoutItem *item;
   while ((item = layout->takeAt(0)) != nullptr) {
     if (item->widget() && item->widget() != newTabButton) {
@@ -37,6 +41,8 @@ void TabBarWidget::setTabs(QStringList titles) {
   // Create new tabs
   for (int i = 0; i < titles.size(); i++) {
     auto *tabWidget = new TabWidget(titles[i], i, this);
+    tabWidget->setModified(modifiedStates[i]);
+
     connect(tabWidget, &TabWidget::clicked, this, [this, i]() {
       setCurrentIndex(i);
       emit currentChanged(i);
