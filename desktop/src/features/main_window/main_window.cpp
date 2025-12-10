@@ -17,6 +17,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   editorWidget = new EditorWidget(editor, this);
   gutterWidget = new GutterWidget(editor, this);
 
+  setupKeyboardShortcuts();
+
   connect(fileExplorerWidget, &FileExplorerWidget::fileSelected, this,
           &MainWindow::onFileSelected);
   connect(fileExplorerWidget, &FileExplorerWidget::directorySelected,
@@ -141,6 +143,53 @@ MainWindow::~MainWindow() {
   }
 }
 
+void MainWindow::setupKeyboardShortcuts() {
+  // Cmd+T for new tab
+  QAction *newTabAction = new QAction(this);
+  newTabAction->setShortcut(QKeySequence::AddTab);
+  newTabAction->setShortcutContext(Qt::WindowShortcut);
+  connect(newTabAction, &QAction::triggered, this,
+          &MainWindow::onNewTabRequested);
+  addAction(newTabAction);
+
+  // Cmd+W for close tab
+  QAction *closeTabAction = new QAction(this);
+  closeTabAction->setShortcut(QKeySequence::Close);
+  closeTabAction->setShortcutContext(Qt::WindowShortcut);
+  connect(closeTabAction, &QAction::triggered, this,
+          &MainWindow::onActiveTabCloseRequested);
+  addAction(closeTabAction);
+
+  // Cmd+Tab for next tab
+  QAction *nextTabAction = new QAction(this);
+  nextTabAction->setShortcut(QKeySequence(Qt::MetaModifier | Qt::Key_Tab));
+  nextTabAction->setShortcutContext(Qt::WindowShortcut);
+  connect(nextTabAction, &QAction::triggered, this, [this]() {
+    size_t tabCount = neko_app_state_get_tab_count(appState);
+    if (tabCount > 0) {
+      size_t currentIndex = neko_app_state_get_active_tab_index(appState);
+      size_t nextIndex = (currentIndex + 1) % tabCount;
+      onTabChanged(nextIndex);
+    }
+  });
+  addAction(nextTabAction);
+
+  // Cmd+Shift+Tab for previous tab
+  QAction *prevTabAction = new QAction(this);
+  prevTabAction->setShortcut(
+      QKeySequence(Qt::MetaModifier | Qt::ShiftModifier | Qt::Key_Tab));
+  prevTabAction->setShortcutContext(Qt::WindowShortcut);
+  connect(prevTabAction, &QAction::triggered, this, [this]() {
+    size_t tabCount = neko_app_state_get_tab_count(appState);
+    if (tabCount > 0) {
+      size_t currentIndex = neko_app_state_get_active_tab_index(appState);
+      size_t prevIndex = (currentIndex == 0) ? tabCount - 1 : currentIndex - 1;
+      onTabChanged(prevIndex);
+    }
+  });
+  addAction(prevTabAction);
+}
+
 void MainWindow::onActiveTabCloseRequested() {
   int activeIndex = neko_app_state_get_active_tab_index(appState);
 
@@ -160,6 +209,7 @@ void MainWindow::onTabCloseRequested(int index) {
 void MainWindow::onTabChanged(int index) {
   neko_app_state_set_active_tab(appState, index);
   switchToActiveTab();
+  updateTabBar();
 }
 
 void MainWindow::onNewTabRequested() {

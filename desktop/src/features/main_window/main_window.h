@@ -31,6 +31,7 @@ private:
   void onNewTabRequested();
   void switchToActiveTab();
   void onActiveTabCloseRequested();
+  void setupKeyboardShortcuts();
 
   NekoAppState *appState;
   QWidget *emptyStateWidget;
