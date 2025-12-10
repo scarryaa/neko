@@ -8,6 +8,8 @@ GutterWidget::GutterWidget(NekoEditor *editor, QWidget *parent)
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setCornerWidget(nullptr);
+  setFrameShape(QFrame::NoFrame);
+  setAutoFillBackground(false);
 
   setStyleSheet("GutterWidget {"
                 "  background: black;"

@@ -17,6 +17,8 @@ EditorWidget::EditorWidget(NekoEditor *editor, QWidget *parent)
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setCornerWidget(nullptr);
+  setFrameShape(QFrame::NoFrame);
+  setAutoFillBackground(false);
 
   setStyleSheet(
       "QAbstractScrollArea::corner {"

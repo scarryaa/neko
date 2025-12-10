@@ -17,11 +17,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   editorWidget = new EditorWidget(editor, this);
   gutterWidget = new GutterWidget(editor, this);
 
-  fileExplorerWidget->setFrameShape(QFrame::NoFrame);
-  editorWidget->setFrameShape(QFrame::NoFrame);
-  gutterWidget->setFrameShape(QFrame::NoFrame);
-  tabBarWidget->setFrameShape(QFrame::NoFrame);
-
   connect(tabBarWidget, &TabBarWidget::tabCloseRequested, this,
           &MainWindow::onTabCloseRequested);
   connect(tabBarWidget, &TabBarWidget::currentChanged, this,

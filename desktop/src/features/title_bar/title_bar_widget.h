@@ -14,7 +14,7 @@ class TitleBarWidget : public QWidget {
   Q_OBJECT
 
 public:
-  TitleBarWidget(QWidget *parent = nullptr);
+  explicit TitleBarWidget(QWidget *parent = nullptr);
   ~TitleBarWidget();
 
 public slots:
