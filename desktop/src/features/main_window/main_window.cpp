@@ -307,6 +307,7 @@ void MainWindow::saveAs() {
                                          filePath.toStdString().c_str())) {
       int activeIndex = neko_app_state_get_active_tab_index(appState);
       tabBarWidget->setTabModified(activeIndex, false);
+      updateTabBar();
     } else {
       qDebug() << "Save as failed";
     }
