@@ -75,6 +75,8 @@ void TabWidget::mousePressEvent(QMouseEvent *event) {
     } else {
       emit clicked();
     }
+  } else if (event->button() == Qt::MiddleButton) {
+    emit closeRequested();
   }
 }
 
