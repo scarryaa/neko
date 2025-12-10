@@ -17,6 +17,7 @@ public:
   ~GutterWidget();
 
   void updateDimensionsAndRepaint();
+  void setEditor(NekoEditor *editor);
 
 protected:
   QSize sizeHint() const override;

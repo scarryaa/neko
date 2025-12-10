@@ -14,6 +14,7 @@ public:
   ~EditorWidget();
 
   void updateDimensionsAndRepaint();
+  void setEditor(NekoEditor *editor);
 
 protected:
   void keyPressEvent(QKeyEvent *event) override;

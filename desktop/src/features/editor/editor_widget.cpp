@@ -70,6 +70,8 @@ EditorWidget::EditorWidget(NekoEditor *editor, QWidget *parent)
 
 EditorWidget::~EditorWidget() {}
 
+void EditorWidget::setEditor(NekoEditor *newEditor) { editor = newEditor; }
+
 double EditorWidget::measureContent() {
   size_t lineCount = 0;
   neko_editor_get_line_count(editor, &lineCount);

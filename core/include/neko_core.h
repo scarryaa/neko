@@ -28,6 +28,13 @@ bool neko_app_state_save_file(NekoAppState *app);
 bool neko_app_state_save_and_set_path(NekoAppState *app, const char *path);
 NekoEditor *neko_app_state_get_editor(NekoAppState *app);
 FileTree *neko_app_state_get_file_tree(NekoAppState *app);
+void *neko_app_state_get_tab_titles(NekoAppState *app, char ***titles,
+                                    size_t *count);
+size_t neko_app_state_get_active_tab_index(NekoAppState *app);
+bool neko_app_state_close_tab(NekoAppState *app, int index);
+void neko_app_state_set_active_tab(NekoAppState *app, int index);
+void neko_app_state_new_tab(NekoAppState *app);
+void neko_app_state_free_tab_titles(char **titles, size_t count);
 void neko_app_state_free(NekoAppState *app);
 
 NekoEditor *neko_editor_new(void);

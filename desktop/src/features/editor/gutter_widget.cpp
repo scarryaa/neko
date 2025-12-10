@@ -21,6 +21,8 @@ GutterWidget::GutterWidget(NekoEditor *editor, QWidget *parent)
 
 GutterWidget::~GutterWidget() {}
 
+void GutterWidget::setEditor(NekoEditor *newEditor) { editor = newEditor; }
+
 QSize GutterWidget::sizeHint() const {
   return QSize(measureContent() + VIEWPORT_PADDING, height());
 }

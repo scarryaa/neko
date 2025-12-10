@@ -4,9 +4,13 @@
 #include "features/editor/editor_widget.h"
 #include "features/editor/gutter_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
+#include "features/tab_bar/tab_bar_widget.h"
 #include "features/titlebar/titlebar_widget.h"
 #include <QMainWindow>
+#include <QSplitter>
+#include <QVBoxLayout>
 #include <neko_core.h>
+#include <string>
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -21,12 +25,18 @@ private slots:
 
 private:
   void saveAs();
+  void updateTabBar();
+  void onTabCloseRequested(int index);
+  void onTabChanged(int index);
+  void onNewTabRequested();
+  void switchToActiveTab();
 
   NekoAppState *appState;
   FileExplorerWidget *fileExplorerWidget;
   EditorWidget *editorWidget;
   GutterWidget *gutterWidget;
   TitleBarWidget *titleBarWidget;
+  TabBarWidget *tabBarWidget;
 };
 
 #endif // MAIN_WINDOW_H

@@ -1,11 +1,6 @@
 #include "main_window.h"
-#include "features/editor/editor_widget.h"
-#include "features/file_explorer/file_explorer_widget.h"
 #include "utils/mac_utils.h"
-#include <QSplitter>
-#include <QVBoxLayout>
 #include <neko_core.h>
-#include <string>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   setupMacOSTitleBar(this);
@@ -17,6 +12,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   FileTree *fileTree = neko_app_state_get_file_tree(appState);
 
   titleBarWidget = new TitleBarWidget(this);
+  tabBarWidget = new TabBarWidget(this);
   fileExplorerWidget = new FileExplorerWidget(fileTree, this);
   editorWidget = new EditorWidget(editor, this);
   gutterWidget = new GutterWidget(editor, this);
@@ -24,6 +20,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   fileExplorerWidget->setFrameShape(QFrame::NoFrame);
   editorWidget->setFrameShape(QFrame::NoFrame);
   gutterWidget->setFrameShape(QFrame::NoFrame);
+  tabBarWidget->setFrameShape(QFrame::NoFrame);
+
+  connect(tabBarWidget, &TabBarWidget::tabCloseRequested, this,
+          &MainWindow::onTabCloseRequested);
+  connect(tabBarWidget, &TabBarWidget::currentChanged, this,
+          &MainWindow::onTabChanged);
+  connect(tabBarWidget, &TabBarWidget::newTabRequested, this,
+          &MainWindow::onNewTabRequested);
 
   connect(fileExplorerWidget, &FileExplorerWidget::fileSelected, this,
           &MainWindow::onFileSelected);
@@ -51,6 +55,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
   mainLayout->addWidget(titleBarWidget);
 
+  QWidget *editorSideContainer = new QWidget(this);
+  QVBoxLayout *editorSideLayout = new QVBoxLayout(editorSideContainer);
+  editorSideLayout->setContentsMargins(0, 0, 0, 0);
+  editorSideLayout->setSpacing(0);
+
+  editorSideLayout->addWidget(tabBarWidget);
+
   QWidget *editorContainer = new QWidget(this);
   QHBoxLayout *editorLayout = new QHBoxLayout(editorContainer);
   editorLayout->setContentsMargins(0, 0, 0, 0);
@@ -58,10 +69,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   editorLayout->addWidget(gutterWidget, 0);
   editorLayout->addWidget(editorWidget, 1);
 
+  editorSideLayout->addWidget(editorContainer);
+
   auto *splitter = new QSplitter(Qt::Horizontal, this);
   splitter->addWidget(fileExplorerWidget);
-  splitter->addWidget(editorContainer);
-
+  splitter->addWidget(editorSideContainer);
   splitter->setStretchFactor(0, 0);
   splitter->setStretchFactor(1, 1);
   splitter->setSizes({250, 600});
@@ -72,8 +84,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
                           "}");
 
   mainLayout->addWidget(splitter);
-
   setCentralWidget(mainContainer);
+
+  updateTabBar();
+
   editorWidget->setFocus();
 }
 
@@ -83,12 +97,59 @@ MainWindow::~MainWindow() {
   }
 }
 
-void MainWindow::onFileSelected(const std::string filePath) {
-  if (neko_app_state_open_file(appState, filePath.c_str())) {
-    editorWidget->updateDimensionsAndRepaint();
-    editorWidget->setFocus();
-    gutterWidget->updateDimensionsAndRepaint();
+void MainWindow::onTabCloseRequested(int index) {
+  if (neko_app_state_close_tab(appState, index)) {
+    updateTabBar();
+    switchToActiveTab();
   }
+}
+
+void MainWindow::onTabChanged(int index) {
+  neko_app_state_set_active_tab(appState, index);
+  switchToActiveTab();
+}
+
+void MainWindow::onNewTabRequested() {
+  neko_app_state_new_tab(appState);
+  updateTabBar();
+  switchToActiveTab();
+}
+
+void MainWindow::switchToActiveTab() {
+  NekoEditor *editor = neko_app_state_get_editor(appState);
+  editorWidget->setEditor(editor);
+  gutterWidget->setEditor(editor);
+  editorWidget->updateDimensionsAndRepaint();
+  gutterWidget->updateDimensionsAndRepaint();
+  editorWidget->setFocus();
+}
+
+void MainWindow::updateTabBar() {
+  char **titles = nullptr;
+  size_t count = 0;
+
+  neko_app_state_get_tab_titles(appState, &titles, &count);
+
+  QStringList tabTitles;
+  for (size_t i = 0; i < count; i++) {
+    tabTitles.append(QString::fromUtf8(titles[i]));
+  }
+
+  tabBarWidget->setTabs(tabTitles);
+  tabBarWidget->setCurrentIndex(neko_app_state_get_active_tab_index(appState));
+
+  neko_app_state_free_tab_titles(titles, count);
+}
+
+void MainWindow::onFileSelected(const std::string filePath) {
+  neko_app_state_new_tab(appState);
+  neko_app_state_open_file(appState, filePath.c_str());
+  updateTabBar();
+  switchToActiveTab();
+
+  editorWidget->updateDimensionsAndRepaint();
+  editorWidget->setFocus();
+  gutterWidget->updateDimensionsAndRepaint();
 }
 
 void MainWindow::onFileSaved(bool isSaveAs) {

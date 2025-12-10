@@ -99,7 +99,108 @@ pub extern "C" fn neko_app_state_get_editor(app: *mut NekoAppState) -> *mut Edit
 
     unsafe {
         let app = &mut *app;
-        &mut *app.state.get_editor_mut()
+        app.state
+            .get_active_editor_mut()
+            .ok_or(ptr::null_mut::<Editor>())
+            .unwrap()
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_get_tab_titles(
+    app: *mut NekoAppState,
+    titles: *mut *mut *mut c_char,
+    count: *mut usize,
+) {
+    if app.is_null() || titles.is_null() || count.is_null() {
+        return;
+    }
+
+    unsafe {
+        let app = &*app;
+        let tab_titles = app.state.get_tab_titles();
+
+        let c_titles: Vec<*mut c_char> = tab_titles
+            .iter()
+            .map(|title| {
+                CString::new(title.as_str())
+                    .unwrap_or_else(|_| CString::new("").unwrap())
+                    .into_raw()
+            })
+            .collect();
+
+        *count = c_titles.len();
+
+        let boxed_slice = c_titles.into_boxed_slice();
+        *titles = Box::into_raw(boxed_slice) as *mut *mut c_char;
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_free_tab_titles(titles: *mut *mut c_char, count: usize) {
+    if titles.is_null() {
+        return;
+    }
+
+    unsafe {
+        let titles_slice = std::slice::from_raw_parts_mut(titles, count);
+
+        (0..count).for_each(|i| {
+            let title_ptr = titles_slice[i];
+            if !title_ptr.is_null() {
+                drop(CString::from_raw(title_ptr));
+            }
+        });
+
+        drop(Box::from_raw(std::slice::from_raw_parts_mut(titles, count)));
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_get_active_tab_index(app: *mut NekoAppState) -> usize {
+    if app.is_null() {
+        return 0;
+    }
+
+    unsafe {
+        let app = &*app;
+        app.state.get_active_tab_index()
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_close_tab(app: *mut NekoAppState, index: usize) -> bool {
+    if app.is_null() {
+        return false;
+    }
+
+    unsafe {
+        let app = &mut *app;
+        app.state.close_tab(index).is_ok()
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_set_active_tab(app: *mut NekoAppState, index: usize) {
+    if app.is_null() {
+        return;
+    }
+
+    unsafe {
+        let app = &mut *app;
+        app.state.set_active_tab_index(index);
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_new_tab(app: *mut NekoAppState) {
+    if app.is_null() {
+        return;
+    }
+
+    unsafe {
+        let app = &mut *app;
+        app.state.new_tab();
     }
 }
 
