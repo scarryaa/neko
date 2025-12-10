@@ -1,7 +1,7 @@
 #ifndef TAB_BAR_WIDGET_H
 #define TAB_BAR_WIDGET_H
 
-#include "features/tab_bar/tab_widget.h"
+#include "features/tabs/tab_widget.h"
 #include <QHBoxLayout>
 #include <QPaintEvent>
 #include <QPainter>

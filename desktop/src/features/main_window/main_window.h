@@ -4,7 +4,7 @@
 #include "features/editor/editor_widget.h"
 #include "features/editor/gutter_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
-#include "features/tab_bar/tab_bar_widget.h"
+#include "features/tabs/tab_bar_widget.h"
 #include "features/titlebar/titlebar_widget.h"
 #include <QMainWindow>
 #include <QSplitter>

@@ -25,10 +25,10 @@ qt_add_executable(neko
     src/features/editor/gutter_widget.h
     src/features/file_explorer/file_explorer_widget.cpp
     src/features/file_explorer/file_explorer_widget.h
-    src/features/tab_bar/tab_bar_widget.cpp
-    src/features/tab_bar/tab_bar_widget.h
-    src/features/tab_bar/tab_widget.cpp
-    src/features/tab_bar/tab_widget.h
+    src/features/tabs/tab_bar_widget.cpp
+    src/features/tabs/tab_bar_widget.h
+    src/features/tabs/tab_widget.cpp
+    src/features/tabs/tab_widget.h
 
     src/utils/editor_utils.cpp
     src/utils/editor_utils.h
