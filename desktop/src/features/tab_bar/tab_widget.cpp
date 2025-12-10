@@ -27,11 +27,11 @@ void TabWidget::paintEvent(QPaintEvent *event) {
 
   // Background
   if (isActive) {
-    painter.setBrush(QColor(20, 20, 20));
+    painter.setBrush(QColor(0, 0, 0));
   } else if (isHovered) {
     painter.setBrush(QColor(10, 10, 10));
   } else {
-    painter.setBrush(QColor(0, 0, 0));
+    painter.setBrush(QColor(20, 20, 20));
   }
   painter.setPen(Qt::NoPen);
   painter.drawRect(rect());
@@ -41,8 +41,10 @@ void TabWidget::paintEvent(QPaintEvent *event) {
   painter.drawLine(width() - 1, 0, width() - 1, height());
 
   // Bottom border
-  painter.setPen(QPen(QColor("#3c3c3c")));
-  painter.drawLine(0, height() - 1, width(), height() - 1);
+  if (!isActive) {
+    painter.setPen(QPen(QColor("#3c3c3c")));
+    painter.drawLine(0, height() - 1, width(), height() - 1);
+  }
 
   // Text
   QRect textRect = rect().adjusted(12, 0, -30, 0);
