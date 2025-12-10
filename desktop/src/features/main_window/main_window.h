@@ -32,6 +32,7 @@ private:
   void switchToActiveTab();
 
   NekoAppState *appState;
+  QWidget *emptyStateWidget;
   FileExplorerWidget *fileExplorerWidget;
   EditorWidget *editorWidget;
   GutterWidget *gutterWidget;

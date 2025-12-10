@@ -11,6 +11,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   NekoEditor *editor = neko_app_state_get_editor(appState);
   FileTree *fileTree = neko_app_state_get_file_tree(appState);
 
+  emptyStateWidget = new QWidget(this);
   titleBarWidget = new TitleBarWidget(this);
   tabBarWidget = new TabBarWidget(this);
   fileExplorerWidget = new FileExplorerWidget(fileTree, this);
@@ -57,12 +58,30 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
   editorSideLayout->addWidget(tabBarWidget);
 
+  // Empty state layout
+  emptyStateWidget->setStyleSheet(
+      "QWidget { background-color: black; }"
+      "QPushButton { background-color: #a589d1; border-radius: 4px; }");
+  QVBoxLayout *emptyLayout = new QVBoxLayout(emptyStateWidget);
+  emptyLayout->setAlignment(Qt::AlignCenter);
+
+  QPushButton *newTabButton = new QPushButton("New Tab", emptyStateWidget);
+  newTabButton->setFixedSize(80, 35);
+  connect(newTabButton, &QPushButton::clicked, this,
+          &MainWindow::onNewTabRequested);
+
+  emptyLayout->addWidget(newTabButton);
+
+  // Editor and gutter
   QWidget *editorContainer = new QWidget(this);
   QHBoxLayout *editorLayout = new QHBoxLayout(editorContainer);
   editorLayout->setContentsMargins(0, 0, 0, 0);
   editorLayout->setSpacing(0);
   editorLayout->addWidget(gutterWidget, 0);
   editorLayout->addWidget(editorWidget, 1);
+  editorLayout->addWidget(emptyStateWidget);
+
+  emptyStateWidget->hide();
 
   editorSideLayout->addWidget(editorContainer);
 
@@ -113,11 +132,19 @@ void MainWindow::onNewTabRequested() {
 void MainWindow::switchToActiveTab() {
   if (neko_app_state_get_tab_count(appState) == 0) {
     // All tabs closed
+    tabBarWidget->hide();
+    editorWidget->hide();
+    gutterWidget->hide();
+    emptyStateWidget->show();
+
     editorWidget->setEditor(nullptr);
     gutterWidget->setEditor(nullptr);
-    editorWidget->updateDimensionsAndRepaint();
-    gutterWidget->updateDimensionsAndRepaint();
   } else {
+    emptyStateWidget->hide();
+    tabBarWidget->show();
+    editorWidget->show();
+    gutterWidget->show();
+
     NekoEditor *editor = neko_app_state_get_editor(appState);
     editorWidget->setEditor(editor);
     gutterWidget->setEditor(editor);
