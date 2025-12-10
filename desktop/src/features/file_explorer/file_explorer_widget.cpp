@@ -435,10 +435,11 @@ void FileExplorerWidget::scrollToNode(int index) {
   const int scrollY = verticalScrollBar()->value();
   const size_t nodeY = (index * lineHeight);
 
-  if (nodeY + lineHeight > viewportHeight + scrollY) {
-    verticalScrollBar()->setValue(nodeY - viewportHeight + lineHeight);
-  } else if (nodeY < scrollY) {
-    verticalScrollBar()->setValue(nodeY);
+  if (nodeY + lineHeight > viewportHeight - VIEWPORT_PADDING + scrollY) {
+    verticalScrollBar()->setValue(nodeY - viewportHeight + VIEWPORT_PADDING +
+                                  lineHeight);
+  } else if (nodeY < scrollY + VIEWPORT_PADDING) {
+    verticalScrollBar()->setValue(nodeY - VIEWPORT_PADDING);
   }
 }
 
