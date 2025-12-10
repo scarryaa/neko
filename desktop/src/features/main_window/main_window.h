@@ -20,7 +20,7 @@ public:
   ~MainWindow();
 
 private slots:
-  void onFileSelected(const std::string);
+  void onFileSelected(const std::string, bool shouldFocusEditor = true);
   void onFileSaved(bool isSaveAs);
 
 private:
@@ -29,7 +29,7 @@ private:
   void onTabCloseRequested(int index);
   void onTabChanged(int index);
   void onNewTabRequested();
-  void switchToActiveTab();
+  void switchToActiveTab(bool shouldFocusEditor = true);
   void onActiveTabCloseRequested();
   void setupKeyboardShortcuts();
   void onBufferChanged();

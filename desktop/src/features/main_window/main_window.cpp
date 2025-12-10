@@ -241,7 +241,7 @@ void MainWindow::onNewTabRequested() {
   switchToActiveTab();
 }
 
-void MainWindow::switchToActiveTab() {
+void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
   if (neko_app_state_get_tab_count(appState) == 0) {
     // All tabs closed
     tabBarContainer->hide();
@@ -262,7 +262,10 @@ void MainWindow::switchToActiveTab() {
     gutterWidget->setEditor(editor);
     editorWidget->updateDimensionsAndRepaint();
     gutterWidget->updateDimensionsAndRepaint();
-    editorWidget->setFocus();
+
+    if (shouldFocusEditor) {
+      editorWidget->setFocus();
+    }
   }
 }
 
@@ -286,15 +289,19 @@ void MainWindow::updateTabBar() {
   neko_app_state_free_tab_titles(titles, count);
 }
 
-void MainWindow::onFileSelected(const std::string filePath) {
+void MainWindow::onFileSelected(const std::string filePath,
+                                bool shouldFocusEditor) {
   neko_app_state_new_tab(appState);
   neko_app_state_open_file(appState, filePath.c_str());
   updateTabBar();
-  switchToActiveTab();
+  switchToActiveTab(false);
 
   editorWidget->updateDimensionsAndRepaint();
-  editorWidget->setFocus();
   gutterWidget->updateDimensionsAndRepaint();
+
+  if (shouldFocusEditor) {
+    editorWidget->setFocus();
+  }
 }
 
 void MainWindow::onFileSaved(bool isSaveAs) {

@@ -178,6 +178,15 @@ void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
 
   auto node = fileNodes[row];
   neko_file_tree_set_current(tree, node.path);
+
+  if (node.is_dir) {
+    neko_file_tree_toggle_expanded(tree, node.path);
+    neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
+    handleViewportUpdate();
+  } else {
+    emit fileSelected(node.path, false);
+  }
+
   viewport()->repaint();
 }
 
@@ -299,7 +308,7 @@ void FileExplorerWidget::handleEnter() {
     } else {
       // Otherwise, open the file in the editor
       if (currentFile != nullptr) {
-        fileSelected(currentPath);
+        emit fileSelected(currentPath);
       }
     }
   } else {

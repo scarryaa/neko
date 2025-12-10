@@ -38,7 +38,7 @@ protected:
 
 signals:
   void directorySelected(const std::string path);
-  void fileSelected(const std::string path);
+  void fileSelected(const std::string path, bool shouldFocusEditor = true);
 
 public slots:
   void directorySelectionRequested();
