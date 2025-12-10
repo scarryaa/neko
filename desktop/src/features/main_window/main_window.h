@@ -37,6 +37,7 @@ private:
   EditorWidget *editorWidget;
   GutterWidget *gutterWidget;
   TitleBarWidget *titleBarWidget;
+  QWidget *tabBarContainer;
   TabBarWidget *tabBarWidget;
 };
 

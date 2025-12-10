@@ -1,4 +1,5 @@
 #include "tab_bar_widget.h"
+#include <objc/objc.h>
 
 TabBarWidget::TabBarWidget(QWidget *parent) : QScrollArea(parent) {
   setFixedHeight(HEIGHT);
@@ -15,7 +16,6 @@ TabBarWidget::TabBarWidget(QWidget *parent) : QScrollArea(parent) {
   layout = new QHBoxLayout(containerWidget);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
-
   setWidget(containerWidget);
 
   currentTabIndex = 0;
@@ -27,7 +27,7 @@ TabBarWidget::~TabBarWidget() {}
 void TabBarWidget::setTabs(QStringList titles) {
   QLayoutItem *item;
   while ((item = layout->takeAt(0)) != nullptr) {
-    if (item->widget()) {
+    if (item->widget() && item->widget() != newTabButton) {
       item->widget()->deleteLater();
     }
     delete item;
@@ -48,7 +48,6 @@ void TabBarWidget::setTabs(QStringList titles) {
   }
 
   layout->addStretch();
-
   updateTabAppearance();
 }
 

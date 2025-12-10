@@ -13,17 +13,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
   emptyStateWidget = new QWidget(this);
   titleBarWidget = new TitleBarWidget(this);
-  tabBarWidget = new TabBarWidget(this);
   fileExplorerWidget = new FileExplorerWidget(fileTree, this);
   editorWidget = new EditorWidget(editor, this);
   gutterWidget = new GutterWidget(editor, this);
-
-  connect(tabBarWidget, &TabBarWidget::tabCloseRequested, this,
-          &MainWindow::onTabCloseRequested);
-  connect(tabBarWidget, &TabBarWidget::currentChanged, this,
-          &MainWindow::onTabChanged);
-  connect(tabBarWidget, &TabBarWidget::newTabRequested, this,
-          &MainWindow::onNewTabRequested);
 
   connect(fileExplorerWidget, &FileExplorerWidget::fileSelected, this,
           &MainWindow::onFileSelected);
@@ -56,7 +48,39 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   editorSideLayout->setContentsMargins(0, 0, 0, 0);
   editorSideLayout->setSpacing(0);
 
-  editorSideLayout->addWidget(tabBarWidget);
+  tabBarContainer = new QWidget(this);
+  QHBoxLayout *tabBarLayout = new QHBoxLayout(tabBarContainer);
+  tabBarLayout->setContentsMargins(0, 0, 0, 0);
+  tabBarLayout->setSpacing(0);
+
+  tabBarWidget = new TabBarWidget(tabBarContainer);
+  tabBarContainer->setFixedHeight(32);
+  QPushButton *newTabButton = new QPushButton("+", tabBarContainer);
+  newTabButton->setFixedSize(32, 32);
+  newTabButton->setStyleSheet("QPushButton {"
+                              "  background: black;"
+                              "  color: #cccccc;"
+                              "  border: none;"
+                              "  border-bottom: 1px solid #3c3c3c;"
+                              "  font-size: 20px;"
+                              "}"
+                              "QPushButton:hover {"
+                              "  background: #2c2c2c;"
+                              "}");
+
+  tabBarLayout->addWidget(tabBarWidget);
+  tabBarLayout->addWidget(newTabButton);
+
+  connect(tabBarWidget, &TabBarWidget::tabCloseRequested, this,
+          &MainWindow::onTabCloseRequested);
+  connect(tabBarWidget, &TabBarWidget::currentChanged, this,
+          &MainWindow::onTabChanged);
+  connect(tabBarWidget, &TabBarWidget::newTabRequested, this,
+          &MainWindow::onNewTabRequested);
+  connect(newTabButton, &QPushButton::clicked, this,
+          &MainWindow::onNewTabRequested);
+
+  editorSideLayout->addWidget(tabBarContainer);
 
   // Empty state layout
   emptyStateWidget->setStyleSheet(
@@ -65,12 +89,13 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   QVBoxLayout *emptyLayout = new QVBoxLayout(emptyStateWidget);
   emptyLayout->setAlignment(Qt::AlignCenter);
 
-  QPushButton *newTabButton = new QPushButton("New Tab", emptyStateWidget);
-  newTabButton->setFixedSize(80, 35);
-  connect(newTabButton, &QPushButton::clicked, this,
+  QPushButton *emptyStateNewTabButton =
+      new QPushButton("New Tab", emptyStateWidget);
+  emptyStateNewTabButton->setFixedSize(80, 35);
+  connect(emptyStateNewTabButton, &QPushButton::clicked, this,
           &MainWindow::onNewTabRequested);
 
-  emptyLayout->addWidget(newTabButton);
+  emptyLayout->addWidget(emptyStateNewTabButton);
 
   // Editor and gutter
   QWidget *editorContainer = new QWidget(this);
@@ -132,7 +157,7 @@ void MainWindow::onNewTabRequested() {
 void MainWindow::switchToActiveTab() {
   if (neko_app_state_get_tab_count(appState) == 0) {
     // All tabs closed
-    tabBarWidget->hide();
+    tabBarContainer->hide();
     editorWidget->hide();
     gutterWidget->hide();
     emptyStateWidget->show();
@@ -141,7 +166,7 @@ void MainWindow::switchToActiveTab() {
     gutterWidget->setEditor(nullptr);
   } else {
     emptyStateWidget->hide();
-    tabBarWidget->show();
+    tabBarContainer->show();
     editorWidget->show();
     gutterWidget->show();
 

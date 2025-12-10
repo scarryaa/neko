@@ -5,6 +5,7 @@
 #include <QHBoxLayout>
 #include <QPaintEvent>
 #include <QPainter>
+#include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QStringList>
@@ -32,6 +33,7 @@ private:
   void updateTabAppearance();
   void updateViewport();
 
+  QPushButton *newTabButton;
   QWidget *containerWidget;
   QHBoxLayout *layout;
   QList<TabWidget *> tabs;
