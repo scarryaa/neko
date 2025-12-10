@@ -29,7 +29,7 @@ private:
   Config config;
   std::string configPath;
 
-  std::string CONFIG_FILE_NAME = "neko_config.json";
+  std::string CONFIG_FILE_NAME = "settings.json";
 };
 
 #endif // CONFIG_MANAGER_H

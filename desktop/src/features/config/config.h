@@ -4,6 +4,7 @@
 #include <QByteArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QString>
 
 class Config {
 public:
@@ -15,6 +16,7 @@ public:
 
   double editorFontSize;
   double fileExplorerFontSize;
+  QString fileExplorerDirectory;
 };
 
 #endif // CONFIG_H

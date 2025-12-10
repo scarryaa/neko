@@ -40,12 +40,11 @@ void ConfigManager::loadConfig() {
 }
 
 void ConfigManager::saveConfig() {
-  QString configDir =
-      QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
-  configPath = configDir.toStdString() + "/" + CONFIG_FILE_NAME;
-
   // Ensure the directory exists
-  QDir dir(configDir);
+  QString qConfigPath =
+      QString::fromStdString(configPath)
+          .mid(0, configPath.length() - CONFIG_FILE_NAME.length());
+  QDir dir(qConfigPath);
   if (!dir.exists()) {
     dir.mkpath(".");
   }

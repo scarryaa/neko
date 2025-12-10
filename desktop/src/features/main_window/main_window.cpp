@@ -134,6 +134,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
   updateTabBar();
 
+  fileExplorerWidget->loadSavedDir();
   editorWidget->setFocus();
 }
 

@@ -27,6 +27,7 @@ public:
   ~FileExplorerWidget();
 
   void initialize(std::string path);
+  void loadSavedDir();
 
 protected:
   void keyPressEvent(QKeyEvent *event) override;
