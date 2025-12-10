@@ -30,6 +30,7 @@ private:
   void onTabChanged(int index);
   void onNewTabRequested();
   void switchToActiveTab();
+  void onActiveTabCloseRequested();
 
   NekoAppState *appState;
   QWidget *emptyStateWidget;

@@ -382,6 +382,27 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     shouldUpdateViewport = true;
     break;
 
+  case Qt::Key_T:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
+      newTabRequested();
+    } else {
+      neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+      shouldUpdateViewport = true;
+      shouldScroll = true;
+      shouldUpdateLineCount = true;
+      cursorChanged = true;
+    }
+  case Qt::Key_W:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
+      closeTabRequested();
+    } else {
+      neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
+      shouldUpdateViewport = true;
+      shouldScroll = true;
+      shouldUpdateLineCount = true;
+      cursorChanged = true;
+    }
+
   case Qt::Key_A:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
       neko_editor_select_all(editor);

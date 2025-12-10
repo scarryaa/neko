@@ -35,6 +35,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
           &GutterWidget::onEditorCursorPositionChanged);
   connect(editorWidget, &EditorWidget::saveRequested, this,
           &MainWindow::onFileSaved);
+  connect(editorWidget, &EditorWidget::newTabRequested, this,
+          &MainWindow::onNewTabRequested);
+  connect(editorWidget, &EditorWidget::closeTabRequested, this,
+          &MainWindow::onActiveTabCloseRequested);
 
   QWidget *mainContainer = new QWidget(this);
   QVBoxLayout *mainLayout = new QVBoxLayout(mainContainer);
@@ -61,6 +65,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
                               "  background: black;"
                               "  color: #cccccc;"
                               "  border: none;"
+                              "  border-left: 1px solid #3c3c3c;"
                               "  border-bottom: 1px solid #3c3c3c;"
                               "  font-size: 20px;"
                               "}"
@@ -133,6 +138,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 MainWindow::~MainWindow() {
   if (appState) {
     neko_app_state_free(appState);
+  }
+}
+
+void MainWindow::onActiveTabCloseRequested() {
+  int activeIndex = neko_app_state_get_active_tab_index(appState);
+
+  if (neko_app_state_close_tab(appState, activeIndex)) {
+    updateTabBar();
+    switchToActiveTab();
   }
 }
 

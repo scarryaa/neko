@@ -29,6 +29,8 @@ signals:
   void lineCountChanged();
   void cursorPositionChanged();
   void saveRequested(bool isSaveAs = false);
+  void newTabRequested();
+  void closeTabRequested();
 
 private:
   struct RowCol {
