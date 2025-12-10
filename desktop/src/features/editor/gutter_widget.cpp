@@ -30,6 +30,9 @@ QSize GutterWidget::sizeHint() const {
 }
 
 double GutterWidget::measureContent() const {
+  if (editor == nullptr)
+    return 0;
+
   size_t lineCount = 0;
   neko_editor_get_line_count(editor, &lineCount);
 
@@ -37,6 +40,9 @@ double GutterWidget::measureContent() const {
 }
 
 void GutterWidget::wheelEvent(QWheelEvent *event) {
+  if (editor == nullptr)
+    return;
+
   auto horizontalScrollOffset = horizontalScrollBar()->value();
   auto verticalScrollOffset = verticalScrollBar()->value();
   double verticalDelta =
@@ -49,6 +55,9 @@ void GutterWidget::wheelEvent(QWheelEvent *event) {
 }
 
 void GutterWidget::handleViewportUpdate() {
+  if (editor == nullptr)
+    return;
+
   size_t line_count;
   neko_editor_get_line_count(editor, &line_count);
 
@@ -78,6 +87,9 @@ void GutterWidget::onEditorFontSizeChanged(qreal newSize) {
 }
 
 void GutterWidget::paintEvent(QPaintEvent *event) {
+  if (editor == nullptr)
+    return;
+
   QPainter painter(viewport());
 
   size_t lineCount;

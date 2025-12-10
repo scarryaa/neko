@@ -55,6 +55,10 @@ impl AppState {
         }
     }
 
+    pub fn get_tab_count(&self) -> usize {
+        self.tabs.len()
+    }
+
     pub fn get_active_editor(&self) -> Option<&Editor> {
         self.tabs.get(self.active_tab_index).map(|t| &t.editor)
     }

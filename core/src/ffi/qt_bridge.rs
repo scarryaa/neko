@@ -157,6 +157,18 @@ pub extern "C" fn neko_app_state_free_tab_titles(titles: *mut *mut c_char, count
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_get_tab_count(app: *mut NekoAppState) -> usize {
+    if app.is_null() {
+        return 0;
+    }
+
+    unsafe {
+        let app = &*app;
+        app.state.get_tab_count()
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn neko_app_state_get_active_tab_index(app: *mut NekoAppState) -> usize {
     if app.is_null() {
         return 0;

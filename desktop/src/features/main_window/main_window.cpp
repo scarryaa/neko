@@ -111,12 +111,20 @@ void MainWindow::onNewTabRequested() {
 }
 
 void MainWindow::switchToActiveTab() {
-  NekoEditor *editor = neko_app_state_get_editor(appState);
-  editorWidget->setEditor(editor);
-  gutterWidget->setEditor(editor);
-  editorWidget->updateDimensionsAndRepaint();
-  gutterWidget->updateDimensionsAndRepaint();
-  editorWidget->setFocus();
+  if (neko_app_state_get_tab_count(appState) == 0) {
+    // All tabs closed
+    editorWidget->setEditor(nullptr);
+    gutterWidget->setEditor(nullptr);
+    editorWidget->updateDimensionsAndRepaint();
+    gutterWidget->updateDimensionsAndRepaint();
+  } else {
+    NekoEditor *editor = neko_app_state_get_editor(appState);
+    editorWidget->setEditor(editor);
+    gutterWidget->setEditor(editor);
+    editorWidget->updateDimensionsAndRepaint();
+    gutterWidget->updateDimensionsAndRepaint();
+    editorWidget->setFocus();
+  }
 }
 
 void MainWindow::updateTabBar() {
