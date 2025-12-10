@@ -1,5 +1,5 @@
-#ifndef TITLEBARWIDGET_H
-#define TITLEBARWIDGET_H
+#ifndef TITLE_BAR_WIDGET_H
+#define TITLE_BAR_WIDGET_H
 
 #include <QHBoxLayout>
 #include <QMouseEvent>

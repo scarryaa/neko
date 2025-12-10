@@ -17,8 +17,8 @@ qt_add_executable(neko
     src/main.cpp
     src/features/main_window/main_window.cpp
     src/features/main_window/main_window.h
-    src/features/titlebar/titlebar_widget.cpp
-    src/features/titlebar/titlebar_widget.h
+    src/features/title_bar/title_bar_widget.cpp
+    src/features/title_bar/title_bar_widget.h
     src/features/editor/editor_widget.cpp
     src/features/editor/editor_widget.h
     src/features/editor/gutter_widget.cpp

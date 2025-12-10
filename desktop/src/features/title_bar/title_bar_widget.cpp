@@ -1,4 +1,4 @@
-#include "titlebar_widget.h"
+#include "title_bar_widget.h"
 
 TitleBarWidget::TitleBarWidget(QWidget *parent) : QWidget(parent) {
   setFixedHeight(TITLEBAR_HEIGHT);
