@@ -332,22 +332,6 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     neko_editor_clear_selection(editor);
     break;
 
-  case Qt::Key_S:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
-      if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
-        emit saveRequested(true);
-      } else {
-        emit saveRequested();
-      }
-    } else {
-      neko_editor_insert_text(editor, event->text().toStdString().c_str(), len);
-      shouldScroll = true;
-      shouldUpdateLineCount = true;
-    }
-    cursorChanged = true;
-    shouldUpdateViewport = true;
-    break;
-
   case Qt::Key_Equal:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
       increaseFontSize();

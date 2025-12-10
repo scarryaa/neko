@@ -35,8 +35,6 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
           fileExplorerWidget, &FileExplorerWidget::directorySelectionRequested);
   connect(editorWidget, &EditorWidget::cursorPositionChanged, gutterWidget,
           &GutterWidget::onEditorCursorPositionChanged);
-  connect(editorWidget, &EditorWidget::saveRequested, this,
-          &MainWindow::onFileSaved);
   connect(editorWidget, &EditorWidget::newTabRequested, this,
           &MainWindow::onNewTabRequested);
   connect(editorWidget, &EditorWidget::closeTabRequested, this,
@@ -146,6 +144,21 @@ MainWindow::~MainWindow() {
 }
 
 void MainWindow::setupKeyboardShortcuts() {
+  // Cmd+S for save
+  QAction *saveAction = new QAction(this);
+  saveAction->setShortcut(QKeySequence::Save);
+  saveAction->setShortcutContext(Qt::WindowShortcut);
+  connect(saveAction, &QAction::triggered, this, &MainWindow::onFileSaved);
+  addAction(saveAction);
+
+  // Cmd+Shift+S for save as
+  QAction *saveAsAction = new QAction(this);
+  saveAsAction->setShortcut(QKeySequence::SaveAs);
+  saveAsAction->setShortcutContext(Qt::WindowShortcut);
+  connect(saveAsAction, &QAction::triggered, this,
+          [this]() { onFileSaved(true); });
+  addAction(saveAsAction);
+
   // Cmd+T for new tab
   QAction *newTabAction = new QAction(this);
   newTabAction->setShortcut(QKeySequence::AddTab);
