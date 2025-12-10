@@ -1,5 +1,5 @@
-#ifndef EDITORWIDGET_H
-#define EDITORWIDGET_H
+#ifndef EDITOR_WIDGET_H
+#define EDITOR_WIDGET_H
 
 #include "utils/editor_utils.h"
 #include <QScrollArea>
@@ -76,4 +76,4 @@ private:
   double VIEWPORT_PADDING = 74.0;
 };
 
-#endif
+#endif // EDITOR_WIDGET_H

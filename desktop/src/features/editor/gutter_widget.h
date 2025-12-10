@@ -1,5 +1,5 @@
-#ifndef GUTTERWIDGET_H
-#define GUTTERWIDGET_H
+#ifndef GUTTER_WIDGET_H
+#define GUTTER_WIDGET_H
 
 #include "utils/editor_utils.h"
 #include <QPainter>
@@ -53,4 +53,4 @@ private:
   QColor LINE_HIGHLIGHT_COLOR = QColor(255, 255, 255, 25);
 };
 
-#endif // GUTTERWIDGET_H
+#endif // GUTTER_WIDGET_H

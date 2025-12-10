@@ -1,5 +1,5 @@
-#ifndef FILEEXPLORERWIDGET_H
-#define FILEEXPLORERWIDGET_H
+#ifndef FILE_EXPLORER_WIDGET_H
+#define FILE_EXPLORER_WIDGET_H
 
 #include <QApplication>
 #include <QFileDialog>
@@ -73,4 +73,4 @@ private:
   QPen SELECTION_PEN = QPen(QColor(66, 181, 212, 175), 1);
 };
 
-#endif
+#endif // FILE_EXPLORER_WIDGET_H

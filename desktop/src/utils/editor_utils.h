@@ -1,5 +1,5 @@
-#ifndef EDITORUTILS_H
-#define EDITORUTILS_H
+#ifndef EDITOR_UTILS_H
+#define EDITOR_UTILS_H
 
 #include <QRectF>
 
@@ -18,4 +18,4 @@ double getLineBottomY(size_t lineIndex, const ViewportContext &ctx);
 QRectF getLineRect(size_t lineIndex, double x1, double x2,
                    const ViewportContext &ctx);
 
-#endif // !EDITORUTILS_H
+#endif // EDITOR_UTILS_H

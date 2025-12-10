@@ -40,4 +40,4 @@ private:
   QColor BORDER_COLOR = QColor("#3c3c3c");
 };
 
-#endif //  TITLEBARWIDGET_H
+#endif // TITLE_BAR_WIDGET_H
