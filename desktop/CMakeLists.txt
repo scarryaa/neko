@@ -29,6 +29,10 @@ qt_add_executable(neko
     src/features/tabs/tab_bar_widget.h
     src/features/tabs/tab_widget.cpp
     src/features/tabs/tab_widget.h
+    src/features/config/config_manager.cpp
+    src/features/config/config_manager.h
+    src/features/config/config.cpp
+    src/features/config/config.h
 
     src/utils/editor_utils.cpp
     src/utils/editor_utils.h

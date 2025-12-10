@@ -1,8 +1,12 @@
 #include "file_explorer_widget.h"
+#include "features/config/config_manager.h"
 #include <neko_core.h>
 
 FileExplorerWidget::FileExplorerWidget(FileTree *tree, QWidget *parent)
-    : QScrollArea(parent), tree(tree), font(new QFont("IBM Plex Sans", 15.0)),
+    : QScrollArea(parent), tree(tree),
+      font(new QFont(
+          "IBM Plex Sans",
+          ConfigManager::getInstance().getConfig().fileExplorerFontSize)),
       fontMetrics(QFontMetricsF(*font)) {
   setFocusPolicy(Qt::StrongFocus);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);

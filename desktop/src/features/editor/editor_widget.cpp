@@ -1,4 +1,5 @@
 #include "editor_widget.h"
+#include "features/config/config_manager.h"
 #include <QApplication>
 #include <QClipboard>
 #include <QKeyEvent>
@@ -12,7 +13,9 @@
 
 EditorWidget::EditorWidget(NekoEditor *editor, QWidget *parent)
     : QScrollArea(parent), editor(editor),
-      font(new QFont("IBM Plex Mono", 15.0)), fontMetrics(*font) {
+      font(new QFont("IBM Plex Mono",
+                     ConfigManager::getInstance().getConfig().editorFontSize)),
+      fontMetrics(*font) {
   setFocusPolicy(Qt::StrongFocus);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);

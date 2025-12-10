@@ -1,9 +1,12 @@
 #include "gutter_widget.h"
+#include "features/config/config_manager.h"
 #include <neko_core.h>
 
 GutterWidget::GutterWidget(NekoEditor *editor, QWidget *parent)
     : QScrollArea(parent), editor(editor),
-      font(new QFont("IBM Plex Mono", 15.0)), fontMetrics(*font) {
+      font(new QFont("IBM Plex Mono",
+                     ConfigManager::getInstance().getConfig().editorFontSize)),
+      fontMetrics(*font) {
   setFocusPolicy(Qt::NoFocus);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
