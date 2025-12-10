@@ -62,6 +62,8 @@ private:
   void expandNode();
   void collapseNode();
 
+  int convertMousePositionToRow(double y);
+
   FileTree *tree;
   size_t fileCount = 0;
   const FileNode *fileNodes = nullptr;

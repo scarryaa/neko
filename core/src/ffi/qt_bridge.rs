@@ -1016,6 +1016,18 @@ pub extern "C" fn neko_file_tree_set_current(tree: *mut FileTree, path: *const c
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn neko_file_tree_clear_current(tree: *mut FileTree) {
+    if tree.is_null() {
+        return;
+    }
+
+    unsafe {
+        let tree = &mut *tree;
+        tree.clear_current();
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn neko_file_tree_get_current(tree: *const FileTree) -> *const c_char {
     if tree.is_null() {
         return ptr::null();

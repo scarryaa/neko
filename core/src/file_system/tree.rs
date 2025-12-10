@@ -302,6 +302,10 @@ impl FileTree {
         self.current = Some(PathBuf::from(path));
     }
 
+    pub fn clear_current(&mut self) {
+        self.current = None;
+    }
+
     pub fn is_selected(&self, path: &str) -> bool {
         self.selected.contains(&PathBuf::from(path))
     }

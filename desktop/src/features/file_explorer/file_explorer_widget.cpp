@@ -165,7 +165,34 @@ void FileExplorerWidget::wheelEvent(QWheelEvent *event) {
   viewport()->repaint();
 }
 
-void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {}
+void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
+  if (tree == nullptr)
+    return;
+
+  int row = convertMousePositionToRow(event->pos().y());
+  if (row > fileCount) {
+    neko_file_tree_clear_current(tree);
+    viewport()->repaint();
+    return;
+  }
+
+  auto node = fileNodes[row];
+  neko_file_tree_set_current(tree, node.path);
+  viewport()->repaint();
+}
+
+int FileExplorerWidget::convertMousePositionToRow(double y) {
+  if (tree == nullptr)
+    return 0;
+
+  const double lineHeight = fontMetrics.height();
+  const int scrollX = horizontalScrollBar()->value();
+  const int scrollY = verticalScrollBar()->value();
+
+  const size_t targetRow = (y + scrollY) / lineHeight;
+
+  return targetRow;
+}
 
 void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   bool shouldScroll = false;

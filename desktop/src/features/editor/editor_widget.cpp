@@ -182,8 +182,7 @@ void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
   }
 }
 
-EditorWidget::RowCol EditorWidget::convertMousePositionToRowCol(double x,
-                                                                double y) {
+RowCol EditorWidget::convertMousePositionToRowCol(double x, double y) {
   if (editor == nullptr)
     return RowCol{0, 0};
 

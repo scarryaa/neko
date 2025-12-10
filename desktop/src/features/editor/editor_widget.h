@@ -2,6 +2,7 @@
 #define EDITOR_WIDGET_H
 
 #include "utils/editor_utils.h"
+#include "utils/row_col.h"
 #include <QScrollArea>
 #include <QScrollBar>
 #include <neko_core.h>
@@ -33,11 +34,6 @@ signals:
   void bufferChanged();
 
 private:
-  struct RowCol {
-    int row;
-    int col;
-  };
-
   double getTextWidth(const QString &text, double horizontalOffset) const;
   RowCol convertMousePositionToRowCol(double x, double y);
 
