@@ -148,8 +148,14 @@ void EditorWidget::handleViewportUpdate() {
   auto contentWidth = measureContent();
   auto viewportWidth = contentWidth - viewport()->width() + VIEWPORT_PADDING;
 
+  bool horizontalScrollBarVisible = horizontalScrollBar()->isVisible();
+  double horizontalScrollBarHeight = horizontalScrollBar()->height();
+  double adjustedVerticalRange =
+      viewportHeight -
+      (horizontalScrollBarVisible ? horizontalScrollBarHeight : 0.0);
+
   horizontalScrollBar()->setRange(0, viewportWidth);
-  verticalScrollBar()->setRange(0, viewportHeight);
+  verticalScrollBar()->setRange(0, adjustedVerticalRange);
 }
 
 void EditorWidget::updateDimensionsAndRepaint() {
