@@ -1,10 +1,12 @@
 #include "tab_widget.h"
 
-TabWidget::TabWidget(const QString &title, int index, QWidget *parent)
-    : QWidget(parent), title(title), index(index), isActive(false) {
+TabWidget::TabWidget(const QString &title, int index,
+                     NekoConfigManager *manager, QWidget *parent)
+    : QWidget(parent), manager(manager), title(title), index(index),
+      isActive(false) {
   setFixedHeight(HEIGHT);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-  setFont(QFont("IBM Plex Sans", 15.0));
+  setFont(UiUtils::loadFont(manager, UiUtils::FontType::Interface));
   setMouseTracking(true);
 
   double titleWidth = measureText(title);

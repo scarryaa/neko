@@ -1,6 +1,8 @@
 #ifndef TAB_WIDGET_H
 #define TAB_WIDGET_H
 
+#include "neko_core.h"
+#include "utils/gui_utils.h"
 #include <QPaintEvent>
 #include <QPainter>
 #include <QWidget>
@@ -10,7 +12,7 @@ class TabWidget : public QWidget {
 
 public:
   explicit TabWidget(const QString &title, int index,
-                     QWidget *parent = nullptr);
+                     NekoConfigManager *manager, QWidget *parent = nullptr);
   void setActive(bool active);
   void setModified(bool modified);
 
@@ -28,6 +30,7 @@ protected:
 private:
   double measureText(QString text);
 
+  NekoConfigManager *manager;
   QString title;
   bool isModified = false;
   int index;

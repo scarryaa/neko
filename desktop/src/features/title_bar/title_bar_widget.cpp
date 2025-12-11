@@ -1,6 +1,7 @@
 #include "title_bar_widget.h"
 
-TitleBarWidget::TitleBarWidget(QWidget *parent) : QWidget(parent) {
+TitleBarWidget::TitleBarWidget(NekoThemeManager *themeManager, QWidget *parent)
+    : QWidget(parent), themeManager(themeManager) {
   setFixedHeight(TITLEBAR_HEIGHT);
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
@@ -67,11 +68,13 @@ void TitleBarWidget::onDirChanged(std::string newDir) {
 
 void TitleBarWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
-  painter.setBrush(COLOR_BLACK);
+
+  painter.setBrush(
+      UiUtils::getThemeColor(themeManager, "interface.background"));
   painter.setPen(Qt::NoPen);
 
   painter.drawRect(QRectF(QPointF(0, 0), QPointF(width(), TITLEBAR_HEIGHT)));
 
-  painter.setPen(QPen(BORDER_COLOR));
+  painter.setPen(UiUtils::getThemeColor(themeManager, "interface.border"));
   painter.drawLine(QPointF(0, height() - 1), QPointF(width(), height() - 1));
 }

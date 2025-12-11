@@ -16,7 +16,8 @@ QString getThemeColor(NekoThemeManager *manager, const char *key,
                       const char *fallback = "#000000");
 QFont loadFont(NekoConfigManager *manager, FontType type);
 QString getScrollBarStylesheet(const QString &widgetName,
-                               const QString &bgColor);
+                               const QString &bgColor,
+                               const QString &additions = nullptr);
 } // namespace UiUtils
 
 #endif // UI_UTILS_H

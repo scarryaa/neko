@@ -1,7 +1,4 @@
 #include "main_window.h"
-#include "utils/mac_utils.h"
-#include "utils/scroll_offset.h"
-#include <neko_core.h>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   setupMacOSTitleBar(this);
@@ -15,7 +12,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   FileTree *fileTree = neko_app_state_get_file_tree(appState);
 
   emptyStateWidget = new QWidget(this);
-  titleBarWidget = new TitleBarWidget(this);
+  titleBarWidget = new TitleBarWidget(themeManager, this);
   fileExplorerWidget =
       new FileExplorerWidget(fileTree, configManager, themeManager, this);
   editorWidget = new EditorWidget(editor, configManager, themeManager, this);
@@ -63,7 +60,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   tabBarLayout->setContentsMargins(0, 0, 0, 0);
   tabBarLayout->setSpacing(0);
 
-  tabBarWidget = new TabBarWidget(tabBarContainer);
+  tabBarWidget = new TabBarWidget(configManager, themeManager, tabBarContainer);
   tabBarContainer->setFixedHeight(32);
   QPushButton *newTabButton = new QPushButton("+", tabBarContainer);
   newTabButton->setFixedSize(32, 32);

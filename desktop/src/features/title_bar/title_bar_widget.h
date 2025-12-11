@@ -1,6 +1,8 @@
 #ifndef TITLE_BAR_WIDGET_H
 #define TITLE_BAR_WIDGET_H
 
+#include "neko_core.h"
+#include "utils/gui_utils.h"
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QPainter>
@@ -14,7 +16,8 @@ class TitleBarWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit TitleBarWidget(QWidget *parent = nullptr);
+  explicit TitleBarWidget(NekoThemeManager *themeManager,
+                          QWidget *parent = nullptr);
   ~TitleBarWidget();
 
 public slots:
@@ -34,10 +37,9 @@ private:
   QPushButton *m_directorySelectionButton;
   QPoint m_clickPos;
   QString m_currentDir;
+  NekoThemeManager *themeManager;
 
   double TITLEBAR_HEIGHT = 32.0;
-  QColor COLOR_BLACK = QColor(0, 0, 0);
-  QColor BORDER_COLOR = QColor("#3c3c3c");
 };
 
 #endif // TITLE_BAR_WIDGET_H

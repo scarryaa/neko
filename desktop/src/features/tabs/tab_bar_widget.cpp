@@ -1,7 +1,8 @@
 #include "tab_bar_widget.h"
-#include <objc/objc.h>
 
-TabBarWidget::TabBarWidget(QWidget *parent) : QScrollArea(parent) {
+TabBarWidget::TabBarWidget(NekoConfigManager *manager,
+                           NekoThemeManager *themeManager, QWidget *parent)
+    : QScrollArea(parent), manager(manager), themeManager(themeManager) {
   setFixedHeight(HEIGHT);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -9,8 +10,11 @@ TabBarWidget::TabBarWidget(QWidget *parent) : QScrollArea(parent) {
   setWidgetResizable(true);
   setAutoFillBackground(false);
   setFrameShape(QFrame::NoFrame);
-  viewport()->setStyleSheet(
-      "QWidget { background: black; border-bottom: 1px solid #3c3c3c; }");
+
+  viewport()->setStyleSheet(UiUtils::getScrollBarStylesheet(
+      "QWidget", "black",
+      QString("border-bottom: 1px solid %1")
+          .arg(UiUtils::getThemeColor(themeManager, "interface.border"))));
 
   containerWidget = new QWidget(this);
   layout = new QHBoxLayout(containerWidget);
@@ -40,7 +44,7 @@ void TabBarWidget::setTabs(QStringList titles, bool *modifiedStates) {
 
   // Create new tabs
   for (int i = 0; i < titles.size(); i++) {
-    auto *tabWidget = new TabWidget(titles[i], i, this);
+    auto *tabWidget = new TabWidget(titles[i], i, manager, this);
     tabWidget->setModified(modifiedStates[i]);
 
     connect(tabWidget, &TabWidget::clicked, this, [this, i]() {

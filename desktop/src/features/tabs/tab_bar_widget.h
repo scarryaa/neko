@@ -2,6 +2,7 @@
 #define TAB_BAR_WIDGET_H
 
 #include "features/tabs/tab_widget.h"
+#include "utils/gui_utils.h"
 #include <QHBoxLayout>
 #include <QPaintEvent>
 #include <QPainter>
@@ -9,6 +10,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QStringList>
+#include <neko_core.h>
 
 class TabBarWidget : public QScrollArea {
   Q_OBJECT
@@ -16,9 +18,10 @@ class TabBarWidget : public QScrollArea {
 public:
   static constexpr int HEIGHT = 32;
   static constexpr QColor COLOR_BLACK = QColor(0, 0, 0);
-  QColor BORDER_COLOR = QColor("#3c3c3c");
 
-  explicit TabBarWidget(QWidget *parent = nullptr);
+  explicit TabBarWidget(NekoConfigManager *manager,
+                        NekoThemeManager *themeManager,
+                        QWidget *parent = nullptr);
   ~TabBarWidget();
 
   void setTabs(QStringList titles, bool *modifiedStates);
@@ -34,6 +37,8 @@ private:
   void updateTabAppearance();
   void updateViewport();
 
+  NekoConfigManager *manager;
+  NekoThemeManager *themeManager;
   QPushButton *newTabButton;
   QWidget *containerWidget;
   QHBoxLayout *layout;

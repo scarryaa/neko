@@ -21,6 +21,8 @@ impl Default for Theme {
         );
         colors.insert("editor.foreground".to_string(), "#d4d4d4".to_string());
         colors.insert("sidebar.background".to_string(), "#000000".to_string());
+        colors.insert("interface.background".to_string(), "#000000".to_string());
+        colors.insert("interface.border".to_string(), "#3c3c3c".to_string());
 
         Self {
             name: "Default Dark".to_string(),

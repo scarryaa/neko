@@ -6,6 +6,7 @@
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/tabs/tab_bar_widget.h"
 #include "features/title_bar/title_bar_widget.h"
+#include "utils/mac_utils.h"
 #include "utils/scroll_offset.h"
 #include <QMainWindow>
 #include <QSplitter>

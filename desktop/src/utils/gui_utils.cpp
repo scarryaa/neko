@@ -76,26 +76,30 @@ QFont UiUtils::loadFont(NekoConfigManager *manager, FontType type) {
 }
 
 QString UiUtils::getScrollBarStylesheet(const QString &widgetName,
-                                        const QString &bgColor) {
-  return QString("QAbstractScrollArea::corner { background: transparent; }"
-                 "QScrollBar:vertical { background: transparent; width: 12px; "
-                 "margin: 0px; }"
-                 "QScrollBar::handle:vertical { background: #555555; "
-                 "min-height: 20px; }"
-                 "QScrollBar::handle:vertical:hover { background: #666666; }"
-                 "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical "
-                 "{ height: 0px; }"
-                 "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical "
-                 "{ background: none; }"
-                 "QScrollBar:horizontal { background: transparent; height: "
-                 "12px; margin: 0px; }"
-                 "QScrollBar::handle:horizontal { background: #555555; "
-                 "min-width: 20px; }"
-                 "QScrollBar::handle:horizontal:hover { background: #666666; }"
-                 "QScrollBar::add-line:horizontal, "
-                 "QScrollBar::sub-line:horizontal { width: 0px; }"
-                 "QScrollBar::add-page:horizontal, "
-                 "QScrollBar::sub-page:horizontal { background: none; }"
-                 "%1 { background: %2; }")
-      .arg(widgetName, bgColor);
+                                        const QString &bgColor,
+                                        const QString &additions) {
+  QString stylesheet =
+      QString("QAbstractScrollArea::corner { background: transparent; }"
+              "QScrollBar:vertical { background: transparent; width: 12px; "
+              "margin: 0px; }"
+              "QScrollBar::handle:vertical { background: #555555; "
+              "min-height: 20px; }"
+              "QScrollBar::handle:vertical:hover { background: #666666; }"
+              "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical "
+              "{ height: 0px; }"
+              "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical "
+              "{ background: none; }"
+              "QScrollBar:horizontal { background: transparent; height: "
+              "12px; margin: 0px; }"
+              "QScrollBar::handle:horizontal { background: #555555; "
+              "min-width: 20px; }"
+              "QScrollBar::handle:horizontal:hover { background: #666666; }"
+              "QScrollBar::add-line:horizontal, "
+              "QScrollBar::sub-line:horizontal { width: 0px; }"
+              "QScrollBar::add-page:horizontal, "
+              "QScrollBar::sub-page:horizontal { background: none; }"
+              "%1 { background: %2; %3; }")
+          .arg(widgetName, bgColor, additions);
+
+  return stylesheet;
 }
