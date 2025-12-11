@@ -61,9 +61,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   tabBarLayout->setSpacing(0);
 
   tabBarWidget = new TabBarWidget(configManager, themeManager, tabBarContainer);
-  tabBarContainer->setFixedHeight(32);
   QPushButton *newTabButton = new QPushButton("+", tabBarContainer);
-  newTabButton->setFixedSize(32, 32);
+
+  QFont uiFont = UiUtils::loadFont(configManager, UiUtils::FontType::Interface);
+
+  // Height = Font Height + Top Padding (8) + Bottom Padding (8)
+  QFontMetrics fm(uiFont);
+  int dynamicHeight = fm.height() + 16;
+
+  newTabButton->setFixedSize(dynamicHeight, dynamicHeight);
   newTabButton->setStyleSheet("QPushButton {"
                               "  background: black;"
                               "  color: #cccccc;"

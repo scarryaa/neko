@@ -1,14 +1,4 @@
 #include "editor_widget.h"
-#include <QApplication>
-#include <QClipboard>
-#include <QKeyEvent>
-#include <QLabel>
-#include <QPainter>
-#include <QVBoxLayout>
-#include <QtDebug>
-#include <algorithm>
-#include <cstddef>
-#include <neko_core.h>
 
 EditorWidget::EditorWidget(NekoEditor *editor, NekoConfigManager *configManager,
                            NekoThemeManager *themeManager, QWidget *parent)

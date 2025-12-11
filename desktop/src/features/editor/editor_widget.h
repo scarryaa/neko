@@ -4,9 +4,16 @@
 #include "utils/editor_utils.h"
 #include "utils/gui_utils.h"
 #include "utils/row_col.h"
+#include <QApplication>
+#include <QClipboard>
 #include <QFontDatabase>
+#include <QKeyEvent>
+#include <QLabel>
+#include <QPainter>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QVBoxLayout>
+#include <QtDebug>
 #include <neko_core.h>
 
 class EditorWidget : public QScrollArea {

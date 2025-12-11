@@ -1,9 +1,17 @@
 #include "tab_bar_widget.h"
 
-TabBarWidget::TabBarWidget(NekoConfigManager *manager,
+TabBarWidget::TabBarWidget(NekoConfigManager *configManager,
                            NekoThemeManager *themeManager, QWidget *parent)
-    : QScrollArea(parent), manager(manager), themeManager(themeManager) {
-  setFixedHeight(HEIGHT);
+    : QScrollArea(parent), configManager(configManager),
+      themeManager(themeManager) {
+  QFont uiFont = UiUtils::loadFont(configManager, UiUtils::FontType::Interface);
+  setFont(uiFont);
+
+  // Height = Font Height + Top Padding (8) + Bottom Padding (8)
+  QFontMetrics fm(uiFont);
+  int dynamicHeight = fm.height() + 16;
+  setFixedHeight(dynamicHeight);
+
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -44,7 +52,7 @@ void TabBarWidget::setTabs(QStringList titles, bool *modifiedStates) {
 
   // Create new tabs
   for (int i = 0; i < titles.size(); i++) {
-    auto *tabWidget = new TabWidget(titles[i], i, manager, this);
+    auto *tabWidget = new TabWidget(titles[i], i, configManager, this);
     tabWidget->setModified(modifiedStates[i]);
 
     connect(tabWidget, &TabWidget::clicked, this, [this, i]() {

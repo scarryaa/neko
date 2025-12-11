@@ -12,7 +12,8 @@ class TabWidget : public QWidget {
 
 public:
   explicit TabWidget(const QString &title, int index,
-                     NekoConfigManager *manager, QWidget *parent = nullptr);
+                     NekoConfigManager *configManager,
+                     QWidget *parent = nullptr);
   void setActive(bool active);
   void setModified(bool modified);
 
@@ -30,7 +31,7 @@ protected:
 private:
   double measureText(QString text);
 
-  NekoConfigManager *manager;
+  NekoConfigManager *configManager;
   QString title;
   bool isModified = false;
   int index;

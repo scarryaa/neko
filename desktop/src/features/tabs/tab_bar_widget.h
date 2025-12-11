@@ -16,9 +16,6 @@ class TabBarWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  static constexpr int HEIGHT = 32;
-  static constexpr QColor COLOR_BLACK = QColor(0, 0, 0);
-
   explicit TabBarWidget(NekoConfigManager *manager,
                         NekoThemeManager *themeManager,
                         QWidget *parent = nullptr);
@@ -37,7 +34,7 @@ private:
   void updateTabAppearance();
   void updateViewport();
 
-  NekoConfigManager *manager;
+  NekoConfigManager *configManager;
   NekoThemeManager *themeManager;
   QPushButton *newTabButton;
   QWidget *containerWidget;

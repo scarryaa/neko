@@ -1,12 +1,18 @@
 #include "tab_widget.h"
 
 TabWidget::TabWidget(const QString &title, int index,
-                     NekoConfigManager *manager, QWidget *parent)
-    : QWidget(parent), manager(manager), title(title), index(index),
+                     NekoConfigManager *configManager, QWidget *parent)
+    : QWidget(parent), configManager(configManager), title(title), index(index),
       isActive(false) {
-  setFixedHeight(HEIGHT);
+  QFont uiFont = UiUtils::loadFont(configManager, UiUtils::FontType::Interface);
+  setFont(uiFont);
+
+  // Height = Font Height + Top Padding (8) + Bottom Padding (8)
+  QFontMetrics fm(uiFont);
+  int dynamicHeight = fm.height() + 16;
+  setFixedHeight(dynamicHeight);
+
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
-  setFont(UiUtils::loadFont(manager, UiUtils::FontType::Interface));
   setMouseTracking(true);
 
   double titleWidth = measureText(title);
