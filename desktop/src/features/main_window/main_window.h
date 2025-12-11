@@ -6,6 +6,7 @@
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/tabs/tab_bar_widget.h"
 #include "features/title_bar/title_bar_widget.h"
+#include "utils/scroll_offset.h"
 #include <QMainWindow>
 #include <QSplitter>
 #include <QVBoxLayout>
@@ -44,6 +45,7 @@ private:
   TitleBarWidget *titleBarWidget;
   QWidget *tabBarContainer;
   TabBarWidget *tabBarWidget;
+  std::unordered_map<int, ScrollOffset> tabScrollOffsets;
 };
 
 #endif // MAIN_WINDOW_H

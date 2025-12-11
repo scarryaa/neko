@@ -37,6 +37,7 @@ qt_add_executable(neko
     src/utils/editor_utils.cpp
     src/utils/editor_utils.h
     src/utils/row_col.h
+    src/utils/scroll_offset.h
 
     ${PLATFORM_SRCS}
 )

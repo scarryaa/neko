@@ -1,5 +1,6 @@
 #include "main_window.h"
 #include "utils/mac_utils.h"
+#include "utils/scroll_offset.h"
 #include <neko_core.h>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
@@ -216,26 +217,75 @@ void MainWindow::onBufferChanged() {
 void MainWindow::onActiveTabCloseRequested() {
   int activeIndex = neko_app_state_get_active_tab_index(appState);
 
+  // Save current scroll offset before closing
+  tabScrollOffsets[activeIndex] =
+      ScrollOffset{editorWidget->horizontalScrollBar()->value(),
+                   editorWidget->verticalScrollBar()->value()};
+
   if (neko_app_state_close_tab(appState, activeIndex)) {
+    // Remove scroll offset for closed tab
+    tabScrollOffsets.erase(activeIndex);
+
+    // Shift down indices for tabs after the closed one
+    std::unordered_map<int, ScrollOffset> updatedOffsets;
+    for (const auto &[tabIndex, offset] : tabScrollOffsets) {
+      if (tabIndex > activeIndex) {
+        updatedOffsets[tabIndex - 1] = offset;
+      } else {
+        updatedOffsets[tabIndex] = offset;
+      }
+    }
+    tabScrollOffsets = std::move(updatedOffsets);
+
     updateTabBar();
     switchToActiveTab();
   }
 }
 
 void MainWindow::onTabCloseRequested(int index) {
+  // Save current active tab's scroll offset before closing another tab
+  int activeIndex = neko_app_state_get_active_tab_index(appState);
+  tabScrollOffsets[activeIndex] =
+      ScrollOffset{editorWidget->horizontalScrollBar()->value(),
+                   editorWidget->verticalScrollBar()->value()};
+
   if (neko_app_state_close_tab(appState, index)) {
+    // Remove scroll offset for closed tab
+    tabScrollOffsets.erase(index);
+
+    // Shift down indices for tabs after the closed one
+    std::unordered_map<int, ScrollOffset> updatedOffsets;
+    for (const auto &[tabIndex, offset] : tabScrollOffsets) {
+      if (tabIndex > index) {
+        updatedOffsets[tabIndex - 1] = offset;
+      } else {
+        updatedOffsets[tabIndex] = offset;
+      }
+    }
+    tabScrollOffsets = std::move(updatedOffsets);
+
     updateTabBar();
     switchToActiveTab();
   }
 }
 
 void MainWindow::onTabChanged(int index) {
+  int currentIndex = neko_app_state_get_active_tab_index(appState);
+  tabScrollOffsets[currentIndex] =
+      ScrollOffset{editorWidget->horizontalScrollBar()->value(),
+                   editorWidget->verticalScrollBar()->value()};
+
   neko_app_state_set_active_tab(appState, index);
   switchToActiveTab();
   updateTabBar();
 }
 
 void MainWindow::onNewTabRequested() {
+  int currentIndex = neko_app_state_get_active_tab_index(appState);
+  tabScrollOffsets[currentIndex] =
+      ScrollOffset{editorWidget->horizontalScrollBar()->value(),
+                   editorWidget->verticalScrollBar()->value()};
+
   neko_app_state_new_tab(appState);
   updateTabBar();
   switchToActiveTab();
@@ -262,6 +312,16 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
     gutterWidget->setEditor(editor);
     editorWidget->updateDimensionsAndRepaint();
     gutterWidget->updateDimensionsAndRepaint();
+
+    int currentIndex = neko_app_state_get_active_tab_index(appState);
+    auto it = tabScrollOffsets.find(currentIndex);
+    if (it != tabScrollOffsets.end()) {
+      editorWidget->horizontalScrollBar()->setValue(it->second.x);
+      editorWidget->verticalScrollBar()->setValue(it->second.y);
+    } else {
+      editorWidget->horizontalScrollBar()->setValue(0);
+      editorWidget->verticalScrollBar()->setValue(0);
+    }
 
     if (shouldFocusEditor) {
       editorWidget->setFocus();
@@ -293,12 +353,17 @@ void MainWindow::onFileSelected(const std::string &filePath,
                                 bool shouldFocusEditor) {
   // Check if file is already open
   if (neko_app_state_is_file_open(appState, filePath.c_str())) {
+    // Save current scroll offset before switching
+    int currentIndex = neko_app_state_get_active_tab_index(appState);
+    tabScrollOffsets[currentIndex] =
+        ScrollOffset{editorWidget->horizontalScrollBar()->value(),
+                     editorWidget->verticalScrollBar()->value()};
+
     // Switch to existing tab instead
     switchToTabWithFile(filePath);
     if (shouldFocusEditor) {
       editorWidget->setFocus();
     }
-
     return;
   }
 
@@ -307,6 +372,12 @@ void MainWindow::onFileSelected(const std::string &filePath,
       !std::filesystem::is_regular_file(filePath)) {
     return;
   }
+
+  // Save current scroll offset
+  int currentIndex = neko_app_state_get_active_tab_index(appState);
+  tabScrollOffsets[currentIndex] =
+      ScrollOffset{editorWidget->horizontalScrollBar()->value(),
+                   editorWidget->verticalScrollBar()->value()};
 
   neko_app_state_new_tab(appState);
 
@@ -321,6 +392,21 @@ void MainWindow::onFileSelected(const std::string &filePath,
   } else {
     int newTabIndex = neko_app_state_get_active_tab_index(appState);
     neko_app_state_close_tab(appState, newTabIndex);
+
+    // Clean up scroll offset for the failed tab
+    tabScrollOffsets.erase(newTabIndex);
+
+    // Shift down indices for tabs after the closed one
+    std::unordered_map<int, ScrollOffset> updatedOffsets;
+    for (const auto &[tabIndex, offset] : tabScrollOffsets) {
+      if (tabIndex > newTabIndex) {
+        updatedOffsets[tabIndex - 1] = offset;
+      } else {
+        updatedOffsets[tabIndex] = offset;
+      }
+    }
+    tabScrollOffsets = std::move(updatedOffsets);
+
     updateTabBar();
   }
 }
@@ -329,6 +415,12 @@ void MainWindow::switchToTabWithFile(const std::string &path) {
   int index = neko_app_state_get_tab_index_by_path(appState, path.c_str());
 
   if (index != -1) {
+    // Save current scroll offset
+    int currentIndex = neko_app_state_get_active_tab_index(appState);
+    tabScrollOffsets[currentIndex] =
+        ScrollOffset{editorWidget->horizontalScrollBar()->value(),
+                     editorWidget->verticalScrollBar()->value()};
+
     neko_app_state_set_active_tab(appState, index);
     switchToActiveTab();
     updateTabBar();
