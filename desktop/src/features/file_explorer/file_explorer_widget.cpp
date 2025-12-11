@@ -460,10 +460,16 @@ void FileExplorerWidget::drawFiles(QPainter *painter, size_t count,
   double lineHeight = fontMetrics.height();
   double verticalOffset = verticalScrollBar()->value();
   double horizontalOffset = horizontalScrollBar()->value();
+  double viewportHeight = viewport()->height();
 
-  for (size_t i = 0; i < count; i++) {
+  int startRow = std::floor(verticalOffset / lineHeight);
+  int endRow = std::ceil((verticalOffset + viewportHeight) / lineHeight);
+
+  startRow = std::max(0, startRow);
+  endRow = std::min((int)count, endRow);
+
+  for (int i = startRow; i < endRow; i++) {
     double y = (i * lineHeight) - verticalOffset;
-
     drawFile(painter, -horizontalOffset, y, &nodes[i]);
   }
 }
