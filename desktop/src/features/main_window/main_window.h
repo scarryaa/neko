@@ -37,6 +37,7 @@ private:
   void setupKeyboardShortcuts();
   void onBufferChanged();
   void switchToTabWithFile(const std::string &path);
+  void saveCurrentScrollState();
 
   NekoAppState *appState;
   NekoConfigManager *configManager;
