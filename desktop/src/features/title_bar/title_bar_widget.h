@@ -16,7 +16,8 @@ class TitleBarWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit TitleBarWidget(NekoThemeManager *themeManager,
+  explicit TitleBarWidget(NekoConfigManager *configManager,
+                          NekoThemeManager *themeManager,
                           QWidget *parent = nullptr);
   ~TitleBarWidget();
 
@@ -34,12 +35,12 @@ protected:
 private:
   void onDirectorySelectionButtonPressed();
 
+  NekoThemeManager *themeManager;
+  NekoConfigManager *configManager;
+  double m_height;
   QPushButton *m_directorySelectionButton;
   QPoint m_clickPos;
   QString m_currentDir;
-  NekoThemeManager *themeManager;
-
-  double TITLEBAR_HEIGHT = 32.0;
 };
 
 #endif // TITLE_BAR_WIDGET_H

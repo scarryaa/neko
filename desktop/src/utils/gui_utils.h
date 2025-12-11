@@ -18,6 +18,7 @@ QFont loadFont(NekoConfigManager *manager, FontType type);
 QString getScrollBarStylesheet(const QString &widgetName,
                                const QString &bgColor,
                                const QString &additions = nullptr);
+double getTitleBarContentMargin();
 } // namespace UiUtils
 
 #endif // UI_UTILS_H

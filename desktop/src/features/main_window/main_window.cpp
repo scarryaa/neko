@@ -12,7 +12,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   FileTree *fileTree = neko_app_state_get_file_tree(appState);
 
   emptyStateWidget = new QWidget(this);
-  titleBarWidget = new TitleBarWidget(themeManager, this);
+  titleBarWidget = new TitleBarWidget(configManager, themeManager, this);
   fileExplorerWidget =
       new FileExplorerWidget(fileTree, configManager, themeManager, this);
   editorWidget = new EditorWidget(editor, configManager, themeManager, this);

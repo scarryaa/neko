@@ -103,3 +103,11 @@ QString UiUtils::getScrollBarStylesheet(const QString &widgetName,
 
   return stylesheet;
 }
+
+double UiUtils::getTitleBarContentMargin() {
+#if defined(Q_OS_MACOS)
+  return 84; // Spacing for traffic lights
+#else
+  return 10;
+#endif
+}

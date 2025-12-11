@@ -1,38 +1,47 @@
 #include "title_bar_widget.h"
 
-TitleBarWidget::TitleBarWidget(NekoThemeManager *themeManager, QWidget *parent)
-    : QWidget(parent), themeManager(themeManager) {
-  setFixedHeight(TITLEBAR_HEIGHT);
+TitleBarWidget::TitleBarWidget(NekoConfigManager *configManager,
+                               NekoThemeManager *themeManager, QWidget *parent)
+    : QWidget(parent), configManager(configManager),
+      themeManager(themeManager) {
+  QFont uiFont = UiUtils::loadFont(configManager, UiUtils::FontType::Interface);
+  setFont(uiFont);
+
+  // Height = Font Height + Top Padding (8) + Bottom Padding (8)
+  QFontMetrics fm(uiFont);
+  int dynamicHeight = fm.height() + 16;
+  m_height = dynamicHeight;
+  setFixedHeight(m_height);
+
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
+  QString btnText = UiUtils::getThemeColor(
+      themeManager, "titlebar.button.foreground", "#a0a0a0");
+  QString btnHover =
+      UiUtils::getThemeColor(themeManager, "titlebar.button.hover", "#131313");
+  QString btnPress = UiUtils::getThemeColor(
+      themeManager, "titlebar.button.pressed", "#222222");
+
   m_directorySelectionButton = new QPushButton("Select a directory");
-  m_directorySelectionButton->setStyleSheet("QPushButton {"
-                                            "  background-color: transparent;"
-                                            "  color: #a0a0a0;"
-                                            "  border-radius: 6px;"
-                                            "  padding: 4px 8px;"
-                                            "  font-size: 13px;"
-                                            "}"
-                                            "QPushButton:hover {"
-                                            "  background-color: #131313;"
-                                            "}"
-                                            "QPushButton:pressed {"
-                                            "  background-color: #222222;"
-                                            "}");
+  m_directorySelectionButton->setStyleSheet(
+      QString("QPushButton {"
+              "  background-color: transparent;"
+              "  color: %1;"
+              "  border-radius: 6px;"
+              "  padding: 4px 8px;"
+              "}"
+              "QPushButton:hover { background-color: %2; }"
+              "QPushButton:pressed { background-color: %3; }")
+          .arg(btnText, btnHover, btnPress));
 
   connect(m_directorySelectionButton, &QPushButton::clicked, this,
           &TitleBarWidget::onDirectorySelectionButtonPressed);
 
   QHBoxLayout *layout = new QHBoxLayout(this);
 
-  int leftMargin = 10;
-  int rightMargin = 10;
+  int leftMargin = UiUtils::getTitleBarContentMargin();
 
-#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
-  leftMargin = 84;
-#endif
-
-  layout->setContentsMargins(leftMargin, 5, rightMargin, 5);
+  layout->setContentsMargins(leftMargin, 5, 10, 5);
   layout->addWidget(m_directorySelectionButton);
   layout->addStretch();
 }
@@ -73,7 +82,7 @@ void TitleBarWidget::paintEvent(QPaintEvent *event) {
       UiUtils::getThemeColor(themeManager, "interface.background"));
   painter.setPen(Qt::NoPen);
 
-  painter.drawRect(QRectF(QPointF(0, 0), QPointF(width(), TITLEBAR_HEIGHT)));
+  painter.drawRect(QRectF(QPointF(0, 0), QPointF(width(), height())));
 
   painter.setPen(UiUtils::getThemeColor(themeManager, "interface.border"));
   painter.drawLine(QPointF(0, height() - 1), QPointF(width(), height() - 1));
