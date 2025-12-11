@@ -1,9 +1,9 @@
 #include "gutter_widget.h"
 
 GutterWidget::GutterWidget(NekoEditor *editor, NekoConfigManager *configManager,
-                           QWidget *parent)
+                           NekoThemeManager *themeManager, QWidget *parent)
     : QScrollArea(parent), editor(editor), configManager(configManager),
-      font(QFont()), fontMetrics(font) {
+      themeManager(themeManager), font(QFont()), fontMetrics(font) {
   char *familyRaw = neko_config_get_editor_font_family(configManager);
   QString family =
       familyRaw ? QString::fromUtf8(familyRaw)

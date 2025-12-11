@@ -24,6 +24,7 @@ class FileExplorerWidget : public QScrollArea {
 
 public:
   explicit FileExplorerWidget(FileTree *tree, NekoConfigManager *configManager,
+                              NekoThemeManager *themeManager,
                               QWidget *parent = nullptr);
   ~FileExplorerWidget();
 
@@ -67,6 +68,7 @@ private:
   int convertMousePositionToRow(double y);
 
   NekoConfigManager *configManager;
+  NekoThemeManager *themeManager;
   FileTree *tree;
   size_t fileCount = 0;
   const FileNode *fileNodes = nullptr;

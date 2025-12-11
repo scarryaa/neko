@@ -11,9 +11,9 @@
 #include <neko_core.h>
 
 EditorWidget::EditorWidget(NekoEditor *editor, NekoConfigManager *configManager,
-                           QWidget *parent)
+                           NekoThemeManager *themeManager, QWidget *parent)
     : QScrollArea(parent), editor(editor), configManager(configManager),
-      font(QFont()), fontMetrics(font) {
+      themeManager(themeManager), font(QFont()), fontMetrics(font) {
   char *familyRaw = neko_config_get_editor_font_family(configManager);
   QString family =
       familyRaw ? QString::fromUtf8(familyRaw)
@@ -36,49 +36,52 @@ EditorWidget::EditorWidget(NekoEditor *editor, NekoConfigManager *configManager,
   setFrameShape(QFrame::NoFrame);
   setAutoFillBackground(false);
 
+  char *bgHex = neko_theme_get_color(themeManager, "editor.background");
   setStyleSheet(
-      "QAbstractScrollArea::corner {"
-      "  background: transparent;"
-      "}"
-      "QScrollBar:vertical {"
-      "  background: transparent;"
-      "  width: 12px;"
-      "  margin: 0px;"
-      "}"
-      "QScrollBar::handle:vertical {"
-      "  background: #555555;"
-      "  min-height: 20px;"
-      "}"
-      "QScrollBar::handle:vertical:hover {"
-      "  background: #666666;"
-      "}"
-      "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {"
-      "  height: 0px;"
-      "}"
-      "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {"
-      "  background: none;"
-      "}"
-      "QScrollBar:horizontal {"
-      "  background: transparent;"
-      "  height: 12px;"
-      "  margin: 0px;"
-      "}"
-      "QScrollBar::handle:horizontal {"
-      "  background: #555555;"
-      "  min-width: 20px;"
-      "}"
-      "QScrollBar::handle:horizontal:hover {"
-      "  background: #666666;"
-      "}"
-      "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {"
-      "  width: 0px;"
-      "}"
-      "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
-      "  background: none;"
-      "}"
-      "EditorWidget {"
-      "  background: black;"
-      "}");
+      QString(
+          "QAbstractScrollArea::corner {"
+          "  background: transparent;"
+          "}"
+          "QScrollBar:vertical {"
+          "  background: transparent;"
+          "  width: 12px;"
+          "  margin: 0px;"
+          "}"
+          "QScrollBar::handle:vertical {"
+          "  background: #555555;"
+          "  min-height: 20px;"
+          "}"
+          "QScrollBar::handle:vertical:hover {"
+          "  background: #666666;"
+          "}"
+          "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {"
+          "  height: 0px;"
+          "}"
+          "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {"
+          "  background: none;"
+          "}"
+          "QScrollBar:horizontal {"
+          "  background: transparent;"
+          "  height: 12px;"
+          "  margin: 0px;"
+          "}"
+          "QScrollBar::handle:horizontal {"
+          "  background: #555555;"
+          "  min-width: 20px;"
+          "}"
+          "QScrollBar::handle:horizontal:hover {"
+          "  background: #666666;"
+          "}"
+          "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {"
+          "  width: 0px;"
+          "}"
+          "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
+          "  background: none;"
+          "}"
+          "EditorWidget {"
+          "  background: %1;"
+          "}")
+          .arg(bgHex));
 
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
           [this]() { viewport()->repaint(); });

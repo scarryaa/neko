@@ -3,9 +3,10 @@
 
 FileExplorerWidget::FileExplorerWidget(FileTree *tree,
                                        NekoConfigManager *configManager,
+                                       NekoThemeManager *themeManager,
                                        QWidget *parent)
     : QScrollArea(parent), tree(tree), configManager(configManager),
-      font(QFont()), fontMetrics(font) {
+      themeManager(themeManager), font(QFont()), fontMetrics(font) {
   char *familyRaw = neko_config_get_file_explorer_font_family(configManager);
   QString family =
       familyRaw ? QString::fromUtf8(familyRaw) : QApplication::font().family();

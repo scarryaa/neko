@@ -39,6 +39,7 @@ private:
 
   NekoAppState *appState;
   NekoConfigManager *configManager;
+  NekoThemeManager *themeManager;
   QWidget *emptyStateWidget;
   FileExplorerWidget *fileExplorerWidget;
   EditorWidget *editorWidget;

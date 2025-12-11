@@ -4,11 +4,60 @@ use std::{
     ptr,
 };
 
-use crate::{AppState, FileNode, FileTree, config::ConfigManager, text::Editor};
+use crate::{
+    AppState, FileNode, FileTree, config::ConfigManager, text::Editor, theme::ThemeManager,
+};
 
 #[repr(C)]
 pub struct NekoAppState {
     state: AppState,
+}
+
+#[repr(C)]
+pub struct NekoThemeManager {
+    manager: ThemeManager,
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_theme_get_color(
+    manager: *const ThemeManager,
+    color_key: *const c_char,
+) -> *mut c_char {
+    if manager.is_null() || color_key.is_null() {
+        return std::ptr::null_mut();
+    }
+
+    unsafe {
+        let manager = &*manager;
+        let key = match CStr::from_ptr(color_key).to_str() {
+            Ok(k) => k,
+            Err(_) => return std::ptr::null_mut(),
+        };
+
+        let color_hex = manager.get_color(key);
+
+        match CString::new(color_hex) {
+            Ok(c) => c.into_raw(),
+            Err(_) => std::ptr::null_mut(),
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_theme_manager_new() -> *mut NekoThemeManager {
+    let manager = Box::new(NekoThemeManager {
+        manager: ThemeManager::new(),
+    });
+    Box::into_raw(manager)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_theme_manager_free(manager: *mut NekoThemeManager) {
+    if !manager.is_null() {
+        unsafe {
+            let _ = Box::from_raw(manager);
+        }
+    }
 }
 
 #[repr(C)]

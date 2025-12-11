@@ -22,6 +22,11 @@ typedef struct FileNode {
   uint64_t depth;
 } FileNode;
 typedef struct NekoConfigManager NekoConfigManager;
+typedef struct NekoThemeManager NekoThemeManager;
+
+char *neko_theme_get_color(NekoThemeManager *mgr, const char *color_key);
+NekoThemeManager *neko_theme_manager_new();
+void neko_theme_manager_free(NekoThemeManager *mgr);
 
 NekoConfigManager *neko_config_manager_new();
 void neko_config_manager_free(NekoConfigManager *mgr);

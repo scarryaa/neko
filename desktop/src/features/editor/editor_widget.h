@@ -13,6 +13,7 @@ class EditorWidget : public QScrollArea {
 
 public:
   explicit EditorWidget(NekoEditor *editor, NekoConfigManager *configManager,
+                        NekoThemeManager *themeManager,
                         QWidget *parent = nullptr);
   ~EditorWidget();
 
@@ -61,6 +62,7 @@ private:
   double measureContent();
 
   NekoConfigManager *configManager;
+  NekoThemeManager *themeManager;
   NekoEditor *editor;
   QFont font;
   QFontMetricsF fontMetrics;
