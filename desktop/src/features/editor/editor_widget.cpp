@@ -13,9 +13,22 @@
 EditorWidget::EditorWidget(NekoEditor *editor, NekoConfigManager *configManager,
                            QWidget *parent)
     : QScrollArea(parent), editor(editor), configManager(configManager),
-      font(new QFont(neko_config_get_editor_font_family(configManager),
-                     neko_config_get_editor_font_size(configManager))),
-      fontMetrics(*font) {
+      font(QFont()), fontMetrics(font) {
+  char *familyRaw = neko_config_get_editor_font_family(configManager);
+  QString family =
+      familyRaw ? QString::fromUtf8(familyRaw)
+                : QFontDatabase::systemFont(QFontDatabase::FixedFont).family();
+
+  if (familyRaw) {
+    neko_string_free(familyRaw);
+  }
+
+  font = QFont(family, neko_config_get_editor_font_size(configManager));
+  font.setStyleHint(QFont::Monospace);
+  font.setFixedPitch(true);
+
+  fontMetrics = QFontMetricsF(font);
+
   setFocusPolicy(Qt::StrongFocus);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -477,30 +490,30 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
 }
 
 void EditorWidget::resetFontSize() {
-  font->setPointSizeF(DEFAULT_FONT_SIZE);
-  fontMetrics = QFontMetricsF(*font);
+  font.setPointSizeF(DEFAULT_FONT_SIZE);
+  fontMetrics = QFontMetricsF(font);
 
   viewport()->repaint();
-  emit fontSizeChanged(font->pointSizeF());
+  emit fontSizeChanged(font.pointSizeF());
 }
 
 void EditorWidget::increaseFontSize() {
-  if (font->pointSizeF() < FONT_UPPER_LIMIT) {
-    font->setPointSizeF(font->pointSizeF() + FONT_STEP);
-    fontMetrics = QFontMetricsF(*font);
+  if (font.pointSizeF() < FONT_UPPER_LIMIT) {
+    font.setPointSizeF(font.pointSizeF() + FONT_STEP);
+    fontMetrics = QFontMetricsF(font);
 
     viewport()->repaint();
-    emit fontSizeChanged(font->pointSizeF());
+    emit fontSizeChanged(font.pointSizeF());
   }
 }
 
 void EditorWidget::decreaseFontSize() {
-  if (font->pointSizeF() > FONT_LOWER_LIMIT) {
-    font->setPointSizeF(font->pointSizeF() - FONT_STEP);
-    fontMetrics = QFontMetricsF(*font);
+  if (font.pointSizeF() > FONT_LOWER_LIMIT) {
+    font.setPointSizeF(font.pointSizeF() - FONT_STEP);
+    fontMetrics = QFontMetricsF(font);
 
     viewport()->repaint();
-    emit fontSizeChanged(font->pointSizeF());
+    emit fontSizeChanged(font.pointSizeF());
   }
 }
 
@@ -540,7 +553,7 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
 
 void EditorWidget::drawText(QPainter *painter, const ViewportContext &ctx) {
   painter->setPen(TEXT_COLOR);
-  painter->setFont(*font);
+  painter->setFont(font);
 
   for (int line = ctx.firstVisibleLine; line <= ctx.lastVisibleLine; line++) {
     size_t len;

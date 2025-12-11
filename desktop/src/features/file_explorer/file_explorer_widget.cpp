@@ -5,9 +5,18 @@ FileExplorerWidget::FileExplorerWidget(FileTree *tree,
                                        NekoConfigManager *configManager,
                                        QWidget *parent)
     : QScrollArea(parent), tree(tree), configManager(configManager),
-      font(new QFont(neko_config_get_file_explorer_font_family(configManager),
-                     neko_config_get_file_explorer_font_size(configManager))),
-      fontMetrics(QFontMetricsF(*font)) {
+      font(QFont()), fontMetrics(font) {
+  char *familyRaw = neko_config_get_file_explorer_font_family(configManager);
+  QString family =
+      familyRaw ? QString::fromUtf8(familyRaw) : QApplication::font().family();
+
+  if (familyRaw) {
+    neko_string_free(familyRaw);
+  }
+
+  font = QFont(family, neko_config_get_file_explorer_font_size(configManager));
+  fontMetrics = QFontMetricsF(font);
+
   setFocusPolicy(Qt::StrongFocus);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -476,7 +485,7 @@ void FileExplorerWidget::drawFiles(QPainter *painter, size_t count,
 
 void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
                                   const FileNode *node) {
-  painter->setFont(*font);
+  painter->setFont(font);
 
   double indent = node->depth * 20.0;
   double viewportWidth = viewport()->width();

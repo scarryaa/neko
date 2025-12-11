@@ -3,6 +3,7 @@
 
 #include "utils/editor_utils.h"
 #include "utils/row_col.h"
+#include <QFontDatabase>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <neko_core.h>
@@ -61,7 +62,7 @@ private:
 
   NekoConfigManager *configManager;
   NekoEditor *editor;
-  QFont *font;
+  QFont font;
   QFontMetricsF fontMetrics;
 
   int EXTRA_VERTICAL_LINES = 1;

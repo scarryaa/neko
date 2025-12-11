@@ -1,12 +1,24 @@
 #include "gutter_widget.h"
-#include <neko_core.h>
 
 GutterWidget::GutterWidget(NekoEditor *editor, NekoConfigManager *configManager,
                            QWidget *parent)
     : QScrollArea(parent), editor(editor), configManager(configManager),
-      font(new QFont(neko_config_get_editor_font_family(configManager),
-                     neko_config_get_editor_font_size(configManager))),
-      fontMetrics(*font) {
+      font(QFont()), fontMetrics(font) {
+  char *familyRaw = neko_config_get_editor_font_family(configManager);
+  QString family =
+      familyRaw ? QString::fromUtf8(familyRaw)
+                : QFontDatabase::systemFont(QFontDatabase::FixedFont).family();
+
+  if (familyRaw) {
+    neko_string_free(familyRaw);
+  }
+
+  font = QFont(family, neko_config_get_editor_font_size(configManager));
+  font.setStyleHint(QFont::Monospace);
+  font.setFixedPitch(true);
+
+  fontMetrics = QFontMetricsF(font);
+
   setFocusPolicy(Qt::NoFocus);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -83,8 +95,8 @@ void GutterWidget::onEditorLineCountChanged() { updateDimensionsAndRepaint(); }
 void GutterWidget::onEditorCursorPositionChanged() { viewport()->repaint(); }
 
 void GutterWidget::onEditorFontSizeChanged(qreal newSize) {
-  font->setPointSizeF(newSize);
-  fontMetrics = QFontMetricsF(*font);
+  font.setPointSizeF(newSize);
+  fontMetrics = QFontMetricsF(font);
   updateDimensionsAndRepaint();
   updateGeometry();
 }
@@ -116,7 +128,7 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
 void GutterWidget::drawText(QPainter *painter, const ViewportContext &ctx,
                             int lineCount) {
   painter->setPen(TEXT_COLOR);
-  painter->setFont(*font);
+  painter->setFont(font);
 
   auto verticalOffset = verticalScrollBar()->value();
   auto horizontalOffset = horizontalScrollBar()->value();

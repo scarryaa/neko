@@ -72,7 +72,7 @@ private:
   const FileNode *fileNodes = nullptr;
   std::string rootPath;
   QPushButton *directorySelectionButton;
-  QFont *font;
+  QFont font;
   QFontMetricsF fontMetrics;
 
   double VIEWPORT_PADDING = 74.0;

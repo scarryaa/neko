@@ -2,6 +2,8 @@
 #define GUTTER_WIDGET_H
 
 #include "utils/editor_utils.h"
+#include <QApplication>
+#include <QFontDatabase>
 #include <QPainter>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -42,7 +44,7 @@ private:
 
   NekoConfigManager *configManager;
   NekoEditor *editor;
-  QFont *font;
+  QFont font;
   QFontMetricsF fontMetrics;
 
   double FONT_STEP = 2.0;
