@@ -51,7 +51,7 @@ impl ConfigManager {
         }
     }
 
-    fn save(&self) -> Result<(), std::io::Error> {
+    pub fn save(&self) -> Result<(), std::io::Error> {
         let config = self.inner.read().unwrap();
         let json = serde_json::to_string_pretty(&*config)?;
         fs::write(&self.file_path, json)?;

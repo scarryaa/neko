@@ -1,12 +1,12 @@
 #include "file_explorer_widget.h"
-#include "features/config/config_manager.h"
 #include <neko_core.h>
 
-FileExplorerWidget::FileExplorerWidget(FileTree *tree, QWidget *parent)
-    : QScrollArea(parent), tree(tree),
-      font(new QFont(
-          "IBM Plex Sans",
-          ConfigManager::getInstance().getConfig().fileExplorerFontSize)),
+FileExplorerWidget::FileExplorerWidget(FileTree *tree,
+                                       NekoConfigManager *configManager,
+                                       QWidget *parent)
+    : QScrollArea(parent), tree(tree), configManager(configManager),
+      font(new QFont(neko_config_get_file_explorer_font_family(configManager),
+                     neko_config_get_file_explorer_font_size(configManager))),
       fontMetrics(QFontMetricsF(*font)) {
   setFocusPolicy(Qt::StrongFocus);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -97,8 +97,7 @@ void FileExplorerWidget::resizeEvent(QResizeEvent *event) {
 }
 
 void FileExplorerWidget::loadSavedDir() {
-  QString savedDir =
-      ConfigManager::getInstance().getConfig().fileExplorerDirectory;
+  QString savedDir = neko_config_get_file_explorer_directory(configManager);
   if (!savedDir.isEmpty()) {
     initialize(savedDir.toStdString());
     rootPath = savedDir.toStdString();
@@ -115,7 +114,8 @@ void FileExplorerWidget::directorySelectionRequested() {
     initialize(dir.toStdString());
     rootPath = dir.toStdString();
     directorySelectionButton->hide();
-    ConfigManager::getInstance().getConfig().fileExplorerDirectory = dir;
+    neko_config_set_file_explorer_directory(configManager,
+                                            dir.toStdString().c_str());
   }
 }
 

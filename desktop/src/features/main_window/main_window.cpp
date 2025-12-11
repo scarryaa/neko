@@ -9,14 +9,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   setAttribute(Qt::WA_LayoutOnEntireRect);
 
   appState = neko_app_state_new(nullptr);
+  configManager = neko_config_manager_new();
   NekoEditor *editor = neko_app_state_get_editor(appState);
   FileTree *fileTree = neko_app_state_get_file_tree(appState);
 
   emptyStateWidget = new QWidget(this);
   titleBarWidget = new TitleBarWidget(this);
-  fileExplorerWidget = new FileExplorerWidget(fileTree, this);
-  editorWidget = new EditorWidget(editor, this);
-  gutterWidget = new GutterWidget(editor, this);
+  fileExplorerWidget = new FileExplorerWidget(fileTree, configManager, this);
+  editorWidget = new EditorWidget(editor, configManager, this);
+  gutterWidget = new GutterWidget(editor, configManager, this);
 
   setupKeyboardShortcuts();
 

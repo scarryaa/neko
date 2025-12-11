@@ -1,6 +1,5 @@
 #include "features/main_window/main_window.h"
 
-#include "features/config/config_manager.h"
 #include <QApplication>
 #include <QLocale>
 #include <QTranslator>
@@ -8,7 +7,6 @@
 int main(int argc, char *argv[]) {
   QApplication a(argc, argv);
   QTranslator translator;
-  ConfigManager::getInstance();
 
   const QStringList uiLanguages = QLocale::system().uiLanguages();
   for (const QString &locale : uiLanguages) {

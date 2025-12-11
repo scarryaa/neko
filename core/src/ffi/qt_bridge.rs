@@ -4,11 +4,219 @@ use std::{
     ptr,
 };
 
-use crate::{AppState, FileNode, FileTree, text::Editor};
+use crate::{AppState, FileNode, FileTree, config::ConfigManager, text::Editor};
 
 #[repr(C)]
 pub struct NekoAppState {
     state: AppState,
+}
+
+#[repr(C)]
+pub struct NekoConfigManager {
+    manager: ConfigManager,
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_config_manager_new() -> *mut NekoConfigManager {
+    let manager = Box::new(NekoConfigManager {
+        manager: ConfigManager::new(),
+    });
+    Box::into_raw(manager)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_config_manager_free(manager: *mut NekoConfigManager) {
+    if !manager.is_null() {
+        unsafe {
+            let _ = Box::from_raw(manager);
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_config_save(manager: *mut NekoConfigManager) -> bool {
+    if manager.is_null() {
+        return false;
+    }
+
+    unsafe {
+        let manager = &*manager;
+        manager.manager.save().is_ok()
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_config_get_editor_font_size(manager: *mut NekoConfigManager) -> usize {
+    if manager.is_null() {
+        return 15;
+    }
+
+    unsafe {
+        let manager = &*manager;
+        manager.manager.get_snapshot().editor_font_size
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_config_get_editor_font_family(
+    manager: *mut NekoConfigManager,
+) -> *mut c_char {
+    if manager.is_null() {
+        return ptr::null_mut();
+    }
+
+    unsafe {
+        let manager = &*manager;
+        let s = manager.manager.get_snapshot().editor_font_family;
+        match CString::new(s) {
+            Ok(c) => c.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_config_get_file_explorer_font_size(
+    manager: *mut NekoConfigManager,
+) -> usize {
+    if manager.is_null() {
+        return 15;
+    }
+
+    unsafe {
+        let manager = &*manager;
+        manager.manager.get_snapshot().file_explorer_font_size
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_config_get_file_explorer_font_family(
+    manager: *mut NekoConfigManager,
+) -> *mut c_char {
+    if manager.is_null() {
+        return ptr::null_mut();
+    }
+
+    unsafe {
+        let manager = &*manager;
+        let s = manager.manager.get_snapshot().file_explorer_font_family;
+        match CString::new(s) {
+            Ok(c) => c.into_raw(),
+            Err(_) => ptr::null_mut(),
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_config_set_editor_font_size(
+    manager: *mut NekoConfigManager,
+    font_size: usize,
+) {
+    if manager.is_null() {
+        return;
+    }
+
+    unsafe {
+        let manager = &*manager;
+        manager.manager.update(|c| c.editor_font_size = font_size);
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_config_set_editor_font_family(
+    manager: *mut NekoConfigManager,
+    font_family: *const c_char,
+) {
+    if manager.is_null() || font_family.is_null() {
+        return;
+    }
+
+    unsafe {
+        let manager = &*manager;
+        if let Ok(s) = CStr::from_ptr(font_family).to_str() {
+            let str = s.to_string();
+            manager.manager.update(|c| c.editor_font_family = str);
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_config_set_file_explorer_font_size(
+    manager: *mut NekoConfigManager,
+    font_size: usize,
+) {
+    if manager.is_null() {
+        return;
+    }
+
+    unsafe {
+        let manager = &*manager;
+        manager
+            .manager
+            .update(|c| c.file_explorer_font_size = font_size);
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_config_set_file_explorer_font_family(
+    manager: *mut NekoConfigManager,
+    font_family: *const c_char,
+) {
+    if manager.is_null() || font_family.is_null() {
+        return;
+    }
+
+    unsafe {
+        let manager = &*manager;
+        if let Ok(s) = CStr::from_ptr(font_family).to_str() {
+            let str = s.to_string();
+            manager
+                .manager
+                .update(|c| c.file_explorer_font_family = str);
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_config_set_file_explorer_directory(
+    manager: *mut NekoConfigManager,
+    dir: *const c_char,
+) {
+    if manager.is_null() || dir.is_null() {
+        return;
+    }
+
+    unsafe {
+        let manager = &*manager;
+        if let Ok(s) = CStr::from_ptr(dir).to_str() {
+            let str = s.to_string();
+            manager
+                .manager
+                .update(|c| c.file_explorer_directory = Some(str));
+        }
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_config_get_file_explorer_directory(
+    manager: *mut NekoConfigManager,
+) -> *mut c_char {
+    if manager.is_null() {
+        return ptr::null_mut();
+    }
+
+    unsafe {
+        let manager = &*manager;
+        let maybe_dir = manager.manager.get_snapshot().file_explorer_directory;
+
+        match maybe_dir {
+            Some(dir_str) => match CString::new(dir_str) {
+                Ok(c_string) => c_string.into_raw(),
+                Err(_) => ptr::null_mut(),
+            },
+            None => ptr::null_mut(),
+        }
+    }
 }
 
 #[unsafe(no_mangle)]

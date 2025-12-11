@@ -38,6 +38,7 @@ private:
   void switchToTabWithFile(const std::string &path);
 
   NekoAppState *appState;
+  NekoConfigManager *configManager;
   QWidget *emptyStateWidget;
   FileExplorerWidget *fileExplorerWidget;
   EditorWidget *editorWidget;

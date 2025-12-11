@@ -23,7 +23,8 @@ class FileExplorerWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit FileExplorerWidget(FileTree *tree, QWidget *parent = nullptr);
+  explicit FileExplorerWidget(FileTree *tree, NekoConfigManager *configManager,
+                              QWidget *parent = nullptr);
   ~FileExplorerWidget();
 
   void initialize(std::string path);
@@ -65,6 +66,7 @@ private:
 
   int convertMousePositionToRow(double y);
 
+  NekoConfigManager *configManager;
   FileTree *tree;
   size_t fileCount = 0;
   const FileNode *fileNodes = nullptr;

@@ -21,6 +21,27 @@ typedef struct FileNode {
   uint64_t modified;
   uint64_t depth;
 } FileNode;
+typedef struct NekoConfigManager NekoConfigManager;
+
+NekoConfigManager *neko_config_manager_new();
+void neko_config_manager_free(NekoConfigManager *mgr);
+bool neko_config_save(NekoConfigManager *mgr);
+
+size_t neko_config_get_editor_font_size(NekoConfigManager *mgr);
+char *neko_config_get_editor_font_family(NekoConfigManager *mgr);
+size_t neko_config_get_file_explorer_font_size(NekoConfigManager *mgr);
+char *neko_config_get_file_explorer_font_family(NekoConfigManager *mgr);
+
+void neko_config_set_editor_font_size(NekoConfigManager *mgr, size_t font_size);
+void neko_config_set_file_explorer_font_size(NekoConfigManager *mgr,
+                                             size_t font_size);
+void neko_config_set_file_explorer_directory(NekoConfigManager *mgr,
+                                             const char *font_family);
+void neko_config_set_editor_font_family(NekoConfigManager *mgr,
+                                        const char *font_family);
+void neko_config_set_file_explorer_font_family(NekoConfigManager *mgr,
+                                               const char *font_family);
+char *neko_config_get_file_explorer_directory(NekoConfigManager *mgr);
 
 NekoAppState *neko_app_state_new(const char *root_path);
 bool neko_app_state_is_file_open(NekoAppState *app, const char *path);

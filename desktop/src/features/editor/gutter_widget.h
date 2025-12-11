@@ -13,7 +13,8 @@ class GutterWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit GutterWidget(NekoEditor *editor, QWidget *parent = nullptr);
+  explicit GutterWidget(NekoEditor *editor, NekoConfigManager *configManager,
+                        QWidget *parent = nullptr);
   ~GutterWidget();
 
   void updateDimensionsAndRepaint();
@@ -39,6 +40,7 @@ private:
   void increaseFontSize();
   void resetFontSize();
 
+  NekoConfigManager *configManager;
   NekoEditor *editor;
   QFont *font;
   QFontMetricsF fontMetrics;

@@ -11,7 +11,8 @@ class EditorWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit EditorWidget(NekoEditor *editor, QWidget *parent = nullptr);
+  explicit EditorWidget(NekoEditor *editor, NekoConfigManager *configManager,
+                        QWidget *parent = nullptr);
   ~EditorWidget();
 
   void updateDimensionsAndRepaint();
@@ -58,6 +59,7 @@ private:
   void scrollToCursor();
   double measureContent();
 
+  NekoConfigManager *configManager;
   NekoEditor *editor;
   QFont *font;
   QFontMetricsF fontMetrics;
