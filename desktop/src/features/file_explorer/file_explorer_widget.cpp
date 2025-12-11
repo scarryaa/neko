@@ -97,11 +97,17 @@ void FileExplorerWidget::resizeEvent(QResizeEvent *event) {
 }
 
 void FileExplorerWidget::loadSavedDir() {
-  QString savedDir = neko_config_get_file_explorer_directory(configManager);
-  if (!savedDir.isEmpty()) {
-    initialize(savedDir.toStdString());
-    rootPath = savedDir.toStdString();
-    directorySelectionButton->hide();
+  char *rawPath = neko_config_get_file_explorer_directory(configManager);
+
+  if (rawPath != nullptr) {
+    QString savedDir = QString::fromUtf8(rawPath);
+    neko_string_free(rawPath);
+
+    if (!savedDir.isEmpty()) {
+      initialize(savedDir.toStdString());
+      rootPath = savedDir.toStdString();
+      directorySelectionButton->hide();
+    }
   }
 }
 
