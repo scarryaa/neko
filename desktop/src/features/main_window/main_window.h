@@ -20,7 +20,8 @@ public:
   ~MainWindow();
 
 private slots:
-  void onFileSelected(const std::string, bool shouldFocusEditor = true);
+  void onFileSelected(const std::string &filePath,
+                      bool shouldFocusEditor = true);
   void onFileSaved(bool isSaveAs);
 
 private:
@@ -33,6 +34,7 @@ private:
   void onActiveTabCloseRequested();
   void setupKeyboardShortcuts();
   void onBufferChanged();
+  void switchToTabWithFile(const std::string &path);
 
   NekoAppState *appState;
   QWidget *emptyStateWidget;

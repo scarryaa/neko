@@ -43,6 +43,45 @@ pub extern "C" fn neko_app_state_free(app: *mut NekoAppState) {
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_is_file_open(app: *mut NekoAppState, path: *const c_char) -> bool {
+    if app.is_null() || path.is_null() {
+        return false;
+    }
+
+    unsafe {
+        let app = &*app;
+        let path_str = match CStr::from_ptr(path).to_str() {
+            Ok(s) => s,
+            Err(_) => return false,
+        };
+        app.state.tab_with_path_exists(path_str)
+    }
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn neko_app_state_get_tab_index_by_path(
+    app: *mut NekoAppState,
+    path: *const c_char,
+) -> i64 {
+    if app.is_null() || path.is_null() {
+        return -1;
+    }
+
+    unsafe {
+        let app = &*app;
+        let path_str = match CStr::from_ptr(path).to_str() {
+            Ok(s) => s,
+            Err(_) => return -1,
+        };
+
+        app.state
+            .get_tab_index_by_path(path_str)
+            .map(|i| i as i64)
+            .unwrap_or(-1)
+    }
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn neko_app_state_open_file(app: *mut NekoAppState, path: *const c_char) -> bool {
     if app.is_null() || path.is_null() {
         return false;

@@ -289,18 +289,49 @@ void MainWindow::updateTabBar() {
   neko_app_state_free_tab_titles(titles, count);
 }
 
-void MainWindow::onFileSelected(const std::string filePath,
+void MainWindow::onFileSelected(const std::string &filePath,
                                 bool shouldFocusEditor) {
+  // Check if file is already open
+  if (neko_app_state_is_file_open(appState, filePath.c_str())) {
+    // Switch to existing tab instead
+    switchToTabWithFile(filePath);
+    if (shouldFocusEditor) {
+      editorWidget->setFocus();
+    }
+
+    return;
+  }
+
+  // Check if file exists and is readable before creating tab
+  if (!std::filesystem::exists(filePath) ||
+      !std::filesystem::is_regular_file(filePath)) {
+    return;
+  }
+
   neko_app_state_new_tab(appState);
-  neko_app_state_open_file(appState, filePath.c_str());
-  updateTabBar();
-  switchToActiveTab(false);
 
-  editorWidget->updateDimensionsAndRepaint();
-  gutterWidget->updateDimensionsAndRepaint();
+  if (neko_app_state_open_file(appState, filePath.c_str())) {
+    updateTabBar();
+    switchToActiveTab(false);
+    editorWidget->updateDimensionsAndRepaint();
+    gutterWidget->updateDimensionsAndRepaint();
+    if (shouldFocusEditor) {
+      editorWidget->setFocus();
+    }
+  } else {
+    int newTabIndex = neko_app_state_get_active_tab_index(appState);
+    neko_app_state_close_tab(appState, newTabIndex);
+    updateTabBar();
+  }
+}
 
-  if (shouldFocusEditor) {
-    editorWidget->setFocus();
+void MainWindow::switchToTabWithFile(const std::string &path) {
+  int index = neko_app_state_get_tab_index_by_path(appState, path.c_str());
+
+  if (index != -1) {
+    neko_app_state_set_active_tab(appState, index);
+    switchToActiveTab();
+    updateTabBar();
   }
 }
 

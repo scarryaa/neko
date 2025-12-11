@@ -1,6 +1,6 @@
 use std::{
     io::{Error, ErrorKind},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
 use crate::{FileTree, text::Editor};
@@ -102,14 +102,45 @@ impl AppState {
             .unwrap()
     }
 
+    pub fn tab_with_path_exists(&self, path: &str) -> bool {
+        self.tabs
+            .iter()
+            .any(|t| t.file_path.as_ref().and_then(|p| p.to_str()) == Some(path))
+    }
+
+    pub fn get_tab_index_by_path(&self, path: &str) -> Option<usize> {
+        self.tabs
+            .iter()
+            .position(|t| t.file_path.as_ref().and_then(|p| p.to_str()) == Some(path))
+    }
+
     pub fn open_file(&mut self, path: &str) -> Result<(), std::io::Error> {
+        // Check if file is already open
+        if self
+            .tabs
+            .iter()
+            .any(|t| t.file_path.as_ref().and_then(|p| p.to_str()) == Some(path))
+        {
+            return Err(Error::new(
+                ErrorKind::AlreadyExists,
+                "File with given path already open",
+            ));
+        }
+
         let content = std::fs::read_to_string(path)?;
+
         if let Some(t) = self.tabs.get_mut(self.active_tab_index) {
             t.editor.load_file(&content);
             t.original_content = Some(content);
             t.file_path = Some(path.into());
-            t.title = path.split('/').next_back().unwrap().to_string();
+
+            t.title = Path::new(path)
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or(path)
+                .to_string();
         }
+
         Ok(())
     }
 
