@@ -111,7 +111,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   editorSideLayout->addWidget(tabBarContainer);
 
   // Empty state layout
-  QString accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+  QString accentMutedColor =
+      UiUtils::getThemeColor(themeManager, "ui.accent.muted");
   QString foregroundColor =
       UiUtils::getThemeColor(themeManager, "ui.foreground");
   QString emptyStateBackgroundColor =
@@ -121,7 +122,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
       QString("QWidget { background-color: %1; }"
               "QPushButton { background-color: %2; border-radius: 4px; color: "
               "%3; }")
-          .arg(emptyStateBackgroundColor, accentColor, foregroundColor);
+          .arg(emptyStateBackgroundColor, accentMutedColor, foregroundColor);
   emptyStateWidget->setStyleSheet(emptyStateStylesheet);
   QVBoxLayout *emptyLayout = new QVBoxLayout(emptyStateWidget);
   emptyLayout->setAlignment(Qt::AlignCenter);
