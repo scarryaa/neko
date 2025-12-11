@@ -3,32 +3,18 @@
 GutterWidget::GutterWidget(NekoEditor *editor, NekoConfigManager *configManager,
                            NekoThemeManager *themeManager, QWidget *parent)
     : QScrollArea(parent), editor(editor), configManager(configManager),
-      themeManager(themeManager), font(QFont()), fontMetrics(font) {
-  char *familyRaw = neko_config_get_editor_font_family(configManager);
-  QString family =
-      familyRaw ? QString::fromUtf8(familyRaw)
-                : QFontDatabase::systemFont(QFontDatabase::FixedFont).family();
-
-  if (familyRaw) {
-    neko_string_free(familyRaw);
-  }
-
-  font = QFont(family, neko_config_get_editor_font_size(configManager));
-  font.setStyleHint(QFont::Monospace);
-  font.setFixedPitch(true);
-
-  fontMetrics = QFontMetricsF(font);
-
+      themeManager(themeManager),
+      font(UiUtils::loadFont(configManager, UiUtils::FontType::Editor)),
+      fontMetrics(font) {
   setFocusPolicy(Qt::NoFocus);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  setCornerWidget(nullptr);
   setFrameShape(QFrame::NoFrame);
   setAutoFillBackground(false);
 
-  setStyleSheet("GutterWidget {"
-                "  background: black;"
-                "}");
+  QString bgHex =
+      UiUtils::getThemeColor(themeManager, "editor.gutter.background", "black");
+  setStyleSheet(QString("GutterWidget { background: %1; }").arg(bgHex));
 
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
           [this]() { viewport()->repaint(); });

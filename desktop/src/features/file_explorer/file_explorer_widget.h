@@ -1,6 +1,7 @@
 #ifndef FILE_EXPLORER_WIDGET_H
 #define FILE_EXPLORER_WIDGET_H
 
+#include "utils/gui_utils.h"
 #include <QApplication>
 #include <QFileDialog>
 #include <QFont>

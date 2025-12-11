@@ -2,6 +2,7 @@
 #define EDITOR_WIDGET_H
 
 #include "utils/editor_utils.h"
+#include "utils/gui_utils.h"
 #include "utils/row_col.h"
 #include <QFontDatabase>
 #include <QScrollArea>

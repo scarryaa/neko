@@ -2,6 +2,7 @@
 #define GUTTER_WIDGET_H
 
 #include "utils/editor_utils.h"
+#include "utils/gui_utils.h"
 #include <QApplication>
 #include <QFontDatabase>
 #include <QPainter>

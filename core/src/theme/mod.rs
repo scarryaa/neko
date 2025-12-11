@@ -15,6 +15,10 @@ impl Default for Theme {
     fn default() -> Self {
         let mut colors = HashMap::new();
         colors.insert("editor.background".to_string(), "#000000".to_string());
+        colors.insert(
+            "editor.gutter.background".to_string(),
+            "#000000".to_string(),
+        );
         colors.insert("editor.foreground".to_string(), "#d4d4d4".to_string());
         colors.insert("sidebar.background".to_string(), "#000000".to_string());
 

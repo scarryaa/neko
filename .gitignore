@@ -35,6 +35,7 @@ Thumbs.db
 *.rc
 /.qmake.cache
 /.qmake.stash
+!ui_utils.*
 
 # Rust
 core/target/

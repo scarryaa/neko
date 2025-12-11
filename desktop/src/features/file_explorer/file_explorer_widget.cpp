@@ -1,95 +1,29 @@
 #include "file_explorer_widget.h"
-#include <neko_core.h>
 
 FileExplorerWidget::FileExplorerWidget(FileTree *tree,
                                        NekoConfigManager *configManager,
                                        NekoThemeManager *themeManager,
                                        QWidget *parent)
     : QScrollArea(parent), tree(tree), configManager(configManager),
-      themeManager(themeManager), font(QFont()), fontMetrics(font) {
-  char *familyRaw = neko_config_get_file_explorer_font_family(configManager);
-  QString family =
-      familyRaw ? QString::fromUtf8(familyRaw) : QApplication::font().family();
-
-  if (familyRaw) {
-    neko_string_free(familyRaw);
-  }
-
-  font = QFont(family, neko_config_get_file_explorer_font_size(configManager));
-  fontMetrics = QFontMetricsF(font);
-
+      themeManager(themeManager),
+      font(UiUtils::loadFont(configManager, UiUtils::FontType::FileExplorer)),
+      fontMetrics(font) {
   setFocusPolicy(Qt::StrongFocus);
-  setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-  setCornerWidget(nullptr);
   setFrameShape(QFrame::NoFrame);
   setAutoFillBackground(false);
 
-  setStyleSheet(
-      "QAbstractScrollArea::corner {"
-      "  background: transparent;"
-      "}"
-      "QScrollBar:vertical {"
-      "  background: transparent;"
-      "  width: 12px;"
-      "  margin: 0px;"
-      "}"
-      "QScrollBar::handle:vertical {"
-      "  background: #555555;"
-      "  min-height: 20px;"
-      "}"
-      "QScrollBar::handle:vertical:hover {"
-      "  background: #666666;"
-      "}"
-      "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {"
-      "  height: 0px;"
-      "}"
-      "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {"
-      "  background: none;"
-      "}"
-      "QScrollBar:horizontal {"
-      "  background: transparent;"
-      "  height: 12px;"
-      "  margin: 0px;"
-      "}"
-      "QScrollBar::handle:horizontal {"
-      "  background: #555555;"
-      "  min-width: 20px;"
-      "}"
-      "QScrollBar::handle:horizontal:hover {"
-      "  background: #666666;"
-      "}"
-      "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {"
-      "  width: 0px;"
-      "}"
-      "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
-      "  background: none;"
-      "}"
-      "FileExplorerWidget {"
-      "  background: black;"
-      "}");
+  setStyleSheet(UiUtils::getScrollBarStylesheet("FileExplorerWidget", "black"));
 
   directorySelectionButton = new QPushButton("Select a directory");
-  directorySelectionButton->setStyleSheet("QPushButton {"
-                                          "  background-color: #202020;"
-                                          "  color: #e0e0e0;"
-                                          "  border-radius: 6px;"
-                                          "  padding: 8px 16px;"
-                                          "  font-size: 13px;"
-                                          "}"
-                                          "QPushButton:hover {"
-                                          "  background-color: #444444;"
-                                          "  border-color: #555555;"
-                                          "}"
-                                          "QPushButton:pressed {"
-                                          "  background-color: #222222;"
-                                          "  border-color: #333333;"
-                                          "}");
+  directorySelectionButton->setStyleSheet(
+      "QPushButton { background-color: #202020; color: #e0e0e0; border-radius: "
+      "6px; padding: 8px 16px; font-size: 13px; }"
+      "QPushButton:hover { background-color: #444444; border-color: #555555; }"
+      "QPushButton:pressed { background-color: #222222; border-color: #333333; "
+      "}");
 
   auto layout = new QVBoxLayout();
-
   layout->addWidget(directorySelectionButton, 0, Qt::AlignCenter);
-
   setLayout(layout);
 
   connect(directorySelectionButton, &QPushButton::clicked, this,
