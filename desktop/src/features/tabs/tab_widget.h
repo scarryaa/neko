@@ -13,7 +13,7 @@ class TabWidget : public QWidget {
 public:
   explicit TabWidget(const QString &title, int index,
                      NekoConfigManager *configManager,
-                     QWidget *parent = nullptr);
+                     NekoThemeManager *themeManager, QWidget *parent = nullptr);
   void setActive(bool active);
   void setModified(bool modified);
 
@@ -32,14 +32,13 @@ private:
   double measureText(QString text);
 
   NekoConfigManager *configManager;
+  NekoThemeManager *themeManager;
   QString title;
   bool isModified = false;
   int index;
   bool isActive;
   bool isHovered = false;
   bool isCloseHovered = false;
-
-  static constexpr int HEIGHT = 32;
 };
 
 #endif // TAB_WIDGET_H

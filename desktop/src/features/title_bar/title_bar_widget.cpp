@@ -78,12 +78,11 @@ void TitleBarWidget::onDirChanged(std::string newDir) {
 void TitleBarWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
 
-  painter.setBrush(
-      UiUtils::getThemeColor(themeManager, "interface.background"));
+  painter.setBrush(UiUtils::getThemeColor(themeManager, "ui.background"));
   painter.setPen(Qt::NoPen);
 
   painter.drawRect(QRectF(QPointF(0, 0), QPointF(width(), height())));
 
-  painter.setPen(UiUtils::getThemeColor(themeManager, "interface.border"));
+  painter.setPen(UiUtils::getThemeColor(themeManager, "ui.border"));
   painter.drawLine(QPointF(0, height() - 1), QPointF(width(), height() - 1));
 }

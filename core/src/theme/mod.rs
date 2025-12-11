@@ -21,14 +21,20 @@ impl Default for Theme {
         );
         colors.insert("editor.foreground".to_string(), "#d4d4d4".to_string());
         colors.insert("sidebar.background".to_string(), "#000000".to_string());
-        colors.insert("interface.background".to_string(), "#000000".to_string());
-        colors.insert("interface.border".to_string(), "#3c3c3c".to_string());
+        colors.insert("ui.foreground".to_string(), "#d4d4d4".to_string());
+        colors.insert("ui.foreground_muted".to_string(), "#a4a4a4".to_string());
+        colors.insert("ui.background".to_string(), "#000000".to_string());
+        colors.insert("ui.accent".to_string(), "#a589d1".to_string());
+        colors.insert("ui.border".to_string(), "#3c3c3c".to_string());
         colors.insert(
             "titlebar.button.foreground".to_string(),
             "#a0a0a0".to_string(),
         );
         colors.insert("titlebar.button.hover".to_string(), "#131313".to_string());
         colors.insert("titlebar.button.pressed".to_string(), "#222222".to_string());
+        colors.insert("tab.active".to_string(), "#000000".to_string());
+        colors.insert("tab.inactive".to_string(), "#202020".to_string());
+        colors.insert("tab.hover".to_string(), "#101010".to_string());
 
         Self {
             name: "Default Dark".to_string(),

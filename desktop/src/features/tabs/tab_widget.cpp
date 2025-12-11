@@ -1,9 +1,11 @@
 #include "tab_widget.h"
+#include "utils/gui_utils.h"
 
 TabWidget::TabWidget(const QString &title, int index,
-                     NekoConfigManager *configManager, QWidget *parent)
-    : QWidget(parent), configManager(configManager), title(title), index(index),
-      isActive(false) {
+                     NekoConfigManager *configManager,
+                     NekoThemeManager *themeManager, QWidget *parent)
+    : QWidget(parent), configManager(configManager), themeManager(themeManager),
+      title(title), index(index), isActive(false) {
   QFont uiFont = UiUtils::loadFont(configManager, UiUtils::FontType::Interface);
   setFont(uiFont);
 
@@ -38,37 +40,47 @@ void TabWidget::paintEvent(QPaintEvent *event) {
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setFont(font());
 
+  QString borderColor = UiUtils::getThemeColor(themeManager, "ui.border");
+  QString bgColor = UiUtils::getThemeColor(themeManager, "tab.inactive");
+  QString hoverColor = UiUtils::getThemeColor(themeManager, "tab.hover");
+  QString activeColor = UiUtils::getThemeColor(themeManager, "tab.active");
+  QString foregroundColor =
+      UiUtils::getThemeColor(themeManager, "ui.foreground");
+  QString foregroundMutedColor =
+      UiUtils::getThemeColor(themeManager, "ui.foreground_muted");
+  QString modifiedColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+
   // Background
   if (isActive) {
-    painter.setBrush(QColor(0, 0, 0));
+    painter.setBrush(activeColor);
   } else if (isHovered) {
-    painter.setBrush(QColor(10, 10, 10));
+    painter.setBrush(hoverColor);
   } else {
-    painter.setBrush(QColor(20, 20, 20));
+    painter.setBrush(bgColor);
   }
   painter.setPen(Qt::NoPen);
   painter.drawRect(rect());
 
   // Right border
-  painter.setPen(QPen(QColor("#3c3c3c")));
+  painter.setPen(QPen(borderColor));
   painter.drawLine(width() - 1, 0, width() - 1, height());
 
   // Bottom border
   if (!isActive) {
-    painter.setPen(QPen(QColor("#3c3c3c")));
+    painter.setPen(QPen(borderColor));
     painter.drawLine(0, height() - 1, width(), height() - 1);
   }
 
   // Text
   QRect textRect = rect().adjusted(12, 0, -30, 0);
-  painter.setPen(isActive ? Qt::white : QColor(180, 180, 180));
+  painter.setPen(isActive ? foregroundColor : foregroundMutedColor);
   painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, title);
 
   // Modified marker
   if (isModified) {
     QRect modifiedRect(width() - 37, (height() - 6) / 2, 6, 6);
     painter.setPen(Qt::NoPen);
-    painter.setBrush(QBrush(QColor(165, 137, 209)));
+    painter.setBrush(modifiedColor);
     painter.drawEllipse(modifiedRect);
   }
 
@@ -81,7 +93,10 @@ void TabWidget::paintEvent(QPaintEvent *event) {
   }
 
   // Close button
-  painter.setPen(QPen(isCloseHovered ? Qt::white : QColor(150, 150, 150), 1.5));
+  QPen closePen = QPen(isCloseHovered ? foregroundColor : foregroundMutedColor);
+  closePen.setWidthF(1.5);
+
+  painter.setPen(closePen);
   painter.drawLine(closeRect.topLeft() + QPoint(2, 2),
                    closeRect.bottomRight() - QPoint(2, 2));
   painter.drawLine(closeRect.topRight() + QPoint(-2, 2),
