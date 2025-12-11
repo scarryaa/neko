@@ -24,6 +24,7 @@ impl Default for Theme {
         colors.insert("ui.foreground".to_string(), "#d4d4d4".to_string());
         colors.insert("ui.foreground_muted".to_string(), "#a4a4a4".to_string());
         colors.insert("ui.background".to_string(), "#000000".to_string());
+        colors.insert("ui.background.hover".to_string(), "#2c2c2c".to_string());
         colors.insert("ui.accent".to_string(), "#a589d1".to_string());
         colors.insert("ui.border".to_string(), "#3c3c3c".to_string());
         colors.insert(

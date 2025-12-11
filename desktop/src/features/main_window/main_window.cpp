@@ -1,4 +1,5 @@
 #include "main_window.h"
+#include "utils/gui_utils.h"
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   setupMacOSTitleBar(this);
@@ -69,18 +70,31 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   QFontMetrics fm(uiFont);
   int dynamicHeight = fm.height() + 16;
 
+  QString newTabButtonBackgroundColor =
+      UiUtils::getThemeColor(themeManager, "ui.background");
+  QString newTabButtonForegroundColor =
+      UiUtils::getThemeColor(themeManager, "ui.foreground");
+  QString newTabButtonBorderColor =
+      UiUtils::getThemeColor(themeManager, "ui.border");
+  QString newTabButtonHoverBackgroundColor =
+      UiUtils::getThemeColor(themeManager, "ui.background.hover");
+
   newTabButton->setFixedSize(dynamicHeight, dynamicHeight);
-  newTabButton->setStyleSheet("QPushButton {"
-                              "  background: black;"
-                              "  color: #cccccc;"
-                              "  border: none;"
-                              "  border-left: 1px solid #3c3c3c;"
-                              "  border-bottom: 1px solid #3c3c3c;"
-                              "  font-size: 20px;"
-                              "}"
-                              "QPushButton:hover {"
-                              "  background: #2c2c2c;"
-                              "}");
+  QString newTabButtonStylesheet =
+      QString("QPushButton {"
+              "  background: %1;"
+              "  color: %2;"
+              "  border: none;"
+              "  border-left: 1px solid %3;"
+              "  border-bottom: 1px solid %3;"
+              "  font-size: 20px;"
+              "}"
+              "QPushButton:hover {"
+              "  background: %4;"
+              "}")
+          .arg(newTabButtonBackgroundColor, newTabButtonForegroundColor,
+               newTabButtonBorderColor, newTabButtonHoverBackgroundColor);
+  newTabButton->setStyleSheet(newTabButtonStylesheet);
 
   tabBarLayout->addWidget(tabBarWidget);
   tabBarLayout->addWidget(newTabButton);
@@ -97,9 +111,18 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   editorSideLayout->addWidget(tabBarContainer);
 
   // Empty state layout
-  emptyStateWidget->setStyleSheet(
-      "QWidget { background-color: black; }"
-      "QPushButton { background-color: #a589d1; border-radius: 4px; }");
+  QString accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+  QString foregroundColor =
+      UiUtils::getThemeColor(themeManager, "ui.foreground");
+  QString emptyStateBackgroundColor =
+      UiUtils::getThemeColor(themeManager, "ui.background");
+
+  QString emptyStateStylesheet =
+      QString("QWidget { background-color: %1; }"
+              "QPushButton { background-color: %2; border-radius: 4px; color: "
+              "%3; }")
+          .arg(emptyStateBackgroundColor, accentColor, foregroundColor);
+  emptyStateWidget->setStyleSheet(emptyStateStylesheet);
   QVBoxLayout *emptyLayout = new QVBoxLayout(emptyStateWidget);
   emptyLayout->setAlignment(Qt::AlignCenter);
 
@@ -131,10 +154,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   splitter->setStretchFactor(1, 1);
   splitter->setSizes({250, 600});
   splitter->setHandleWidth(1);
-  splitter->setStyleSheet("QSplitter::handle {"
-                          "  background-color: #3c3c3c;"
-                          "  margin: 0px;"
-                          "}");
+
+  QString borderColor = UiUtils::getThemeColor(themeManager, "ui.border");
+  QString splitterStylesheet = QString("QSplitter::handle {"
+                                       "  background-color: %1;"
+                                       "  margin: 0px;"
+                                       "}")
+                                   .arg(borderColor);
+  splitter->setStyleSheet(splitterStylesheet);
 
   mainLayout->addWidget(splitter);
   setCentralWidget(mainContainer);
