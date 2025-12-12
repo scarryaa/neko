@@ -20,6 +20,11 @@ QString UiUtils::getThemeColor(neko::ThemeManager &manager, const char *key,
   return result;
 }
 
+void UiUtils::setFontSize(neko::ConfigManager &manager, neko::FontType type,
+                          double newFontSize) {
+  manager.set_font_size(newFontSize, type);
+}
+
 QFont UiUtils::loadFont(neko::ConfigManager &manager, neko::FontType type) {
   bool forceMonospace = false;
 

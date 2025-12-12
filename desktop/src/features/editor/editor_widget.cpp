@@ -1,4 +1,5 @@
 #include "editor_widget.h"
+#include "utils/gui_utils.h"
 #include <neko-core/src/ffi/mod.rs.h>
 
 EditorWidget::EditorWidget(neko::Editor *editor,
@@ -390,32 +391,27 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
   viewport()->repaint();
 }
 
-void EditorWidget::resetFontSize() {
-  font.setPointSizeF(DEFAULT_FONT_SIZE);
-  fontMetrics = QFontMetricsF(font);
-
-  viewport()->repaint();
-  emit fontSizeChanged(font.pointSizeF());
-}
+void EditorWidget::resetFontSize() { setFontSize(DEFAULT_FONT_SIZE); }
 
 void EditorWidget::increaseFontSize() {
   if (font.pointSizeF() < FONT_UPPER_LIMIT) {
-    font.setPointSizeF(font.pointSizeF() + FONT_STEP);
-    fontMetrics = QFontMetricsF(font);
-
-    viewport()->repaint();
-    emit fontSizeChanged(font.pointSizeF());
+    setFontSize(font.pointSizeF() + FONT_STEP);
   }
 }
 
 void EditorWidget::decreaseFontSize() {
   if (font.pointSizeF() > FONT_LOWER_LIMIT) {
-    font.setPointSizeF(font.pointSizeF() - FONT_STEP);
-    fontMetrics = QFontMetricsF(font);
-
-    viewport()->repaint();
-    emit fontSizeChanged(font.pointSizeF());
+    setFontSize(font.pointSizeF() - FONT_STEP);
   }
+}
+
+void EditorWidget::setFontSize(double newFontSize) {
+  font.setPointSizeF(newFontSize);
+  fontMetrics = QFontMetricsF(font);
+
+  viewport()->repaint();
+  UiUtils::setFontSize(configManager, neko::FontType::Editor, newFontSize);
+  emit fontSizeChanged(newFontSize);
 }
 
 double EditorWidget::getTextWidth(const QString &text,

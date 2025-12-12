@@ -65,6 +65,7 @@ private:
   void increaseFontSize();
   void decreaseFontSize();
   void resetFontSize();
+  void setFontSize(double newFontSize);
 
   void handleViewportUpdate();
   void scrollToCursor();

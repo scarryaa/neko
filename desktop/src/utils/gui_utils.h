@@ -13,6 +13,8 @@ QString getConfigString(neko::ConfigManager *manager,
 QString getThemeColor(neko::ThemeManager &manager, const char *key,
                       const char *fallback = "#000000");
 QFont loadFont(neko::ConfigManager &manager, neko::FontType type);
+void setFontSize(neko::ConfigManager &manager, neko::FontType type,
+                 double newFontSize);
 QString getScrollBarStylesheet(const QString &widgetName,
                                const QString &bgColor,
                                const QString &additions = nullptr);
