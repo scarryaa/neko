@@ -401,7 +401,7 @@ impl FileTree {
     }
 
     fn get_visible_nodes_wrapper(tree: &FileTree) -> Vec<FileNode> {
-        tree.nodes
+        tree.get_visible_nodes_owned()
             .iter()
             .map(|n| FileNode {
                 path: n.path_str(),
