@@ -1,6 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
-    ffi::{CStr, CString, c_char},
+    ffi::{CStr, CString, OsStr, c_char},
     fs::{self, DirEntry},
     io,
     path::{Path, PathBuf},
@@ -31,7 +31,14 @@ impl FileNode {
                 .ok()?
                 .into_raw(),
             is_dir: metadata.is_dir(),
-            is_hidden: file_name.starts_with('.'),
+            is_hidden: file_name.starts_with('.')
+                || path.ancestors().any(|a| {
+                    a.file_name()
+                        .unwrap_or(OsStr::new(""))
+                        .to_str()
+                        .unwrap()
+                        .starts_with(".")
+                }),
             size: metadata.len(),
             modified: metadata
                 .modified()

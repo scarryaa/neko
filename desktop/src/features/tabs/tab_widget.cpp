@@ -47,7 +47,7 @@ void TabWidget::paintEvent(QPaintEvent *event) {
   QString foregroundColor =
       UiUtils::getThemeColor(themeManager, "ui.foreground");
   QString foregroundMutedColor =
-      UiUtils::getThemeColor(themeManager, "ui.foreground_muted");
+      UiUtils::getThemeColor(themeManager, "ui.foreground.muted");
   QString modifiedColor = UiUtils::getThemeColor(themeManager, "ui.accent");
 
   // Background
