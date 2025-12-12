@@ -1,7 +1,6 @@
 #ifndef TITLE_BAR_WIDGET_H
 #define TITLE_BAR_WIDGET_H
 
-#include "neko_core.h"
 #include "utils/gui_utils.h"
 #include <QHBoxLayout>
 #include <QMouseEvent>
@@ -10,14 +9,15 @@
 #include <QPushButton>
 #include <QString>
 #include <QWidget>
+#include <neko-core/src/ffi/mod.rs.h>
 #include <string>
 
 class TitleBarWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit TitleBarWidget(NekoConfigManager *configManager,
-                          NekoThemeManager *themeManager,
+  explicit TitleBarWidget(neko::ConfigManager &configManager,
+                          neko::ThemeManager &themeManager,
                           QWidget *parent = nullptr);
   ~TitleBarWidget();
 
@@ -35,8 +35,8 @@ protected:
 private:
   void onDirectorySelectionButtonPressed();
 
-  NekoThemeManager *themeManager;
-  NekoConfigManager *configManager;
+  neko::ThemeManager &themeManager;
+  neko::ConfigManager &configManager;
   double m_height;
   QPushButton *m_directorySelectionButton;
   QPoint m_clickPos;

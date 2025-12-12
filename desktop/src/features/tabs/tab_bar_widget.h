@@ -2,6 +2,7 @@
 #define TAB_BAR_WIDGET_H
 
 #include "features/tabs/tab_widget.h"
+#include "neko-core/src/ffi/mod.rs.h"
 #include "utils/gui_utils.h"
 #include <QHBoxLayout>
 #include <QPaintEvent>
@@ -10,18 +11,17 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QStringList>
-#include <neko_core.h>
 
 class TabBarWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit TabBarWidget(NekoConfigManager *manager,
-                        NekoThemeManager *themeManager,
+  explicit TabBarWidget(neko::ConfigManager &configManager,
+                        neko::ThemeManager &themeManager,
                         QWidget *parent = nullptr);
   ~TabBarWidget();
 
-  void setTabs(QStringList titles, bool *modifiedStates);
+  void setTabs(QStringList titles, rust::Vec<bool> modifiedStates);
   void setCurrentIndex(size_t index);
   void setTabModified(int index, bool modified);
 
@@ -34,8 +34,8 @@ private:
   void updateTabAppearance();
   void updateViewport();
 
-  NekoConfigManager *configManager;
-  NekoThemeManager *themeManager;
+  neko::ConfigManager &configManager;
+  neko::ThemeManager &themeManager;
   QPushButton *newTabButton;
   QWidget *containerWidget;
   QHBoxLayout *layout;

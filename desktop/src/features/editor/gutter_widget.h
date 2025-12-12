@@ -1,6 +1,7 @@
 #ifndef GUTTER_WIDGET_H
 #define GUTTER_WIDGET_H
 
+#include "neko-core/src/ffi/mod.rs.h"
 #include "utils/editor_utils.h"
 #include "utils/gui_utils.h"
 #include <QApplication>
@@ -10,19 +11,19 @@
 #include <QScrollBar>
 #include <QString>
 #include <QWheelEvent>
-#include <neko_core.h>
 
 class GutterWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit GutterWidget(NekoEditor *editor, NekoConfigManager *configManager,
-                        NekoThemeManager *themeManager,
+  explicit GutterWidget(neko::Editor *editor,
+                        neko::ConfigManager &configManager,
+                        neko::ThemeManager &themeManager,
                         QWidget *parent = nullptr);
   ~GutterWidget();
 
   void updateDimensionsAndRepaint();
-  void setEditor(NekoEditor *editor);
+  void setEditor(neko::Editor *editor);
 
 protected:
   QSize sizeHint() const override;
@@ -44,9 +45,9 @@ private:
   void increaseFontSize();
   void resetFontSize();
 
-  NekoThemeManager *themeManager;
-  NekoConfigManager *configManager;
-  NekoEditor *editor;
+  neko::ThemeManager &themeManager;
+  neko::ConfigManager &configManager;
+  neko::Editor *editor;
   QFont font;
   QFontMetricsF fontMetrics;
 

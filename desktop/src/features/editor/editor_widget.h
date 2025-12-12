@@ -1,6 +1,7 @@
 #ifndef EDITOR_WIDGET_H
 #define EDITOR_WIDGET_H
 
+#include "neko-core/src/ffi/mod.rs.h"
 #include "utils/editor_utils.h"
 #include "utils/gui_utils.h"
 #include "utils/row_col.h"
@@ -14,19 +15,19 @@
 #include <QScrollBar>
 #include <QVBoxLayout>
 #include <QtDebug>
-#include <neko_core.h>
 
 class EditorWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit EditorWidget(NekoEditor *editor, NekoConfigManager *configManager,
-                        NekoThemeManager *themeManager,
+  explicit EditorWidget(neko::Editor *editor,
+                        neko::ConfigManager &configManager,
+                        neko::ThemeManager &themeManager,
                         QWidget *parent = nullptr);
   ~EditorWidget();
 
   void updateDimensionsAndRepaint();
-  void setEditor(NekoEditor *editor);
+  void setEditor(neko::Editor *editor);
 
 protected:
   void keyPressEvent(QKeyEvent *event) override;
@@ -69,9 +70,9 @@ private:
   void scrollToCursor();
   double measureContent();
 
-  NekoConfigManager *configManager;
-  NekoThemeManager *themeManager;
-  NekoEditor *editor;
+  neko::ConfigManager &configManager;
+  neko::ThemeManager &themeManager;
+  neko::Editor *editor;
   QFont font;
   QFontMetricsF fontMetrics;
 

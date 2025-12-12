@@ -1,12 +1,13 @@
 #include "file_explorer_widget.h"
+#include <neko-core/src/ffi/mod.rs.h>
 
-FileExplorerWidget::FileExplorerWidget(FileTree *tree,
-                                       NekoConfigManager *configManager,
-                                       NekoThemeManager *themeManager,
+FileExplorerWidget::FileExplorerWidget(neko::FileTree *tree,
+                                       neko::ConfigManager &configManager,
+                                       neko::ThemeManager &themeManager,
                                        QWidget *parent)
     : QScrollArea(parent), tree(tree), configManager(configManager),
       themeManager(themeManager),
-      font(UiUtils::loadFont(configManager, UiUtils::FontType::FileExplorer)),
+      font(UiUtils::loadFont(configManager, neko::FontType::FileExplorer)),
       fontMetrics(font) {
   setFocusPolicy(Qt::StrongFocus);
   setFrameShape(QFrame::NoFrame);
@@ -41,17 +42,13 @@ void FileExplorerWidget::resizeEvent(QResizeEvent *event) {
 }
 
 void FileExplorerWidget::loadSavedDir() {
-  char *rawPath = neko_config_get_file_explorer_directory(configManager);
+  auto rawPath = configManager.get_file_explorer_directory();
+  QString savedDir = QString::fromUtf8(rawPath);
 
-  if (rawPath != nullptr) {
-    QString savedDir = QString::fromUtf8(rawPath);
-    neko_string_free(rawPath);
-
-    if (!savedDir.isEmpty()) {
-      initialize(savedDir.toStdString());
-      rootPath = savedDir.toStdString();
-      directorySelectionButton->hide();
-    }
+  if (!savedDir.isEmpty()) {
+    initialize(savedDir.toStdString());
+    rootPath = savedDir.toStdString();
+    directorySelectionButton->hide();
   }
 }
 
@@ -64,20 +61,20 @@ void FileExplorerWidget::directorySelectionRequested() {
     initialize(dir.toStdString());
     rootPath = dir.toStdString();
     directorySelectionButton->hide();
-    neko_config_set_file_explorer_directory(configManager,
-                                            dir.toStdString().c_str());
+    configManager.set_file_explorer_directory(dir.toStdString());
   }
 }
 
 void FileExplorerWidget::initialize(std::string path) {
-  neko_file_tree_set_root_path(tree, path.c_str());
+  tree->set_root_dir(path);
   emit directorySelected(path);
   loadDirectory(path);
   handleViewportUpdate();
 }
 
 void FileExplorerWidget::loadDirectory(const std::string path) {
-  neko_file_tree_get_children(tree, path.c_str(), &fileNodes, &fileCount);
+  fileNodes = tree->get_children(path);
+  fileCount = fileNodes.size();
   viewport()->repaint();
 }
 
@@ -86,8 +83,8 @@ double FileExplorerWidget::measureContent() {
 
   // TODO: Make this faster
   for (int i = 0; i < fileCount; i++) {
-    const char *line = fileNodes[i].name;
-    QString lineText = QString::fromStdString(line);
+    auto rawLine = fileNodes[i].name;
+    QString lineText = QString::fromUtf8(rawLine);
 
     finalWidth = std::max(fontMetrics.horizontalAdvance(lineText), finalWidth);
   }
@@ -122,34 +119,31 @@ void FileExplorerWidget::wheelEvent(QWheelEvent *event) {
 }
 
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
-  if (tree == nullptr)
-    return;
-
   int row = convertMousePositionToRow(event->pos().y());
+
   if (row >= fileCount) {
-    neko_file_tree_clear_current(tree);
+    tree->clear_current();
     viewport()->repaint();
     return;
   }
 
   auto node = fileNodes[row];
-  neko_file_tree_set_current(tree, node.path);
+  tree->set_current(node.path);
 
   if (node.is_dir) {
-    neko_file_tree_toggle_expanded(tree, node.path);
-    neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
+    tree->toggle_expanded(node.path);
+    fileNodes = tree->get_visible_nodes();
+    fileCount = fileNodes.size();
     handleViewportUpdate();
   } else {
-    emit fileSelected(node.path, false);
+    QString fileStr = QString::fromUtf8(node.path);
+    emit fileSelected(fileStr.toStdString(), false);
   }
 
   viewport()->repaint();
 }
 
 int FileExplorerWidget::convertMousePositionToRow(double y) {
-  if (tree == nullptr)
-    return 0;
-
   const double lineHeight = fontMetrics.height();
   const int scrollX = horizontalScrollBar()->value();
   const int scrollY = verticalScrollBar()->value();
@@ -194,7 +188,7 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   }
 
   if (shouldScroll) {
-    int index = neko_file_tree_get_index(tree);
+    int index = tree->get_current_index();
     scrollToNode(index);
   }
 
@@ -202,184 +196,153 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
 }
 
 void FileExplorerWidget::handleLeft() {
-  auto currentPath = neko_file_tree_get_current(tree);
+  auto rawCurrentPath = tree->get_path_of_current();
 
   // If focused node is collapsed, go to parent and collapse
-  if (!neko_file_tree_is_expanded(tree, currentPath)) {
-    auto parent = neko_file_tree_get_parent(tree, currentPath);
-    if (parent != nullptr && parent != rootPath) {
-      neko_file_tree_set_current(tree, parent);
-      neko_file_tree_set_collapsed(tree, parent);
-      neko_string_free(parent);
+  if (!tree->is_expanded(rawCurrentPath)) {
+    auto parent = tree->get_path_of_parent(rawCurrentPath);
+    if (parent != rootPath) {
+      tree->set_current(parent);
+      tree->set_collapsed(parent);
     }
   } else {
     // Otherwise, collapse focused node and stay put
     collapseNode();
   }
 
-  if (currentPath != nullptr) {
-    neko_string_free(const_cast<char *>(currentPath));
-  }
-
-  neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
+  fileNodes = tree->get_visible_nodes();
+  fileCount = fileNodes.size();
   handleViewportUpdate();
 }
 
 void FileExplorerWidget::handleRight() {
-  auto currentPath = neko_file_tree_get_current(tree);
+  auto rawCurrentPath = tree->get_path_of_current();
 
   // If focused node is collapsed, expand and stay put
-  if (!neko_file_tree_is_expanded(tree, currentPath)) {
+  if (!tree->is_expanded(rawCurrentPath)) {
     expandNode();
   } else {
     // Otherwise, go to first child
-    const FileNode *children;
-    size_t childCount = 0;
+    auto children = tree->get_children(rawCurrentPath);
 
-    neko_file_tree_get_children(tree, currentPath, &children, &childCount);
-
-    if (childCount > 0) {
-      neko_file_tree_set_current(tree, children[0].path);
+    if (!children.empty()) {
+      tree->set_current(children[0].path);
     }
   }
 
-  if (currentPath != nullptr) {
-    neko_string_free(const_cast<char *>(currentPath));
-  }
-
-  neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
+  fileNodes = tree->get_visible_nodes();
+  fileCount = fileNodes.size();
   handleViewportUpdate();
 }
 
 void FileExplorerWidget::handleEnter() {
-  auto currentPath = neko_file_tree_get_current(tree);
+  auto rawCurrentPath = tree->get_path_of_current();
 
-  // If focused node exists
-  if (currentPath != nullptr) {
-    // If focused node is a directory, toggle expansion
-    const FileNode *currentFile = neko_file_tree_get_node(tree, currentPath);
-    bool isDir = currentFile->is_dir;
+  // If focused node is a directory, toggle expansion
+  auto currentFile = tree->get_node(rawCurrentPath);
+  bool isDir = currentFile.is_dir;
 
+  if (!rawCurrentPath.empty()) {
     if (isDir) {
-      if (!neko_file_tree_is_expanded(tree, currentPath)) {
+      if (!tree->is_expanded(rawCurrentPath)) {
         expandNode();
       } else {
         collapseNode();
       }
     } else {
       // Otherwise, open the file in the editor
-      if (currentFile != nullptr) {
-        emit fileSelected(currentPath);
-      }
+      emit fileSelected(rawCurrentPath.c_str());
     }
   } else {
-    neko_file_tree_set_current(tree, fileNodes[0].path);
+    tree->set_current(fileNodes[0].path);
   }
 
-  if (currentPath != nullptr) {
-    neko_string_free(const_cast<char *>(currentPath));
-  }
-
-  neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
+  fileNodes = tree->get_visible_nodes();
+  fileCount = fileNodes.size();
 }
 
 void FileExplorerWidget::selectNextNode() {
-  auto currentPath = neko_file_tree_get_current(tree);
+  auto rawCurrentPath = tree->get_path_of_current();
 
-  if (currentPath == nullptr) {
-    if (fileNodes == nullptr) {
-      return;
-    }
-
-    neko_file_tree_set_current(tree, fileNodes[0].path);
+  if (rawCurrentPath.empty()) {
+    tree->set_current(fileNodes[0].path);
     return;
   }
 
-  auto next = neko_file_tree_next(tree, currentPath);
-  if (next != nullptr) {
-    neko_file_tree_set_current(tree, next->path);
-
-    neko_string_free(const_cast<char *>(currentPath));
-  }
+  auto next = tree->get_next_node(rawCurrentPath);
+  tree->set_current(next.path);
 }
 
 void FileExplorerWidget::selectPrevNode() {
-  auto currentPath = neko_file_tree_get_current(tree);
+  auto rawCurrentPath = tree->get_path_of_current();
 
-  if (currentPath == nullptr) {
-    if (fileNodes == nullptr) {
+  if (rawCurrentPath.empty()) {
+    if (fileNodes.empty()) {
       return;
     }
 
-    neko_file_tree_set_current(tree, fileNodes[0].path);
+    tree->set_current(fileNodes[0].path);
     return;
   }
 
-  auto prev = neko_file_tree_prev(tree, currentPath);
-  if (prev != nullptr) {
-    neko_file_tree_set_current(tree, prev->path);
-
-    neko_string_free(const_cast<char *>(currentPath));
-  }
+  auto prev = tree->get_prev_node(rawCurrentPath);
+  tree->set_current(prev.path);
 }
 
 void FileExplorerWidget::toggleSelectNode() {
-  auto currentPath = neko_file_tree_get_current(tree);
+  auto rawCurrentPath = tree->get_path_of_current();
 
-  if (currentPath == nullptr) {
-    if (fileNodes == nullptr) {
+  if (rawCurrentPath.empty()) {
+    if (fileNodes.empty()) {
       return;
     }
 
-    neko_file_tree_set_current(tree, fileNodes[0].path);
+    tree->set_current(fileNodes[0].path);
     return;
   }
 
-  neko_file_tree_toggle_select(tree, currentPath);
-
-  neko_string_free(const_cast<char *>(currentPath));
+  tree->toggle_select(rawCurrentPath);
 }
 
 void FileExplorerWidget::expandNode() {
-  auto currentPath = neko_file_tree_get_current(tree);
-  if (currentPath == nullptr) {
-    if (fileNodes == nullptr) {
+  auto rawCurrentPath = tree->get_path_of_current();
+
+  if (rawCurrentPath.empty()) {
+    if (fileNodes.empty()) {
       return;
     }
 
-    neko_file_tree_set_current(tree, fileNodes[0].path);
+    tree->set_current(fileNodes[0].path);
     return;
   }
 
-  neko_file_tree_set_expanded(tree, currentPath);
-  neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
+  tree->set_expanded(rawCurrentPath);
+  fileNodes = tree->get_visible_nodes();
+  fileCount = fileNodes.size();
 
-  neko_string_free(const_cast<char *>(currentPath));
   handleViewportUpdate();
 }
 
 void FileExplorerWidget::collapseNode() {
-  auto currentPath = neko_file_tree_get_current(tree);
-  if (currentPath == nullptr) {
-    if (fileNodes == nullptr) {
+  auto rawCurrentPath = tree->get_path_of_current();
+
+  if (rawCurrentPath.empty()) {
+    if (fileNodes.empty()) {
       return;
     }
 
-    neko_file_tree_set_current(tree, fileNodes[0].path);
+    tree->set_current(fileNodes[0].path);
     return;
   }
 
-  neko_file_tree_set_collapsed(tree, currentPath);
-  neko_file_tree_get_visible_nodes(tree, &fileNodes, &fileCount);
+  tree->set_collapsed(rawCurrentPath);
+  fileNodes = tree->get_visible_nodes();
+  fileCount = fileNodes.size();
 
-  neko_string_free(const_cast<char *>(currentPath));
   handleViewportUpdate();
 }
 
 void FileExplorerWidget::scrollToNode(int index) {
-  if (tree == nullptr)
-    return;
-
   const double viewportHeight = viewport()->height();
   const double lineHeight = fontMetrics.height();
   const int scrollY = verticalScrollBar()->value();
@@ -400,7 +363,7 @@ void FileExplorerWidget::paintEvent(QPaintEvent *event) {
 }
 
 void FileExplorerWidget::drawFiles(QPainter *painter, size_t count,
-                                   const FileNode *nodes) {
+                                   rust::Vec<neko::FileNode> nodes) {
   double lineHeight = fontMetrics.height();
   double verticalOffset = verticalScrollBar()->value();
   double horizontalOffset = horizontalScrollBar()->value();
@@ -414,23 +377,23 @@ void FileExplorerWidget::drawFiles(QPainter *painter, size_t count,
 
   for (int i = startRow; i < endRow; i++) {
     double y = (i * lineHeight) - verticalOffset;
-    drawFile(painter, -horizontalOffset, y, &nodes[i]);
+    drawFile(painter, -horizontalOffset, y, nodes[i]);
   }
 }
 
 void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
-                                  const FileNode *node) {
+                                  neko::FileNode node) {
   painter->setFont(font);
 
-  double indent = node->depth * 20.0;
+  double indent = node.depth * 20.0;
   double viewportWidth = viewport()->width();
   // Adjusted to avoid overlapping with the splitter
   double viewportWidthAdjusted = viewportWidth - 1.0;
   double lineHeight = fontMetrics.height();
   double horizontalOffset = horizontalScrollBar()->value();
 
-  bool isSelected = neko_file_tree_is_selected(tree, node->path);
-  bool isCurrent = neko_file_tree_is_current(tree, node->path);
+  bool isSelected = tree->is_selected(node.path);
+  bool isCurrent = tree->is_current(node.path);
 
   // Selection background
   if (isSelected) {
@@ -450,8 +413,8 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
 
   // Get appropriate icon
   QIcon icon;
-  if (node->is_dir) {
-    bool isExpanded = neko_file_tree_is_expanded(tree, node->path);
+  if (node.is_dir) {
+    bool isExpanded = tree->is_expanded(node.path);
 
     icon = QApplication::style()->standardIcon(
         isExpanded ? QStyle::SP_DirOpenIcon : QStyle::SP_DirIcon);
@@ -472,5 +435,5 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   painter->setBrush(Qt::white);
   painter->setPen(Qt::white);
   painter->drawText(QPointF(textX, y + fontMetrics.ascent()),
-                    QString::fromUtf8(node->name));
+                    QString::fromUtf8(node.name));
 }

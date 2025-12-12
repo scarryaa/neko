@@ -1,76 +1,33 @@
 #include "gui_utils.h"
 
-QString UiUtils::getConfigString(NekoConfigManager *manager,
-                                 char *(*getter)(NekoConfigManager *)) {
-  char *raw = getter(manager);
-  QString result;
-
-  if (raw) {
-    result = QString::fromUtf8(raw);
-    neko_string_free(raw);
-  }
+QString UiUtils::getConfigString(neko::ConfigManager *manager,
+                                 char *(*getter)(neko::ConfigManager *)) {
+  auto raw = getter(manager);
+  QString result = QString::fromUtf8(raw);
 
   return result;
 }
 
-QString UiUtils::getThemeColor(NekoThemeManager *manager, const char *key,
+QString UiUtils::getThemeColor(neko::ThemeManager &manager, const char *key,
                                const char *fallback) {
-  char *raw = neko_theme_get_color(manager, key);
-  QString result = fallback;
+  auto colorStr = manager.get_color(key);
+  QString result = QString::fromUtf8(colorStr);
 
-  if (raw) {
-    result = QString::fromUtf8(raw);
-    neko_string_free(raw);
+  if (result.isEmpty()) {
+    return fallback;
   }
 
   return result;
 }
 
-QFont UiUtils::loadFont(NekoConfigManager *manager, FontType type) {
-  char *rawFamily = nullptr;
-  size_t size = 15;
+QFont UiUtils::loadFont(neko::ConfigManager &manager, neko::FontType type) {
   bool forceMonospace = false;
 
-  switch (type) {
-  case FontType::Editor:
-    rawFamily = neko_config_get_editor_font_family(manager);
-    size = neko_config_get_editor_font_size(manager);
-    forceMonospace = true;
-    break;
-  case FontType::FileExplorer:
-    rawFamily = neko_config_get_file_explorer_font_family(manager);
-    size = neko_config_get_file_explorer_font_size(manager);
-    forceMonospace = false;
-    break;
-  case FontType::Interface:
-    size = 15;
-    break;
-  case FontType::Terminal:
-    size = 15;
-    forceMonospace = true;
-    break;
-  }
+  auto rawFamily = manager.get_font_family(type);
+  auto rawSize = manager.get_font_size(type);
 
-  QString family;
-  if (rawFamily) {
-    family = QString::fromUtf8(rawFamily);
-    neko_string_free(rawFamily);
-  } else {
-    if (forceMonospace) {
-      family = QFontDatabase::systemFont(QFontDatabase::FixedFont).family();
-    } else {
-      family = QApplication::font().family();
-    }
-  }
-
-  QFont font(family, size);
-
-  if (forceMonospace) {
-    font.setStyleHint(QFont::Monospace);
-    font.setFixedPitch(true);
-  } else {
-    font.setStyleHint(QFont::SansSerif);
-  }
+  QString family = QString::fromUtf8(rawFamily);
+  QFont font(family, rawSize);
 
   return font;
 }

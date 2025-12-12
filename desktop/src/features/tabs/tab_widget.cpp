@@ -2,11 +2,11 @@
 #include "utils/gui_utils.h"
 
 TabWidget::TabWidget(const QString &title, int index,
-                     NekoConfigManager *configManager,
-                     NekoThemeManager *themeManager, QWidget *parent)
+                     neko::ConfigManager &configManager,
+                     neko::ThemeManager &themeManager, QWidget *parent)
     : QWidget(parent), configManager(configManager), themeManager(themeManager),
       title(title), index(index), isActive(false) {
-  QFont uiFont = UiUtils::loadFont(configManager, UiUtils::FontType::Interface);
+  QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 
   // Height = Font Height + Top Padding (8) + Bottom Padding (8)

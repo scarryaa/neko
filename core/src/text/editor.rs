@@ -1,6 +1,6 @@
 use crate::{Buffer, Cursor, Selection};
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Editor {
     buffer: Buffer,
     line_widths: Vec<f64>,

@@ -1,10 +1,11 @@
 #include "tab_bar_widget.h"
+#include <neko-core/src/ffi/mod.rs.h>
 
-TabBarWidget::TabBarWidget(NekoConfigManager *configManager,
-                           NekoThemeManager *themeManager, QWidget *parent)
+TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
+                           neko::ThemeManager &themeManager, QWidget *parent)
     : QScrollArea(parent), configManager(configManager),
       themeManager(themeManager) {
-  QFont uiFont = UiUtils::loadFont(configManager, UiUtils::FontType::Interface);
+  QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 
   // Height = Font Height + Top Padding (8) + Bottom Padding (8)
@@ -40,7 +41,7 @@ void TabBarWidget::setTabModified(int index, bool modified) {
   tabs[index]->setModified(modified);
 }
 
-void TabBarWidget::setTabs(QStringList titles, bool *modifiedStates) {
+void TabBarWidget::setTabs(QStringList titles, rust::Vec<bool> modifiedStates) {
   QLayoutItem *item;
   while ((item = layout->takeAt(0)) != nullptr) {
     if (item->widget() && item->widget() != newTabButton) {

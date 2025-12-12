@@ -1,23 +1,23 @@
 #include "main_window.h"
-#include "utils/gui_utils.h"
+#include <neko-core/src/ffi/mod.rs.h>
 
-MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent), appState(neko::new_app_state("")),
+      themeManager(neko::new_theme_manager()),
+      configManager(neko::new_config_manager()) {
   setupMacOSTitleBar(this);
   setAttribute(Qt::WA_NativeWindow);
   setAttribute(Qt::WA_LayoutOnEntireRect);
 
-  appState = neko_app_state_new(nullptr);
-  configManager = neko_config_manager_new();
-  themeManager = neko_theme_manager_new();
-  NekoEditor *editor = neko_app_state_get_editor(appState);
-  FileTree *fileTree = neko_app_state_get_file_tree(appState);
+  neko::Editor *editor = &appState->get_editor_mut();
+  neko::FileTree *fileTree = &appState->get_file_tree_mut();
 
   emptyStateWidget = new QWidget(this);
-  titleBarWidget = new TitleBarWidget(configManager, themeManager, this);
+  titleBarWidget = new TitleBarWidget(*configManager, *themeManager, this);
   fileExplorerWidget =
-      new FileExplorerWidget(fileTree, configManager, themeManager, this);
-  editorWidget = new EditorWidget(editor, configManager, themeManager, this);
-  gutterWidget = new GutterWidget(editor, configManager, themeManager, this);
+      new FileExplorerWidget(fileTree, *configManager, *themeManager, this);
+  editorWidget = new EditorWidget(editor, *configManager, *themeManager, this);
+  gutterWidget = new GutterWidget(editor, *configManager, *themeManager, this);
 
   setupKeyboardShortcuts();
 
@@ -61,23 +61,24 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   tabBarLayout->setContentsMargins(0, 0, 0, 0);
   tabBarLayout->setSpacing(0);
 
-  tabBarWidget = new TabBarWidget(configManager, themeManager, tabBarContainer);
+  tabBarWidget =
+      new TabBarWidget(*configManager, *themeManager, tabBarContainer);
   QPushButton *newTabButton = new QPushButton("+", tabBarContainer);
 
-  QFont uiFont = UiUtils::loadFont(configManager, UiUtils::FontType::Interface);
+  QFont uiFont = UiUtils::loadFont(*configManager, neko::FontType::Interface);
 
   // Height = Font Height + Top Padding (8) + Bottom Padding (8)
   QFontMetrics fm(uiFont);
   int dynamicHeight = fm.height() + 16;
 
   QString newTabButtonBackgroundColor =
-      UiUtils::getThemeColor(themeManager, "ui.background");
+      UiUtils::getThemeColor(*themeManager, "ui.background");
   QString newTabButtonForegroundColor =
-      UiUtils::getThemeColor(themeManager, "ui.foreground");
+      UiUtils::getThemeColor(*themeManager, "ui.foreground");
   QString newTabButtonBorderColor =
-      UiUtils::getThemeColor(themeManager, "ui.border");
+      UiUtils::getThemeColor(*themeManager, "ui.border");
   QString newTabButtonHoverBackgroundColor =
-      UiUtils::getThemeColor(themeManager, "ui.background.hover");
+      UiUtils::getThemeColor(*themeManager, "ui.background.hover");
 
   newTabButton->setFixedSize(dynamicHeight, dynamicHeight);
   QString newTabButtonStylesheet =
@@ -112,11 +113,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
   // Empty state layout
   QString accentMutedColor =
-      UiUtils::getThemeColor(themeManager, "ui.accent.muted");
+      UiUtils::getThemeColor(*themeManager, "ui.accent.muted");
   QString foregroundColor =
-      UiUtils::getThemeColor(themeManager, "ui.foreground");
+      UiUtils::getThemeColor(*themeManager, "ui.foreground");
   QString emptyStateBackgroundColor =
-      UiUtils::getThemeColor(themeManager, "ui.background");
+      UiUtils::getThemeColor(*themeManager, "ui.background");
 
   QString emptyStateStylesheet =
       QString("QWidget { background-color: %1; }"
@@ -156,7 +157,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   splitter->setSizes({250, 600});
   splitter->setHandleWidth(1);
 
-  QString borderColor = UiUtils::getThemeColor(themeManager, "ui.border");
+  QString borderColor = UiUtils::getThemeColor(*themeManager, "ui.border");
   QString splitterStylesheet = QString("QSplitter::handle {"
                                        "  background-color: %1;"
                                        "  margin: 0px;"
@@ -173,18 +174,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   editorWidget->setFocus();
 }
 
-MainWindow::~MainWindow() {
-  if (appState)
-    neko_app_state_free(appState);
-  if (configManager)
-    neko_config_manager_free(configManager);
-  if (themeManager)
-    neko_theme_manager_free(themeManager);
-}
+MainWindow::~MainWindow() {}
 
 void MainWindow::saveCurrentScrollState() {
-  if (neko_app_state_get_tab_count(appState) > 0) {
-    int currentIndex = neko_app_state_get_active_tab_index(appState);
+  if (appState->get_tab_count() > 0) {
+    int currentIndex = appState->get_active_tab_index();
+
     tabScrollOffsets[currentIndex] =
         ScrollOffset{editorWidget->horizontalScrollBar()->value(),
                      editorWidget->verticalScrollBar()->value()};
@@ -228,9 +223,10 @@ void MainWindow::setupKeyboardShortcuts() {
   nextTabAction->setShortcut(QKeySequence(Qt::MetaModifier | Qt::Key_Tab));
   nextTabAction->setShortcutContext(Qt::WindowShortcut);
   connect(nextTabAction, &QAction::triggered, this, [this]() {
-    size_t tabCount = neko_app_state_get_tab_count(appState);
+    int tabCount = appState->get_tab_count();
+
     if (tabCount > 0) {
-      size_t currentIndex = neko_app_state_get_active_tab_index(appState);
+      int currentIndex = appState->get_active_tab_index();
       size_t nextIndex = (currentIndex + 1) % tabCount;
       onTabChanged(nextIndex);
     }
@@ -243,9 +239,10 @@ void MainWindow::setupKeyboardShortcuts() {
       QKeySequence(Qt::MetaModifier | Qt::ShiftModifier | Qt::Key_Tab));
   prevTabAction->setShortcutContext(Qt::WindowShortcut);
   connect(prevTabAction, &QAction::triggered, this, [this]() {
-    size_t tabCount = neko_app_state_get_tab_count(appState);
+    int tabCount = appState->get_tab_count();
+
     if (tabCount > 0) {
-      size_t currentIndex = neko_app_state_get_active_tab_index(appState);
+      int currentIndex = appState->get_active_tab_index();
       size_t prevIndex = (currentIndex == 0) ? tabCount - 1 : currentIndex - 1;
       onTabChanged(prevIndex);
     }
@@ -254,19 +251,19 @@ void MainWindow::setupKeyboardShortcuts() {
 }
 
 void MainWindow::onBufferChanged() {
-  int activeIndex = neko_app_state_get_active_tab_index(appState);
-  bool modified = neko_app_state_get_tab_modified(appState, activeIndex);
+  int activeIndex = appState->get_active_tab_index();
+  bool modified = appState->get_tab_modified(activeIndex);
 
   tabBarWidget->setTabModified(activeIndex, modified);
 }
 
 void MainWindow::onActiveTabCloseRequested() {
-  int activeIndex = neko_app_state_get_active_tab_index(appState);
+  int activeIndex = appState->get_active_tab_index();
 
   // Save current scroll offset before closing
   saveCurrentScrollState();
 
-  if (neko_app_state_close_tab(appState, activeIndex)) {
+  if (appState->close_tab(activeIndex)) {
     // Remove scroll offset for closed tab
     tabScrollOffsets.erase(activeIndex);
 
@@ -289,7 +286,7 @@ void MainWindow::onActiveTabCloseRequested() {
 void MainWindow::onTabCloseRequested(int index) {
   saveCurrentScrollState();
 
-  if (neko_app_state_close_tab(appState, index)) {
+  if (appState->close_tab(index)) {
     // Remove scroll offset for closed tab
     tabScrollOffsets.erase(index);
 
@@ -311,7 +308,7 @@ void MainWindow::onTabCloseRequested(int index) {
 
 void MainWindow::onTabChanged(int index) {
   saveCurrentScrollState();
-  neko_app_state_set_active_tab(appState, index);
+  appState->set_active_tab_index(index);
   switchToActiveTab();
   updateTabBar();
 }
@@ -319,34 +316,31 @@ void MainWindow::onTabChanged(int index) {
 void MainWindow::onNewTabRequested() {
   saveCurrentScrollState();
 
-  neko_app_state_new_tab(appState);
+  appState->new_tab();
   updateTabBar();
   switchToActiveTab();
 }
 
 void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
-  if (neko_app_state_get_tab_count(appState) == 0) {
+  if (appState->get_tab_count() == 0) {
     // All tabs closed
     tabBarContainer->hide();
     editorWidget->hide();
     gutterWidget->hide();
     emptyStateWidget->show();
-
-    editorWidget->setEditor(nullptr);
-    gutterWidget->setEditor(nullptr);
   } else {
     emptyStateWidget->hide();
     tabBarContainer->show();
     editorWidget->show();
     gutterWidget->show();
 
-    NekoEditor *editor = neko_app_state_get_editor(appState);
-    editorWidget->setEditor(editor);
-    gutterWidget->setEditor(editor);
+    neko::Editor &editor = appState->get_editor_mut();
+    editorWidget->setEditor(&editor);
+    gutterWidget->setEditor(&editor);
     editorWidget->updateDimensionsAndRepaint();
     gutterWidget->updateDimensionsAndRepaint();
 
-    int currentIndex = neko_app_state_get_active_tab_index(appState);
+    int currentIndex = appState->get_active_tab_index();
     auto it = tabScrollOffsets.find(currentIndex);
     if (it != tabScrollOffsets.end()) {
       editorWidget->horizontalScrollBar()->setValue(it->second.x);
@@ -363,29 +357,24 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
 }
 
 void MainWindow::updateTabBar() {
-  char **titles = nullptr;
-  size_t count = 0;
-
-  neko_app_state_get_tab_titles(appState, &titles, &count);
+  auto rawTitles = appState->get_tab_titles();
+  int count = rawTitles.size();
 
   QStringList tabTitles;
-  for (size_t i = 0; i < count; i++) {
-    tabTitles.append(QString::fromUtf8(titles[i]));
+  for (int i = 0; i < rawTitles.size(); i++) {
+    tabTitles.append(QString::fromUtf8(rawTitles[i]));
   }
 
-  bool *modifieds = nullptr;
-  neko_app_state_get_tab_modified_states(appState, &modifieds, &count);
+  rust::Vec<bool> modifieds = appState->get_tab_modified_states();
 
   tabBarWidget->setTabs(tabTitles, modifieds);
-  tabBarWidget->setCurrentIndex(neko_app_state_get_active_tab_index(appState));
-
-  neko_app_state_free_tab_titles(titles, count);
+  tabBarWidget->setCurrentIndex(appState->get_active_tab_index());
 }
 
 void MainWindow::onFileSelected(const std::string &filePath,
                                 bool shouldFocusEditor) {
   // Check if file is already open
-  if (neko_app_state_is_file_open(appState, filePath.c_str())) {
+  if (appState->is_file_open(filePath)) {
     // Save current scroll offset before switching
     saveCurrentScrollState();
 
@@ -406,9 +395,9 @@ void MainWindow::onFileSelected(const std::string &filePath,
   // Save current scroll offset
   saveCurrentScrollState();
 
-  neko_app_state_new_tab(appState);
+  appState->new_tab();
 
-  if (neko_app_state_open_file(appState, filePath.c_str())) {
+  if (appState->open_file(filePath)) {
     updateTabBar();
     switchToActiveTab(false);
     editorWidget->updateDimensionsAndRepaint();
@@ -417,8 +406,8 @@ void MainWindow::onFileSelected(const std::string &filePath,
       editorWidget->setFocus();
     }
   } else {
-    int newTabIndex = neko_app_state_get_active_tab_index(appState);
-    neko_app_state_close_tab(appState, newTabIndex);
+    int newTabIndex = appState->get_active_tab_index();
+    appState->close_tab(newTabIndex);
 
     // Clean up scroll offset for the failed tab
     tabScrollOffsets.erase(newTabIndex);
@@ -439,13 +428,13 @@ void MainWindow::onFileSelected(const std::string &filePath,
 }
 
 void MainWindow::switchToTabWithFile(const std::string &path) {
-  int index = neko_app_state_get_tab_index_by_path(appState, path.c_str());
+  int index = appState->get_tab_index_by_path(path);
 
   if (index != -1) {
     // Save current scroll offset
     saveCurrentScrollState();
 
-    neko_app_state_set_active_tab(appState, index);
+    appState->set_active_tab_index(index);
     switchToActiveTab();
     updateTabBar();
   }
@@ -455,9 +444,9 @@ void MainWindow::onFileSaved(bool isSaveAs) {
   if (isSaveAs) {
     saveAs();
   } else {
-    if (neko_app_state_save_file(appState)) {
+    if (appState->save_active_file()) {
       // Save successful
-      int activeIndex = neko_app_state_get_active_tab_index(appState);
+      int activeIndex = appState->get_active_tab_index();
       tabBarWidget->setTabModified(activeIndex, false);
     } else {
       // Save failed, fallback to save as
@@ -471,9 +460,8 @@ void MainWindow::saveAs() {
       QFileDialog::getSaveFileName(this, "Save As", QDir::homePath());
 
   if (!filePath.isEmpty()) {
-    if (neko_app_state_save_and_set_path(appState,
-                                         filePath.toStdString().c_str())) {
-      int activeIndex = neko_app_state_get_active_tab_index(appState);
+    if (appState->save_and_set_path(filePath.toStdString())) {
+      int activeIndex = appState->get_active_tab_index();
       tabBarWidget->setTabModified(activeIndex, false);
       updateTabBar();
     } else {

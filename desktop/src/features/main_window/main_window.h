@@ -6,12 +6,13 @@
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/tabs/tab_bar_widget.h"
 #include "features/title_bar/title_bar_widget.h"
+#include "neko-core/src/ffi/mod.rs.h"
+#include "utils/gui_utils.h"
 #include "utils/mac_utils.h"
 #include "utils/scroll_offset.h"
 #include <QMainWindow>
 #include <QSplitter>
 #include <QVBoxLayout>
-#include <neko_core.h>
 #include <string>
 
 class MainWindow : public QMainWindow {
@@ -39,9 +40,9 @@ private:
   void switchToTabWithFile(const std::string &path);
   void saveCurrentScrollState();
 
-  NekoAppState *appState;
-  NekoConfigManager *configManager;
-  NekoThemeManager *themeManager;
+  rust::Box<neko::AppState> appState;
+  rust::Box<neko::ThemeManager> themeManager;
+  rust::Box<neko::ConfigManager> configManager;
   QWidget *emptyStateWidget;
   FileExplorerWidget *fileExplorerWidget;
   EditorWidget *editorWidget;

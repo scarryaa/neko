@@ -1,10 +1,11 @@
 #include "title_bar_widget.h"
 
-TitleBarWidget::TitleBarWidget(NekoConfigManager *configManager,
-                               NekoThemeManager *themeManager, QWidget *parent)
+TitleBarWidget::TitleBarWidget(neko::ConfigManager &configManager,
+                               neko::ThemeManager &themeManager,
+                               QWidget *parent)
     : QWidget(parent), configManager(configManager),
       themeManager(themeManager) {
-  QFont uiFont = UiUtils::loadFont(configManager, UiUtils::FontType::Interface);
+  QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 
   // Height = Font Height + Top Padding (8) + Bottom Padding (8)

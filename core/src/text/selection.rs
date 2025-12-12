@@ -30,6 +30,10 @@ impl Selection {
         &self.end
     }
 
+    pub fn anchor(&self) -> &Cursor {
+        &self.anchor
+    }
+
     pub fn begin(&mut self, cursor: &Cursor) {
         self.anchor = cursor.clone();
         self.start = cursor.clone();

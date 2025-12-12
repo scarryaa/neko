@@ -5,12 +5,14 @@ use std::{
 
 use crate::{FileTree, text::Editor};
 
+#[derive(Debug)]
 pub struct AppState {
     tabs: Vec<Tab>,
     active_tab_index: usize,
     file_tree: FileTree,
 }
 
+#[derive(Debug)]
 pub struct Tab {
     editor: Editor,
     original_content: Option<String>,

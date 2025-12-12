@@ -1,10 +1,11 @@
 #include "gutter_widget.h"
 
-GutterWidget::GutterWidget(NekoEditor *editor, NekoConfigManager *configManager,
-                           NekoThemeManager *themeManager, QWidget *parent)
+GutterWidget::GutterWidget(neko::Editor *editor,
+                           neko::ConfigManager &configManager,
+                           neko::ThemeManager &themeManager, QWidget *parent)
     : QScrollArea(parent), editor(editor), configManager(configManager),
       themeManager(themeManager),
-      font(UiUtils::loadFont(configManager, UiUtils::FontType::Editor)),
+      font(UiUtils::loadFont(configManager, neko::FontType::Editor)),
       fontMetrics(font) {
   setFocusPolicy(Qt::NoFocus);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -24,26 +25,19 @@ GutterWidget::GutterWidget(NekoEditor *editor, NekoConfigManager *configManager,
 
 GutterWidget::~GutterWidget() {}
 
-void GutterWidget::setEditor(NekoEditor *newEditor) { editor = newEditor; }
+void GutterWidget::setEditor(neko::Editor *newEditor) { editor = newEditor; }
 
 QSize GutterWidget::sizeHint() const {
   return QSize(measureContent() + VIEWPORT_PADDING, height());
 }
 
 double GutterWidget::measureContent() const {
-  if (editor == nullptr)
-    return 0;
-
-  size_t lineCount = 0;
-  neko_editor_get_line_count(editor, &lineCount);
+  int lineCount = editor->get_line_count();
 
   return fontMetrics.horizontalAdvance(QString::number(lineCount));
 }
 
 void GutterWidget::wheelEvent(QWheelEvent *event) {
-  if (editor == nullptr)
-    return;
-
   auto horizontalScrollOffset = horizontalScrollBar()->value();
   auto verticalScrollOffset = verticalScrollBar()->value();
   double verticalDelta =
@@ -56,13 +50,9 @@ void GutterWidget::wheelEvent(QWheelEvent *event) {
 }
 
 void GutterWidget::handleViewportUpdate() {
-  if (editor == nullptr)
-    return;
+  int lineCount = editor->get_line_count();
 
-  size_t line_count;
-  neko_editor_get_line_count(editor, &line_count);
-
-  auto viewportHeight = (line_count * fontMetrics.height()) -
+  auto viewportHeight = (lineCount * fontMetrics.height()) -
                         viewport()->height() + VIEWPORT_PADDING;
   auto contentWidth = measureContent();
   auto viewportWidth = contentWidth - viewport()->width() + VIEWPORT_PADDING;
@@ -88,14 +78,9 @@ void GutterWidget::onEditorFontSizeChanged(qreal newSize) {
 }
 
 void GutterWidget::paintEvent(QPaintEvent *event) {
-  if (editor == nullptr)
-    return;
-
   QPainter painter(viewport());
 
-  size_t lineCount;
-  neko_editor_get_line_count(editor, &lineCount);
-
+  int lineCount = editor->get_line_count();
   double lineHeight = fontMetrics.height();
   double verticalOffset = verticalScrollBar()->value();
   double viewportHeight = viewport()->height();
@@ -125,14 +110,16 @@ void GutterWidget::drawText(QPainter *painter, const ViewportContext &ctx,
       fontMetrics.horizontalAdvance(QString::number(maxLineNumber));
   double numWidth = fontMetrics.horizontalAdvance(QString::number(1));
 
-  size_t cursorRow, cursorCol;
-  neko_editor_get_cursor_position(editor, &cursorRow, &cursorCol);
+  neko::CursorPosition cursor = editor->get_cursor_position();
+  int cursorRow = cursor.row;
+  int cursorCol = cursor.col;
 
-  size_t selectionStartRow, selectionStartCol, selectionEndRow, selectionEndCol;
-  neko_editor_get_selection_start(editor, &selectionStartRow,
-                                  &selectionStartCol);
-  neko_editor_get_selection_end(editor, &selectionEndRow, &selectionEndCol);
-  bool selectionActive = neko_editor_get_selection_active(editor);
+  neko::Selection selection = editor->get_selection();
+  int selectionStartRow = selection.start.row;
+  int selectionEndRow = selection.end.row;
+  int selectionStartCol = selection.start.col;
+  int selectionEndCol = selection.end.col;
+  bool selectionActive = selection.active;
 
   for (int line = ctx.firstVisibleLine; line <= ctx.lastVisibleLine; ++line) {
     auto y =
@@ -159,8 +146,9 @@ void GutterWidget::drawText(QPainter *painter, const ViewportContext &ctx,
 
 void GutterWidget::drawLineHighlight(QPainter *painter,
                                      const ViewportContext &ctx) {
-  size_t cursorRow, cursorCol;
-  neko_editor_get_cursor_position(editor, &cursorRow, &cursorCol);
+  neko::CursorPosition cursor = editor->get_cursor_position();
+  int cursorRow = cursor.row;
+  int cursorCol = cursor.col;
 
   if (cursorRow < ctx.firstVisibleLine || cursorRow > ctx.lastVisibleLine) {
     return;

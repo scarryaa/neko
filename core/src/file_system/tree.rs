@@ -6,8 +6,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-#[repr(C)]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct FileNode {
     pub path: *const c_char,
     pub name: *const c_char,
@@ -70,8 +69,9 @@ impl FileNode {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct FileTree {
-    nodes: Vec<FileNode>,
+    pub nodes: Vec<FileNode>,
     root_path: PathBuf,
     expanded: HashMap<PathBuf, Vec<FileNode>>,
     selected: HashSet<PathBuf>,
@@ -81,7 +81,7 @@ pub struct FileTree {
 
 impl FileTree {
     pub fn new(root: Option<&str>) -> Result<Self, io::Error> {
-        if root.is_none() {
+        if root.is_none() || root.is_some_and(|r| r.is_empty()) {
             return Ok(Self {
                 nodes: Vec::new(),
                 root_path: PathBuf::new(),

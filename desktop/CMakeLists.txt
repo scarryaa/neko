@@ -3,12 +3,10 @@ qt_standard_project_setup()
 
 if(APPLE)
   find_library(COCOA_LIB Cocoa)
-
   list(APPEND PLATFORM_SRCS
     src/utils/mac_utils.mm
     src/utils/mac_utils.h
   )
-
   list(APPEND PLATFORM_LIBS ${COCOA_LIB})
 endif()
 
@@ -32,8 +30,6 @@ qt_add_executable(neko
 
     src/utils/editor_utils.cpp
     src/utils/editor_utils.h
-    src/utils/row_col.h
-    src/utils/scroll_offset.h
     src/utils/gui_utils.cpp
     src/utils/gui_utils.h
 
@@ -49,14 +45,12 @@ target_link_libraries(neko
     PRIVATE
         Qt::Core
         Qt::Widgets
-        neko_core  # Link the Rust library
-
+        neko_core
         ${PLATFORM_LIBS}
 )
 
 target_include_directories(neko PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/../core/include
 )
 
 include(GNUInstallDirs)

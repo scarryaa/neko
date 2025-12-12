@@ -1,6 +1,7 @@
 #ifndef FILE_EXPLORER_WIDGET_H
 #define FILE_EXPLORER_WIDGET_H
 
+#include "neko-core/src/ffi/mod.rs.h"
 #include "utils/gui_utils.h"
 #include <QApplication>
 #include <QFileDialog>
@@ -15,7 +16,6 @@
 #include <QStyle>
 #include <QVBoxLayout>
 #include <QWheelEvent>
-#include <neko_core.h>
 #include <string>
 
 struct FileTree;
@@ -24,8 +24,9 @@ class FileExplorerWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit FileExplorerWidget(FileTree *tree, NekoConfigManager *configManager,
-                              NekoThemeManager *themeManager,
+  explicit FileExplorerWidget(neko::FileTree *tree,
+                              neko::ConfigManager &configManager,
+                              neko::ThemeManager &themeManager,
                               QWidget *parent = nullptr);
   ~FileExplorerWidget();
 
@@ -47,8 +48,8 @@ public slots:
   void directorySelectionRequested();
 
 private:
-  void drawFiles(QPainter *painter, size_t count, const FileNode *nodes);
-  void drawFile(QPainter *painter, double x, double y, const FileNode *node);
+  void drawFiles(QPainter *painter, size_t count, rust::Vec<neko::FileNode>);
+  void drawFile(QPainter *painter, double x, double y, neko::FileNode node);
 
   void loadDirectory(const std::string path);
 
@@ -68,11 +69,11 @@ private:
 
   int convertMousePositionToRow(double y);
 
-  NekoConfigManager *configManager;
-  NekoThemeManager *themeManager;
-  FileTree *tree;
+  neko::ConfigManager &configManager;
+  neko::ThemeManager &themeManager;
+  neko::FileTree *tree;
   size_t fileCount = 0;
-  const FileNode *fileNodes = nullptr;
+  rust::Vec<neko::FileNode> fileNodes;
   std::string rootPath;
   QPushButton *directorySelectionButton;
   QFont font;
