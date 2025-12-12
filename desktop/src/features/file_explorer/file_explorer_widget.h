@@ -4,10 +4,12 @@
 #include "neko-core/src/ffi/mod.rs.h"
 #include "utils/gui_utils.h"
 #include <QApplication>
+#include <QClipboard>
 #include <QFileDialog>
 #include <QFont>
 #include <QFontMetricsF>
 #include <QIcon>
+#include <QMimeData>
 #include <QPainter>
 #include <QPoint>
 #include <QPushButton>
@@ -60,6 +62,8 @@ private:
   void handleEnter();
   void handleLeft();
   void handleRight();
+  void handleCopy();
+  void handlePaste();
 
   void selectNextNode();
   void selectPrevNode();

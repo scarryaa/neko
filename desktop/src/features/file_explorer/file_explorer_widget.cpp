@@ -181,6 +181,16 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   case Qt::Key_Return:
     handleEnter();
     break;
+  case Qt::Key_C:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
+      handleCopy();
+    }
+    break;
+  case Qt::Key_V:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
+      handlePaste();
+    }
+    break;
   }
 
   if (shouldUpdateViewport) {
@@ -193,6 +203,55 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   }
 
   viewport()->repaint();
+}
+
+void FileExplorerWidget::handleCopy() {
+  auto rawCurrentPath = tree->get_path_of_current();
+
+  QMimeData *mimeData = new QMimeData();
+
+  QList<QUrl> urls;
+  urls.append(QUrl::fromLocalFile(QString::fromUtf8(rawCurrentPath)));
+  mimeData->setUrls(urls);
+
+  QApplication::clipboard()->setMimeData(mimeData);
+}
+
+void FileExplorerWidget::handlePaste() {
+  auto rawCurrentPath = tree->get_path_of_current();
+  auto parentPath = tree->get_path_of_parent(rawCurrentPath);
+  auto currentNode = tree->get_node(rawCurrentPath);
+  bool currentIsDir = currentNode.is_dir;
+
+  const QMimeData *mimeData = QApplication::clipboard()->mimeData();
+
+  QList<QUrl> urls = mimeData->urls();
+
+  for (auto url : urls) {
+    QFile file = QFile(url.path());
+
+    if (file.open(QIODevice::ReadOnly)) {
+      QByteArray fileData = file.readAll();
+      file.close();
+
+      QFile dstFile =
+          QFile(QString::fromUtf8(currentIsDir ? rawCurrentPath : parentPath) +
+                QDir::separator() + url.fileName());
+      if (dstFile.open(QIODevice::WriteOnly)) {
+        dstFile.write(fileData);
+        dstFile.close();
+      } else {
+        qDebug() << "Failed to open dst file";
+      }
+    } else {
+      qDebug() << "Failed to open src file";
+    }
+  }
+
+  tree->refresh_dir(currentIsDir ? rawCurrentPath : parentPath);
+  fileNodes = tree->get_visible_nodes();
+  fileCount = fileNodes.size();
+  handleViewportUpdate();
 }
 
 void FileExplorerWidget::handleLeft() {

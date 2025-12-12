@@ -283,6 +283,15 @@ impl FileTree {
         }
     }
 
+    pub fn refresh_dir(&mut self, path: &str) {
+        let path_buf = PathBuf::from(path);
+
+        if path_buf.is_dir() {
+            self.expanded.remove(&path_buf);
+            self.get_children(path);
+        }
+    }
+
     pub fn is_expanded(&self, path: &str) -> bool {
         self.expanded.contains_key(&PathBuf::from(path))
     }

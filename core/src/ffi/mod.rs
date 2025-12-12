@@ -140,6 +140,7 @@ mod bridge {
         fn is_expanded(self: &FileTree, path: &str) -> bool;
         fn is_selected(self: &FileTree, path: &str) -> bool;
         fn is_current(self: &FileTree, path: &str) -> bool;
+        fn refresh_dir(self: &mut FileTree, path: &str);
 
         // FileNode
         fn get_path(self: &FileNode) -> String;
