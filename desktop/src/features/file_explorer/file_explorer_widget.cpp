@@ -1,5 +1,4 @@
 #include "file_explorer_widget.h"
-#include <neko-core/src/ffi/mod.rs.h>
 
 FileExplorerWidget::FileExplorerWidget(neko::FileTree *tree,
                                        neko::ConfigManager &configManager,
@@ -277,6 +276,12 @@ void FileExplorerWidget::selectNextNode() {
     return;
   }
 
+  if (tree->get_current_index() == fileNodes.size() - 1) {
+    // Wrap to start
+    tree->set_current(fileNodes.begin()->path);
+    return;
+  }
+
   auto next = tree->get_next_node(rawCurrentPath);
   tree->set_current(next.path);
 }
@@ -290,6 +295,12 @@ void FileExplorerWidget::selectPrevNode() {
     }
 
     tree->set_current(fileNodes[0].path);
+    return;
+  }
+
+  if (tree->get_current_index() == 0) {
+    // Wrap to end
+    tree->set_current(fileNodes.at(fileNodes.size() - 1).path);
     return;
   }
 
