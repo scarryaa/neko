@@ -1,5 +1,6 @@
 #include "file_explorer_widget.h"
 #include "utils/gui_utils.h"
+#include <neko-core/src/ffi/mod.rs.h>
 
 FileExplorerWidget::FileExplorerWidget(neko::FileTree *tree,
                                        neko::ConfigManager &configManager,
@@ -191,6 +192,12 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
       handlePaste();
     }
     break;
+  case Qt::Key_Delete:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
+      handleDeleteNoConfirm();
+    } else {
+      handleDeleteConfirm();
+    }
   }
 
   if (shouldUpdateViewport) {
@@ -215,6 +222,64 @@ void FileExplorerWidget::handleCopy() {
   mimeData->setUrls(urls);
 
   QApplication::clipboard()->setMimeData(mimeData);
+}
+
+void FileExplorerWidget::handleDeleteNoConfirm() {
+  auto rawCurrentPath = tree->get_path_of_current();
+  auto currentNode = tree->get_node(rawCurrentPath);
+
+  deleteItem(rawCurrentPath.c_str(), currentNode);
+}
+
+void FileExplorerWidget::handleDeleteConfirm() {
+  auto rawCurrentPath = tree->get_path_of_current();
+  auto currentNode = tree->get_node(rawCurrentPath);
+
+  QMessageBox::StandardButton reply;
+  reply = QMessageBox::question(this, "Delete Item",
+                                "Are you sure you want to delete " +
+                                    currentNode.name +
+                                    "?\n\n(Hold shift to bypass this dialog)",
+                                QMessageBox::Yes | QMessageBox::No);
+
+  if (reply == QMessageBox::Yes) {
+    deleteItem(rawCurrentPath.c_str(), currentNode);
+  }
+}
+
+void FileExplorerWidget::deleteItem(std::string path,
+                                    neko::FileNode currentNode) {
+  auto prevNode = tree->get_prev_node(path);
+  auto parentPath = tree->get_path_of_parent(path);
+  bool currentIsDir = currentNode.is_dir;
+
+  if (currentIsDir) {
+    QDir dir = QDir(QString::fromStdString(path));
+
+    if (dir.removeRecursively()) {
+      tree->refresh_dir(parentPath);
+      fileNodes = tree->get_visible_nodes();
+      fileCount = fileNodes.size();
+
+      tree->set_current(prevNode.path);
+      handleViewportUpdate();
+    } else {
+      qDebug() << "Failed to remove directory";
+    }
+  } else {
+    QFile file = QFile(QString::fromStdString(path));
+
+    if (file.remove()) {
+      tree->refresh_dir(parentPath);
+      fileNodes = tree->get_visible_nodes();
+      fileCount = fileNodes.size();
+
+      tree->set_current(prevNode.path);
+      handleViewportUpdate();
+    } else {
+      qDebug() << "Failed to remove file";
+    }
+  }
 }
 
 void FileExplorerWidget::handlePaste() {

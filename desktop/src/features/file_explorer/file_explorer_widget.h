@@ -9,6 +9,7 @@
 #include <QFont>
 #include <QFontMetricsF>
 #include <QIcon>
+#include <QMessageBox>
 #include <QMimeData>
 #include <QPainter>
 #include <QPoint>
@@ -64,6 +65,9 @@ private:
   void handleRight();
   void handleCopy();
   void handlePaste();
+  void handleDeleteConfirm();
+  void handleDeleteNoConfirm();
+  void deleteItem(std::string path, neko::FileNode currentNode);
 
   void selectNextNode();
   void selectPrevNode();
