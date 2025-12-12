@@ -254,7 +254,11 @@ void FileExplorerWidget::handleEnter() {
       emit fileSelected(rawCurrentPath.c_str());
     }
   } else {
-    tree->set_current(fileNodes[0].path);
+    if (!fileNodes.empty()) {
+      tree->set_current(fileNodes[0].path);
+    } else {
+      return;
+    }
   }
 
   fileNodes = tree->get_visible_nodes();
@@ -265,7 +269,11 @@ void FileExplorerWidget::selectNextNode() {
   auto rawCurrentPath = tree->get_path_of_current();
 
   if (rawCurrentPath.empty()) {
-    tree->set_current(fileNodes[0].path);
+    if (!fileNodes.empty()) {
+      tree->set_current(fileNodes[0].path);
+    } else {
+      return;
+    }
     return;
   }
 

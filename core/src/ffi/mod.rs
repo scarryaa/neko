@@ -417,7 +417,7 @@ impl FileTree {
 
     fn get_path_of_current(&self) -> String {
         self.get_current()
-            .unwrap()
+            .unwrap_or("".into())
             .to_string_lossy()
             .as_ref()
             .to_string()
