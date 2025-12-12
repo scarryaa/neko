@@ -65,6 +65,7 @@ private:
   void handleRight();
   void handleCopy();
   void handlePaste();
+  bool copyRecursively(QString sourceFolder, QString destFolder);
   void handleDeleteConfirm();
   void handleDeleteNoConfirm();
   void deleteItem(std::string path, neko::FileNode currentNode);

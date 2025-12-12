@@ -236,11 +236,11 @@ void FileExplorerWidget::handleDeleteConfirm() {
   auto currentNode = tree->get_node(rawCurrentPath);
 
   QMessageBox::StandardButton reply;
-  reply = QMessageBox::question(this, "Delete Item",
-                                "Are you sure you want to delete " +
-                                    currentNode.name +
-                                    "?\n\n(Hold shift to bypass this dialog)",
-                                QMessageBox::Yes | QMessageBox::No);
+  reply = QMessageBox::question(
+      this, "Delete Item",
+      "Are you sure you want to delete " + currentNode.name +
+          "?\n\n(Hold shift to bypass this dialog)",
+      QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
 
   if (reply == QMessageBox::Yes) {
     deleteItem(rawCurrentPath.c_str(), currentNode);
@@ -288,28 +288,36 @@ void FileExplorerWidget::handlePaste() {
   auto currentNode = tree->get_node(rawCurrentPath);
   bool currentIsDir = currentNode.is_dir;
 
+  QString targetDirectory = currentIsDir ? QString::fromUtf8(rawCurrentPath)
+                                         : QString::fromUtf8(parentPath);
+
   const QMimeData *mimeData = QApplication::clipboard()->mimeData();
+  if (!mimeData->hasUrls())
+    return;
 
   QList<QUrl> urls = mimeData->urls();
 
-  for (auto url : urls) {
-    QFile file = QFile(url.path());
+  for (const auto &url : urls) {
+    QString srcPath = url.toLocalFile();
+    QFileInfo srcInfo(srcPath);
 
-    if (file.open(QIODevice::ReadOnly)) {
-      QByteArray fileData = file.readAll();
-      file.close();
+    QString destPath = targetDirectory + QDir::separator() + srcInfo.fileName();
 
-      QFile dstFile =
-          QFile(QString::fromUtf8(currentIsDir ? rawCurrentPath : parentPath) +
-                QDir::separator() + url.fileName());
-      if (dstFile.open(QIODevice::WriteOnly)) {
-        dstFile.write(fileData);
-        dstFile.close();
-      } else {
-        qDebug() << "Failed to open dst file";
-      }
+    if (destPath.startsWith(srcPath)) {
+      continue;
+    }
+
+    if (srcInfo.isDir()) {
+      copyRecursively(srcPath, destPath);
     } else {
-      qDebug() << "Failed to open src file";
+      if (QFile::exists(destPath)) {
+        // QFile::remove(destPath);
+        qDebug() << "File already exists:" << destPath;
+      } else {
+        if (!QFile::copy(srcPath, destPath)) {
+          qDebug() << "Failed to copy file:" << srcPath;
+        }
+      }
     }
   }
 
@@ -317,6 +325,34 @@ void FileExplorerWidget::handlePaste() {
   fileNodes = tree->get_visible_nodes();
   fileCount = fileNodes.size();
   handleViewportUpdate();
+}
+
+bool FileExplorerWidget::copyRecursively(QString sourceFolder,
+                                         QString destFolder) {
+  QDir sourceDir(sourceFolder);
+  if (!sourceDir.exists())
+    return false;
+
+  QDir destDir(destFolder);
+  if (!destDir.exists()) {
+    destDir.mkpath(".");
+  }
+
+  QStringList files = sourceDir.entryList(QDir::Files | QDir::Dirs |
+                                          QDir::NoDotAndDotDot | QDir::Hidden);
+
+  for (const QString &file : files) {
+    QString srcName = sourceFolder + QDir::separator() + file;
+    QString destName = destFolder + QDir::separator() + file;
+
+    QFileInfo info(srcName);
+    if (info.isDir()) {
+      copyRecursively(srcName, destName);
+    } else {
+      QFile::copy(srcName, destName);
+    }
+  }
+  return true;
 }
 
 void FileExplorerWidget::handleLeft() {
