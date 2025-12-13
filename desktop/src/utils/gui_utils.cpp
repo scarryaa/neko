@@ -66,6 +66,19 @@ QString UiUtils::getScrollBarStylesheet(const QString &widgetName,
   return stylesheet;
 }
 
+QIcon UiUtils::createColorizedIcon(const QIcon &originalIcon,
+                                   const QColor &color, const QSize &size) {
+  QPixmap pixmap = originalIcon.pixmap(size);
+
+  QPainter painter(&pixmap);
+  painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+
+  painter.fillRect(pixmap.rect(), color);
+  painter.end();
+
+  return QIcon(pixmap);
+}
+
 double UiUtils::getTitleBarContentMargin() {
 #if defined(Q_OS_MACOS)
   return 84; // Spacing for traffic lights

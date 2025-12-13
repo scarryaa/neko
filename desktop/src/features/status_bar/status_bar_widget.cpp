@@ -16,15 +16,58 @@ StatusBarWidget::StatusBarWidget(neko::ConfigManager &configManager,
 
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
+  QString btnText = UiUtils::getThemeColor(
+      themeManager, "titlebar.button.foreground", "#a0a0a0");
+  QString btnHover =
+      UiUtils::getThemeColor(themeManager, "titlebar.button.hover", "#131313");
+  QString btnPress = UiUtils::getThemeColor(
+      themeManager, "titlebar.button.pressed", "#222222");
+
+  QColor greyColor =
+      UiUtils::getThemeColor(themeManager, "ui.foreground.muted");
+  QColor accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+  QSize iconSize(18, 18);
+
+  QIcon baseIcon =
+      QApplication::style()->standardIcon(QStyle::SP_DirClosedIcon);
+  QIcon toggleIcon;
+
+  QIcon greyIcon = UiUtils::createColorizedIcon(baseIcon, greyColor, iconSize);
+  toggleIcon.addPixmap(greyIcon.pixmap(iconSize), QIcon::Normal, QIcon::Off);
+
+  QIcon accentIcon =
+      UiUtils::createColorizedIcon(baseIcon, accentColor, iconSize);
+  toggleIcon.addPixmap(accentIcon.pixmap(iconSize), QIcon::Normal, QIcon::On);
+
+  fileExplorerToggleButton = new QPushButton();
+  fileExplorerToggleButton->setIcon(toggleIcon);
+  fileExplorerToggleButton->setIconSize(iconSize);
+  fileExplorerToggleButton->setCheckable(true);
+  fileExplorerToggleButton->setChecked(true);
+
+  fileExplorerToggleButton->setStyleSheet(
+      QString("QPushButton {"
+              "  background-color: transparent;"
+              "  border-radius: 4px;"
+              "  padding: 2px 2px;"
+              "}"
+              "QPushButton:hover { background-color: %1; }"
+              "QPushButton:pressed { background-color: %2; }")
+          .arg(btnHover, btnPress));
+
+  connect(fileExplorerToggleButton, &QPushButton::clicked, this,
+          &StatusBarWidget::onFileExplorerToggled);
+
   QHBoxLayout *layout = new QHBoxLayout(this);
 
-  int leftMargin = UiUtils::getTitleBarContentMargin();
-
-  layout->setContentsMargins(leftMargin, 5, 10, 5);
+  layout->setContentsMargins(10, 5, 10, 5);
+  layout->addWidget(fileExplorerToggleButton);
   layout->addStretch();
 }
 
 StatusBarWidget::~StatusBarWidget() {}
+
+void StatusBarWidget::onFileExplorerToggled() { emit fileExplorerToggled(); }
 
 void StatusBarWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(this);

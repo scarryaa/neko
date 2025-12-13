@@ -3,8 +3,13 @@
 
 #include "neko-core/src/ffi/mod.rs.h"
 #include "utils/gui_utils.h"
+#include <QApplication>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QPainter>
+#include <QPushButton>
+#include <QStyle>
+#include <QStyleOption>
 #include <QWidget>
 
 class StatusBarWidget : public QWidget {
@@ -16,13 +21,19 @@ public:
                            QWidget *parent = nullptr);
   ~StatusBarWidget();
 
+signals:
+  void fileExplorerToggled();
+
 protected:
   void paintEvent(QPaintEvent *event) override;
 
 private:
+  void onFileExplorerToggled();
+
   neko::ThemeManager &themeManager;
   neko::ConfigManager &configManager;
   double m_height;
+  QPushButton *fileExplorerToggleButton;
 };
 
 #endif // STATUS_BAR_WIDGET_H

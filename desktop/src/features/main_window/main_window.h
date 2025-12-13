@@ -23,6 +23,9 @@ public:
   explicit MainWindow(QWidget *parent = nullptr);
   ~MainWindow();
 
+public slots:
+  void onFileExplorerToggled();
+
 private slots:
   void onFileSelected(const std::string &filePath,
                       bool shouldFocusEditor = true);

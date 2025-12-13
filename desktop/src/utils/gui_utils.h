@@ -3,8 +3,12 @@
 
 #include "neko-core/src/ffi/mod.rs.h"
 #include <QApplication>
+#include <QColor>
 #include <QFont>
 #include <QFontDatabase>
+#include <QIcon>
+#include <QPainter>
+#include <QSize>
 #include <QString>
 
 namespace UiUtils {
@@ -19,6 +23,8 @@ QString getScrollBarStylesheet(const QString &widgetName,
                                const QString &bgColor,
                                const QString &additions = nullptr);
 double getTitleBarContentMargin();
+QIcon createColorizedIcon(const QIcon &originalIcon, const QColor &color,
+                          const QSize &size);
 } // namespace UiUtils
 
 #endif // UI_UTILS_H

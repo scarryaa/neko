@@ -43,6 +43,8 @@ MainWindow::MainWindow(QWidget *parent)
           &MainWindow::onActiveTabCloseRequested);
   connect(editorWidget, &EditorWidget::bufferChanged, this,
           &MainWindow::onBufferChanged);
+  connect(statusBarWidget, &StatusBarWidget::fileExplorerToggled, this,
+          &MainWindow::onFileExplorerToggled);
 
   QWidget *mainContainer = new QWidget(this);
   QVBoxLayout *mainLayout = new QVBoxLayout(mainContainer);
@@ -176,6 +178,14 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 MainWindow::~MainWindow() {}
+
+void MainWindow::onFileExplorerToggled() {
+  if (fileExplorerWidget->isHidden()) {
+    fileExplorerWidget->show();
+  } else {
+    fileExplorerWidget->hide();
+  }
+}
 
 void MainWindow::saveCurrentScrollState() {
   if (appState->get_tab_count() > 0) {
