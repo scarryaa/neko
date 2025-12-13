@@ -80,6 +80,8 @@ mod bridge {
         fn get_file_explorer_directory(self: &ConfigManager) -> String;
         fn set_file_explorer_shown(self: &mut ConfigManager, shown: bool);
         fn get_file_explorer_shown(self: &ConfigManager) -> bool;
+        fn set_file_explorer_width(self: &mut ConfigManager, width: usize);
+        fn get_file_explorer_width(self: &ConfigManager) -> usize;
 
         // ThemeManager
         fn new_theme_manager() -> Result<Box<ThemeManager>>;
@@ -269,6 +271,14 @@ impl ConfigManager {
 
     fn get_file_explorer_shown(self: &ConfigManager) -> bool {
         self.get_snapshot().file_explorer_shown
+    }
+
+    fn set_file_explorer_width(&mut self, width: usize) {
+        self.update(|c| c.file_explorer_width = width);
+    }
+
+    fn get_file_explorer_width(&self) -> usize {
+        self.get_snapshot().file_explorer_width
     }
 }
 

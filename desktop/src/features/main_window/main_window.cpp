@@ -167,6 +167,20 @@ MainWindow::MainWindow(QWidget *parent)
                                    .arg(borderColor);
   splitter->setStyleSheet(splitterStylesheet);
 
+  int savedSidebarWidth = configManager->get_file_explorer_width();
+  splitter->setSizes(QList<int>() << savedSidebarWidth << 1000000);
+
+  QObject::connect(splitter, &QSplitter::splitterMoved, this,
+                   [splitter, this](int pos, int index) {
+                     QList<int> sizes = splitter->sizes();
+
+                     if (!sizes.isEmpty()) {
+                       int newWidth = sizes.first();
+
+                       configManager->set_file_explorer_width(newWidth);
+                     }
+                   });
+
   mainLayout->addWidget(splitter);
   mainLayout->addWidget(statusBarWidget);
   setCentralWidget(mainContainer);

@@ -11,6 +11,7 @@ pub struct Config {
     pub file_explorer_font_family: String,
     pub file_explorer_directory: Option<String>,
     pub file_explorer_shown: bool,
+    pub file_explorer_width: usize,
 }
 
 impl Default for Config {
@@ -22,6 +23,7 @@ impl Default for Config {
             file_explorer_font_size: 15,
             file_explorer_directory: None,
             file_explorer_shown: true,
+            file_explorer_width: 250,
         }
     }
 }
