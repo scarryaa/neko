@@ -71,6 +71,7 @@ void GutterWidget::handleViewportUpdate() {
 
 void GutterWidget::updateDimensionsAndRepaint() {
   handleViewportUpdate();
+  updateGeometry();
   viewport()->repaint();
 }
 
