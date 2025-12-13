@@ -39,11 +39,13 @@ StatusBarWidget::StatusBarWidget(neko::ConfigManager &configManager,
       UiUtils::createColorizedIcon(baseIcon, accentColor, iconSize);
   toggleIcon.addPixmap(accentIcon.pixmap(iconSize), QIcon::Normal, QIcon::On);
 
+  bool fileExplorerShown = configManager.get_file_explorer_shown();
+
   fileExplorerToggleButton = new QPushButton();
   fileExplorerToggleButton->setIcon(toggleIcon);
   fileExplorerToggleButton->setIconSize(iconSize);
   fileExplorerToggleButton->setCheckable(true);
-  fileExplorerToggleButton->setChecked(true);
+  fileExplorerToggleButton->setChecked(fileExplorerShown);
 
   fileExplorerToggleButton->setStyleSheet(
       QString("QPushButton {"

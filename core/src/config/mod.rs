@@ -10,6 +10,7 @@ pub struct Config {
     pub file_explorer_font_size: usize,
     pub file_explorer_font_family: String,
     pub file_explorer_directory: Option<String>,
+    pub file_explorer_shown: bool,
 }
 
 impl Default for Config {
@@ -20,6 +21,7 @@ impl Default for Config {
             file_explorer_font_family: "IBM Plex Sans".to_string(),
             file_explorer_font_size: 15,
             file_explorer_directory: None,
+            file_explorer_shown: true,
         }
     }
 }

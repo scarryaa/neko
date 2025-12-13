@@ -78,6 +78,8 @@ mod bridge {
         fn set_font_family(self: &mut ConfigManager, font_family: &str, font_type: FontType);
         fn set_file_explorer_directory(self: &mut ConfigManager, new_directory: &str);
         fn get_file_explorer_directory(self: &ConfigManager) -> String;
+        fn set_file_explorer_shown(self: &mut ConfigManager, shown: bool);
+        fn get_file_explorer_shown(self: &ConfigManager) -> bool;
 
         // ThemeManager
         fn new_theme_manager() -> Result<Box<ThemeManager>>;
@@ -259,6 +261,14 @@ impl ConfigManager {
 
     fn set_file_explorer_directory(&mut self, new_directory: &str) {
         self.update(|c| c.file_explorer_directory = Some(new_directory.to_string()));
+    }
+
+    fn set_file_explorer_shown(self: &mut ConfigManager, shown: bool) {
+        self.update(|c| c.file_explorer_shown = shown);
+    }
+
+    fn get_file_explorer_shown(self: &ConfigManager) -> bool {
+        self.get_snapshot().file_explorer_shown
     }
 }
 

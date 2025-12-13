@@ -174,17 +174,26 @@ MainWindow::MainWindow(QWidget *parent)
   updateTabBar();
 
   fileExplorerWidget->loadSavedDir();
+
+  if (!configManager->get_file_explorer_shown()) {
+    fileExplorerWidget->hide();
+  }
+
   editorWidget->setFocus();
 }
 
 MainWindow::~MainWindow() {}
 
 void MainWindow::onFileExplorerToggled() {
-  if (fileExplorerWidget->isHidden()) {
+  bool isOpen = fileExplorerWidget->isHidden();
+
+  if (isOpen) {
     fileExplorerWidget->show();
   } else {
     fileExplorerWidget->hide();
   }
+
+  configManager->set_file_explorer_shown(isOpen);
 }
 
 void MainWindow::saveCurrentScrollState() {
