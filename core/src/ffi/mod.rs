@@ -119,6 +119,8 @@ mod bridge {
         fn get_selection(self: &mut Editor) -> Selection;
         fn paste(self: &mut Editor, text: &str);
         fn copy(self: &Editor) -> String;
+        fn undo(self: &mut Editor);
+        fn redo(self: &mut Editor);
 
         // FileTree
         #[cxx_name = "set_root_dir"]

@@ -1,4 +1,8 @@
+use std::fmt::Debug;
+
 use crate::{Buffer, Cursor, Selection};
+
+use super::{Edit, Transaction, UndoHistory, ViewState};
 
 #[derive(Default, Debug)]
 pub struct Editor {
@@ -8,6 +12,7 @@ pub struct Editor {
     max_width_line: usize,
     cursor: Cursor,
     selection: Selection,
+    history: UndoHistory,
 }
 
 impl Editor {
@@ -19,6 +24,7 @@ impl Editor {
             max_width_line: 0,
             cursor: Cursor::new(),
             selection: Selection::new(),
+            history: UndoHistory::default(),
         }
     }
 
@@ -53,79 +59,195 @@ impl Editor {
     }
 
     pub fn insert_text(&mut self, text: &str) {
+        self.begin_tx();
+
         if self.selection.is_active() {
+            let start = self.selection.start().get_idx();
+            let end = self.selection.end().get_idx();
+
             self.cursor = self.selection.start().clone();
-            self.selection.delete(&mut self.buffer);
+
+            let deleted = self.buffer.delete_range_capture(start, end);
+            self.record_edit(Edit::Delete {
+                start,
+                end,
+                deleted,
+            });
+
+            self.selection.clear();
             self.sync_line_widths();
             self.invalidate_line_width(self.cursor.get_row());
         }
 
-        self.cursor.insert_and_move(&mut self.buffer, text);
+        let pos = self.cursor.get_idx();
+        self.buffer.insert(pos, text);
+        self.record_edit(Edit::Insert {
+            pos,
+            text: text.to_string(),
+        });
+
+        self.cursor.move_right_by_bytes(&self.buffer, text.len());
         self.sync_line_widths();
         self.invalidate_line_width(self.cursor.get_row());
-        self.selection.clear();
+
+        self.commit_tx();
     }
 
     pub fn insert_newline(&mut self) {
+        self.begin_tx();
+
         if self.selection.is_active() {
+            let start = self.selection.start().get_idx();
+            let end = self.selection.end().get_idx();
+
             self.cursor = self.selection.start().clone();
-            self.selection.delete(&mut self.buffer);
+
+            let deleted = self.buffer.delete_range_capture(start, end);
+            self.record_edit(Edit::Delete {
+                start,
+                end,
+                deleted,
+            });
+
+            self.selection.clear();
             self.sync_line_widths();
+            self.invalidate_line_width(self.cursor.get_row());
         }
 
+        let pos = self.cursor.get_idx();
+        let text = "\n";
+        self.buffer.insert(pos, text);
+        self.record_edit(Edit::Insert {
+            pos,
+            text: text.to_string(),
+        });
+
         let current_row = self.cursor.get_row();
-        self.cursor.insert_newline(&mut self.buffer);
+        self.cursor.move_newline();
 
         // Newline adds a line, so insert width entry
         self.line_widths.insert(current_row + 1, -1.0);
         self.invalidate_line_width(current_row);
 
-        self.selection.clear();
+        self.commit_tx();
     }
 
     pub fn insert_tab(&mut self) {
+        self.begin_tx();
+
         if self.selection.is_active() {
+            let start = self.selection.start().get_idx();
+            let end = self.selection.end().get_idx();
+
             self.cursor = self.selection.start().clone();
-            self.selection.delete(&mut self.buffer);
+
+            let deleted = self.buffer.delete_range_capture(start, end);
+            self.record_edit(Edit::Delete {
+                start,
+                end,
+                deleted,
+            });
+
+            self.selection.clear();
             self.sync_line_widths();
+            self.invalidate_line_width(self.cursor.get_row());
         }
 
-        self.cursor.insert_tab(&mut self.buffer);
-        self.invalidate_line_width(self.cursor.get_row());
-        self.selection.clear();
+        let pos = self.cursor.get_idx();
+        let text = "    ";
+        self.buffer.insert(pos, text);
+        self.record_edit(Edit::Insert {
+            pos,
+            text: text.to_string(),
+        });
+
+        let current_row = self.cursor.get_row();
+        self.cursor.move_tab();
+
+        self.invalidate_line_width(current_row);
+
+        self.commit_tx();
     }
 
     pub fn backspace(&mut self) {
-        if self.selection.is_active() {
-            self.cursor = self.selection.start().clone();
-            self.selection.delete(&mut self.buffer);
-            self.sync_line_widths();
-        } else {
-            let row_before = self.cursor.get_row();
-            self.cursor.backspace_and_move(&mut self.buffer);
-            let row_after = self.cursor.get_row();
+        self.begin_tx();
 
-            // If rows changed, a line was joined
-            if row_before != row_after {
-                self.line_widths.remove(row_before);
-                self.invalidate_line_width(row_after);
-            } else {
+        if self.selection.is_active() {
+            let start = self.selection.start().get_idx();
+            let end = self.selection.end().get_idx();
+
+            self.cursor = self.selection.start().clone();
+            let deleted = self.buffer.delete_range_capture(start, end);
+            self.record_edit(Edit::Delete {
+                start,
+                end,
+                deleted,
+            });
+
+            self.selection.clear();
+            self.sync_line_widths();
+            self.invalidate_line_width(self.cursor.get_row());
+        } else {
+            let pos = self.cursor.get_idx();
+            let row_before = self.cursor.get_row();
+
+            if pos > 0 {
+                let start = pos - 1;
+                let end = pos;
+
+                let deleted = self.buffer.delete_range_capture(start, end);
+                self.record_edit(Edit::Delete {
+                    start,
+                    end,
+                    deleted,
+                });
+
+                self.cursor.move_left(&self.buffer);
+                let row_after = self.cursor.get_row();
+
+                if row_before != row_after {
+                    self.line_widths.remove(row_before);
+                }
                 self.invalidate_line_width(row_after);
             }
         }
 
-        self.selection.clear();
+        self.commit_tx();
     }
 
     pub fn delete(&mut self) {
+        self.begin_tx();
+
         if self.selection.is_active() {
+            let start = self.selection.start().get_idx();
+            let end = self.selection.end().get_idx();
+
             self.cursor = self.selection.start().clone();
-            self.selection.delete(&mut self.buffer);
+            let deleted = self.buffer.delete_range_capture(start, end);
+            self.record_edit(Edit::Delete {
+                start,
+                end,
+                deleted,
+            });
+
+            self.selection.clear();
             self.sync_line_widths();
+            self.invalidate_line_width(self.cursor.get_row());
         } else {
+            let start = self.cursor.get_idx();
+
             let line_count_before = self.buffer.line_count();
-            self.cursor.delete_at_cursor(&mut self.buffer);
+            let deleted = self.buffer.delete_at_capture(start);
             let line_count_after = self.buffer.line_count();
+
+            if !deleted.is_empty() {
+                let end = start + deleted.len();
+                self.record_edit(Edit::Delete {
+                    start,
+                    end,
+                    deleted,
+                });
+            }
 
             // If line count changed, a line was joined
             if line_count_before != line_count_after {
@@ -134,7 +256,7 @@ impl Editor {
             self.invalidate_line_width(self.cursor.get_row());
         }
 
-        self.selection.clear();
+        self.commit_tx();
     }
 
     pub fn move_to(&mut self, row: usize, col: usize, clear_selection: bool) {
@@ -283,5 +405,81 @@ impl Editor {
                 self.max_width_line = idx;
             }
         }
+    }
+
+    fn view_state(&self) -> ViewState {
+        ViewState {
+            cursor: self.cursor.clone(),
+            selection: self.selection.clone(),
+        }
+    }
+
+    fn begin_tx(&mut self) {
+        if self.history.current.is_none() {
+            self.history.current = Some(Transaction {
+                before: self.view_state(),
+                after: self.view_state(),
+                edits: Vec::new(),
+            });
+        }
+    }
+
+    fn record_edit(&mut self, edit: Edit) {
+        if let Some(tx) = &mut self.history.current {
+            tx.edits.push(edit);
+        }
+    }
+
+    fn commit_tx(&mut self) {
+        if let Some(mut tx) = self.history.current.take() {
+            tx.after = self.view_state();
+
+            if !tx.edits.is_empty() {
+                self.history.undo.push(tx);
+                self.history.redo.clear();
+            }
+        }
+    }
+
+    pub fn undo(&mut self) {
+        let Some(tx) = self.history.undo.pop() else {
+            return;
+        };
+
+        for edit in tx.edits.iter().rev() {
+            edit.invert().apply(&mut self.buffer);
+        }
+
+        self.cursor = tx.before.cursor.clone();
+        self.selection = tx.before.selection.clone();
+
+        self.sync_line_widths();
+        for i in 0..self.line_widths.len() {
+            self.line_widths[i] = -1.0;
+        }
+        self.recalculate_max_width();
+
+        self.history.redo.push(tx);
+    }
+
+    pub fn redo(&mut self) {
+        let Some(tx) = self.history.redo.pop() else {
+            return;
+        };
+
+        for edit in tx.edits.iter() {
+            edit.apply(&mut self.buffer);
+        }
+
+        self.cursor = tx.after.cursor.clone();
+        self.selection = tx.after.selection.clone();
+
+        self.sync_line_widths();
+        for i in 0..self.line_widths.len() {
+            self.line_widths[i] = -1.0;
+        }
+        self.recalculate_max_width();
+
+        self.history.undo.push(tx);
     }
 }

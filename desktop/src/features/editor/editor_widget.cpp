@@ -381,6 +381,22 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     shouldUpdateLineCount = true;
     break;
 
+  case Qt::Key_Z:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
+      if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
+        editor->redo();
+      } else {
+        editor->undo();
+      }
+    } else {
+      editor->insert_text(event->text().toStdString());
+    }
+    shouldScroll = true;
+    cursorChanged = true;
+    shouldUpdateViewport = true;
+    shouldUpdateLineCount = true;
+    break;
+
   default:
     if (event->text().isEmpty()) {
       return;

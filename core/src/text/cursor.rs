@@ -47,6 +47,21 @@ impl Cursor {
         self.idx += 1;
     }
 
+    pub fn move_newline(&mut self) {
+        self.row += 1;
+        self.column = 0;
+        self.sticky_column = 0;
+        self.idx += 1;
+    }
+
+    pub fn move_tab(&mut self) {
+        let tab_width = 4;
+
+        self.column += tab_width;
+        self.sticky_column += self.column;
+        self.idx += tab_width;
+    }
+
     pub fn insert_tab(&mut self, buffer: &mut Buffer) {
         // TODO: Make this configurable
         let tab_width = 4;
@@ -109,6 +124,12 @@ impl Cursor {
             self.column = 0;
             self.sticky_column = 0;
             self.idx += 1;
+        }
+    }
+
+    pub fn move_right_by_bytes(&mut self, buffer: &Buffer, length: usize) {
+        for _ in 0..length {
+            self.move_right(buffer);
         }
     }
 
