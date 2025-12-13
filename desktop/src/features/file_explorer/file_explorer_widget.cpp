@@ -1,4 +1,5 @@
 #include "file_explorer_widget.h"
+#include "utils/gui_utils.h"
 
 FileExplorerWidget::FileExplorerWidget(neko::FileTree *tree,
                                        neko::ConfigManager &configManager,
@@ -602,7 +603,7 @@ void FileExplorerWidget::drawFiles(QPainter *painter, size_t count,
 
   for (int i = startRow; i < endRow; i++) {
     double y = (i * lineHeight) - verticalOffset;
-    drawFile(painter, -horizontalOffset, y, nodes[i]);
+    drawFile(painter, -horizontalOffset + ICON_EDGE_PADDING, y, nodes[i]);
   }
 }
 
@@ -612,28 +613,35 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
 
   double indent = node.depth * 20.0;
   double viewportWidth = viewport()->width();
-  // Adjusted to avoid overlapping with the splitter
-  double viewportWidthAdjusted = viewportWidth - 1.0;
   double lineHeight = fontMetrics.height();
   double horizontalOffset = horizontalScrollBar()->value();
 
   bool isSelected = tree->is_selected(node.path);
   bool isCurrent = tree->is_current(node.path);
 
+  auto accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+  // TODO: Make a way to adjust alpha of theme colors
+  auto accentColorMuted = "#332f3b";
+
   // Selection background
   if (isSelected) {
-    painter->setBrush(SELECTION_COLOR);
+    painter->setBrush(accentColorMuted);
     painter->setPen(Qt::NoPen);
-    painter->drawRect(
-        QRectF(x, y, viewportWidth + horizontalOffset, lineHeight));
+    painter->drawRect(QRectF(
+        -horizontalOffset, y,
+        viewportWidth + ICON_EDGE_PADDING + horizontalOffset, lineHeight));
   }
 
   // Current item border
+  bool verticalScrollBarShown = !verticalScrollBar()->isHidden();
   if (isCurrent && hasFocus()) {
     painter->setBrush(Qt::NoBrush);
-    painter->setPen(SELECTION_PEN);
+    painter->setPen(accentColor);
     painter->drawRect(
-        QRectF(x, y, viewportWidthAdjusted + horizontalOffset, lineHeight));
+        QRectF(-horizontalOffset, y,
+               viewportWidth + ICON_EDGE_PADDING + horizontalOffset -
+                   (verticalScrollBarShown ? verticalScrollBar()->width() : 0),
+               lineHeight - 1));
   }
 
   // Get appropriate icon
@@ -647,12 +655,18 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
     icon = QApplication::style()->standardIcon(QStyle::SP_FileIcon);
   }
 
-  int iconSize = lineHeight - 2;
-  QPixmap pixmap = icon.pixmap(iconSize, iconSize);
+  int iconSize = lineHeight - ICON_ADJUSTMENT;
+  QIcon colorizedIcon = UiUtils::createColorizedIcon(icon, accentColor,
+                                                     QSize(iconSize, iconSize));
+  QPixmap pixmap = colorizedIcon.pixmap(iconSize, iconSize);
 
   if (node.is_hidden) {
-    pixmap = icon.pixmap(iconSize, iconSize, QIcon::Mode::Disabled,
-                         QIcon::State::Off);
+    pixmap = colorizedIcon.pixmap(iconSize, iconSize, QIcon::Mode::Disabled,
+                                  QIcon::State::Off);
+  }
+
+  if (!node.is_dir) {
+    pixmap = icon.pixmap(iconSize, iconSize);
   }
 
   // Draw icon with indentation

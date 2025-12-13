@@ -93,6 +93,8 @@ private:
   QFont font;
   QFontMetricsF fontMetrics;
 
+  double ICON_EDGE_PADDING = 10.0;
+  double ICON_ADJUSTMENT = 6.0;
   double FONT_STEP = 2.0;
   double DEFAULT_FONT_SIZE = 15.0;
   double FONT_UPPER_LIMIT = 96.0;
