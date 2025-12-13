@@ -8,6 +8,7 @@ name = "neko_core"
 crate-type = ["staticlib"]
 
 [dependencies]
+bitflags = "2.10.0"
 crop = "0.4.3"
 cxx = "1.0.190"
 dirs = "6.0.0"

@@ -2,6 +2,7 @@
 #define EDITOR_WIDGET_H
 
 #include "neko-core/src/ffi/mod.rs.h"
+#include "utils/change_mask.h"
 #include "utils/editor_utils.h"
 #include "utils/gui_utils.h"
 #include "utils/row_col.h"
@@ -48,6 +49,8 @@ signals:
 private:
   double getTextWidth(const QString &text, double horizontalOffset) const;
   RowCol convertMousePositionToRowCol(double x, double y);
+
+  void applyChangeSet(const neko::ChangeSetFfi &cs);
 
   void drawText(QPainter *painter, const ViewportContext &ctx);
   void drawCursor(QPainter *painter, const ViewportContext &ctx);

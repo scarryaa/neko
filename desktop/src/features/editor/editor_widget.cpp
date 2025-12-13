@@ -1,5 +1,4 @@
 #include "editor_widget.h"
-#include "utils/gui_utils.h"
 
 EditorWidget::EditorWidget(neko::Editor *editor,
                            neko::ConfigManager &configManager,
@@ -24,6 +23,32 @@ EditorWidget::EditorWidget(neko::Editor *editor,
 }
 
 EditorWidget::~EditorWidget() {}
+
+void EditorWidget::applyChangeSet(const neko::ChangeSetFfi &cs) {
+  const uint32_t m = cs.mask;
+
+  if (m & (ChangeMask::Cursor | ChangeMask::Selection)) {
+    emit cursorPositionChanged();
+  }
+
+  if (m & (ChangeMask::Viewport | ChangeMask::LineCount | ChangeMask::Widths)) {
+    handleViewportUpdate();
+  }
+
+  if (m & ChangeMask::LineCount) {
+    emit lineCountChanged();
+  }
+
+  if (m & ChangeMask::Cursor) {
+    scrollToCursor();
+  }
+
+  if (m & ChangeMask::Buffer) {
+    emit bufferChanged();
+  }
+
+  viewport()->update();
+}
 
 void EditorWidget::setEditor(neko::Editor *newEditor) { editor = newEditor; }
 
@@ -205,126 +230,83 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     return;
   }
 
-  size_t len = event->text().size();
-  bool cursorChanged = false;
-  bool shouldScroll = false;
-  bool shouldUpdateViewport = false;
-  bool shouldUpdateLineCount = false;
-
   switch (event->key()) {
   case Qt::Key_Left:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
-      editor->select_left();
+      applyChangeSet(editor->select_left());
     } else {
-      editor->move_left();
+      applyChangeSet(editor->move_left());
     }
-    cursorChanged = true;
-    shouldScroll = true;
     break;
   case Qt::Key_Right:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
-      editor->select_right();
+      applyChangeSet(editor->select_right());
     } else {
-      editor->move_right();
+      applyChangeSet(editor->move_right());
     }
-    cursorChanged = true;
-    shouldScroll = true;
     break;
   case Qt::Key_Up:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
-      editor->select_up();
+      applyChangeSet(editor->select_up());
     } else {
-      editor->move_up();
+      applyChangeSet(editor->move_up());
     }
-    cursorChanged = true;
-    shouldScroll = true;
     break;
   case Qt::Key_Down:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
-      editor->select_down();
+      applyChangeSet(editor->select_down());
     } else {
-      editor->move_down();
+      applyChangeSet(editor->move_down());
     }
-    cursorChanged = true;
-    shouldScroll = true;
     break;
 
   case Qt::Key_Enter:
   case Qt::Key_Return:
-    editor->insert_newline();
-    shouldUpdateViewport = true;
-    shouldScroll = true;
-    shouldUpdateLineCount = true;
-    cursorChanged = true;
+    applyChangeSet(editor->insert_newline());
     break;
   case Qt::Key_Backspace:
-    editor->backspace();
-    shouldUpdateViewport = true;
-    shouldScroll = true;
-    shouldUpdateLineCount = true;
-    cursorChanged = true;
+    applyChangeSet(editor->backspace());
     break;
   case Qt::Key_Delete:
-    editor->delete_forwards();
-    shouldUpdateViewport = true;
-    shouldScroll = true;
-    shouldUpdateLineCount = true;
+    applyChangeSet(editor->delete_forwards());
     break;
   case Qt::Key_Tab:
-    editor->insert_tab();
-    shouldUpdateViewport = true;
-    shouldScroll = true;
-    cursorChanged = true;
-
+    applyChangeSet(editor->insert_tab());
     break;
   case Qt::Key_Escape:
-    editor->clear_selection();
+    applyChangeSet(editor->clear_selection());
     break;
 
   case Qt::Key_Equal:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
       increaseFontSize();
     } else {
-      editor->insert_text(event->text().toStdString());
-      shouldScroll = true;
-      cursorChanged = true;
-      shouldUpdateLineCount = true;
+      applyChangeSet(editor->insert_text(event->text().toStdString()));
     }
-    shouldUpdateViewport = true;
     break;
   case Qt::Key_Minus:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
       decreaseFontSize();
+      handleViewportUpdate();
     } else {
-      editor->insert_text(event->text().toStdString());
-      shouldScroll = true;
-      cursorChanged = true;
-      shouldUpdateLineCount = true;
+      applyChangeSet(editor->insert_text(event->text().toStdString()));
     }
-    shouldUpdateViewport = true;
     break;
   case Qt::Key_0:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
       resetFontSize();
+      handleViewportUpdate();
     } else {
-      editor->insert_text(event->text().toStdString());
-      shouldScroll = true;
-      cursorChanged = true;
-      shouldUpdateLineCount = true;
+      applyChangeSet(editor->insert_text(event->text().toStdString()));
     }
-    shouldUpdateViewport = true;
     break;
 
   case Qt::Key_A:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
-      editor->select_all();
+      applyChangeSet(editor->select_all());
     } else {
-      editor->insert_text(event->text().toStdString());
-      shouldScroll = true;
-      shouldUpdateLineCount = true;
+      applyChangeSet(editor->insert_text(event->text().toStdString()));
     }
-    cursorChanged = true;
-    shouldUpdateViewport = true;
     break;
 
   case Qt::Key_C:
@@ -338,24 +320,16 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
         }
       }
     } else {
-      editor->insert_text(event->text().toStdString());
-      shouldUpdateViewport = true;
-      shouldScroll = true;
-      cursorChanged = true;
-      shouldUpdateLineCount = true;
+      applyChangeSet(editor->insert_text(event->text().toStdString()));
     }
     break;
   case Qt::Key_V:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
       QString text = QApplication::clipboard()->text();
-      editor->paste(text.toStdString());
+      applyChangeSet(editor->paste(text.toStdString()));
     } else {
-      editor->insert_text(event->text().toStdString());
+      applyChangeSet(editor->insert_text(event->text().toStdString()));
     }
-    cursorChanged = true;
-    shouldScroll = true;
-    shouldUpdateViewport = true;
-    shouldUpdateLineCount = true;
     break;
   case Qt::Key_X:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
@@ -367,34 +341,23 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
           QApplication::clipboard()->setText(text);
         }
 
-        editor->delete_forwards();
+        applyChangeSet(editor->delete_forwards());
       }
     } else {
-      editor->insert_text(event->text().toStdString());
-      shouldUpdateViewport = true;
-      shouldScroll = true;
-      shouldUpdateLineCount = true;
+      applyChangeSet(editor->insert_text(event->text().toStdString()));
     }
-    shouldScroll = true;
-    cursorChanged = true;
-    shouldUpdateViewport = true;
-    shouldUpdateLineCount = true;
     break;
 
   case Qt::Key_Z:
     if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
       if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
-        editor->redo();
+        applyChangeSet(editor->redo());
       } else {
-        editor->undo();
+        applyChangeSet(editor->undo());
       }
     } else {
-      editor->insert_text(event->text().toStdString());
+      applyChangeSet(editor->insert_text(event->text().toStdString()));
     }
-    shouldScroll = true;
-    cursorChanged = true;
-    shouldUpdateViewport = true;
-    shouldUpdateLineCount = true;
     break;
 
   default:
@@ -402,32 +365,9 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
       return;
     }
 
-    editor->insert_text(event->text().toStdString());
-    shouldUpdateViewport = true;
-    shouldScroll = true;
-    shouldUpdateLineCount = true;
-    cursorChanged = true;
+    applyChangeSet(editor->insert_text(event->text().toStdString()));
     break;
   }
-
-  if (cursorChanged) {
-    emit cursorPositionChanged();
-  }
-
-  if (shouldUpdateViewport) {
-    handleViewportUpdate();
-  }
-
-  if (shouldUpdateLineCount) {
-    emit lineCountChanged();
-  }
-
-  if (shouldScroll) {
-    scrollToCursor();
-  }
-
-  emit bufferChanged();
-  viewport()->repaint();
 }
 
 void EditorWidget::resetFontSize() { setFontSize(DEFAULT_FONT_SIZE); }

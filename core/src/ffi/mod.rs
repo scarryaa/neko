@@ -1,12 +1,24 @@
 use std::path::PathBuf;
 
-use bridge::{CursorPosition, FileNode, FontType, Selection};
+use bridge::{ChangeSetFfi, CursorPosition, FileNode, FontType, Selection};
 
 use crate::app::AppState;
 use crate::config::ConfigManager;
 use crate::file_system::FileTree;
-use crate::text::Editor;
+use crate::text::{ChangeSet, Editor};
 use crate::theme::ThemeManager;
+
+impl From<ChangeSet> for bridge::ChangeSetFfi {
+    fn from(cs: ChangeSet) -> Self {
+        Self {
+            mask: cs.change.bits(),
+            line_count_before: cs.line_count_before as u32,
+            line_count_after: cs.line_count_after as u32,
+            dirty_first_row: cs.dirty_first_row.map(|v| v as i32).unwrap_or(-1),
+            dirty_last_row: cs.dirty_last_row.map(|v| v as i32).unwrap_or(-1),
+        }
+    }
+}
 
 #[cxx::bridge(namespace = "neko")]
 mod bridge {
@@ -37,6 +49,14 @@ mod bridge {
         size: u64,
         modified: u64,
         depth: usize,
+    }
+
+    struct ChangeSetFfi {
+        mask: u32,
+        line_count_before: u32,
+        line_count_after: u32,
+        dirty_first_row: i32,
+        dirty_last_row: i32,
     }
 
     extern "Rust" {
@@ -89,18 +109,49 @@ mod bridge {
         fn get_color_wrapper(self: &mut ThemeManager, key: &str) -> String;
 
         // Editor
-        fn move_to(self: &mut Editor, row: usize, col: usize, clear_selection: bool);
-        fn select_to(self: &mut Editor, row: usize, col: usize);
-        fn move_left(self: &mut Editor);
-        fn move_right(self: &mut Editor);
-        fn move_up(self: &mut Editor);
-        fn move_down(self: &mut Editor);
-        fn insert_text(self: &mut Editor, text: &str);
-        fn insert_newline(self: &mut Editor);
-        fn insert_tab(self: &mut Editor);
-        fn backspace(self: &mut Editor);
+        #[cxx_name = "move_to"]
+        fn move_to_wrapper(
+            self: &mut Editor,
+            row: usize,
+            col: usize,
+            clear_selection: bool,
+        ) -> ChangeSetFfi;
+        #[cxx_name = "select_to"]
+        fn select_to_wrapper(self: &mut Editor, row: usize, col: usize) -> ChangeSetFfi;
+        #[cxx_name = "move_left"]
+        fn move_left_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        #[cxx_name = "move_right"]
+        fn move_right_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        #[cxx_name = "move_up"]
+        fn move_up_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        #[cxx_name = "move_down"]
+        fn move_down_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        #[cxx_name = "insert_text"]
+        fn insert_text_wrapper(self: &mut Editor, text: &str) -> ChangeSetFfi;
+        #[cxx_name = "insert_newline"]
+        fn insert_newline_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        #[cxx_name = "insert_tab"]
+        fn insert_tab_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        #[cxx_name = "backspace"]
+        fn backspace_wrapper(self: &mut Editor) -> ChangeSetFfi;
         #[cxx_name = "delete_forwards"]
-        fn delete(self: &mut Editor);
+        fn delete_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        #[cxx_name = "select_all"]
+        fn select_all_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        #[cxx_name = "select_left"]
+        fn select_left_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        #[cxx_name = "select_right"]
+        fn select_right_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        #[cxx_name = "select_up"]
+        fn select_up_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        #[cxx_name = "select_down"]
+        fn select_down_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        #[cxx_name = "clear_selection"]
+        fn clear_selection_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        #[cxx_name = "undo"]
+        fn undo_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        #[cxx_name = "redo"]
+        fn redo_wrapper(self: &mut Editor) -> ChangeSetFfi;
         #[cxx_name = "get_max_width"]
         fn max_width(self: &Editor) -> f64;
         #[cxx_name = "set_line_width"]
@@ -110,17 +161,9 @@ mod bridge {
         fn get_line(self: &Editor, line_idx: usize) -> String;
         fn get_line_count(self: &Editor) -> usize;
         fn get_cursor_position(self: &Editor) -> CursorPosition;
-        fn select_all(self: &mut Editor);
-        fn select_left(self: &mut Editor);
-        fn select_right(self: &mut Editor);
-        fn select_up(self: &mut Editor);
-        fn select_down(self: &mut Editor);
-        fn clear_selection(self: &mut Editor);
         fn get_selection(self: &mut Editor) -> Selection;
-        fn paste(self: &mut Editor, text: &str);
         fn copy(self: &Editor) -> String;
-        fn undo(self: &mut Editor);
-        fn redo(self: &mut Editor);
+        fn paste(self: &mut Editor, text: &str) -> ChangeSetFfi;
 
         // FileTree
         #[cxx_name = "set_root_dir"]
@@ -339,10 +382,6 @@ impl Editor {
         }
     }
 
-    fn paste(&mut self, text: &str) {
-        self.insert_text(text);
-    }
-
     fn copy(self: &Editor) -> String {
         let selection = self.selection();
 
@@ -352,6 +391,86 @@ impl Editor {
         } else {
             "".to_string()
         }
+    }
+
+    fn paste(&mut self, text: &str) -> ChangeSetFfi {
+        self.insert_text(text).into()
+    }
+
+    fn insert_text_wrapper(&mut self, text: &str) -> ChangeSetFfi {
+        self.insert_text(text).into()
+    }
+
+    fn move_to_wrapper(&mut self, row: usize, col: usize, clear_selection: bool) -> ChangeSetFfi {
+        self.move_to(row, col, clear_selection).into()
+    }
+
+    fn select_to_wrapper(&mut self, row: usize, col: usize) -> ChangeSetFfi {
+        self.select_to(row, col).into()
+    }
+
+    fn move_left_wrapper(&mut self) -> ChangeSetFfi {
+        self.move_left().into()
+    }
+
+    fn move_right_wrapper(&mut self) -> ChangeSetFfi {
+        self.move_right().into()
+    }
+
+    fn move_up_wrapper(&mut self) -> ChangeSetFfi {
+        self.move_up().into()
+    }
+
+    fn move_down_wrapper(&mut self) -> ChangeSetFfi {
+        self.move_down().into()
+    }
+
+    fn insert_newline_wrapper(&mut self) -> ChangeSetFfi {
+        self.insert_newline().into()
+    }
+
+    fn insert_tab_wrapper(&mut self) -> ChangeSetFfi {
+        self.insert_tab().into()
+    }
+
+    fn backspace_wrapper(&mut self) -> ChangeSetFfi {
+        self.backspace().into()
+    }
+
+    fn delete_wrapper(&mut self) -> ChangeSetFfi {
+        self.delete().into()
+    }
+
+    fn select_all_wrapper(&mut self) -> ChangeSetFfi {
+        self.select_all().into()
+    }
+
+    fn select_left_wrapper(&mut self) -> ChangeSetFfi {
+        self.select_left().into()
+    }
+
+    fn select_right_wrapper(&mut self) -> ChangeSetFfi {
+        self.select_right().into()
+    }
+
+    fn select_up_wrapper(&mut self) -> ChangeSetFfi {
+        self.select_up().into()
+    }
+
+    fn select_down_wrapper(&mut self) -> ChangeSetFfi {
+        self.select_down().into()
+    }
+
+    fn clear_selection_wrapper(&mut self) -> ChangeSetFfi {
+        self.clear_selection().into()
+    }
+
+    fn undo_wrapper(&mut self) -> ChangeSetFfi {
+        self.undo().into()
+    }
+
+    fn redo_wrapper(&mut self) -> ChangeSetFfi {
+        self.redo().into()
     }
 }
 

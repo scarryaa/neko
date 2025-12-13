@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use crate::{Buffer, Cursor, Selection};
 
-use super::{Edit, Transaction, UndoHistory, ViewState};
+use super::{Change, ChangeSet, Edit, Transaction, UndoHistory, ViewState};
 
 #[derive(Default, Debug)]
 pub struct Editor {
@@ -44,13 +44,55 @@ impl Editor {
         &self.selection
     }
 
-    pub fn load_file(&mut self, content: &str) {
+    fn begin_changes(&self) -> (usize, Cursor, Selection) {
+        (
+            self.buffer.line_count(),
+            self.cursor.clone(),
+            self.selection.clone(),
+        )
+    }
+
+    fn end_changes(
+        &self,
+        before_line_count: usize,
+        before_cursor: &Cursor,
+        before_selection: &Selection,
+    ) -> ChangeSet {
+        let after_line_count = self.buffer.line_count();
+
+        let mut c = Change::NONE;
+        if after_line_count != before_line_count {
+            c |= Change::LINE_COUNT | Change::VIEWPORT;
+        }
+        if &self.cursor != before_cursor {
+            c |= Change::CURSOR;
+        }
+        if &self.selection != before_selection {
+            c |= Change::SELECTION;
+        }
+
+        ChangeSet {
+            change: c,
+            line_count_before: before_line_count,
+            line_count_after: after_line_count,
+            dirty_first_row: None,
+            dirty_last_row: None,
+        }
+    }
+
+    pub fn load_file(&mut self, content: &str) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         self.buffer.clear();
         self.buffer.insert(0, content);
         self.cursor = Cursor::new();
         self.selection = Selection::new();
 
         self.clear_and_rebuild_line_widths();
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::BUFFER | Change::VIEWPORT | Change::WIDTHS;
+        cs
     }
 
     fn clear_and_rebuild_line_widths(&mut self) {
@@ -62,7 +104,9 @@ impl Editor {
         self.max_width_line = 0;
     }
 
-    fn delete_selection(&mut self) {
+    fn delete_selection(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         let a = self.selection.start().get_idx();
         let b = self.selection.end().get_idx();
         let (start, end) = if a <= b { (a, b) } else { (b, a) };
@@ -70,6 +114,7 @@ impl Editor {
         self.cursor = self.selection.start().clone();
 
         let deleted = self.buffer.delete_range_capture(start, end);
+        self.clear_and_rebuild_line_widths();
         self.record_edit(Edit::Delete {
             start,
             end,
@@ -79,9 +124,14 @@ impl Editor {
         self.selection.clear();
         self.sync_line_widths();
         self.invalidate_line_width(self.cursor.get_row());
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::BUFFER | Change::VIEWPORT | Change::WIDTHS;
+        cs
     }
 
-    pub fn insert_text(&mut self, text: &str) {
+    pub fn insert_text(&mut self, text: &str) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
         self.begin_tx();
 
         if self.selection.is_active() {
@@ -94,15 +144,21 @@ impl Editor {
             pos,
             text: text.to_string(),
         });
-
         self.cursor.move_right_by_bytes(&self.buffer, text.len());
+
         self.sync_line_widths();
         self.invalidate_line_width(self.cursor.get_row());
 
         self.commit_tx();
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::BUFFER | Change::VIEWPORT | Change::WIDTHS;
+        cs
     }
 
-    pub fn insert_newline(&mut self) {
+    pub fn insert_newline(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         self.begin_tx();
 
         if self.selection.is_active() {
@@ -125,9 +181,15 @@ impl Editor {
         self.invalidate_line_width(current_row);
 
         self.commit_tx();
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::BUFFER | Change::VIEWPORT | Change::WIDTHS;
+        cs
     }
 
-    pub fn insert_tab(&mut self) {
+    pub fn insert_tab(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         self.begin_tx();
 
         if self.selection.is_active() {
@@ -149,9 +211,15 @@ impl Editor {
         self.invalidate_line_width(current_row);
 
         self.commit_tx();
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::BUFFER | Change::VIEWPORT | Change::WIDTHS;
+        cs
     }
 
-    pub fn backspace(&mut self) {
+    pub fn backspace(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         self.begin_tx();
 
         if self.selection.is_active() {
@@ -182,9 +250,15 @@ impl Editor {
         }
 
         self.commit_tx();
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::BUFFER | Change::VIEWPORT | Change::WIDTHS;
+        cs
     }
 
-    pub fn delete(&mut self) {
+    pub fn delete(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         self.begin_tx();
 
         if self.selection.is_active() {
@@ -213,88 +287,164 @@ impl Editor {
         }
 
         self.commit_tx();
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::BUFFER | Change::VIEWPORT | Change::WIDTHS;
+        cs
     }
 
-    pub fn move_to(&mut self, row: usize, col: usize, clear_selection: bool) {
+    pub fn move_to(&mut self, row: usize, col: usize, clear_selection: bool) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         self.cursor.move_to(&self.buffer, row, col);
 
         if clear_selection {
             self.selection.clear();
         }
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::VIEWPORT;
+        cs
     }
 
-    pub fn move_left(&mut self) {
+    pub fn move_left(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         self.cursor.move_left(&self.buffer);
         self.selection.clear();
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::VIEWPORT;
+        cs
     }
 
-    pub fn move_right(&mut self) {
+    pub fn move_right(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         self.cursor.move_right(&self.buffer);
         self.selection.clear();
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::VIEWPORT;
+        cs
     }
 
-    pub fn move_up(&mut self) {
+    pub fn move_up(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         self.cursor.move_up(&self.buffer);
         self.selection.clear();
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::VIEWPORT;
+        cs
     }
 
-    pub fn move_down(&mut self) {
+    pub fn move_down(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         self.cursor.move_down(&self.buffer);
         self.selection.clear();
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::VIEWPORT;
+        cs
     }
 
-    pub fn select_to(&mut self, row: usize, col: usize) {
+    pub fn select_to(&mut self, row: usize, col: usize) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         if !self.selection.is_active() {
             self.selection.begin(&self.cursor);
         }
         self.move_to(row, col, false);
         self.selection.update(&self.cursor);
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::VIEWPORT;
+        cs
     }
 
-    pub fn select_left(&mut self) {
+    pub fn select_left(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         if !self.selection.is_active() {
             self.selection.begin(&self.cursor);
         }
 
         self.cursor.move_left(&self.buffer);
         self.selection.update(&self.cursor);
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::VIEWPORT;
+        cs
     }
 
-    pub fn select_right(&mut self) {
+    pub fn select_right(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         if !self.selection.is_active() {
             self.selection.begin(&self.cursor);
         }
 
         self.cursor.move_right(&self.buffer);
         self.selection.update(&self.cursor);
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::VIEWPORT;
+        cs
     }
 
-    pub fn select_up(&mut self) {
+    pub fn select_up(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         if !self.selection.is_active() {
             self.selection.begin(&self.cursor);
         }
 
         self.cursor.move_up(&self.buffer);
         self.selection.update(&self.cursor);
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::VIEWPORT;
+        cs
     }
 
-    pub fn select_down(&mut self) {
+    pub fn select_down(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         if !self.selection.is_active() {
             self.selection.begin(&self.cursor);
         }
 
         self.cursor.move_down(&self.buffer);
         self.selection.update(&self.cursor);
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::VIEWPORT;
+        cs
     }
 
-    pub fn select_all(&mut self) {
+    pub fn select_all(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         self.selection.begin(&Cursor::new());
         self.cursor.move_to_end(&self.buffer);
         self.selection.update(&self.cursor);
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::VIEWPORT;
+        cs
     }
 
-    pub fn clear_selection(&mut self) {
+    pub fn clear_selection(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         self.selection.clear();
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::VIEWPORT;
+        cs
     }
 
     fn sync_line_widths(&mut self) {
@@ -397,11 +547,13 @@ impl Editor {
         }
     }
 
-    pub fn undo(&mut self) {
+    pub fn undo(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         self.history.current = None;
 
         let Some(tx) = self.history.undo.pop() else {
-            return;
+            return ChangeSet::default();
         };
 
         for edit in tx.edits.iter().rev() {
@@ -414,13 +566,24 @@ impl Editor {
         self.clear_and_rebuild_line_widths();
 
         self.history.redo.push(tx);
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::SELECTION
+            | Change::BUFFER
+            | Change::CURSOR
+            | Change::VIEWPORT
+            | Change::WIDTHS
+            | Change::LINE_COUNT;
+        cs
     }
 
-    pub fn redo(&mut self) {
+    pub fn redo(&mut self) -> ChangeSet {
+        let (lc0, cur0, sel0) = self.begin_changes();
+
         self.history.current = None;
 
         let Some(tx) = self.history.redo.pop() else {
-            return;
+            return ChangeSet::default();
         };
 
         for edit in tx.edits.iter() {
@@ -433,5 +596,14 @@ impl Editor {
         self.clear_and_rebuild_line_widths();
 
         self.history.undo.push(tx);
+
+        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        cs.change |= Change::SELECTION
+            | Change::BUFFER
+            | Change::CURSOR
+            | Change::VIEWPORT
+            | Change::WIDTHS
+            | Change::LINE_COUNT;
+        cs
     }
 }

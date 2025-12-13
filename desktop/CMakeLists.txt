@@ -30,6 +30,7 @@ qt_add_executable(neko
     src/features/tabs/tab_widget.cpp
     src/features/tabs/tab_widget.h
 
+    src/utils/change_mask.h
     src/utils/editor_utils.cpp
     src/utils/editor_utils.h
     src/utils/gui_utils.cpp
