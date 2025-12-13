@@ -1,6 +1,4 @@
 #include "file_explorer_widget.h"
-#include "utils/gui_utils.h"
-#include <neko-core/src/ffi/mod.rs.h>
 
 FileExplorerWidget::FileExplorerWidget(neko::FileTree *tree,
                                        neko::ConfigManager &configManager,

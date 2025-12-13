@@ -1,6 +1,4 @@
 #include "editor_widget.h"
-#include "utils/gui_utils.h"
-#include <neko-core/src/ffi/mod.rs.h>
 
 EditorWidget::EditorWidget(neko::Editor *editor,
                            neko::ConfigManager &configManager,

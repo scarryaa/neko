@@ -1,5 +1,4 @@
 #include "tab_bar_widget.h"
-#include <neko-core/src/ffi/mod.rs.h>
 
 TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
                            neko::ThemeManager &themeManager, QWidget *parent)

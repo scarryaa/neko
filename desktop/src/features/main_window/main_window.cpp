@@ -1,5 +1,4 @@
 #include "main_window.h"
-#include <neko-core/src/ffi/mod.rs.h>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), appState(neko::new_app_state("")),

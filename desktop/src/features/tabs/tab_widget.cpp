@@ -1,5 +1,4 @@
 #include "tab_widget.h"
-#include "utils/gui_utils.h"
 
 TabWidget::TabWidget(const QString &title, int index,
                      neko::ConfigManager &configManager,
