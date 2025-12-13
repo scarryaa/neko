@@ -50,6 +50,10 @@ impl Editor {
         self.cursor = Cursor::new();
         self.selection = Selection::new();
 
+        self.clear_and_rebuild_line_widths();
+    }
+
+    fn clear_and_rebuild_line_widths(&mut self) {
         // Resize line_widths to match buffer
         let line_count = self.buffer.line_count();
         self.line_widths.clear();
@@ -58,25 +62,30 @@ impl Editor {
         self.max_width_line = 0;
     }
 
+    fn delete_selection(&mut self) {
+        let a = self.selection.start().get_idx();
+        let b = self.selection.end().get_idx();
+        let (start, end) = if a <= b { (a, b) } else { (b, a) };
+
+        self.cursor = self.selection.start().clone();
+
+        let deleted = self.buffer.delete_range_capture(start, end);
+        self.record_edit(Edit::Delete {
+            start,
+            end,
+            deleted,
+        });
+
+        self.selection.clear();
+        self.sync_line_widths();
+        self.invalidate_line_width(self.cursor.get_row());
+    }
+
     pub fn insert_text(&mut self, text: &str) {
         self.begin_tx();
 
         if self.selection.is_active() {
-            let start = self.selection.start().get_idx();
-            let end = self.selection.end().get_idx();
-
-            self.cursor = self.selection.start().clone();
-
-            let deleted = self.buffer.delete_range_capture(start, end);
-            self.record_edit(Edit::Delete {
-                start,
-                end,
-                deleted,
-            });
-
-            self.selection.clear();
-            self.sync_line_widths();
-            self.invalidate_line_width(self.cursor.get_row());
+            self.delete_selection();
         }
 
         let pos = self.cursor.get_idx();
@@ -97,21 +106,7 @@ impl Editor {
         self.begin_tx();
 
         if self.selection.is_active() {
-            let start = self.selection.start().get_idx();
-            let end = self.selection.end().get_idx();
-
-            self.cursor = self.selection.start().clone();
-
-            let deleted = self.buffer.delete_range_capture(start, end);
-            self.record_edit(Edit::Delete {
-                start,
-                end,
-                deleted,
-            });
-
-            self.selection.clear();
-            self.sync_line_widths();
-            self.invalidate_line_width(self.cursor.get_row());
+            self.delete_selection();
         }
 
         let pos = self.cursor.get_idx();
@@ -123,7 +118,7 @@ impl Editor {
         });
 
         let current_row = self.cursor.get_row();
-        self.cursor.move_newline();
+        self.cursor.move_right_by_bytes(&self.buffer, text.len());
 
         // Newline adds a line, so insert width entry
         self.line_widths.insert(current_row + 1, -1.0);
@@ -136,24 +131,11 @@ impl Editor {
         self.begin_tx();
 
         if self.selection.is_active() {
-            let start = self.selection.start().get_idx();
-            let end = self.selection.end().get_idx();
-
-            self.cursor = self.selection.start().clone();
-
-            let deleted = self.buffer.delete_range_capture(start, end);
-            self.record_edit(Edit::Delete {
-                start,
-                end,
-                deleted,
-            });
-
-            self.selection.clear();
-            self.sync_line_widths();
-            self.invalidate_line_width(self.cursor.get_row());
+            self.delete_selection();
         }
 
         let pos = self.cursor.get_idx();
+        // TODO: Make this configurable
         let text = "    ";
         self.buffer.insert(pos, text);
         self.record_edit(Edit::Insert {
@@ -162,7 +144,7 @@ impl Editor {
         });
 
         let current_row = self.cursor.get_row();
-        self.cursor.move_tab();
+        self.cursor.move_right_by_bytes(&self.buffer, text.len());
 
         self.invalidate_line_width(current_row);
 
@@ -173,20 +155,7 @@ impl Editor {
         self.begin_tx();
 
         if self.selection.is_active() {
-            let start = self.selection.start().get_idx();
-            let end = self.selection.end().get_idx();
-
-            self.cursor = self.selection.start().clone();
-            let deleted = self.buffer.delete_range_capture(start, end);
-            self.record_edit(Edit::Delete {
-                start,
-                end,
-                deleted,
-            });
-
-            self.selection.clear();
-            self.sync_line_widths();
-            self.invalidate_line_width(self.cursor.get_row());
+            self.delete_selection();
         } else {
             let pos = self.cursor.get_idx();
             let row_before = self.cursor.get_row();
@@ -219,20 +188,7 @@ impl Editor {
         self.begin_tx();
 
         if self.selection.is_active() {
-            let start = self.selection.start().get_idx();
-            let end = self.selection.end().get_idx();
-
-            self.cursor = self.selection.start().clone();
-            let deleted = self.buffer.delete_range_capture(start, end);
-            self.record_edit(Edit::Delete {
-                start,
-                end,
-                deleted,
-            });
-
-            self.selection.clear();
-            self.sync_line_widths();
-            self.invalidate_line_width(self.cursor.get_row());
+            self.delete_selection();
         } else {
             let start = self.cursor.get_idx();
 
@@ -442,6 +398,8 @@ impl Editor {
     }
 
     pub fn undo(&mut self) {
+        self.history.current = None;
+
         let Some(tx) = self.history.undo.pop() else {
             return;
         };
@@ -453,16 +411,14 @@ impl Editor {
         self.cursor = tx.before.cursor.clone();
         self.selection = tx.before.selection.clone();
 
-        self.sync_line_widths();
-        for i in 0..self.line_widths.len() {
-            self.line_widths[i] = -1.0;
-        }
-        self.recalculate_max_width();
+        self.clear_and_rebuild_line_widths();
 
         self.history.redo.push(tx);
     }
 
     pub fn redo(&mut self) {
+        self.history.current = None;
+
         let Some(tx) = self.history.redo.pop() else {
             return;
         };
@@ -474,11 +430,7 @@ impl Editor {
         self.cursor = tx.after.cursor.clone();
         self.selection = tx.after.selection.clone();
 
-        self.sync_line_widths();
-        for i in 0..self.line_widths.len() {
-            self.line_widths[i] = -1.0;
-        }
-        self.recalculate_max_width();
+        self.clear_and_rebuild_line_widths();
 
         self.history.undo.push(tx);
     }
