@@ -196,6 +196,30 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       handleDeleteConfirm();
     }
+
+  case Qt::Key_Equal:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
+      increaseFontSize();
+      shouldScroll = true;
+      shouldUpdateViewport = true;
+    }
+    break;
+  case Qt::Key_Minus:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
+      decreaseFontSize();
+    } else {
+      shouldScroll = true;
+      shouldUpdateViewport = true;
+    }
+    break;
+  case Qt::Key_0:
+    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
+      resetFontSize();
+    } else {
+      shouldScroll = true;
+      shouldUpdateViewport = true;
+    }
+    break;
   }
 
   if (shouldUpdateViewport) {
@@ -208,6 +232,29 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   }
 
   viewport()->repaint();
+}
+
+void FileExplorerWidget::resetFontSize() { setFontSize(DEFAULT_FONT_SIZE); }
+
+void FileExplorerWidget::increaseFontSize() {
+  if (font.pointSizeF() < FONT_UPPER_LIMIT) {
+    setFontSize(font.pointSizeF() + FONT_STEP);
+  }
+}
+
+void FileExplorerWidget::decreaseFontSize() {
+  if (font.pointSizeF() > FONT_LOWER_LIMIT) {
+    setFontSize(font.pointSizeF() - FONT_STEP);
+  }
+}
+
+void FileExplorerWidget::setFontSize(double newFontSize) {
+  font.setPointSizeF(newFontSize);
+  fontMetrics = QFontMetricsF(font);
+
+  viewport()->repaint();
+  UiUtils::setFontSize(configManager, neko::FontType::FileExplorer,
+                       newFontSize);
 }
 
 void FileExplorerWidget::handleCopy() {

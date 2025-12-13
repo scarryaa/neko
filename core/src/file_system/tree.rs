@@ -343,6 +343,10 @@ impl FileTree {
     }
 
     pub fn get_index(&self) -> usize {
+        if self.current.is_none() {
+            return 0;
+        }
+
         let visible = self.get_visible_nodes();
         visible
             .iter()

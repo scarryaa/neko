@@ -60,6 +60,11 @@ private:
   void handleViewportUpdate();
   void scrollToNode(int index);
 
+  void increaseFontSize();
+  void decreaseFontSize();
+  void resetFontSize();
+  void setFontSize(double newFontSize);
+
   void handleEnter();
   void handleLeft();
   void handleRight();
@@ -88,6 +93,10 @@ private:
   QFont font;
   QFontMetricsF fontMetrics;
 
+  double FONT_STEP = 2.0;
+  double DEFAULT_FONT_SIZE = 15.0;
+  double FONT_UPPER_LIMIT = 96.0;
+  double FONT_LOWER_LIMIT = 6.0;
   double VIEWPORT_PADDING = 74.0;
   QColor SELECTION_COLOR = QColor(66, 181, 212, 50);
   QPen SELECTION_PEN = QPen(QColor(66, 181, 212, 175), 1);
