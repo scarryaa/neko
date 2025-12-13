@@ -1,4 +1,5 @@
 #include "editor_widget.h"
+#include <neko-core/src/ffi/mod.rs.h>
 
 EditorWidget::EditorWidget(neko::Editor *editor,
                            neko::ConfigManager &configManager,
@@ -230,36 +231,68 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     return;
   }
 
+  const auto mods = event->modifiers();
+  const bool ctrl = mods.testFlag(Qt::ControlModifier);
+  const bool shift = mods.testFlag(Qt::ShiftModifier);
+
+  auto nav = [&](auto moveFn, auto selectFn) -> neko::ChangeSetFfi {
+    if (shift)
+      return (editor->*selectFn)();
+    else
+      return (editor->*moveFn)();
+  };
+
+  if (ctrl) {
+    switch (event->key()) {
+    case Qt::Key_A:
+      applyChangeSet(editor->select_all());
+      return;
+    case Qt::Key_C:
+      handleCopy();
+      return;
+    case Qt::Key_V: {
+      handlePaste();
+      return;
+    }
+    case Qt::Key_X:
+      handleCut();
+      return;
+
+    case Qt::Key_Z:
+      if (shift) {
+        handleRedo();
+      } else {
+        handleUndo();
+      }
+      return;
+    case Qt::Key_Equal:
+      increaseFontSize();
+      handleViewportUpdate();
+      return;
+    case Qt::Key_Minus:
+      decreaseFontSize();
+      handleViewportUpdate();
+      return;
+    case Qt::Key_0:
+      resetFontSize();
+      handleViewportUpdate();
+      return;
+    }
+  }
+
   switch (event->key()) {
   case Qt::Key_Left:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
-      applyChangeSet(editor->select_left());
-    } else {
-      applyChangeSet(editor->move_left());
-    }
+    applyChangeSet(nav(&neko::Editor::move_left, &neko::Editor::select_left));
     break;
   case Qt::Key_Right:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
-      applyChangeSet(editor->select_right());
-    } else {
-      applyChangeSet(editor->move_right());
-    }
+    applyChangeSet(nav(&neko::Editor::move_right, &neko::Editor::select_right));
     break;
   case Qt::Key_Up:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
-      applyChangeSet(editor->select_up());
-    } else {
-      applyChangeSet(editor->move_up());
-    }
+    applyChangeSet(nav(&neko::Editor::move_up, &neko::Editor::select_up));
     break;
   case Qt::Key_Down:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
-      applyChangeSet(editor->select_down());
-    } else {
-      applyChangeSet(editor->move_down());
-    }
+    applyChangeSet(nav(&neko::Editor::move_down, &neko::Editor::select_down));
     break;
-
   case Qt::Key_Enter:
   case Qt::Key_Return:
     applyChangeSet(editor->insert_newline());
@@ -277,89 +310,6 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     applyChangeSet(editor->clear_selection());
     break;
 
-  case Qt::Key_Equal:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
-      increaseFontSize();
-    } else {
-      applyChangeSet(editor->insert_text(event->text().toStdString()));
-    }
-    break;
-  case Qt::Key_Minus:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
-      decreaseFontSize();
-      handleViewportUpdate();
-    } else {
-      applyChangeSet(editor->insert_text(event->text().toStdString()));
-    }
-    break;
-  case Qt::Key_0:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
-      resetFontSize();
-      handleViewportUpdate();
-    } else {
-      applyChangeSet(editor->insert_text(event->text().toStdString()));
-    }
-    break;
-
-  case Qt::Key_A:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
-      applyChangeSet(editor->select_all());
-    } else {
-      applyChangeSet(editor->insert_text(event->text().toStdString()));
-    }
-    break;
-
-  case Qt::Key_C:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
-      if (editor->get_selection().active) {
-        auto rawText = editor->copy();
-        QString text = QString::fromUtf8(rawText);
-
-        if (!text.isEmpty()) {
-          QApplication::clipboard()->setText(text);
-        }
-      }
-    } else {
-      applyChangeSet(editor->insert_text(event->text().toStdString()));
-    }
-    break;
-  case Qt::Key_V:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
-      QString text = QApplication::clipboard()->text();
-      applyChangeSet(editor->paste(text.toStdString()));
-    } else {
-      applyChangeSet(editor->insert_text(event->text().toStdString()));
-    }
-    break;
-  case Qt::Key_X:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
-      if (editor->get_selection().active) {
-        auto rawText = editor->copy();
-        QString text = QString::fromUtf8(rawText);
-
-        if (!text.isEmpty()) {
-          QApplication::clipboard()->setText(text);
-        }
-
-        applyChangeSet(editor->delete_forwards());
-      }
-    } else {
-      applyChangeSet(editor->insert_text(event->text().toStdString()));
-    }
-    break;
-
-  case Qt::Key_Z:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
-      if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
-        applyChangeSet(editor->redo());
-      } else {
-        applyChangeSet(editor->undo());
-      }
-    } else {
-      applyChangeSet(editor->insert_text(event->text().toStdString()));
-    }
-    break;
-
   default:
     if (event->text().isEmpty()) {
       return;
@@ -369,6 +319,39 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     break;
   }
 }
+
+void EditorWidget::handleCopy() {
+  if (editor->get_selection().active) {
+    auto rawText = editor->copy();
+    QString text = QString::fromUtf8(rawText);
+
+    if (!text.isEmpty()) {
+      QApplication::clipboard()->setText(text);
+    }
+  }
+}
+
+void EditorWidget::handlePaste() {
+  QString text = QApplication::clipboard()->text();
+  applyChangeSet(editor->paste(text.toStdString()));
+}
+
+void EditorWidget::handleCut() {
+  if (editor->get_selection().active) {
+    auto rawText = editor->copy();
+    QString text = QString::fromUtf8(rawText);
+
+    if (!text.isEmpty()) {
+      QApplication::clipboard()->setText(text);
+    }
+
+    applyChangeSet(editor->delete_forwards());
+  }
+}
+
+void EditorWidget::handleRedo() { applyChangeSet(editor->redo()); }
+
+void EditorWidget::handleUndo() { applyChangeSet(editor->undo()); }
 
 void EditorWidget::resetFontSize() { setFontSize(DEFAULT_FONT_SIZE); }
 

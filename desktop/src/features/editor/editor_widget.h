@@ -51,6 +51,11 @@ private:
   RowCol convertMousePositionToRowCol(double x, double y);
 
   void applyChangeSet(const neko::ChangeSetFfi &cs);
+  void handleCopy();
+  void handleCut();
+  void handlePaste();
+  void handleUndo();
+  void handleRedo();
 
   void drawText(QPainter *painter, const ViewportContext &ctx);
   void drawCursor(QPainter *painter, const ViewportContext &ctx);
