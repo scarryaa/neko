@@ -18,9 +18,9 @@ GutterWidget::GutterWidget(neko::Editor *editor,
   setStyleSheet(QString("GutterWidget { background: %1; }").arg(bgHex));
 
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
-          [this]() { viewport()->repaint(); });
+          [this]() { viewport()->update(); });
   connect(horizontalScrollBar(), &QScrollBar::valueChanged, this,
-          [this]() { viewport()->repaint(); });
+          [this]() { viewport()->update(); });
 }
 
 GutterWidget::~GutterWidget() {}
@@ -50,7 +50,7 @@ void GutterWidget::wheelEvent(QWheelEvent *event) {
   auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;
 
   verticalScrollBar()->setValue(newVerticalScrollOffset);
-  viewport()->repaint();
+  viewport()->update();
 }
 
 void GutterWidget::handleViewportUpdate() {
@@ -72,12 +72,12 @@ void GutterWidget::handleViewportUpdate() {
 void GutterWidget::updateDimensionsAndRepaint() {
   handleViewportUpdate();
   updateGeometry();
-  viewport()->repaint();
+  viewport()->update();
 }
 
 void GutterWidget::onEditorLineCountChanged() { updateDimensionsAndRepaint(); }
 
-void GutterWidget::onEditorCursorPositionChanged() { viewport()->repaint(); }
+void GutterWidget::onEditorCursorPositionChanged() { viewport()->update(); }
 
 void GutterWidget::onEditorFontSizeChanged(qreal newSize) {
   font.setPointSizeF(newSize);

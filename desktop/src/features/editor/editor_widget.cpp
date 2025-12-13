@@ -18,9 +18,9 @@ EditorWidget::EditorWidget(neko::Editor *editor,
   setStyleSheet(UiUtils::getScrollBarStylesheet("EditorWidget", bgHex));
 
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
-          [this]() { viewport()->repaint(); });
+          [this]() { viewport()->update(); });
   connect(horizontalScrollBar(), &QScrollBar::valueChanged, this,
-          [this]() { viewport()->repaint(); });
+          [this]() { viewport()->update(); });
 }
 
 EditorWidget::~EditorWidget() {}
@@ -133,7 +133,7 @@ void EditorWidget::handleViewportUpdate() {
 
 void EditorWidget::updateDimensionsAndRepaint() {
   handleViewportUpdate();
-  viewport()->repaint();
+  viewport()->update();
 }
 
 void EditorWidget::mousePressEvent(QMouseEvent *event) {
@@ -145,7 +145,7 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
 
   editor->move_to(rc.row, rc.col, true);
   emit cursorPositionChanged();
-  viewport()->repaint();
+  viewport()->update();
 }
 
 void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
@@ -159,7 +159,7 @@ void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
 
     editor->select_to(rc.row, rc.col);
     emit cursorPositionChanged();
-    viewport()->repaint();
+    viewport()->update();
   }
 }
 
@@ -221,7 +221,7 @@ void EditorWidget::wheelEvent(QWheelEvent *event) {
 
   horizontalScrollBar()->setValue(newHorizontalScrollOffset);
   verticalScrollBar()->setValue(newVerticalScrollOffset);
-  viewport()->repaint();
+  viewport()->update();
 }
 
 bool EditorWidget::focusNextPrevChild(bool next) { return false; }
@@ -371,7 +371,7 @@ void EditorWidget::setFontSize(double newFontSize) {
   font.setPointSizeF(newFontSize);
   fontMetrics = QFontMetricsF(font);
 
-  viewport()->repaint();
+  viewport()->update();
   UiUtils::setFontSize(configManager, neko::FontType::Editor, newFontSize);
   emit fontSizeChanged(newFontSize);
 }
