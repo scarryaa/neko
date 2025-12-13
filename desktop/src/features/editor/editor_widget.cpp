@@ -29,6 +29,10 @@ EditorWidget::~EditorWidget() {}
 void EditorWidget::setEditor(neko::Editor *newEditor) { editor = newEditor; }
 
 double EditorWidget::measureContent() {
+  if (editor == nullptr) {
+    return 0;
+  }
+
   size_t lineCount = editor->get_line_count();
 
   for (size_t i = 0; i < lineCount; i++) {
@@ -44,6 +48,10 @@ double EditorWidget::measureContent() {
 }
 
 void EditorWidget::scrollToCursor() {
+  if (editor == nullptr) {
+    return;
+  }
+
   neko::CursorPosition cursor = editor->get_cursor_position();
   int targetRow = cursor.row;
   double lineHeight = fontMetrics.height();
@@ -77,6 +85,10 @@ void EditorWidget::scrollToCursor() {
 }
 
 void EditorWidget::handleViewportUpdate() {
+  if (editor == nullptr) {
+    return;
+  }
+
   int lineCount = editor->get_line_count();
 
   auto viewportHeight = (lineCount * fontMetrics.height()) -
@@ -100,6 +112,10 @@ void EditorWidget::updateDimensionsAndRepaint() {
 }
 
 void EditorWidget::mousePressEvent(QMouseEvent *event) {
+  if (editor == nullptr) {
+    return;
+  }
+
   RowCol rc = convertMousePositionToRowCol(event->pos().x(), event->pos().y());
 
   editor->move_to(rc.row, rc.col, true);
@@ -108,6 +124,10 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
 }
 
 void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
+  if (editor == nullptr) {
+    return;
+  }
+
   if (event->buttons() == Qt::LeftButton) {
     RowCol rc =
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
@@ -182,6 +202,10 @@ void EditorWidget::wheelEvent(QWheelEvent *event) {
 bool EditorWidget::focusNextPrevChild(bool next) { return false; }
 
 void EditorWidget::keyPressEvent(QKeyEvent *event) {
+  if (editor == nullptr) {
+    return;
+  }
+
   size_t len = event->text().size();
   bool cursorChanged = false;
   bool shouldScroll = false;
@@ -420,6 +444,10 @@ double EditorWidget::getTextWidth(const QString &text,
 }
 
 void EditorWidget::paintEvent(QPaintEvent *event) {
+  if (editor == nullptr) {
+    return;
+  }
+
   QPainter painter(viewport());
 
   int lineCount = editor->get_line_count();

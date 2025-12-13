@@ -32,6 +32,10 @@ QSize GutterWidget::sizeHint() const {
 }
 
 double GutterWidget::measureContent() const {
+  if (editor == nullptr) {
+    return 0;
+  }
+
   int lineCount = editor->get_line_count();
 
   return fontMetrics.horizontalAdvance(QString::number(lineCount));
@@ -50,6 +54,10 @@ void GutterWidget::wheelEvent(QWheelEvent *event) {
 }
 
 void GutterWidget::handleViewportUpdate() {
+  if (editor == nullptr) {
+    return;
+  }
+
   int lineCount = editor->get_line_count();
 
   auto viewportHeight = (lineCount * fontMetrics.height()) -
@@ -78,6 +86,10 @@ void GutterWidget::onEditorFontSizeChanged(qreal newSize) {
 }
 
 void GutterWidget::paintEvent(QPaintEvent *event) {
+  if (editor == nullptr) {
+    return;
+  }
+
   QPainter painter(viewport());
 
   int lineCount = editor->get_line_count();

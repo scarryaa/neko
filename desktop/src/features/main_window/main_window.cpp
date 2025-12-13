@@ -327,7 +327,11 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
     tabBarContainer->hide();
     editorWidget->hide();
     gutterWidget->hide();
+    editorWidget->setEditor(nullptr);
+    gutterWidget->setEditor(nullptr);
     emptyStateWidget->show();
+
+    fileExplorerWidget->setFocus();
   } else {
     emptyStateWidget->hide();
     tabBarContainer->show();
