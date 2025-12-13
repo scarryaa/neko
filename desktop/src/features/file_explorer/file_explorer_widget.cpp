@@ -620,12 +620,12 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   bool isCurrent = tree->is_current(node.path);
 
   auto accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
-  // TODO: Make a way to adjust alpha of theme colors
-  auto accentColorMuted = "#332f3b";
+  QColor selectionColor = QColor(accentColor);
+  selectionColor.setAlpha(60);
 
   // Selection background
   if (isSelected) {
-    painter->setBrush(accentColorMuted);
+    painter->setBrush(selectionColor);
     painter->setPen(Qt::NoPen);
     painter->drawRect(QRectF(
         -horizontalOffset, y,

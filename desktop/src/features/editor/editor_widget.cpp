@@ -1,4 +1,5 @@
 #include "editor_widget.h"
+#include "utils/gui_utils.h"
 
 EditorWidget::EditorWidget(neko::Editor *editor,
                            neko::ConfigManager &configManager,
@@ -492,7 +493,10 @@ void EditorWidget::drawSelections(QPainter *painter,
     return;
   }
 
-  painter->setBrush(SELECTION_COLOR);
+  auto accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+  QColor selectionColor = QColor(accentColor);
+  selectionColor.setAlpha(50);
+  painter->setBrush(selectionColor);
   painter->setPen(Qt::transparent);
 
   neko::Selection selection = editor->get_selection();
@@ -621,7 +625,8 @@ void EditorWidget::drawCursor(QPainter *painter, const ViewportContext &ctx) {
     return;
   }
 
-  painter->setPen(CURSOR_COLOR);
+  auto accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+  painter->setPen(accentColor);
   painter->setBrush(Qt::NoBrush);
 
   double x = cursorX - ctx.horizontalOffset;
