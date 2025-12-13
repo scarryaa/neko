@@ -637,11 +637,9 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   if (isCurrent && hasFocus()) {
     painter->setBrush(Qt::NoBrush);
     painter->setPen(accentColor);
-    painter->drawRect(
-        QRectF(-horizontalOffset, y,
-               viewportWidth + ICON_EDGE_PADDING + horizontalOffset -
-                   (verticalScrollBarShown ? verticalScrollBar()->width() : 0),
-               lineHeight - 1));
+    painter->drawRect(QRectF(-horizontalOffset, y,
+                             viewportWidth - 1 + horizontalOffset,
+                             lineHeight - 1));
   }
 
   // Get appropriate icon

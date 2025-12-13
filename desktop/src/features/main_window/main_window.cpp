@@ -156,7 +156,9 @@ MainWindow::MainWindow(QWidget *parent)
   splitter->addWidget(editorSideContainer);
   splitter->setStretchFactor(0, 0);
   splitter->setStretchFactor(1, 1);
-  splitter->setSizes({250, 600});
+
+  int savedSidebarWidth = configManager->get_file_explorer_width();
+  splitter->setSizes(QList<int>() << savedSidebarWidth << 1000000);
   splitter->setHandleWidth(1);
 
   QString borderColor = UiUtils::getThemeColor(*themeManager, "ui.border");
@@ -166,9 +168,6 @@ MainWindow::MainWindow(QWidget *parent)
                                        "}")
                                    .arg(borderColor);
   splitter->setStyleSheet(splitterStylesheet);
-
-  int savedSidebarWidth = configManager->get_file_explorer_width();
-  splitter->setSizes(QList<int>() << savedSidebarWidth << 1000000);
 
   QObject::connect(splitter, &QSplitter::splitterMoved, this,
                    [splitter, this](int pos, int index) {
