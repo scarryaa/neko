@@ -17,6 +17,7 @@ MainWindow::MainWindow(QWidget *parent)
       new FileExplorerWidget(fileTree, *configManager, *themeManager, this);
   editorWidget = new EditorWidget(editor, *configManager, *themeManager, this);
   gutterWidget = new GutterWidget(editor, *configManager, *themeManager, this);
+  statusBarWidget = new StatusBarWidget(*configManager, *themeManager, this);
 
   setupKeyboardShortcuts();
 
@@ -165,6 +166,7 @@ MainWindow::MainWindow(QWidget *parent)
   splitter->setStyleSheet(splitterStylesheet);
 
   mainLayout->addWidget(splitter);
+  mainLayout->addWidget(statusBarWidget);
   setCentralWidget(mainContainer);
 
   updateTabBar();
