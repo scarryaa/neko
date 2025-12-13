@@ -14,6 +14,7 @@
 #include <QPainter>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QTextLayout>
 #include <QVBoxLayout>
 #include <QtDebug>
 

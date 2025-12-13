@@ -163,49 +163,42 @@ void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
   }
 }
 
+static int xToCursorIndex(const QString &line, const QFont &font, qreal x) {
+  QTextLayout layout(line, font);
+  layout.beginLayout();
+
+  QTextLine tl = layout.createLine();
+
+  if (!tl.isValid())
+    return 0;
+
+  tl.setLineWidth(1e9);
+
+  layout.endLayout();
+
+  return tl.xToCursor(x);
+}
+
 RowCol EditorWidget::convertMousePositionToRowCol(double x, double y) {
   const double lineHeight = fontMetrics.height();
   const int scrollX = horizontalScrollBar()->value();
   const int scrollY = verticalScrollBar()->value();
 
-  int lineCount = editor->get_line_count();
+  const int lineCount = editor->get_line_count();
+  if (lineCount <= 0)
+    return {0, 0};
 
-  const size_t targetRow = (y + scrollY) / lineHeight;
-  const size_t lastRow = lineCount - 1;
+  const size_t targetRow = size_t((y + scrollY) / lineHeight);
+  const size_t lastRow = size_t(lineCount - 1);
+  const size_t row = std::min(targetRow, lastRow);
 
-  // Handle clicks beyond the last line
-  if (targetRow > lastRow) {
-    auto rawLine = editor->get_line(lastRow);
-    QString line = QString::fromUtf8(rawLine);
-    int lastRowLen = line.length();
+  const QString line = QString::fromUtf8(editor->get_line(row));
+  const qreal targetX = qreal(x + scrollX);
 
-    return {(int)lastRow, (int)lastRowLen};
-  }
+  int col = xToCursorIndex(line, font, targetX);
+  col = std::clamp(col, 0, (int)line.length());
 
-  const size_t clampedRow = std::min(targetRow, lastRow);
-  auto rawTargetLine = editor->get_line(clampedRow);
-  const QString targetLine = QString::fromUtf8(rawTargetLine);
-  int targetLineLen = targetLine.length();
-
-  // Find the closest character position to the click
-  const double targetX = x + scrollX;
-  size_t charPos = 0;
-
-  for (size_t i = 0; i < targetLineLen; ++i) {
-    const double currentWidth =
-        fontMetrics.horizontalAdvance(targetLine.left(i));
-    const double nextWidth =
-        fontMetrics.horizontalAdvance(targetLine.left(i + 1));
-    const double midpoint = (currentWidth + nextWidth) / 2.0;
-
-    if (targetX < midpoint) {
-      charPos = i;
-      break;
-    }
-    charPos = i + 1;
-  }
-
-  return {(int)clampedRow, (int)charPos};
+  return {(int)row, col};
 }
 
 void EditorWidget::wheelEvent(QWheelEvent *event) {
