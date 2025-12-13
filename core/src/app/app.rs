@@ -99,9 +99,10 @@ impl AppState {
         self.tabs
             .get(index)
             .map(|t| {
-                t.original_content.clone().unwrap_or("".to_string()) != t.editor.buffer().get_text()
+                let original = t.original_content.as_deref().unwrap_or("");
+                original != t.editor.buffer().get_text()
             })
-            .unwrap()
+            .unwrap_or(false)
     }
 
     pub fn tab_with_path_exists(&self, path: &str) -> bool {
