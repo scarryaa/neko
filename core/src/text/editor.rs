@@ -16,8 +16,14 @@ enum CursorMode {
 }
 
 enum DeleteResult {
-    Text(()),
-    Newline { row: usize, left_len: usize },
+    Text {
+        invalidate: Option<usize>,
+    },
+    Newline {
+        row: usize,
+        left_len: usize,
+        invalidate: Option<usize>,
+    },
 }
 
 #[derive(Default, Debug)]
@@ -31,6 +37,7 @@ pub struct Editor {
     history: UndoHistory,
 }
 
+// TODO: Fix multi-cursor enter positioning bug
 impl Editor {
     pub fn new() -> Self {
         Self {
@@ -154,12 +161,38 @@ impl Editor {
         self.max_width_line = 0;
     }
 
+    fn apply_delete_result(&mut self, i: usize, res: DeleteResult) {
+        match res {
+            DeleteResult::Text { invalidate } => {
+                if let Some(line) = invalidate {
+                    self.invalidate_line_width(line);
+                }
+            }
+            DeleteResult::Newline {
+                row,
+                left_len,
+                invalidate,
+            } => {
+                self.fix_cursors_after_line_merge(row, left_len, i);
+                if let Some(line) = invalidate {
+                    self.invalidate_line_width(line);
+                }
+            }
+        }
+    }
+
     fn delete_selection_if_active(&mut self) -> bool {
         if self.selection.is_active() {
             self.delete_selection_impl();
             true
         } else {
             false
+        }
+    }
+
+    fn for_each_cursor_rev(&mut self, mut f: impl FnMut(&mut Self, usize)) {
+        for i in (0..self.cursors.len()).rev() {
+            f(self, i);
         }
     }
 
@@ -198,16 +231,15 @@ impl Editor {
         });
 
         self.selection.clear();
-        self.sync_line_widths();
         self.invalidate_line_width(self.cursors[0].row);
     }
 
     pub fn insert_text(&mut self, text: &str) -> ChangeSet {
-        self.with_op(true, OpFlags::BufferViewportWidths, |editor| {
+        let res = self.with_op(true, OpFlags::BufferViewportWidths, |editor| {
             let has_nl = text.contains('\n');
             let is_tab = text == "\t";
 
-            for i in (0..editor.cursors.len()).rev() {
+            editor.for_each_cursor_rev(|editor, i| {
                 if has_nl {
                     editor.insert_newline(text, i);
                 } else if is_tab {
@@ -215,8 +247,12 @@ impl Editor {
                 } else {
                     editor.insert_text_internal(text, i);
                 }
-            }
-        })
+            });
+        });
+
+        self.sync_line_widths();
+
+        res
     }
 
     fn insert_text_internal(&mut self, text: &str, i: usize) {
@@ -234,8 +270,6 @@ impl Editor {
         let col = self.cursors[i].column + text.len();
 
         self.cursors[i].move_to(&self.buffer, row, col);
-
-        self.sync_line_widths();
         self.invalidate_line_width(self.cursors[i].row);
     }
 
@@ -259,7 +293,6 @@ impl Editor {
         let new_col = last.len();
 
         self.cursors[i].move_to(&self.buffer, new_row, new_col);
-        self.sync_line_widths();
         self.invalidate_line_width(current_row);
     }
 
@@ -278,45 +311,30 @@ impl Editor {
         let (row, col) = (self.cursors[i].row, self.cursors[i].column + text.len());
         self.cursors[i].move_to(&self.buffer, row, col);
 
-        self.sync_line_widths();
         self.invalidate_line_width(self.cursors[i].row);
     }
 
     pub fn backspace(&mut self) -> ChangeSet {
-        self.with_op(true, OpFlags::BufferViewportWidths, |editor| {
-            for i in (0..editor.cursors.len()).rev() {
-                match editor.backspace_impl(i) {
-                    DeleteResult::Text(_) => {}
-                    DeleteResult::Newline { row, left_len } => {
-                        editor.fix_cursors_after_line_merge(row, left_len, i);
-                    }
-                }
-            }
+        let res = self.with_op(true, OpFlags::BufferViewportWidths, |editor| {
+            editor.for_each_cursor_rev(|editor, i| {
+                let res = editor.backspace_impl(i);
+                editor.apply_delete_result(i, res);
+            });
+        });
 
-            editor.sync_line_widths();
-        })
+        self.sync_line_widths();
+        res
     }
 
     fn backspace_impl(&mut self, i: usize) -> DeleteResult {
         if self.delete_selection_if_active() {
-            return DeleteResult::Text(());
+            return DeleteResult::Text { invalidate: None };
         }
 
         let pos = self.cursors[i].get_idx(&self.buffer);
         if pos == 0 {
-            return DeleteResult::Text(());
+            return DeleteResult::Text { invalidate: None };
         }
-
-        let (maybe_merge_row, maybe_left_len) = {
-            let c = &self.cursors[i];
-            if c.column == 0 && c.row > 0 {
-                let merge_row = c.row - 1;
-                let left_len = self.buffer.line_len(merge_row);
-                (Some(merge_row), Some(left_len))
-            } else {
-                (None, None)
-            }
-        };
 
         let start = pos - 1;
         let end = pos;
@@ -328,64 +346,78 @@ impl Editor {
             deleted: deleted.clone(),
         });
 
-        self.cursors[i].move_left(&self.buffer);
+        let c = &self.cursors[i];
+        let was_line_start = c.column == 0 && c.row > 0;
 
-        if deleted == "\n" {
+        let res = if deleted == "\n" && was_line_start {
+            let row = c.row - 1;
+            let left_len = self.buffer.line_len(row);
             DeleteResult::Newline {
-                row: maybe_merge_row.unwrap(),
-                left_len: maybe_left_len.unwrap(),
+                row,
+                left_len,
+                invalidate: Some(row),
             }
         } else {
-            DeleteResult::Text(())
-        }
+            DeleteResult::Text {
+                invalidate: Some(self.cursors[i].row),
+            }
+        };
+
+        self.cursors[i].move_left(&self.buffer);
+
+        res
     }
 
     pub fn delete(&mut self) -> ChangeSet {
-        self.with_op(true, OpFlags::BufferViewportWidths, |editor| {
-            for i in (0..editor.cursors.len()).rev() {
-                match editor.delete_impl(i) {
-                    DeleteResult::Text(_) => {}
-                    DeleteResult::Newline { row, left_len } => {
-                        editor.fix_cursors_after_line_merge(row, left_len, i);
-                    }
-                }
-            }
-        })
+        let res = self.with_op(true, OpFlags::BufferViewportWidths, |editor| {
+            editor.for_each_cursor_rev(|editor, i| {
+                let res = editor.delete_impl(i);
+                editor.apply_delete_result(i, res);
+            });
+        });
+
+        self.sync_line_widths();
+        res
     }
 
     fn delete_impl(&mut self, i: usize) -> DeleteResult {
         if self.delete_selection_if_active() {
-            self.sync_line_widths();
-            self.invalidate_line_width(self.cursors[i].row);
-            return DeleteResult::Text(());
-        }
-
-        let start = self.cursors[i].get_idx(&self.buffer);
-        if start < self.buffer.byte_len() - 1 {
-            let deleted = self.buffer.delete_at(start);
-
-            if !deleted.is_empty() {
-                let end = start + deleted.len();
-                self.record_edit(Edit::Delete {
-                    start,
-                    end,
-                    deleted: deleted.clone(),
-                });
-            }
-
-            self.sync_line_widths();
-            self.invalidate_line_width(self.cursors[i].row);
-
-            return match deleted.contains("\n") {
-                true => DeleteResult::Newline {
-                    row: self.cursors[i].row,
-                    left_len: start,
-                },
-                false => DeleteResult::Text(()),
+            return DeleteResult::Text {
+                invalidate: Some(self.cursors[i].row),
             };
         }
 
-        DeleteResult::Text(())
+        let start = self.cursors[i].get_idx(&self.buffer);
+        if start >= self.buffer.byte_len() - 1 {
+            return DeleteResult::Text { invalidate: None };
+        }
+
+        let deleted = self.buffer.delete_at(start);
+        if deleted.is_empty() {
+            return DeleteResult::Text { invalidate: None };
+        }
+
+        let end = start + deleted.len();
+        self.record_edit(Edit::Delete {
+            start,
+            end,
+            deleted: deleted.clone(),
+        });
+
+        let row = self.cursors[i].row;
+
+        if deleted.contains('\n') {
+            let left_len = self.buffer.line_len(row);
+            DeleteResult::Newline {
+                row,
+                left_len,
+                invalidate: Some(row),
+            }
+        } else {
+            DeleteResult::Text {
+                invalidate: Some(row),
+            }
+        }
     }
 
     fn move_cursor_at(
@@ -422,81 +454,81 @@ impl Editor {
 
     pub fn move_left(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            for i in (0..editor.cursors.len()).rev() {
+            editor.for_each_cursor_rev(|editor, i| {
                 editor.move_cursor_at(i, SelectionMode::Clear, CursorMode::Multiple, |c, b| {
                     c.move_left(b)
                 });
-            }
+            });
         })
     }
 
     pub fn move_right(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            for i in (0..editor.cursors.len()).rev() {
+            editor.for_each_cursor_rev(|editor, i| {
                 editor.move_cursor_at(i, SelectionMode::Clear, CursorMode::Multiple, |c, b| {
                     c.move_right(b)
                 });
-            }
+            });
         })
     }
 
     pub fn move_up(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            for i in (0..editor.cursors.len()).rev() {
+            editor.for_each_cursor_rev(|editor, i| {
                 editor.move_cursor_at(i, SelectionMode::Clear, CursorMode::Multiple, |c, b| {
                     c.move_up(b)
                 });
-            }
+            });
         })
     }
 
     pub fn move_down(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            for i in (0..editor.cursors.len()).rev() {
+            editor.for_each_cursor_rev(|editor, i| {
                 editor.move_cursor_at(i, SelectionMode::Clear, CursorMode::Multiple, |c, b| {
                     c.move_down(b)
                 });
-            }
+            });
         })
     }
 
     pub fn select_left(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            for i in (0..editor.cursors.len()).rev() {
+            editor.for_each_cursor_rev(|editor, i| {
                 editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
                     c.move_left(b)
                 });
-            }
+            });
         })
     }
 
     pub fn select_right(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            for i in (0..editor.cursors.len()).rev() {
+            editor.for_each_cursor_rev(|editor, i| {
                 editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
                     c.move_right(b)
                 });
-            }
+            });
         })
     }
 
     pub fn select_up(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            for i in (0..editor.cursors.len()).rev() {
+            editor.for_each_cursor_rev(|editor, i| {
                 editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
                     c.move_up(b)
                 });
-            }
+            });
         })
     }
 
     pub fn select_down(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            for i in (0..editor.cursors.len()).rev() {
+            editor.for_each_cursor_rev(|editor, i| {
                 editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
                     c.move_down(b)
                 });
-            }
+            });
         })
     }
 
