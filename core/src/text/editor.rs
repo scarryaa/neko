@@ -25,6 +25,12 @@ enum DeleteResult {
     },
 }
 
+pub enum AddCursorDirection {
+    Above,
+    Below,
+    At { row: usize, col: usize },
+}
+
 #[derive(Default, Debug)]
 pub struct Editor {
     pub(crate) buffer: Buffer,
@@ -643,7 +649,39 @@ impl Editor {
         })
     }
 
-    pub fn add_cursor(&mut self, row: usize, col: usize) {
+    pub fn add_cursor(&mut self, direction: AddCursorDirection) {
+        match direction {
+            AddCursorDirection::Above => self.add_cursor_above(),
+            AddCursorDirection::Below => self.add_cursor_below(),
+            AddCursorDirection::At { row, col } => self.add_cursor_at(row, col),
+        }
+    }
+
+    fn add_cursor_above(&mut self) {
+        let Some((row, col)) = self.cursors.first().map(|c| (c.row, c.column)) else {
+            return;
+        };
+
+        let mut cursor = Cursor::new();
+        cursor.move_to(&self.buffer, row.saturating_sub(1), col);
+
+        self.cursors.push(cursor);
+        self.sort_and_dedup_cursors();
+    }
+
+    fn add_cursor_below(&mut self) {
+        let Some((row, col)) = self.cursors.last().map(|c| (c.row, c.column)) else {
+            return;
+        };
+
+        let mut cursor = Cursor::new();
+        cursor.move_to(&self.buffer, row.saturating_add(1), col);
+
+        self.cursors.push(cursor);
+        self.sort_and_dedup_cursors();
+    }
+
+    fn add_cursor_at(&mut self, row: usize, col: usize) {
         let mut cursor = Cursor::new();
         cursor.move_to(&self.buffer, row, col);
 

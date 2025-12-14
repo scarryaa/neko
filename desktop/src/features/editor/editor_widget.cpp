@@ -149,10 +149,42 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
     if (editor->cursor_exists_at(rc.row, rc.col)) {
       editor->remove_cursor(rc.row, rc.col);
     } else {
-      editor->add_cursor(rc.row, rc.col);
+      addCursor(neko::AddCursorDirectionKind::At, rc.row, rc.col);
     }
   } else {
     editor->move_to(rc.row, rc.col, true);
+  }
+
+  emit cursorPositionChanged();
+  viewport()->update();
+}
+
+void EditorWidget::addCursor(neko::AddCursorDirectionKind dirKind, int row,
+                             int col) {
+  switch (dirKind) {
+  case neko::AddCursorDirectionKind::Above: {
+    neko::AddCursorDirectionFfi dir;
+    dir.kind = dirKind;
+
+    editor->add_cursor(dir);
+    break;
+  }
+  case neko::AddCursorDirectionKind::Below: {
+    neko::AddCursorDirectionFfi dir;
+    dir.kind = dirKind;
+
+    editor->add_cursor(dir);
+    break;
+  }
+  case neko::AddCursorDirectionKind::At: {
+    neko::AddCursorDirectionFfi dir;
+    dir.kind = dirKind;
+    dir.row = row;
+    dir.col = col;
+
+    editor->add_cursor(dir);
+    break;
+  }
   }
 
   emit cursorPositionChanged();
@@ -238,6 +270,7 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
   const auto mods = event->modifiers();
   const bool ctrl = mods.testFlag(Qt::ControlModifier);
   const bool shift = mods.testFlag(Qt::ShiftModifier);
+  const bool meta = mods.testFlag(Qt::MetaModifier);
 
   auto nav = [&](auto moveFn, auto selectFn) -> neko::ChangeSetFfi {
     if (shift)
@@ -261,6 +294,17 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     case Qt::Key_X:
       handleCut();
       return;
+
+    case Qt::Key_P:
+      if (meta) {
+        addCursor(neko::AddCursorDirectionKind::Above);
+        return;
+      }
+    case Qt::Key_N:
+      if (meta) {
+        addCursor(neko::AddCursorDirectionKind::Below);
+        return;
+      }
 
     case Qt::Key_Z:
       if (shift) {

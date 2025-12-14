@@ -50,6 +50,8 @@ signals:
 private:
   double getTextWidth(const QString &text, double horizontalOffset) const;
   RowCol convertMousePositionToRowCol(double x, double y);
+  void addCursor(neko::AddCursorDirectionKind dirKind, int row = 0,
+                 int col = 0);
 
   void applyChangeSet(const neko::ChangeSetFfi &cs);
   void handleCopy();

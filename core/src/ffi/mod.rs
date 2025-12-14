@@ -1,10 +1,14 @@
 use std::path::PathBuf;
 
-use bridge::{ChangeSetFfi, CursorPosition, FileNode, FontType, Selection};
+use bridge::{
+    AddCursorDirectionFfi, AddCursorDirectionKind, ChangeSetFfi, CursorPosition, FileNode,
+    FontType, Selection,
+};
 
 use crate::app::AppState;
 use crate::config::ConfigManager;
 use crate::file_system::FileTree;
+use crate::text::editor::AddCursorDirection;
 use crate::text::{ChangeSet, Editor};
 use crate::theme::ThemeManager;
 
@@ -16,6 +20,20 @@ impl From<ChangeSet> for bridge::ChangeSetFfi {
             line_count_after: cs.line_count_after as u32,
             dirty_first_row: cs.dirty_first_row.map(|v| v as i32).unwrap_or(-1),
             dirty_last_row: cs.dirty_last_row.map(|v| v as i32).unwrap_or(-1),
+        }
+    }
+}
+
+impl From<AddCursorDirectionFfi> for AddCursorDirection {
+    fn from(dir: AddCursorDirectionFfi) -> Self {
+        match dir.kind {
+            AddCursorDirectionKind::Above => AddCursorDirection::Above,
+            AddCursorDirectionKind::Below => AddCursorDirection::Below,
+            AddCursorDirectionKind::At => AddCursorDirection::At {
+                row: dir.row,
+                col: dir.col,
+            },
+            _ => AddCursorDirection::Above,
         }
     }
 }
@@ -57,6 +75,18 @@ mod bridge {
         line_count_after: u32,
         dirty_first_row: i32,
         dirty_last_row: i32,
+    }
+
+    enum AddCursorDirectionKind {
+        Above,
+        Below,
+        At,
+    }
+
+    struct AddCursorDirectionFfi {
+        kind: AddCursorDirectionKind,
+        row: usize,
+        col: usize,
     }
 
     extern "Rust" {
@@ -163,7 +193,8 @@ mod bridge {
         fn get_selection(self: &mut Editor) -> Selection;
         fn copy(self: &Editor) -> String;
         fn paste(self: &mut Editor, text: &str) -> ChangeSetFfi;
-        fn add_cursor(self: &mut Editor, row: usize, col: usize);
+        #[cxx_name = "add_cursor"]
+        fn add_cursor_wrapper(self: &mut Editor, direction: AddCursorDirectionFfi);
         fn remove_cursor(self: &mut Editor, row: usize, col: usize);
         fn cursor_exists_at(self: &Editor, row: usize, col: usize) -> bool;
         #[cxx_name = "clear_cursors"]
@@ -490,6 +521,10 @@ impl Editor {
 
     fn get_max_width(&self) -> f64 {
         self.max_width
+    }
+
+    fn add_cursor_wrapper(self: &mut Editor, direction: AddCursorDirectionFfi) {
+        self.add_cursor(direction.into());
     }
 }
 

@@ -24,7 +24,7 @@ impl Cursor {
     }
 
     pub fn move_to(&mut self, buffer: &Buffer, row: usize, col: usize) {
-        let max_row = buffer.line_count().saturating_sub(1);
+        let max_row = buffer.line_count().saturating_sub(1).max(0);
         self.row = min(row, max_row);
 
         let line_len = buffer.line_len_without_newline(self.row);
