@@ -146,7 +146,11 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
   RowCol rc = convertMousePositionToRowCol(event->pos().x(), event->pos().y());
 
   if (event->modifiers().testFlag(Qt::AltModifier)) {
-    editor->add_cursor(rc.row, rc.col);
+    if (editor->cursor_exists_at(rc.row, rc.col)) {
+      editor->remove_cursor(rc.row, rc.col);
+    } else {
+      editor->add_cursor(rc.row, rc.col);
+    }
   } else {
     editor->move_to(rc.row, rc.col, true);
   }
@@ -307,7 +311,11 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     applyChangeSet(editor->insert_tab());
     break;
   case Qt::Key_Escape:
-    applyChangeSet(editor->clear_selection());
+    if (editor->has_active_selection()) {
+      applyChangeSet(editor->clear_selection());
+    } else {
+      applyChangeSet(editor->clear_cursors());
+    }
     break;
 
   default:

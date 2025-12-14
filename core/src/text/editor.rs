@@ -51,6 +51,44 @@ impl Editor {
         }
     }
 
+    pub fn cursor_exists_at(&self, row: usize, col: usize) -> bool {
+        self.cursors.iter().any(|c| c.row == row && c.column == col)
+    }
+
+    pub fn remove_cursor(&mut self, row: usize, col: usize) {
+        if self.cursors.len() == 1 {
+            return;
+        }
+
+        let index = self
+            .cursors
+            .iter()
+            .position(|c| c.row == row && c.column == col);
+
+        if let Some(found_index) = index {
+            self.cursors.remove(found_index);
+
+            if found_index == self.active_cursor_index
+                || self.active_cursor_index >= self.cursors.len()
+            {
+                self.active_cursor_index = self.cursors.len() - 1;
+            }
+        }
+    }
+
+    pub fn clear_cursors(&mut self) -> ChangeSet {
+        self.with_op(false, OpFlags::ViewportOnly, |editor| {
+            let active_cursor = editor.cursors[editor.active_cursor_index].clone();
+            editor.cursors.clear();
+            editor.cursors.push(active_cursor);
+            editor.active_cursor_index = 0;
+        })
+    }
+
+    pub fn has_active_selection(&self) -> bool {
+        self.selection.is_active()
+    }
+
     fn sort_and_dedup_cursors(&mut self) {
         let active_key = {
             let c = &self.cursors[self.active_cursor_index];

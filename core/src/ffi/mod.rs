@@ -164,6 +164,11 @@ mod bridge {
         fn copy(self: &Editor) -> String;
         fn paste(self: &mut Editor, text: &str) -> ChangeSetFfi;
         fn add_cursor(self: &mut Editor, row: usize, col: usize);
+        fn remove_cursor(self: &mut Editor, row: usize, col: usize);
+        fn cursor_exists_at(self: &Editor, row: usize, col: usize) -> bool;
+        #[cxx_name = "clear_cursors"]
+        fn clear_cursors_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        fn has_active_selection(self: &Editor) -> bool;
 
         // FileTree
         #[cxx_name = "set_root_dir"]
@@ -469,6 +474,10 @@ impl Editor {
 
     fn clear_selection_wrapper(&mut self) -> ChangeSetFfi {
         self.clear_selection().into()
+    }
+
+    fn clear_cursors_wrapper(&mut self) -> ChangeSetFfi {
+        self.clear_cursors().into()
     }
 
     fn undo_wrapper(&mut self) -> ChangeSetFfi {
