@@ -15,6 +15,11 @@ enum CursorMode {
     Multiple,
 }
 
+enum DeleteResult {
+    Text(()),
+    Newline { row: usize, left_len: usize },
+}
+
 #[derive(Default, Debug)]
 pub struct Editor {
     pub(crate) buffer: Buffer,
@@ -158,6 +163,25 @@ impl Editor {
         }
     }
 
+    fn fix_cursors_after_line_merge(&mut self, row: usize, left_len: usize, skip_i: usize) {
+        for (j, c) in self.cursors.iter_mut().enumerate() {
+            if j == skip_i {
+                continue;
+            }
+
+            if c.row == row + 1 {
+                c.row = row;
+                c.column += left_len;
+            } else if c.row > row + 1 {
+                c.row -= 1;
+            }
+
+            // Clamp column to line length
+            let max_col = self.buffer.line_len(c.row);
+            c.column = c.column.min(max_col);
+        }
+    }
+
     fn delete_selection_impl(&mut self) {
         let a = self.selection.start.get_idx(&self.buffer);
         let b = self.selection.end.get_idx(&self.buffer);
@@ -261,50 +285,79 @@ impl Editor {
     pub fn backspace(&mut self) -> ChangeSet {
         self.with_op(true, OpFlags::BufferViewportWidths, |editor| {
             for i in (0..editor.cursors.len()).rev() {
-                editor.backspace_impl(i);
+                match editor.backspace_impl(i) {
+                    DeleteResult::Text(_) => {}
+                    DeleteResult::Newline { row, left_len } => {
+                        editor.fix_cursors_after_line_merge(row, left_len, i);
+                    }
+                }
             }
+
+            editor.sync_line_widths();
         })
     }
 
-    fn backspace_impl(&mut self, i: usize) {
+    fn backspace_impl(&mut self, i: usize) -> DeleteResult {
         if self.delete_selection_if_active() {
-            self.sync_line_widths();
-            return;
+            return DeleteResult::Text(());
         }
 
         let pos = self.cursors[i].get_idx(&self.buffer);
         if pos == 0 {
-            return;
+            return DeleteResult::Text(());
         }
+
+        let (maybe_merge_row, maybe_left_len) = {
+            let c = &self.cursors[i];
+            if c.column == 0 && c.row > 0 {
+                let merge_row = c.row - 1;
+                let left_len = self.buffer.line_len(merge_row);
+                (Some(merge_row), Some(left_len))
+            } else {
+                (None, None)
+            }
+        };
 
         let start = pos - 1;
         let end = pos;
+
         let deleted = self.buffer.delete_range(start, end);
         self.record_edit(Edit::Delete {
             start,
             end,
-            deleted,
+            deleted: deleted.clone(),
         });
 
         self.cursors[i].move_left(&self.buffer);
 
-        self.sync_line_widths();
-        self.invalidate_line_width(self.cursors[i].row);
+        if deleted == "\n" {
+            DeleteResult::Newline {
+                row: maybe_merge_row.unwrap(),
+                left_len: maybe_left_len.unwrap(),
+            }
+        } else {
+            DeleteResult::Text(())
+        }
     }
 
     pub fn delete(&mut self) -> ChangeSet {
         self.with_op(true, OpFlags::BufferViewportWidths, |editor| {
             for i in (0..editor.cursors.len()).rev() {
-                editor.delete_impl(i)
+                match editor.delete_impl(i) {
+                    DeleteResult::Text(_) => {}
+                    DeleteResult::Newline { row, left_len } => {
+                        editor.fix_cursors_after_line_merge(row, left_len, i);
+                    }
+                }
             }
         })
     }
 
-    fn delete_impl(&mut self, i: usize) {
+    fn delete_impl(&mut self, i: usize) -> DeleteResult {
         if self.delete_selection_if_active() {
             self.sync_line_widths();
             self.invalidate_line_width(self.cursors[i].row);
-            return;
+            return DeleteResult::Text(());
         }
 
         let start = self.cursors[i].get_idx(&self.buffer);
@@ -316,13 +369,23 @@ impl Editor {
                 self.record_edit(Edit::Delete {
                     start,
                     end,
-                    deleted,
+                    deleted: deleted.clone(),
                 });
             }
 
             self.sync_line_widths();
             self.invalidate_line_width(self.cursors[i].row);
+
+            return match deleted.contains("\n") {
+                true => DeleteResult::Newline {
+                    row: self.cursors[i].row,
+                    left_len: start,
+                },
+                false => DeleteResult::Text(()),
+            };
         }
+
+        DeleteResult::Text(())
     }
 
     fn move_cursor_at(
