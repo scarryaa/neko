@@ -10,13 +10,18 @@ enum SelectionMode {
     Keep,
 }
 
+enum CursorMode {
+    Single,
+    Multiple,
+}
+
 #[derive(Default, Debug)]
 pub struct Editor {
     pub(crate) buffer: Buffer,
     line_widths: Vec<f64>,
     pub(crate) max_width: f64,
     max_width_line: usize,
-    pub(crate) cursor: Cursor,
+    pub(crate) cursors: Vec<Cursor>,
     pub(crate) selection: Selection,
     history: UndoHistory,
 }
@@ -28,10 +33,21 @@ impl Editor {
             line_widths: vec![-1.0],
             max_width: 0.0,
             max_width_line: 0,
-            cursor: Cursor::new(),
+            cursors: vec![Cursor::new()],
             selection: Selection::new(),
             history: UndoHistory::default(),
         }
+    }
+
+    fn sort_and_dedup_cursors(&mut self) {
+        self.cursors.sort_by(|c1, c2| {
+            if c1.row == c2.row {
+                c1.column.cmp(&c2.column)
+            } else {
+                c1.row.cmp(&c2.row)
+            }
+        });
+        self.cursors.dedup();
     }
 
     fn with_op<R>(
@@ -41,6 +57,9 @@ impl Editor {
         f: impl FnOnce(&mut Self) -> R,
     ) -> ChangeSet {
         let (lc0, cur0, sel0) = self.begin_changes();
+
+        self.sort_and_dedup_cursors();
+
         if tx {
             self.begin_tx();
         }
@@ -51,7 +70,9 @@ impl Editor {
             self.commit_tx();
         }
 
-        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        self.sort_and_dedup_cursors();
+
+        let mut cs = self.end_changes(lc0, cur0, &sel0);
         match flags {
             OpFlags::ViewportOnly => cs.change |= Change::VIEWPORT,
             OpFlags::BufferViewportWidths => {
@@ -62,10 +83,10 @@ impl Editor {
         cs
     }
 
-    fn begin_changes(&self) -> (usize, Cursor, Selection) {
+    fn begin_changes(&self) -> (usize, Vec<Cursor>, Selection) {
         (
             self.buffer.line_count(),
-            self.cursor.clone(),
+            self.cursors.clone(),
             self.selection.clone(),
         )
     }
@@ -73,7 +94,7 @@ impl Editor {
     fn end_changes(
         &self,
         before_line_count: usize,
-        before_cursor: &Cursor,
+        before_cursors: Vec<Cursor>,
         before_selection: &Selection,
     ) -> ChangeSet {
         let after_line_count = self.buffer.line_count();
@@ -82,7 +103,13 @@ impl Editor {
         if after_line_count != before_line_count {
             c |= Change::LINE_COUNT | Change::VIEWPORT;
         }
-        if &self.cursor != before_cursor {
+        if before_cursors.len() != self.cursors.len()
+            || self
+                .cursors
+                .iter()
+                .zip(before_cursors)
+                .any(|(c1, c2)| *c1 != c2)
+        {
             c |= Change::CURSOR;
         }
         if &self.selection != before_selection {
@@ -103,12 +130,12 @@ impl Editor {
 
         self.buffer.clear();
         self.buffer.insert(0, content);
-        self.cursor = Cursor::new();
+        self.cursors = vec![Cursor::new()];
         self.selection = Selection::new();
 
         self.clear_and_rebuild_line_widths();
 
-        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        let mut cs = self.end_changes(lc0, cur0, &sel0);
         cs.change |= Change::BUFFER | Change::VIEWPORT | Change::WIDTHS;
         cs
     }
@@ -136,7 +163,7 @@ impl Editor {
         let b = self.selection.end.get_idx(&self.buffer);
         let (start, end) = if a <= b { (a, b) } else { (b, a) };
 
-        self.cursor = self.selection.start.clone();
+        self.cursors = vec![self.selection.start.clone()];
 
         let deleted = self.buffer.delete_range(start, end);
         self.clear_and_rebuild_line_widths();
@@ -148,45 +175,50 @@ impl Editor {
 
         self.selection.clear();
         self.sync_line_widths();
-        self.invalidate_line_width(self.cursor.row);
+        self.invalidate_line_width(self.cursors[0].row);
     }
 
     pub fn insert_text(&mut self, text: &str) -> ChangeSet {
         self.with_op(true, OpFlags::BufferViewportWidths, |editor| {
-            if text.contains('\n') {
-                editor.insert_newline(text);
-            } else if text == "\t" {
-                editor.insert_tab();
-            } else {
-                editor.insert_text_internal(text);
+            let has_nl = text.contains('\n');
+            let is_tab = text == "\t";
+
+            for i in (0..editor.cursors.len()).rev() {
+                if has_nl {
+                    editor.insert_newline(text, i);
+                } else if is_tab {
+                    editor.insert_tab(i);
+                } else {
+                    editor.insert_text_internal(text, i);
+                }
             }
         })
     }
 
-    fn insert_text_internal(&mut self, text: &str) {
+    fn insert_text_internal(&mut self, text: &str, i: usize) {
         self.delete_selection_if_active();
 
-        let pos = self.cursor.get_idx(&self.buffer);
+        let pos = self.cursors[i].get_idx(&self.buffer);
 
         self.buffer.insert(pos, text);
         self.record_edit(Edit::Insert {
             pos,
             text: text.to_string(),
         });
-        self.cursor.move_to(
-            &self.buffer,
-            self.cursor.row,
-            self.cursor.column + text.len(),
-        );
+
+        let row = self.cursors[i].row;
+        let col = self.cursors[i].column + text.len();
+
+        self.cursors[i].move_to(&self.buffer, row, col);
 
         self.sync_line_widths();
-        self.invalidate_line_width(self.cursor.row);
+        self.invalidate_line_width(self.cursors[i].row);
     }
 
-    fn insert_newline(&mut self, text: &str) {
+    fn insert_newline(&mut self, text: &str, i: usize) {
         self.delete_selection_if_active();
 
-        let pos = self.cursor.get_idx(&self.buffer);
+        let pos = self.cursors[i].get_idx(&self.buffer);
 
         self.buffer.insert(pos, text);
         self.record_edit(Edit::Insert {
@@ -194,7 +226,7 @@ impl Editor {
             text: text.to_string(),
         });
 
-        let current_row = self.cursor.row;
+        let current_row = self.cursors[i].row;
         let inserted_newlines = text.matches('\n').count();
         let new_row = current_row + inserted_newlines;
 
@@ -202,16 +234,16 @@ impl Editor {
         let last = last.strip_suffix('\r').unwrap_or(last);
         let new_col = last.len();
 
-        self.cursor.move_to(&self.buffer, new_row, new_col);
+        self.cursors[i].move_to(&self.buffer, new_row, new_col);
         self.sync_line_widths();
         self.invalidate_line_width(current_row);
     }
 
-    fn insert_tab(&mut self) {
+    fn insert_tab(&mut self, i: usize) {
         self.delete_selection_if_active();
 
         let text = "    ";
-        let pos = self.cursor.get_idx(&self.buffer);
+        let pos = self.cursors[i].get_idx(&self.buffer);
 
         self.buffer.insert(pos, text);
         self.record_edit(Edit::Insert {
@@ -219,30 +251,28 @@ impl Editor {
             text: text.to_string(),
         });
 
-        self.cursor.move_to(
-            &self.buffer,
-            self.cursor.row,
-            self.cursor.column + text.len(),
-        );
+        let (row, col) = (self.cursors[i].row, self.cursors[i].column + text.len());
+        self.cursors[i].move_to(&self.buffer, row, col);
 
         self.sync_line_widths();
-        self.invalidate_line_width(self.cursor.row);
+        self.invalidate_line_width(self.cursors[i].row);
     }
 
     pub fn backspace(&mut self) -> ChangeSet {
         self.with_op(true, OpFlags::BufferViewportWidths, |editor| {
-            editor.backspace_impl();
+            for i in (0..editor.cursors.len()).rev() {
+                editor.backspace_impl(i);
+            }
         })
     }
 
-    fn backspace_impl(&mut self) {
+    fn backspace_impl(&mut self, i: usize) {
         if self.delete_selection_if_active() {
             self.sync_line_widths();
-            self.invalidate_line_width(self.cursor.row);
             return;
         }
 
-        let pos = self.cursor.get_idx(&self.buffer);
+        let pos = self.cursors[i].get_idx(&self.buffer);
         if pos == 0 {
             return;
         }
@@ -256,26 +286,28 @@ impl Editor {
             deleted,
         });
 
-        self.cursor.move_left(&self.buffer);
+        self.cursors[i].move_left(&self.buffer);
 
         self.sync_line_widths();
-        self.invalidate_line_width(self.cursor.row);
+        self.invalidate_line_width(self.cursors[i].row);
     }
 
     pub fn delete(&mut self) -> ChangeSet {
         self.with_op(true, OpFlags::BufferViewportWidths, |editor| {
-            editor.delete_impl()
+            for i in (0..editor.cursors.len()).rev() {
+                editor.delete_impl(i)
+            }
         })
     }
 
-    fn delete_impl(&mut self) {
+    fn delete_impl(&mut self, i: usize) {
         if self.delete_selection_if_active() {
             self.sync_line_widths();
-            self.invalidate_line_width(self.cursor.row);
+            self.invalidate_line_width(self.cursors[i].row);
             return;
         }
 
-        let start = self.cursor.get_idx(&self.buffer);
+        let start = self.cursors[i].get_idx(&self.buffer);
         if start < self.buffer.byte_len() - 1 {
             let deleted = self.buffer.delete_at(start);
 
@@ -289,21 +321,37 @@ impl Editor {
             }
 
             self.sync_line_widths();
-            self.invalidate_line_width(self.cursor.row);
+            self.invalidate_line_width(self.cursors[i].row);
         }
     }
 
-    fn move_cursor(&mut self, mode: SelectionMode, f: impl FnOnce(&mut Cursor, &Buffer)) {
+    fn move_cursor_at(
+        &mut self,
+        i: usize,
+        mode: SelectionMode,
+        cursor_mode: CursorMode,
+        f: impl FnOnce(&mut Cursor, &Buffer),
+    ) {
+        self.sort_and_dedup_cursors();
+        let cursor = self.cursors[0].clone();
+
         if let SelectionMode::Extend = mode {
             if !self.selection.is_active() {
-                self.selection.begin(&self.cursor);
+                self.selection.begin(&cursor);
             }
         }
 
-        f(&mut self.cursor, &self.buffer);
+        match cursor_mode {
+            CursorMode::Single => {
+                self.cursors.clear();
+                self.cursors.push(cursor);
+                f(&mut self.cursors[0], &self.buffer);
+            }
+            CursorMode::Multiple => f(&mut self.cursors[i], &self.buffer),
+        }
 
         match mode {
-            SelectionMode::Extend => self.selection.update(&self.cursor, &self.buffer),
+            SelectionMode::Extend => self.selection.update(&self.cursors[0], &self.buffer),
             SelectionMode::Clear => self.selection.clear(),
             SelectionMode::Keep => {}
         }
@@ -311,49 +359,81 @@ impl Editor {
 
     pub fn move_left(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.move_cursor(SelectionMode::Clear, |c, b| c.move_left(b));
+            for i in (0..editor.cursors.len()).rev() {
+                editor.move_cursor_at(i, SelectionMode::Clear, CursorMode::Multiple, |c, b| {
+                    c.move_left(b)
+                });
+            }
         })
     }
 
     pub fn move_right(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.move_cursor(SelectionMode::Clear, |c, b| c.move_right(b));
+            for i in (0..editor.cursors.len()).rev() {
+                editor.move_cursor_at(i, SelectionMode::Clear, CursorMode::Multiple, |c, b| {
+                    c.move_right(b)
+                });
+            }
         })
     }
 
     pub fn move_up(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.move_cursor(SelectionMode::Clear, |c, b| c.move_up(b));
+            for i in (0..editor.cursors.len()).rev() {
+                editor.move_cursor_at(i, SelectionMode::Clear, CursorMode::Multiple, |c, b| {
+                    c.move_up(b)
+                });
+            }
         })
     }
 
     pub fn move_down(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.move_cursor(SelectionMode::Clear, |c, b| c.move_down(b));
+            for i in (0..editor.cursors.len()).rev() {
+                editor.move_cursor_at(i, SelectionMode::Clear, CursorMode::Multiple, |c, b| {
+                    c.move_down(b)
+                });
+            }
         })
     }
 
     pub fn select_left(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.move_cursor(SelectionMode::Extend, |c, b| c.move_left(b));
+            for i in (0..editor.cursors.len()).rev() {
+                editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
+                    c.move_left(b)
+                });
+            }
         })
     }
 
     pub fn select_right(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.move_cursor(SelectionMode::Extend, |c, b| c.move_right(b));
+            for i in (0..editor.cursors.len()).rev() {
+                editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
+                    c.move_right(b)
+                });
+            }
         })
     }
 
     pub fn select_up(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.move_cursor(SelectionMode::Extend, |c, b| c.move_up(b));
+            for i in (0..editor.cursors.len()).rev() {
+                editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
+                    c.move_up(b)
+                });
+            }
         })
     }
 
     pub fn select_down(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.move_cursor(SelectionMode::Extend, |c, b| c.move_down(b));
+            for i in (0..editor.cursors.len()).rev() {
+                editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
+                    c.move_down(b)
+                });
+            }
         })
     }
 
@@ -364,21 +444,33 @@ impl Editor {
             } else {
                 SelectionMode::Keep
             };
-            editor.move_cursor(mode, |c, b| c.move_to(b, row, col));
+            editor.move_cursor_at(0, mode, CursorMode::Single, |c, b| c.move_to(b, row, col));
         })
+    }
+
+    pub fn add_cursor(&mut self, row: usize, col: usize) {
+        let mut cursor = Cursor::new();
+        cursor.move_to(&self.buffer, row, col);
+
+        self.cursors.push(cursor);
+        self.sort_and_dedup_cursors();
     }
 
     pub fn select_to(&mut self, row: usize, col: usize) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.move_cursor(SelectionMode::Extend, |c, b| c.move_to(b, row, col));
+            editor.move_cursor_at(0, SelectionMode::Extend, CursorMode::Single, |c, b| {
+                c.move_to(b, row, col)
+            });
         })
     }
 
     pub fn select_all(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
             editor.selection.begin(&Cursor::new());
-            editor.cursor.move_to_end(&editor.buffer);
-            editor.selection.update(&editor.cursor, &editor.buffer);
+            editor.cursors = vec![Cursor::new()];
+
+            editor.cursors[0].move_to_end(&editor.buffer);
+            editor.selection.update(&editor.cursors[0], &editor.buffer);
         })
     }
 
@@ -456,7 +548,7 @@ impl Editor {
 
     fn view_state(&self) -> ViewState {
         ViewState {
-            cursor: self.cursor.clone(),
+            cursors: self.cursors.clone(),
             selection: self.selection.clone(),
         }
     }
@@ -501,14 +593,14 @@ impl Editor {
             edit.invert().apply(&mut self.buffer);
         }
 
-        self.cursor = tx.before.cursor.clone();
+        self.cursors = tx.before.cursors.clone();
         self.selection = tx.before.selection.clone();
 
         self.clear_and_rebuild_line_widths();
 
         self.history.redo.push(tx);
 
-        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        let mut cs = self.end_changes(lc0, cur0, &sel0);
         cs.change |= Change::SELECTION
             | Change::BUFFER
             | Change::CURSOR
@@ -531,14 +623,14 @@ impl Editor {
             edit.apply(&mut self.buffer);
         }
 
-        self.cursor = tx.after.cursor.clone();
+        self.cursors = tx.after.cursors.clone();
         self.selection = tx.after.selection.clone();
 
         self.clear_and_rebuild_line_widths();
 
         self.history.undo.push(tx);
 
-        let mut cs = self.end_changes(lc0, &cur0, &sel0);
+        let mut cs = self.end_changes(lc0, cur0, &sel0);
         cs.change |= Change::SELECTION
             | Change::BUFFER
             | Change::CURSOR

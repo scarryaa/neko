@@ -1,11 +1,17 @@
 use super::Buffer;
 use std::cmp::min;
 
-#[derive(Debug, Default, PartialEq, Eq, Clone)]
+#[derive(Debug, Default, Eq, Clone)]
 pub struct Cursor {
     pub(crate) row: usize,
     pub(crate) column: usize,
     pub(crate) sticky_column: usize,
+}
+
+impl PartialEq for Cursor {
+    fn eq(&self, other: &Self) -> bool {
+        self.row == other.row && self.column == other.column
+    }
 }
 
 impl Cursor {

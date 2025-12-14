@@ -38,7 +38,7 @@ impl Edit {
 
 #[derive(Clone, Debug)]
 pub struct ViewState {
-    pub cursor: Cursor,
+    pub cursors: Vec<Cursor>,
     pub selection: Selection,
 }
 

@@ -77,7 +77,9 @@ void EditorWidget::scrollToCursor() {
     return;
   }
 
-  neko::CursorPosition cursor = editor->get_cursor_position();
+  auto cursors = editor->get_cursor_positions();
+  auto cursor = cursors.at(0);
+
   int targetRow = cursor.row;
   double lineHeight = fontMetrics.height();
 
@@ -143,8 +145,13 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
 
   RowCol rc = convertMousePositionToRowCol(event->pos().x(), event->pos().y());
 
-  editor->move_to(rc.row, rc.col, true);
-  emit cursorPositionChanged();
+  if (event->modifiers().testFlag(Qt::AltModifier)) {
+    editor->add_cursor(rc.row, rc.col);
+  } else {
+    editor->move_to(rc.row, rc.col, true);
+    emit cursorPositionChanged();
+  }
+
   viewport()->update();
 }
 
@@ -398,7 +405,7 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
                          verticalOffset, horizontalOffset};
 
   drawText(&painter, ctx);
-  drawCursor(&painter, ctx);
+  drawCursors(&painter, ctx);
   drawSelections(&painter, ctx);
 }
 
@@ -528,40 +535,43 @@ void EditorWidget::drawLastLineSelection(QPainter *painter,
                                 width - ctx.horizontalOffset, ctx));
 }
 
-void EditorWidget::drawCursor(QPainter *painter, const ViewportContext &ctx) {
-  neko::CursorPosition cursor = editor->get_cursor_position();
-  int cursorRow = cursor.row;
-  int cursorCol = cursor.col;
+void EditorWidget::drawCursors(QPainter *painter, const ViewportContext &ctx) {
+  auto cursors = editor->get_cursor_positions();
 
-  if (cursorRow < ctx.firstVisibleLine || cursorRow > ctx.lastVisibleLine) {
-    return;
+  for (auto cursor : cursors) {
+    int cursorRow = cursor.row;
+    int cursorCol = cursor.col;
+
+    if (cursorRow < ctx.firstVisibleLine || cursorRow > ctx.lastVisibleLine) {
+      return;
+    }
+
+    // Draw line highlight
+    painter->setPen(Qt::NoPen);
+    painter->setBrush(QBrush(LINE_HIGHLIGHT_COLOR));
+    painter->drawRect(getLineRect(
+        cursorRow, 0, viewport()->width() + ctx.horizontalOffset, ctx));
+
+    if (!hasFocus()) {
+      return;
+    }
+
+    auto rawLine = editor->get_line(cursorRow);
+    QString text = QString::fromUtf8(rawLine);
+    QString textBeforeCursor = text.left(cursorCol);
+
+    qreal cursorX = fontMetrics.horizontalAdvance(textBeforeCursor);
+
+    if (cursorX < 0 || cursorX > viewport()->width() + ctx.horizontalOffset) {
+      return;
+    }
+
+    auto accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+    painter->setPen(accentColor);
+    painter->setBrush(Qt::NoBrush);
+
+    double x = cursorX - ctx.horizontalOffset;
+    painter->drawLine(QLineF(QPointF(x, getLineTopY(cursorRow, ctx)),
+                             QPointF(x, getLineBottomY(cursorRow, ctx))));
   }
-
-  // Draw line highlight
-  painter->setPen(Qt::NoPen);
-  painter->setBrush(QBrush(LINE_HIGHLIGHT_COLOR));
-  painter->drawRect(getLineRect(
-      cursorRow, 0, viewport()->width() + ctx.horizontalOffset, ctx));
-
-  if (!hasFocus()) {
-    return;
-  }
-
-  auto rawLine = editor->get_line(cursorRow);
-  QString text = QString::fromUtf8(rawLine);
-  QString textBeforeCursor = text.left(cursorCol);
-
-  qreal cursorX = fontMetrics.horizontalAdvance(textBeforeCursor);
-
-  if (cursorX < 0 || cursorX > viewport()->width() + ctx.horizontalOffset) {
-    return;
-  }
-
-  auto accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
-  painter->setPen(accentColor);
-  painter->setBrush(Qt::NoBrush);
-
-  double x = cursorX - ctx.horizontalOffset;
-  painter->drawLine(QLineF(QPointF(x, getLineTopY(cursorRow, ctx)),
-                           QPointF(x, getLineBottomY(cursorRow, ctx))));
 }

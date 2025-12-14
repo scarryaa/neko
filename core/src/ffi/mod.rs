@@ -159,10 +159,11 @@ mod bridge {
         fn get_text(self: &Editor) -> String;
         fn get_line(self: &Editor, line_idx: usize) -> String;
         fn get_line_count(self: &Editor) -> usize;
-        fn get_cursor_position(self: &Editor) -> CursorPosition;
+        fn get_cursor_positions(self: &Editor) -> Vec<CursorPosition>;
         fn get_selection(self: &mut Editor) -> Selection;
         fn copy(self: &Editor) -> String;
         fn paste(self: &mut Editor, text: &str) -> ChangeSetFfi;
+        fn add_cursor(self: &mut Editor, row: usize, col: usize);
 
         // FileTree
         #[cxx_name = "set_root_dir"]
@@ -351,10 +352,14 @@ impl Editor {
         self.buffer.line_count()
     }
 
-    fn get_cursor_position(self: &Editor) -> CursorPosition {
-        let (row, col) = (self.cursor.row, self.cursor.column);
-
-        CursorPosition { row, col }
+    fn get_cursor_positions(self: &Editor) -> Vec<CursorPosition> {
+        self.cursors
+            .iter()
+            .map(|c| CursorPosition {
+                row: c.row,
+                col: c.column,
+            })
+            .collect()
     }
 
     fn get_selection(&self) -> Selection {

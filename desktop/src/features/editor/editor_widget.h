@@ -59,7 +59,7 @@ private:
   void handleRedo();
 
   void drawText(QPainter *painter, const ViewportContext &ctx);
-  void drawCursor(QPainter *painter, const ViewportContext &ctx);
+  void drawCursors(QPainter *painter, const ViewportContext &ctx);
   void drawSelections(QPainter *painter, const ViewportContext &ctx);
 
   void drawSingleLineSelection(QPainter *painter, const ViewportContext &ctx,
