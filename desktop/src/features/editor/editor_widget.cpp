@@ -149,9 +149,9 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
     editor->add_cursor(rc.row, rc.col);
   } else {
     editor->move_to(rc.row, rc.col, true);
-    emit cursorPositionChanged();
   }
 
+  emit cursorPositionChanged();
   viewport()->update();
 }
 
