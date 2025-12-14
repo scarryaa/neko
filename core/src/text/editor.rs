@@ -33,6 +33,7 @@ pub struct Editor {
     pub(crate) max_width: f64,
     max_width_line: usize,
     pub(crate) cursors: Vec<Cursor>,
+    pub(crate) active_cursor_index: usize,
     pub(crate) selection: Selection,
     history: UndoHistory,
 }
@@ -46,20 +47,26 @@ impl Editor {
             max_width: 0.0,
             max_width_line: 0,
             cursors: vec![Cursor::new()],
+            active_cursor_index: 0,
             selection: Selection::new(),
             history: UndoHistory::default(),
         }
     }
 
     fn sort_and_dedup_cursors(&mut self) {
-        self.cursors.sort_by(|c1, c2| {
-            if c1.row == c2.row {
-                c1.column.cmp(&c2.column)
-            } else {
-                c1.row.cmp(&c2.row)
-            }
-        });
-        self.cursors.dedup();
+        let active_key = {
+            let c = &self.cursors[self.active_cursor_index];
+            (c.row, c.column)
+        };
+
+        self.cursors.sort_by_key(|c| (c.row, c.column));
+        self.cursors.dedup_by_key(|c| (c.row, c.column));
+
+        self.active_cursor_index = self
+            .cursors
+            .iter()
+            .position(|c| (c.row, c.column) == active_key)
+            .unwrap_or(0);
     }
 
     fn with_op<R>(
@@ -428,7 +435,9 @@ impl Editor {
         f: impl FnOnce(&mut Cursor, &Buffer),
     ) {
         self.sort_and_dedup_cursors();
-        let cursor = self.cursors[0].clone();
+
+        let i = i.min(self.cursors.len().saturating_sub(1));
+        let cursor = self.cursors[i].clone();
 
         if let SelectionMode::Extend = mode {
             if !self.selection.is_active() {
@@ -436,17 +445,22 @@ impl Editor {
             }
         }
 
-        match cursor_mode {
+        let new_i = match cursor_mode {
             CursorMode::Single => {
                 self.cursors.clear();
                 self.cursors.push(cursor);
-                f(&mut self.cursors[0], &self.buffer);
+                self.active_cursor_index = 0;
+                0
             }
-            CursorMode::Multiple => f(&mut self.cursors[i], &self.buffer),
-        }
+            CursorMode::Multiple => i,
+        };
+
+        f(&mut self.cursors[new_i], &self.buffer);
+
+        self.sort_and_dedup_cursors();
 
         match mode {
-            SelectionMode::Extend => self.selection.update(&self.cursors[0], &self.buffer),
+            SelectionMode::Extend => self.selection.update(&self.cursors[new_i], &self.buffer),
             SelectionMode::Clear => self.selection.clear(),
             SelectionMode::Keep => {}
         }
@@ -493,53 +507,52 @@ impl Editor {
     }
 
     pub fn select_left(&mut self) -> ChangeSet {
+        let i = self.active_cursor_index;
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.for_each_cursor_rev(|editor, i| {
-                editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
-                    c.move_left(b)
-                });
+            editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
+                c.move_left(b)
             });
         })
     }
 
     pub fn select_right(&mut self) -> ChangeSet {
+        let i = self.active_cursor_index;
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.for_each_cursor_rev(|editor, i| {
-                editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
-                    c.move_right(b)
-                });
+            editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
+                c.move_right(b)
             });
         })
     }
 
     pub fn select_up(&mut self) -> ChangeSet {
+        let i = self.active_cursor_index;
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.for_each_cursor_rev(|editor, i| {
-                editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
-                    c.move_up(b)
-                });
+            editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
+                c.move_up(b)
             });
         })
     }
 
     pub fn select_down(&mut self) -> ChangeSet {
+        let i = self.active_cursor_index;
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.for_each_cursor_rev(|editor, i| {
-                editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
-                    c.move_down(b)
-                });
+            editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
+                c.move_down(b)
             });
         })
     }
 
     pub fn move_to(&mut self, row: usize, col: usize, clear: bool) -> ChangeSet {
+        let cursor_index = self.active_cursor_index;
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
             let mode = if clear {
                 SelectionMode::Clear
             } else {
                 SelectionMode::Keep
             };
-            editor.move_cursor_at(0, mode, CursorMode::Single, |c, b| c.move_to(b, row, col));
+            editor.move_cursor_at(cursor_index, mode, CursorMode::Single, |c, b| {
+                c.move_to(b, row, col)
+            });
         })
     }
 
@@ -552,10 +565,14 @@ impl Editor {
     }
 
     pub fn select_to(&mut self, row: usize, col: usize) -> ChangeSet {
+        let cursor_index = self.active_cursor_index;
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.move_cursor_at(0, SelectionMode::Extend, CursorMode::Single, |c, b| {
-                c.move_to(b, row, col)
-            });
+            editor.move_cursor_at(
+                cursor_index,
+                SelectionMode::Extend,
+                CursorMode::Single,
+                |c, b| c.move_to(b, row, col),
+            );
         })
     }
 
