@@ -21,7 +21,6 @@ enum DeleteResult {
     },
     Newline {
         row: usize,
-        left_len: usize,
         invalidate: Option<usize>,
     },
 }
@@ -38,7 +37,6 @@ pub struct Editor {
     history: UndoHistory,
 }
 
-// TODO: Fix multi-cursor enter positioning bug
 impl Editor {
     pub fn new() -> Self {
         Self {
@@ -168,7 +166,7 @@ impl Editor {
         self.max_width_line = 0;
     }
 
-    fn apply_delete_result(&mut self, i: usize, res: DeleteResult) {
+    fn apply_delete_result(&mut self, _i: usize, res: DeleteResult) {
         match res {
             DeleteResult::Text { invalidate } => {
                 if let Some(line) = invalidate {
@@ -176,13 +174,13 @@ impl Editor {
                 }
             }
             DeleteResult::Newline {
-                row,
-                left_len,
-                invalidate,
+                row, invalidate, ..
             } => {
-                self.fix_cursors_after_line_merge(row, left_len, i);
                 if let Some(line) = invalidate {
                     self.invalidate_line_width(line);
+                }
+                if row + 1 < self.buffer.line_count() {
+                    self.invalidate_line_width(row + 1);
                 }
             }
         }
@@ -200,25 +198,6 @@ impl Editor {
     fn for_each_cursor_rev(&mut self, mut f: impl FnMut(&mut Self, usize)) {
         for i in (0..self.cursors.len()).rev() {
             f(self, i);
-        }
-    }
-
-    fn fix_cursors_after_line_merge(&mut self, row: usize, left_len: usize, skip_i: usize) {
-        for (j, c) in self.cursors.iter_mut().enumerate() {
-            if j == skip_i {
-                continue;
-            }
-
-            if c.row == row + 1 {
-                c.row = row;
-                c.column += left_len;
-            } else if c.row > row + 1 {
-                c.row -= 1;
-            }
-
-            // Clamp column to line length
-            let max_col = self.buffer.line_len(c.row);
-            c.column = c.column.min(max_col);
         }
     }
 
@@ -246,26 +225,36 @@ impl Editor {
             let has_nl = text.contains('\n');
             let is_tab = text == "\t";
 
+            let mut idxs: Vec<usize> = editor
+                .cursors
+                .iter()
+                .map(|c| c.get_idx(&editor.buffer))
+                .collect();
+
             editor.for_each_cursor_rev(|editor, i| {
                 if has_nl {
-                    editor.insert_newline(text, i);
+                    editor.insert_newline(text, i, &mut idxs);
                 } else if is_tab {
-                    editor.insert_tab(i);
+                    editor.insert_tab(i, &mut idxs);
                 } else {
-                    editor.insert_text_internal(text, i);
+                    editor.insert_text_internal(text, i, &mut idxs);
                 }
             });
+
+            for (c, &idx) in editor.cursors.iter_mut().zip(idxs.iter()) {
+                let (row, col) = editor.buffer.byte_to_row_col(idx);
+                c.move_to(&editor.buffer, row, col);
+            }
         });
 
         self.sync_line_widths();
-
         res
     }
 
-    fn insert_text_internal(&mut self, text: &str, i: usize) {
+    fn insert_text_internal(&mut self, text: &str, i: usize, idxs: &mut [usize]) {
         self.delete_selection_if_active();
 
-        let pos = self.cursors[i].get_idx(&self.buffer);
+        let pos = idxs[i];
 
         self.buffer.insert(pos, text);
         self.record_edit(Edit::Insert {
@@ -273,17 +262,24 @@ impl Editor {
             text: text.to_string(),
         });
 
-        let row = self.cursors[i].row;
-        let col = self.cursors[i].column + text.len();
+        let ins_len = text.len();
 
-        self.cursors[i].move_to(&self.buffer, row, col);
-        self.invalidate_line_width(self.cursors[i].row);
+        (0..idxs.len()).for_each(|j| {
+            if idxs[j] > pos {
+                idxs[j] += ins_len;
+            } else if idxs[j] == pos {
+                idxs[j] = pos + ins_len;
+            }
+        });
+
+        let row = self.buffer.byte_to_line(pos);
+        self.invalidate_line_width(row);
     }
 
-    fn insert_newline(&mut self, text: &str, i: usize) {
+    fn insert_newline(&mut self, text: &str, i: usize, idxs: &mut [usize]) {
         self.delete_selection_if_active();
 
-        let pos = self.cursors[i].get_idx(&self.buffer);
+        let pos = idxs[i];
 
         self.buffer.insert(pos, text);
         self.record_edit(Edit::Insert {
@@ -291,23 +287,28 @@ impl Editor {
             text: text.to_string(),
         });
 
-        let current_row = self.cursors[i].row;
-        let inserted_newlines = text.matches('\n').count();
-        let new_row = current_row + inserted_newlines;
+        let ins_len = text.len();
 
-        let last = text.rsplit('\n').next().unwrap_or("");
-        let last = last.strip_suffix('\r').unwrap_or(last);
-        let new_col = last.len();
+        (0..idxs.len()).for_each(|j| {
+            if idxs[j] > pos {
+                idxs[j] += ins_len;
+            } else if idxs[j] == pos {
+                idxs[j] = pos + ins_len;
+            }
+        });
 
-        self.cursors[i].move_to(&self.buffer, new_row, new_col);
-        self.invalidate_line_width(current_row);
+        let row = self.buffer.byte_to_line(pos);
+        self.invalidate_line_width(row);
+        if row + 1 < self.buffer.line_count() {
+            self.invalidate_line_width(row + 1);
+        }
     }
 
-    fn insert_tab(&mut self, i: usize) {
+    fn insert_tab(&mut self, i: usize, idxs: &mut [usize]) {
         self.delete_selection_if_active();
 
         let text = "    ";
-        let pos = self.cursors[i].get_idx(&self.buffer);
+        let pos = idxs[i];
 
         self.buffer.insert(pos, text);
         self.record_edit(Edit::Insert {
@@ -315,35 +316,58 @@ impl Editor {
             text: text.to_string(),
         });
 
-        let (row, col) = (self.cursors[i].row, self.cursors[i].column + text.len());
-        self.cursors[i].move_to(&self.buffer, row, col);
+        let ins_len = text.len();
 
-        self.invalidate_line_width(self.cursors[i].row);
+        (0..idxs.len()).for_each(|j| {
+            if idxs[j] > pos {
+                idxs[j] += ins_len;
+            } else if idxs[j] == pos {
+                idxs[j] = pos + ins_len;
+            }
+        });
+
+        let row = self.buffer.byte_to_line(pos);
+        self.invalidate_line_width(row);
     }
 
     pub fn backspace(&mut self) -> ChangeSet {
         let res = self.with_op(true, OpFlags::BufferViewportWidths, |editor| {
+            if editor.delete_selection_if_active() {
+                return;
+            }
+
+            let mut idxs: Vec<usize> = editor
+                .cursors
+                .iter()
+                .map(|c| c.get_idx(&editor.buffer))
+                .collect();
+
             editor.for_each_cursor_rev(|editor, i| {
-                let res = editor.backspace_impl(i);
+                let res = editor.backspace_impl(i, &mut idxs);
                 editor.apply_delete_result(i, res);
             });
+
+            for (c, &idx) in editor.cursors.iter_mut().zip(idxs.iter()) {
+                let (row, col) = editor.buffer.byte_to_row_col(idx);
+                c.move_to(&editor.buffer, row, col);
+            }
         });
 
         self.sync_line_widths();
         res
     }
 
-    fn backspace_impl(&mut self, i: usize) -> DeleteResult {
-        if self.delete_selection_if_active() {
-            return DeleteResult::Text { invalidate: None };
-        }
-
-        let pos = self.cursors[i].get_idx(&self.buffer);
+    fn backspace_impl(&mut self, i: usize, idxs: &mut [usize]) -> DeleteResult {
+        let pos = idxs[i];
         if pos == 0 {
             return DeleteResult::Text { invalidate: None };
         }
 
-        let start = pos - 1;
+        let start = if pos >= 2 && self.buffer.get_text_range(pos - 2, pos) == "\r\n" {
+            pos - 2
+        } else {
+            pos - 1
+        };
         let end = pos;
 
         let deleted = self.buffer.delete_range(start, end);
@@ -353,74 +377,99 @@ impl Editor {
             deleted: deleted.clone(),
         });
 
-        let c = &self.cursors[i];
-        let was_line_start = c.column == 0 && c.row > 0;
+        self.apply_delete_to_idxs(start, end, idxs, i);
 
-        let res = if deleted == "\n" && was_line_start {
-            let row = c.row - 1;
-            let left_len = self.buffer.line_len(row);
+        if deleted.contains('\n') {
+            let row = self.buffer.byte_to_line(start);
             DeleteResult::Newline {
                 row,
-                left_len,
                 invalidate: Some(row),
             }
         } else {
+            let row = self.buffer.byte_to_line(start);
             DeleteResult::Text {
-                invalidate: Some(self.cursors[i].row),
+                invalidate: Some(row),
             }
-        };
+        }
+    }
 
-        self.cursors[i].move_left(&self.buffer);
+    fn apply_delete_to_idxs(&self, start: usize, end: usize, idxs: &mut [usize], caret_i: usize) {
+        let delta = end - start;
 
-        res
+        (0..idxs.len()).for_each(|j| {
+            let idx = idxs[j];
+            if idx > end {
+                idxs[j] = idx - delta;
+            } else if idx > start {
+                idxs[j] = start;
+            }
+        });
+
+        idxs[caret_i] = start;
     }
 
     pub fn delete(&mut self) -> ChangeSet {
         let res = self.with_op(true, OpFlags::BufferViewportWidths, |editor| {
+            if editor.delete_selection_if_active() {
+                return;
+            }
+
+            let mut idxs: Vec<usize> = editor
+                .cursors
+                .iter()
+                .map(|c| c.get_idx(&editor.buffer))
+                .collect();
+
             editor.for_each_cursor_rev(|editor, i| {
-                let res = editor.delete_impl(i);
+                let res = editor.delete_impl(i, &mut idxs);
                 editor.apply_delete_result(i, res);
             });
+
+            for (c, &idx) in editor.cursors.iter_mut().zip(idxs.iter()) {
+                let (row, col) = editor.buffer.byte_to_row_col(idx);
+                c.move_to(&editor.buffer, row, col);
+            }
         });
 
         self.sync_line_widths();
         res
     }
 
-    fn delete_impl(&mut self, i: usize) -> DeleteResult {
-        if self.delete_selection_if_active() {
-            return DeleteResult::Text {
-                invalidate: Some(self.cursors[i].row),
-            };
-        }
-
-        let start = self.cursors[i].get_idx(&self.buffer);
-        if start >= self.buffer.byte_len() - 1 {
+    fn delete_impl(&mut self, i: usize, idxs: &mut [usize]) -> DeleteResult {
+        let start = idxs[i];
+        if start >= self.buffer.byte_len().saturating_sub(1) {
             return DeleteResult::Text { invalidate: None };
         }
 
-        let deleted = self.buffer.delete_at(start);
+        let mut end = start + 1;
+        if self.buffer.get_text_range(start, end) == "\r"
+            && start + 2 <= self.buffer.byte_len()
+            && self.buffer.get_text_range(start, start + 2) == "\r\n"
+        {
+            end = start + 2;
+        }
+
+        let deleted = self.buffer.delete_range(start, end);
         if deleted.is_empty() {
             return DeleteResult::Text { invalidate: None };
         }
 
-        let end = start + deleted.len();
         self.record_edit(Edit::Delete {
             start,
             end,
             deleted: deleted.clone(),
         });
 
-        let row = self.cursors[i].row;
+        self.apply_delete_to_idxs(start, end, idxs, i);
 
         if deleted.contains('\n') {
-            let left_len = self.buffer.line_len(row);
+            let row = self.buffer.byte_to_line(start);
             DeleteResult::Newline {
                 row,
-                left_len,
                 invalidate: Some(row),
             }
         } else {
+            let row = self.buffer.byte_to_line(start);
             DeleteResult::Text {
                 invalidate: Some(row),
             }

@@ -86,6 +86,15 @@ impl Buffer {
         self.content.line_of_byte(byte_idx)
     }
 
+    pub fn byte_to_row_col(&self, byte_idx: usize) -> (usize, usize) {
+        let row = self.byte_to_line(byte_idx);
+        let line_start = self.line_to_byte(row);
+        let col = byte_idx.saturating_sub(line_start);
+
+        let col = col.min(self.line_len_without_newline(row));
+        (row, col)
+    }
+
     pub fn line_len_without_newline(&self, line_idx: usize) -> usize {
         if line_idx >= self.content.line_len() {
             return 0;
