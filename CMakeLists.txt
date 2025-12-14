@@ -29,15 +29,13 @@ endif()
 
 set(RUST_LIB_FULL_PATH "${RUST_TARGET_DIR}/${RUST_TARGET_SUBDIR}/${RUST_LIB_NAME}")
 
-add_custom_command(
-    OUTPUT "${RUST_LIB_FULL_PATH}"
+add_custom_target(neko_core_build ALL
     COMMAND ${CARGO_EXECUTABLE} ${CARGO_CMD}
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/core"
     COMMENT "Building Rust core..."
+    BYPRODUCTS "${RUST_LIB_FULL_PATH}"
     USES_TERMINAL
 )
-
-add_custom_target(neko_core_build ALL DEPENDS "${RUST_LIB_FULL_PATH}")
 
 add_library(neko_core STATIC IMPORTED GLOBAL)
 
