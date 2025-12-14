@@ -2,9 +2,9 @@ use super::{Buffer, Cursor};
 
 #[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct Selection {
-    start: Cursor,
-    end: Cursor,
-    anchor: Cursor,
+    pub(crate) start: Cursor,
+    pub(crate) end: Cursor,
+    pub(crate) anchor: Cursor,
     active: bool,
 }
 
@@ -20,18 +20,6 @@ impl Selection {
 
     pub fn is_active(&self) -> bool {
         self.active && self.start != self.end
-    }
-
-    pub fn start(&self) -> &Cursor {
-        &self.start
-    }
-
-    pub fn end(&self) -> &Cursor {
-        &self.end
-    }
-
-    pub fn anchor(&self) -> &Cursor {
-        &self.anchor
     }
 
     pub fn begin(&mut self, cursor: &Cursor) {
@@ -62,12 +50,5 @@ impl Selection {
         self.active = false;
         self.start = Cursor::new();
         self.end = Cursor::new();
-    }
-
-    pub fn delete(&mut self, buffer: &mut Buffer) {
-        if self.is_active() {
-            buffer.delete_range(self.start.get_idx(buffer), self.end.get_idx(buffer));
-            self.clear();
-        }
     }
 }

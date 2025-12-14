@@ -6,12 +6,12 @@ use super::{Change, ChangeSet, Edit, Transaction, UndoHistory, ViewState};
 
 #[derive(Default, Debug)]
 pub struct Editor {
-    buffer: Buffer,
+    pub(crate) buffer: Buffer,
     line_widths: Vec<f64>,
-    max_width: f64,
+    pub(crate) max_width: f64,
     max_width_line: usize,
-    cursor: Cursor,
-    selection: Selection,
+    pub(crate) cursor: Cursor,
+    pub(crate) selection: Selection,
     history: UndoHistory,
 }
 
@@ -26,22 +26,6 @@ impl Editor {
             selection: Selection::new(),
             history: UndoHistory::default(),
         }
-    }
-
-    pub fn buffer(&self) -> &Buffer {
-        &self.buffer
-    }
-
-    pub fn cursor(&self) -> &Cursor {
-        &self.cursor
-    }
-
-    pub fn max_width(&self) -> f64 {
-        self.max_width
-    }
-
-    pub fn selection(&self) -> &Selection {
-        &self.selection
     }
 
     fn begin_changes(&self) -> (usize, Cursor, Selection) {
@@ -107,13 +91,13 @@ impl Editor {
     fn delete_selection(&mut self) -> ChangeSet {
         let (lc0, cur0, sel0) = self.begin_changes();
 
-        let a = self.selection.start().get_idx(&self.buffer);
-        let b = self.selection.end().get_idx(&self.buffer);
+        let a = self.selection.start.get_idx(&self.buffer);
+        let b = self.selection.end.get_idx(&self.buffer);
         let (start, end) = if a <= b { (a, b) } else { (b, a) };
 
-        self.cursor = self.selection.start().clone();
+        self.cursor = self.selection.start.clone();
 
-        let deleted = self.buffer.delete_range_capture(start, end);
+        let deleted = self.buffer.delete_range(start, end);
         self.clear_and_rebuild_line_widths();
         self.record_edit(Edit::Delete {
             start,
@@ -123,7 +107,7 @@ impl Editor {
 
         self.selection.clear();
         self.sync_line_widths();
-        self.invalidate_line_width(self.cursor.get_row());
+        self.invalidate_line_width(self.cursor.row);
 
         let mut cs = self.end_changes(lc0, &cur0, &sel0);
         cs.change |= Change::BUFFER | Change::VIEWPORT | Change::WIDTHS;
@@ -138,20 +122,13 @@ impl Editor {
             self.delete_selection();
         }
 
-        let pos = self.cursor.get_idx(&self.buffer);
-        self.buffer.insert(pos, text);
-        self.record_edit(Edit::Insert {
-            pos,
-            text: text.to_string(),
-        });
-        self.cursor.move_to(
-            &self.buffer,
-            self.cursor.get_row(),
-            self.cursor.get_col() + text.len(),
-        );
-
-        self.sync_line_widths();
-        self.invalidate_line_width(self.cursor.get_row());
+        if text.contains('\n') || text.contains("\r\n") {
+            self.insert_newline(text);
+        } else if text.contains('\t') {
+            self.insert_tab(text);
+        } else {
+            self.insert_text_internal(text);
+        };
 
         self.commit_tx();
 
@@ -160,69 +137,67 @@ impl Editor {
         cs
     }
 
-    pub fn insert_newline(&mut self) -> ChangeSet {
-        let (lc0, cur0, sel0) = self.begin_changes();
+    fn insert_text_internal(&mut self, text: &str) {
+        let pos = self.cursor.get_idx(&self.buffer);
 
-        self.begin_tx();
+        self.buffer.insert(pos, text);
+        self.record_edit(Edit::Insert {
+            pos,
+            text: text.to_string(),
+        });
+        self.cursor.move_to(
+            &self.buffer,
+            self.cursor.row,
+            self.cursor.column + text.len(),
+        );
 
+        self.sync_line_widths();
+        self.invalidate_line_width(self.cursor.row);
+    }
+
+    fn insert_newline(&mut self, text: &str) {
         if self.selection.is_active() {
             self.delete_selection();
         }
 
         let pos = self.cursor.get_idx(&self.buffer);
-        let text = "\n";
+
         self.buffer.insert(pos, text);
         self.record_edit(Edit::Insert {
             pos,
             text: text.to_string(),
         });
 
-        let current_row = self.cursor.get_row();
+        let current_row = self.cursor.row;
         self.cursor.move_to(&self.buffer, current_row + 1, 0);
 
         // Newline adds a line, so insert width entry
         self.line_widths.insert(current_row + 1, -1.0);
         self.invalidate_line_width(current_row);
-
-        self.commit_tx();
-
-        let mut cs = self.end_changes(lc0, &cur0, &sel0);
-        cs.change |= Change::BUFFER | Change::VIEWPORT | Change::WIDTHS;
-        cs
     }
 
-    pub fn insert_tab(&mut self) -> ChangeSet {
-        let (lc0, cur0, sel0) = self.begin_changes();
-
+    fn insert_tab(&mut self, _text: &str) {
         self.begin_tx();
 
         if self.selection.is_active() {
             self.delete_selection();
         }
 
-        let pos = self.cursor.get_idx(&self.buffer);
         // TODO: Make this configurable
         let text = "    ";
+        let pos = self.cursor.get_idx(&self.buffer);
+
         self.buffer.insert(pos, text);
         self.record_edit(Edit::Insert {
             pos,
             text: text.to_string(),
         });
 
-        let current_row = self.cursor.get_row();
-        self.cursor.move_to(
-            &self.buffer,
-            current_row,
-            self.cursor.get_col() + text.len(),
-        );
+        let current_row = self.cursor.row;
+        self.cursor
+            .move_to(&self.buffer, current_row, self.cursor.column + text.len());
 
         self.invalidate_line_width(current_row);
-
-        self.commit_tx();
-
-        let mut cs = self.end_changes(lc0, &cur0, &sel0);
-        cs.change |= Change::BUFFER | Change::VIEWPORT | Change::WIDTHS;
-        cs
     }
 
     pub fn backspace(&mut self) -> ChangeSet {
@@ -234,13 +209,13 @@ impl Editor {
             self.delete_selection();
         } else {
             let pos = self.cursor.get_idx(&self.buffer);
-            let row_before = self.cursor.get_row();
+            let row_before = self.cursor.row;
 
             if pos > 0 {
                 let start = pos - 1;
                 let end = pos;
 
-                let deleted = self.buffer.delete_range_capture(start, end);
+                let deleted = self.buffer.delete_range(start, end);
                 self.record_edit(Edit::Delete {
                     start,
                     end,
@@ -248,7 +223,7 @@ impl Editor {
                 });
 
                 self.cursor.move_left(&self.buffer);
-                let row_after = self.cursor.get_row();
+                let row_after = self.cursor.row;
 
                 if row_before != row_after {
                     self.line_widths.remove(row_before);
@@ -275,7 +250,7 @@ impl Editor {
             let start = self.cursor.get_idx(&self.buffer);
 
             let line_count_before = self.buffer.line_count();
-            let deleted = self.buffer.delete_at_capture(start);
+            let deleted = self.buffer.delete_at(start);
             let line_count_after = self.buffer.line_count();
 
             if !deleted.is_empty() {
@@ -289,9 +264,9 @@ impl Editor {
 
             // If line count changed, a line was joined
             if line_count_before != line_count_after {
-                self.line_widths.remove(self.cursor.get_row() + 1);
+                self.line_widths.remove(self.cursor.row + 1);
             }
-            self.invalidate_line_width(self.cursor.get_row());
+            self.invalidate_line_width(self.cursor.row);
         }
 
         self.commit_tx();

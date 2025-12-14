@@ -18,12 +18,6 @@ impl Buffer {
         }
     }
 
-    pub fn delete_range(&mut self, start_pos: usize, end_pos: usize) {
-        if start_pos < self.content.byte_len() && end_pos <= self.content.byte_len() {
-            self.content.delete(start_pos..end_pos);
-        }
-    }
-
     pub fn clear(&mut self) {
         self.content.delete(0..);
     }
@@ -36,13 +30,7 @@ impl Buffer {
         self.content.delete(pos - 1..pos);
     }
 
-    pub fn delete_at(&mut self, pos: usize) {
-        if pos < self.content.byte_len() && self.content.byte_len() != 1 {
-            self.content.delete(pos..pos + 1);
-        }
-    }
-
-    pub fn delete_at_capture(&mut self, pos: usize) -> String {
+    pub fn delete_at(&mut self, pos: usize) -> String {
         let deleted = self.get_text_range(pos, pos + 1);
         if pos < self.content.byte_len() && self.content.byte_len() != 1 {
             self.content.delete(pos..pos + 1);
@@ -52,9 +40,13 @@ impl Buffer {
         }
     }
 
-    pub fn delete_range_capture(&mut self, start_pos: usize, end_pos: usize) -> String {
+    pub fn delete_range(&mut self, start_pos: usize, end_pos: usize) -> String {
         let deleted = self.get_text_range(start_pos, end_pos);
-        self.delete_range(start_pos, end_pos);
+
+        if start_pos < self.content.byte_len() && end_pos <= self.content.byte_len() {
+            self.content.delete(start_pos..end_pos);
+        }
+
         deleted
     }
 

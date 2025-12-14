@@ -152,8 +152,7 @@ mod bridge {
         fn undo_wrapper(self: &mut Editor) -> ChangeSetFfi;
         #[cxx_name = "redo"]
         fn redo_wrapper(self: &mut Editor) -> ChangeSetFfi;
-        #[cxx_name = "get_max_width"]
-        fn max_width(self: &Editor) -> f64;
+        fn get_max_width(self: &Editor) -> f64;
         #[cxx_name = "set_line_width"]
         fn update_line_width(self: &mut Editor, line_idx: usize, line_width: f64);
         fn needs_width_measurement(self: &Editor, line_idx: usize) -> bool;
@@ -341,54 +340,54 @@ impl ThemeManager {
 
 impl Editor {
     fn get_text(&self) -> String {
-        self.buffer().get_text()
+        self.buffer.get_text()
     }
 
     fn get_line(&self, line_idx: usize) -> String {
-        self.buffer().get_line(line_idx)
+        self.buffer.get_line(line_idx)
     }
 
     fn get_line_count(&self) -> usize {
-        self.buffer().line_count()
+        self.buffer.line_count()
     }
 
     fn get_cursor_position(self: &Editor) -> CursorPosition {
-        let (row, col) = (self.cursor().get_row(), self.cursor().get_col());
+        let (row, col) = (self.cursor.row, self.cursor.column);
 
         CursorPosition { row, col }
     }
 
     fn get_selection(&self) -> Selection {
-        let s = self.selection();
-        let start = s.start();
-        let end = s.end();
-        let anchor = s.anchor();
+        let s = self.selection.clone();
+        let start = s.start.clone();
+        let end = s.end.clone();
+        let anchor = s.anchor.clone();
         let active = s.is_active();
 
         Selection {
             start: CursorPosition {
-                row: start.get_row(),
-                col: start.get_col(),
+                row: start.row,
+                col: start.column,
             },
             end: CursorPosition {
-                row: end.get_row(),
-                col: end.get_col(),
+                row: end.row,
+                col: end.column,
             },
             anchor: CursorPosition {
-                row: anchor.get_row(),
-                col: anchor.get_col(),
+                row: anchor.row,
+                col: anchor.column,
             },
             active,
         }
     }
 
     fn copy(self: &Editor) -> String {
-        let selection = self.selection();
+        let selection = self.selection.clone();
 
         if selection.is_active() {
-            self.buffer().get_text_range(
-                selection.start().get_idx(self.buffer()),
-                selection.end().get_idx(self.buffer()),
+            self.buffer.get_text_range(
+                selection.start.get_idx(&self.buffer),
+                selection.end.get_idx(&self.buffer),
             )
         } else {
             "".to_string()
@@ -428,11 +427,11 @@ impl Editor {
     }
 
     fn insert_newline_wrapper(&mut self) -> ChangeSetFfi {
-        self.insert_newline().into()
+        self.insert_text("\n").into()
     }
 
     fn insert_tab_wrapper(&mut self) -> ChangeSetFfi {
-        self.insert_tab().into()
+        self.insert_text("\t").into()
     }
 
     fn backspace_wrapper(&mut self) -> ChangeSetFfi {
@@ -473,6 +472,10 @@ impl Editor {
 
     fn redo_wrapper(&mut self) -> ChangeSetFfi {
         self.redo().into()
+    }
+
+    fn get_max_width(&self) -> f64 {
+        self.max_width
     }
 }
 

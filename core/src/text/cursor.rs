@@ -3,9 +3,9 @@ use std::cmp::min;
 
 #[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct Cursor {
-    row: usize,
-    column: usize,
-    sticky_column: usize,
+    pub(crate) row: usize,
+    pub(crate) column: usize,
+    pub(crate) sticky_column: usize,
 }
 
 impl Cursor {
@@ -15,14 +15,6 @@ impl Cursor {
             column: 0,
             sticky_column: 0,
         }
-    }
-
-    pub fn get_idx(&self, buffer: &Buffer) -> usize {
-        let line_start = buffer.line_to_byte(self.row);
-        let line_len = buffer.line_len(self.row);
-        let valid_col = min(self.column, line_len);
-
-        line_start + valid_col
     }
 
     pub fn move_to(&mut self, buffer: &Buffer, row: usize, col: usize) {
@@ -96,6 +88,14 @@ impl Cursor {
         self.sticky_column = 0;
     }
 
+    pub fn get_idx(&self, buffer: &Buffer) -> usize {
+        let line_start = buffer.line_to_byte(self.row);
+        let line_len = buffer.line_len(self.row);
+        let valid_col = min(self.column, line_len);
+
+        line_start + valid_col
+    }
+
     pub fn set_row(&mut self, row: usize) {
         self.row = row;
     }
@@ -103,17 +103,5 @@ impl Cursor {
     pub fn set_col(&mut self, col: usize) {
         self.column = col;
         self.sticky_column = col;
-    }
-
-    pub fn get_row(&self) -> usize {
-        self.row
-    }
-
-    pub fn get_col(&self) -> usize {
-        self.column
-    }
-
-    pub fn get_sticky_col(&self) -> usize {
-        self.sticky_column
     }
 }

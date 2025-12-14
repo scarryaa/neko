@@ -17,7 +17,7 @@ impl Edit {
     pub fn apply(&self, buffer: &mut Buffer) {
         match self {
             Edit::Insert { pos, text } => buffer.insert(*pos, text),
-            Edit::Delete { start, end, .. } => buffer.delete_range(*start, *end),
+            Edit::Delete { start, end, .. } => _ = buffer.delete_range(*start, *end),
         }
     }
 
