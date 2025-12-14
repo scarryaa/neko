@@ -19,3 +19,8 @@ pub struct ChangeSet {
     pub dirty_first_row: Option<usize>,
     pub dirty_last_row: Option<usize>,
 }
+
+pub enum OpFlags {
+    ViewportOnly,
+    BufferViewportWidths,
+}
