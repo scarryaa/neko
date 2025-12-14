@@ -1,13 +1,11 @@
-use std::cmp::min;
-
 use super::Buffer;
+use std::cmp::min;
 
 #[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct Cursor {
     row: usize,
     column: usize,
     sticky_column: usize,
-    idx: usize,
 }
 
 impl Cursor {
@@ -16,53 +14,38 @@ impl Cursor {
             row: 0,
             column: 0,
             sticky_column: 0,
-            idx: 1,
         }
+    }
+
+    pub fn get_idx(&self, buffer: &Buffer) -> usize {
+        let line_start = buffer.line_to_byte(self.row);
+        let line_len = buffer.line_len(self.row);
+        let valid_col = min(self.column, line_len);
+
+        line_start + valid_col
     }
 
     pub fn move_to(&mut self, buffer: &Buffer, row: usize, col: usize) {
-        if row >= buffer.line_count() {
-            self.row = buffer.line_count() - 1;
-        } else {
-            self.row = row;
-        }
+        let max_row = buffer.line_count().saturating_sub(1);
+        self.row = min(row, max_row);
 
-        if col > buffer.line_len(self.row) {
-            self.column = buffer.line_len(self.row);
-        } else {
-            self.column = col;
-        }
+        let line_len = buffer.line_len_without_newline(self.row);
+        self.column = min(col, line_len);
+
         self.sticky_column = self.column;
-
-        self.idx = 0;
-        // +1 for newlines
-        for i in 0..self.row {
-            let len = buffer.line_len(i) + 1;
-            self.idx += len;
-        }
-        self.idx += self.column + 1;
     }
 
     pub fn move_right(&mut self, buffer: &Buffer) {
-        if self.row >= buffer.line_count() {
-            return;
-        }
+        let line_len = buffer.line_len_without_newline(self.row);
 
-        if self.column < buffer.line_len(self.row) {
+        if self.column < line_len {
             self.column += 1;
             self.sticky_column = self.column;
-            self.idx += 1;
         } else if self.row + 1 < buffer.line_count() {
+            // Wrap to start of next line
             self.row += 1;
             self.column = 0;
             self.sticky_column = 0;
-            self.idx += 1;
-        }
-    }
-
-    pub fn move_right_by_bytes(&mut self, buffer: &Buffer, length: usize) {
-        for _ in 0..length {
-            self.move_right(buffer);
         }
     }
 
@@ -70,67 +53,33 @@ impl Cursor {
         if self.column > 0 {
             self.column -= 1;
             self.sticky_column = self.column;
-            self.idx -= 1;
         } else if self.row > 0 {
+            // Wrap to end of previous line
             self.row -= 1;
-            self.column = buffer.line_len(self.row);
-            self.sticky_column = buffer.line_len(self.row);
-            self.idx -= 1;
+            self.column = buffer.line_len_without_newline(self.row);
+            self.sticky_column = self.column;
         }
     }
 
     pub fn move_down(&mut self, buffer: &Buffer) {
-        let prev_col = self.column;
-        let prev_row = self.row;
-
         if self.row + 1 < buffer.line_count() {
             self.row += 1;
 
-            let line_len = buffer.line_len(self.row);
-
-            self.column = min(line_len, self.sticky_column);
-        } else if self.row + 1 == buffer.line_count() {
-            let line_len = buffer.line_len(self.row);
-            self.column = line_len;
-            self.sticky_column = line_len;
-        }
-
-        if prev_row != self.row {
-            // Moved to next line
-            let prev_line_len = buffer.line_len(prev_row);
-
-            // +1 for newline
-            self.idx = self.idx + prev_line_len - prev_col + self.column + 1;
+            let len = buffer.line_len_without_newline(self.row);
+            self.column = min(self.sticky_column, len);
         } else {
-            // Moved within the same line
-            self.idx += self.column - prev_col;
+            self.move_to_end(buffer);
         }
     }
 
     pub fn move_up(&mut self, buffer: &Buffer) {
-        let prev_col = self.column;
-        let prev_row = self.row;
-
         if self.row > 0 {
             self.row -= 1;
 
-            let line_len = buffer.line_len(self.row);
-            self.column = min(line_len, self.sticky_column);
+            let len = buffer.line_len_without_newline(self.row);
+            self.column = min(self.sticky_column, len);
         } else {
-            self.row = 0;
-            self.column = 0;
-            self.sticky_column = 0;
-        }
-
-        if prev_row != self.row {
-            // Moved to previous line
-            let new_line_len = buffer.line_len(self.row);
-
-            // -1 for newline
-            self.idx = self.idx - prev_col - (new_line_len - self.column) - 1;
-        } else {
-            // Moved within the same line
-            self.idx -= prev_col - self.column;
+            self.move_to_start();
         }
     }
 
@@ -139,14 +88,12 @@ impl Cursor {
         self.row = last_line_idx;
         self.column = buffer.line_len(last_line_idx);
         self.sticky_column = buffer.line_len(last_line_idx);
-        self.idx = buffer.byte_len();
     }
 
     pub fn move_to_start(&mut self) {
         self.row = 0;
         self.column = 0;
         self.sticky_column = 0;
-        self.idx = 0;
     }
 
     pub fn set_row(&mut self, row: usize) {
@@ -168,9 +115,5 @@ impl Cursor {
 
     pub fn get_sticky_col(&self) -> usize {
         self.sticky_column
-    }
-
-    pub fn get_idx(&self) -> usize {
-        self.idx - 1
     }
 }

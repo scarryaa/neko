@@ -41,13 +41,13 @@ impl Selection {
         self.active = true;
     }
 
-    pub fn update(&mut self, cursor: &Cursor) {
+    pub fn update(&mut self, cursor: &Cursor, buffer: &Buffer) {
         if !self.active {
             return;
         }
 
-        let anchor_idx = self.anchor.get_idx();
-        let cursor_idx = cursor.get_idx();
+        let anchor_idx = self.anchor.get_idx(buffer);
+        let cursor_idx = cursor.get_idx(buffer);
 
         if cursor_idx < anchor_idx {
             self.start = cursor.clone();
@@ -66,7 +66,7 @@ impl Selection {
 
     pub fn delete(&mut self, buffer: &mut Buffer) {
         if self.is_active() {
-            buffer.delete_range(self.start.get_idx(), self.end.get_idx());
+            buffer.delete_range(self.start.get_idx(buffer), self.end.get_idx(buffer));
             self.clear();
         }
     }

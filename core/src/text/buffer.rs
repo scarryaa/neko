@@ -13,7 +13,15 @@ impl Buffer {
     }
 
     pub fn insert(&mut self, pos: usize, text: &str) {
-        self.content.insert(pos, text);
+        if pos <= self.content.byte_len() {
+            self.content.insert(pos, text);
+        }
+    }
+
+    pub fn delete_range(&mut self, start_pos: usize, end_pos: usize) {
+        if start_pos < self.content.byte_len() && end_pos <= self.content.byte_len() {
+            self.content.delete(start_pos..end_pos);
+        }
     }
 
     pub fn clear(&mut self) {
@@ -41,12 +49,6 @@ impl Buffer {
             deleted
         } else {
             "".to_string()
-        }
-    }
-
-    pub fn delete_range(&mut self, start_pos: usize, end_pos: usize) {
-        if start_pos < self.content.byte_len() && end_pos <= self.content.byte_len() {
-            self.content.delete(start_pos..end_pos);
         }
     }
 
@@ -82,5 +84,29 @@ impl Buffer {
 
     pub fn byte_len(&self) -> usize {
         self.content.byte_len()
+    }
+
+    pub fn line_to_byte(&self, line_idx: usize) -> usize {
+        self.content.byte_of_line(line_idx)
+    }
+
+    pub fn byte_to_line(&self, byte_idx: usize) -> usize {
+        self.content.line_of_byte(byte_idx)
+    }
+
+    pub fn line_len_without_newline(&self, line_idx: usize) -> usize {
+        if line_idx >= self.content.line_len() {
+            return 0;
+        }
+        let line = self.content.line(line_idx);
+        let len = line.byte_len();
+
+        // Check for \r\n or \n
+        if len >= 2 && line.byte_slice(len - 2..len) == "\r\n" {
+            return len - 2;
+        } else if len >= 1 && line.byte_slice(len - 1..len) == "\n" {
+            return len - 1;
+        }
+        len
     }
 }

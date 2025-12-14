@@ -386,8 +386,10 @@ impl Editor {
         let selection = self.selection();
 
         if selection.is_active() {
-            self.buffer()
-                .get_text_range(selection.start().get_idx(), selection.end().get_idx())
+            self.buffer().get_text_range(
+                selection.start().get_idx(self.buffer()),
+                selection.end().get_idx(self.buffer()),
+            )
         } else {
             "".to_string()
         }

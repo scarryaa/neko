@@ -107,8 +107,8 @@ impl Editor {
     fn delete_selection(&mut self) -> ChangeSet {
         let (lc0, cur0, sel0) = self.begin_changes();
 
-        let a = self.selection.start().get_idx();
-        let b = self.selection.end().get_idx();
+        let a = self.selection.start().get_idx(&self.buffer);
+        let b = self.selection.end().get_idx(&self.buffer);
         let (start, end) = if a <= b { (a, b) } else { (b, a) };
 
         self.cursor = self.selection.start().clone();
@@ -138,13 +138,17 @@ impl Editor {
             self.delete_selection();
         }
 
-        let pos = self.cursor.get_idx();
+        let pos = self.cursor.get_idx(&self.buffer);
         self.buffer.insert(pos, text);
         self.record_edit(Edit::Insert {
             pos,
             text: text.to_string(),
         });
-        self.cursor.move_right_by_bytes(&self.buffer, text.len());
+        self.cursor.move_to(
+            &self.buffer,
+            self.cursor.get_row(),
+            self.cursor.get_col() + text.len(),
+        );
 
         self.sync_line_widths();
         self.invalidate_line_width(self.cursor.get_row());
@@ -165,7 +169,7 @@ impl Editor {
             self.delete_selection();
         }
 
-        let pos = self.cursor.get_idx();
+        let pos = self.cursor.get_idx(&self.buffer);
         let text = "\n";
         self.buffer.insert(pos, text);
         self.record_edit(Edit::Insert {
@@ -174,7 +178,7 @@ impl Editor {
         });
 
         let current_row = self.cursor.get_row();
-        self.cursor.move_right_by_bytes(&self.buffer, text.len());
+        self.cursor.move_to(&self.buffer, current_row + 1, 0);
 
         // Newline adds a line, so insert width entry
         self.line_widths.insert(current_row + 1, -1.0);
@@ -196,7 +200,7 @@ impl Editor {
             self.delete_selection();
         }
 
-        let pos = self.cursor.get_idx();
+        let pos = self.cursor.get_idx(&self.buffer);
         // TODO: Make this configurable
         let text = "    ";
         self.buffer.insert(pos, text);
@@ -206,7 +210,11 @@ impl Editor {
         });
 
         let current_row = self.cursor.get_row();
-        self.cursor.move_right_by_bytes(&self.buffer, text.len());
+        self.cursor.move_to(
+            &self.buffer,
+            current_row,
+            self.cursor.get_col() + text.len(),
+        );
 
         self.invalidate_line_width(current_row);
 
@@ -225,7 +233,7 @@ impl Editor {
         if self.selection.is_active() {
             self.delete_selection();
         } else {
-            let pos = self.cursor.get_idx();
+            let pos = self.cursor.get_idx(&self.buffer);
             let row_before = self.cursor.get_row();
 
             if pos > 0 {
@@ -264,7 +272,7 @@ impl Editor {
         if self.selection.is_active() {
             self.delete_selection();
         } else {
-            let start = self.cursor.get_idx();
+            let start = self.cursor.get_idx(&self.buffer);
 
             let line_count_before = self.buffer.line_count();
             let deleted = self.buffer.delete_at_capture(start);
@@ -358,7 +366,7 @@ impl Editor {
             self.selection.begin(&self.cursor);
         }
         self.move_to(row, col, false);
-        self.selection.update(&self.cursor);
+        self.selection.update(&self.cursor, &self.buffer);
 
         let mut cs = self.end_changes(lc0, &cur0, &sel0);
         cs.change |= Change::VIEWPORT;
@@ -373,7 +381,7 @@ impl Editor {
         }
 
         self.cursor.move_left(&self.buffer);
-        self.selection.update(&self.cursor);
+        self.selection.update(&self.cursor, &self.buffer);
 
         let mut cs = self.end_changes(lc0, &cur0, &sel0);
         cs.change |= Change::VIEWPORT;
@@ -388,7 +396,7 @@ impl Editor {
         }
 
         self.cursor.move_right(&self.buffer);
-        self.selection.update(&self.cursor);
+        self.selection.update(&self.cursor, &self.buffer);
 
         let mut cs = self.end_changes(lc0, &cur0, &sel0);
         cs.change |= Change::VIEWPORT;
@@ -403,7 +411,7 @@ impl Editor {
         }
 
         self.cursor.move_up(&self.buffer);
-        self.selection.update(&self.cursor);
+        self.selection.update(&self.cursor, &self.buffer);
 
         let mut cs = self.end_changes(lc0, &cur0, &sel0);
         cs.change |= Change::VIEWPORT;
@@ -418,7 +426,7 @@ impl Editor {
         }
 
         self.cursor.move_down(&self.buffer);
-        self.selection.update(&self.cursor);
+        self.selection.update(&self.cursor, &self.buffer);
 
         let mut cs = self.end_changes(lc0, &cur0, &sel0);
         cs.change |= Change::VIEWPORT;
@@ -430,7 +438,7 @@ impl Editor {
 
         self.selection.begin(&Cursor::new());
         self.cursor.move_to_end(&self.buffer);
-        self.selection.update(&self.cursor);
+        self.selection.update(&self.cursor, &self.buffer);
 
         let mut cs = self.end_changes(lc0, &cur0, &sel0);
         cs.change |= Change::VIEWPORT;
