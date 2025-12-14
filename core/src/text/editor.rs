@@ -658,27 +658,27 @@ impl Editor {
     }
 
     fn add_cursor_above(&mut self) {
-        let Some((row, col)) = self.cursors.first().map(|c| (c.row, c.column)) else {
-            return;
-        };
+        self.for_each_cursor_rev(|editor, i| {
+            let (row, col) = (editor.cursors[i].row, editor.cursors[i].column);
 
-        let mut cursor = Cursor::new();
-        cursor.move_to(&self.buffer, row.saturating_sub(1), col);
+            let mut cursor = Cursor::new();
+            cursor.move_to(&editor.buffer, row.saturating_sub(1), col);
 
-        self.cursors.push(cursor);
-        self.sort_and_dedup_cursors();
+            editor.cursors.push(cursor);
+            editor.sort_and_dedup_cursors();
+        });
     }
 
     fn add_cursor_below(&mut self) {
-        let Some((row, col)) = self.cursors.last().map(|c| (c.row, c.column)) else {
-            return;
-        };
+        self.for_each_cursor_rev(|editor, i| {
+            let (row, col) = (editor.cursors[i].row, editor.cursors[i].column);
 
-        let mut cursor = Cursor::new();
-        cursor.move_to(&self.buffer, row.saturating_add(1), col);
+            let mut cursor = Cursor::new();
+            cursor.move_to(&editor.buffer, row.saturating_add(1), col);
 
-        self.cursors.push(cursor);
-        self.sort_and_dedup_cursors();
+            editor.cursors.push(cursor);
+            editor.sort_and_dedup_cursors();
+        });
     }
 
     fn add_cursor_at(&mut self, row: usize, col: usize) {
