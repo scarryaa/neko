@@ -61,6 +61,10 @@ impl Editor {
         self.cursors.iter().any(|c| c.row == row && c.column == col)
     }
 
+    fn cursor_exists_at_row(&self, row: usize) -> bool {
+        self.cursors.iter().any(|c| c.row == row)
+    }
+
     pub fn remove_cursor(&mut self, row: usize, col: usize) {
         if self.cursors.len() == 1 {
             return;
@@ -649,6 +653,19 @@ impl Editor {
         })
     }
 
+    fn cursors_are_contiguous(&self, first_cursor: &Cursor, last_cursor: &Cursor) -> bool {
+        let starting_row = first_cursor.row;
+        let ending_row = last_cursor.row;
+
+        for i in starting_row..ending_row {
+            if !self.cursor_exists_at_row(i) {
+                return false;
+            }
+        }
+
+        true
+    }
+
     pub fn add_cursor(&mut self, direction: AddCursorDirection) {
         match direction {
             AddCursorDirection::Above => self.add_cursor_above(),
@@ -658,27 +675,47 @@ impl Editor {
     }
 
     fn add_cursor_above(&mut self) {
-        self.for_each_cursor_rev(|editor, i| {
-            let (row, col) = (editor.cursors[i].row, editor.cursors[i].column);
+        let main_cursor = self.cursors[self.active_cursor_index].clone();
+        let last_cursor = self.cursors.last().unwrap_or(&main_cursor);
 
-            let mut cursor = Cursor::new();
-            cursor.move_to(&editor.buffer, row.saturating_sub(1), col);
+        // If cursors have been added below, reverse them first
+        if self.cursors_are_contiguous(&main_cursor, last_cursor)
+            && last_cursor.row > main_cursor.row
+        {
+            self.remove_cursor(last_cursor.row, last_cursor.column);
+        } else {
+            self.for_each_cursor_rev(|editor, i| {
+                let (row, col) = (editor.cursors[i].row, editor.cursors[i].column);
 
-            editor.cursors.push(cursor);
-            editor.sort_and_dedup_cursors();
-        });
+                let mut cursor = Cursor::new();
+                cursor.move_to(&editor.buffer, row.saturating_sub(1), col);
+
+                editor.cursors.push(cursor);
+                editor.sort_and_dedup_cursors();
+            });
+        }
     }
 
     fn add_cursor_below(&mut self) {
-        self.for_each_cursor_rev(|editor, i| {
-            let (row, col) = (editor.cursors[i].row, editor.cursors[i].column);
+        let main_cursor = self.cursors[self.active_cursor_index].clone();
+        let first_cursor = self.cursors.first().unwrap_or(&main_cursor);
 
-            let mut cursor = Cursor::new();
-            cursor.move_to(&editor.buffer, row.saturating_add(1), col);
+        // If cursors have been added above, reverse them first
+        if self.cursors_are_contiguous(&main_cursor, first_cursor)
+            && first_cursor.row < main_cursor.row
+        {
+            self.remove_cursor(first_cursor.row, first_cursor.column);
+        } else {
+            self.for_each_cursor_rev(|editor, i| {
+                let (row, col) = (editor.cursors[i].row, editor.cursors[i].column);
 
-            editor.cursors.push(cursor);
-            editor.sort_and_dedup_cursors();
-        });
+                let mut cursor = Cursor::new();
+                cursor.move_to(&editor.buffer, row.saturating_add(1), col);
+
+                editor.cursors.push(cursor);
+                editor.sort_and_dedup_cursors();
+            });
+        }
     }
 
     fn add_cursor_at(&mut self, row: usize, col: usize) {
