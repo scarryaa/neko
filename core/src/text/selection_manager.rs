@@ -13,6 +13,10 @@ impl SelectionManager {
         }
     }
 
+    pub fn selection(&self) -> &Selection {
+        &self.selection
+    }
+
     pub fn has_active_selection(&self) -> bool {
         self.selection.is_active()
     }

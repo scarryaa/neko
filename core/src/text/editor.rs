@@ -117,7 +117,7 @@ impl Editor {
     }
 
     pub fn selection(&self) -> Selection {
-        self.selection_manager.selection.clone()
+        self.selection_manager.selection().clone()
     }
 
     pub(crate) fn with_op<R>(
@@ -161,7 +161,7 @@ impl Editor {
         (
             self.buffer.line_count(),
             self.cursor_manager.cursors.clone(),
-            self.selection_manager.selection.clone(),
+            self.selection_manager.selection().clone(),
         )
     }
 
@@ -187,7 +187,7 @@ impl Editor {
         {
             c |= Change::CURSOR;
         }
-        if &self.selection_manager.selection != before_selection {
+        if self.selection_manager.selection() != before_selection {
             c |= Change::SELECTION;
         }
 
@@ -240,7 +240,7 @@ impl Editor {
     }
 
     pub(crate) fn delete_selection_if_active(&mut self) -> bool {
-        if self.selection_manager.selection.is_active() {
+        if self.selection_manager.selection().is_active() {
             self.delete_selection_impl();
             true
         } else {
@@ -249,8 +249,12 @@ impl Editor {
     }
 
     fn delete_selection_impl(&mut self) {
-        let a = self.selection_manager.selection.start.get_idx(&self.buffer);
-        let b = self.selection_manager.selection.end.get_idx(&self.buffer);
+        let a = self
+            .selection_manager
+            .selection()
+            .start
+            .get_idx(&self.buffer);
+        let b = self.selection_manager.selection().end.get_idx(&self.buffer);
         let (start, end) = if a <= b { (a, b) } else { (b, a) };
 
         let cursor_id = self.cursor_manager.new_cursor_id();
