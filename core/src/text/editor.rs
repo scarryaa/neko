@@ -44,6 +44,7 @@ pub struct Editor {
     next_group_id: u64,
     pub(crate) cursors: Vec<CursorEntry>,
     pub(crate) active_cursor_index: usize,
+    // Single shared selection across all cursors; TODO multi-selection per cursor
     pub(crate) selection: Selection,
     history: UndoHistory,
 }
@@ -353,94 +354,29 @@ impl Editor {
             let has_nl = text.contains('\n');
             let is_tab = text == "\t";
 
-            let mut idxs: Vec<usize> = if editor.selection.is_active() {
-                // Remove the selection but preserve existing cursors
-                let a = editor.selection.start.get_idx(&editor.buffer);
-                let b = editor.selection.end.get_idx(&editor.buffer);
-                let (start, end) = if a <= b { (a, b) } else { (b, a) };
-                let delta = end - start;
-
-                let cursor_info: Vec<(CursorEntry, usize)> = editor
-                    .cursors
-                    .iter()
-                    .cloned()
-                    .map(|entry| {
-                        let idx = entry.cursor.get_idx(&editor.buffer);
-                        (entry, idx)
-                    })
-                    .collect();
-                let active_id = editor.cursors.get(editor.active_cursor_index).map(|c| c.id);
-
-                let deleted = editor.buffer.delete_range(start, end);
-                editor.record_edit(Edit::Delete {
-                    start,
-                    end,
-                    deleted,
-                });
-
-                editor.selection.clear();
-                editor.clear_and_rebuild_line_widths();
-
-                let mut new_cursors: Vec<CursorEntry> = Vec::new();
-                for (entry, idx) in cursor_info {
-                    let new_idx = if idx <= start {
-                        idx
-                    } else if idx >= end {
-                        idx - delta
-                    } else {
-                        continue;
-                    };
-
-                    let (row, col) = editor.buffer.byte_to_row_col(new_idx);
-                    let mut cursor = entry.cursor.clone();
-                    cursor.move_to(&editor.buffer, row, col);
-                    new_cursors.push(CursorEntry {
-                        id: entry.id,
-                        cursor,
-                        column_group: entry.column_group,
-                    });
-                }
-
-                if new_cursors.is_empty() {
-                    let mut cursor = Cursor::new();
-                    let (row, col) = editor.buffer.byte_to_row_col(start);
-                    cursor.move_to(&editor.buffer, row, col);
-                    new_cursors.push(CursorEntry::individual(editor.new_cursor_id(), &cursor));
-                }
-
-                if let Some(id) = active_id {
-                    if let Some(pos) = new_cursors.iter().position(|c| c.id == id) {
-                        editor.active_cursor_index = pos;
-                    } else {
-                        editor.active_cursor_index = 0;
-                    }
-                } else {
-                    editor.active_cursor_index = 0;
-                }
-
-                editor.cursors = new_cursors;
-                editor.sort_and_dedup_cursors();
-
-                editor
-                    .cursors
-                    .iter()
-                    .map(|c| c.cursor.get_idx(&editor.buffer))
-                    .collect()
-            } else {
-                editor
-                    .cursors
-                    .iter()
-                    .map(|c| c.cursor.get_idx(&editor.buffer))
-                    .collect()
-            };
+            let mut idxs: Vec<usize> = editor
+                .delete_selection_preserve_cursors()
+                .unwrap_or_else(|| editor.cursor_byte_idxs());
 
             editor.for_each_cursor_rev(|editor, i| {
                 if has_nl {
-                    editor.insert_newline(text, i, &mut idxs);
+                    editor.insert_at(text, i, &mut idxs, |pos: usize, editor: &mut Editor| {
+                        let row = editor.buffer.byte_to_line(pos);
+                        editor.invalidate_line_width(row);
+                        if row + 1 < editor.buffer.line_count() {
+                            editor.invalidate_line_width(row + 1);
+                        }
+                    });
                 } else if is_tab {
-                    editor.insert_tab(i, &mut idxs);
+                    editor.insert_at(text, i, &mut idxs, |pos: usize, editor: &mut Editor| {
+                        let row = editor.buffer.byte_to_line(pos);
+                        editor.invalidate_line_width(row);
+                    });
                 } else {
-                    editor.insert_text_internal(text, i, &mut idxs);
+                    editor.insert_at(text, i, &mut idxs, |pos: usize, editor: &mut Editor| {
+                        let row = editor.buffer.byte_to_line(pos);
+                        editor.invalidate_line_width(row);
+                    });
                 }
             });
 
@@ -454,57 +390,90 @@ impl Editor {
         res
     }
 
-    fn insert_text_internal(&mut self, text: &str, i: usize, idxs: &mut [usize]) {
-        let pos = idxs[i];
-
-        self.buffer.insert(pos, text);
-        self.record_edit(Edit::Insert {
-            pos,
-            text: text.to_string(),
-        });
-
-        let ins_len = text.len();
-
-        (0..idxs.len()).for_each(|j| {
-            if idxs[j] > pos {
-                idxs[j] += ins_len;
-            } else if idxs[j] == pos {
-                idxs[j] = pos + ins_len;
-            }
-        });
-
-        let row = self.buffer.byte_to_line(pos);
-        self.invalidate_line_width(row);
+    fn cursor_byte_idxs(&self) -> Vec<usize> {
+        self.cursors
+            .iter()
+            .map(|c| c.cursor.get_idx(&self.buffer))
+            .collect()
     }
 
-    fn insert_newline(&mut self, text: &str, i: usize, idxs: &mut [usize]) {
-        let pos = idxs[i];
-
-        self.buffer.insert(pos, text);
-        self.record_edit(Edit::Insert {
-            pos,
-            text: text.to_string(),
-        });
-
-        let ins_len = text.len();
-
-        (0..idxs.len()).for_each(|j| {
-            if idxs[j] > pos {
-                idxs[j] += ins_len;
-            } else if idxs[j] == pos {
-                idxs[j] = pos + ins_len;
-            }
-        });
-
-        let row = self.buffer.byte_to_line(pos);
-        self.invalidate_line_width(row);
-        if row + 1 < self.buffer.line_count() {
-            self.invalidate_line_width(row + 1);
+    fn delete_selection_preserve_cursors(&mut self) -> Option<Vec<usize>> {
+        if !self.selection.is_active() {
+            return None;
         }
+
+        let a = self.selection.start.get_idx(&self.buffer);
+        let b = self.selection.end.get_idx(&self.buffer);
+        let (start, end) = if a <= b { (a, b) } else { (b, a) };
+        let delta = end - start;
+
+        let cursor_info: Vec<(CursorEntry, usize)> = self
+            .cursors
+            .iter()
+            .cloned()
+            .map(|entry| {
+                let idx = entry.cursor.get_idx(&self.buffer);
+                (entry, idx)
+            })
+            .collect();
+        let active_id = self.cursors.get(self.active_cursor_index).map(|c| c.id);
+
+        let deleted = self.buffer.delete_range(start, end);
+        self.record_edit(Edit::Delete {
+            start,
+            end,
+            deleted,
+        });
+
+        self.selection.clear();
+        self.clear_and_rebuild_line_widths();
+
+        let mut new_cursors: Vec<CursorEntry> = Vec::new();
+        for (entry, idx) in cursor_info {
+            let new_idx = if idx <= start {
+                idx
+            } else if idx >= end {
+                idx - delta
+            } else {
+                continue;
+            };
+
+            let (row, col) = self.buffer.byte_to_row_col(new_idx);
+            let mut cursor = entry.cursor.clone();
+            cursor.move_to(&self.buffer, row, col);
+            new_cursors.push(CursorEntry {
+                id: entry.id,
+                cursor,
+                column_group: entry.column_group,
+            });
+        }
+
+        if new_cursors.is_empty() {
+            let mut cursor = Cursor::new();
+            let (row, col) = self.buffer.byte_to_row_col(start);
+            cursor.move_to(&self.buffer, row, col);
+            new_cursors.push(CursorEntry::individual(self.new_cursor_id(), &cursor));
+        }
+
+        self.cursors = new_cursors;
+        self.sort_and_dedup_cursors();
+
+        if let Some(id) = active_id {
+            self.active_cursor_index = self.cursors.iter().position(|c| c.id == id).unwrap_or(0);
+        } else {
+            self.active_cursor_index = 0;
+        }
+
+        Some(self.cursor_byte_idxs())
     }
 
-    fn insert_tab(&mut self, i: usize, idxs: &mut [usize]) {
-        let text = "    ";
+    fn insert_at(
+        &mut self,
+        text: &str,
+        i: usize,
+        idxs: &mut [usize],
+        invalidate_lines: impl FnOnce(usize, &mut Editor),
+    ) {
         let pos = idxs[i];
 
         self.buffer.insert(pos, text);
@@ -523,8 +492,7 @@ impl Editor {
             }
         });
 
-        let row = self.buffer.byte_to_line(pos);
-        self.invalidate_line_width(row);
+        invalidate_lines(pos, self);
     }
 
     pub fn backspace(&mut self) -> ChangeSet {
