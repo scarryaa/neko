@@ -71,6 +71,10 @@ impl Buffer {
     }
 
     pub fn line_len(&self, line_idx: usize) -> usize {
+        if line_idx >= self.content.line_len() {
+            return 0;
+        }
+
         self.content.line(line_idx).byte_len()
     }
 
@@ -79,10 +83,18 @@ impl Buffer {
     }
 
     pub fn line_to_byte(&self, line_idx: usize) -> usize {
+        if line_idx >= self.content.line_len() {
+            return 0;
+        }
+
         self.content.byte_of_line(line_idx)
     }
 
     pub fn byte_to_line(&self, byte_idx: usize) -> usize {
+        if self.content.line_len() == 0 {
+            return 0;
+        }
+
         self.content.line_of_byte(byte_idx)
     }
 

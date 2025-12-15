@@ -353,11 +353,86 @@ impl Editor {
             let has_nl = text.contains('\n');
             let is_tab = text == "\t";
 
-            let mut idxs: Vec<usize> = editor
-                .cursors
-                .iter()
-                .map(|c| c.cursor.get_idx(&editor.buffer))
-                .collect();
+            let mut idxs: Vec<usize> = if editor.selection.is_active() {
+                // Remove the selection but preserve existing cursors
+                let a = editor.selection.start.get_idx(&editor.buffer);
+                let b = editor.selection.end.get_idx(&editor.buffer);
+                let (start, end) = if a <= b { (a, b) } else { (b, a) };
+                let delta = end - start;
+
+                let cursor_info: Vec<(CursorEntry, usize)> = editor
+                    .cursors
+                    .iter()
+                    .cloned()
+                    .map(|entry| {
+                        let idx = entry.cursor.get_idx(&editor.buffer);
+                        (entry, idx)
+                    })
+                    .collect();
+                let active_id = editor.cursors.get(editor.active_cursor_index).map(|c| c.id);
+
+                let deleted = editor.buffer.delete_range(start, end);
+                editor.record_edit(Edit::Delete {
+                    start,
+                    end,
+                    deleted,
+                });
+
+                editor.selection.clear();
+                editor.clear_and_rebuild_line_widths();
+
+                let mut new_cursors: Vec<CursorEntry> = Vec::new();
+                for (entry, idx) in cursor_info {
+                    let new_idx = if idx <= start {
+                        idx
+                    } else if idx >= end {
+                        idx - delta
+                    } else {
+                        continue;
+                    };
+
+                    let (row, col) = editor.buffer.byte_to_row_col(new_idx);
+                    let mut cursor = entry.cursor.clone();
+                    cursor.move_to(&editor.buffer, row, col);
+                    new_cursors.push(CursorEntry {
+                        id: entry.id,
+                        cursor,
+                        column_group: entry.column_group,
+                    });
+                }
+
+                if new_cursors.is_empty() {
+                    let mut cursor = Cursor::new();
+                    let (row, col) = editor.buffer.byte_to_row_col(start);
+                    cursor.move_to(&editor.buffer, row, col);
+                    new_cursors.push(CursorEntry::individual(editor.new_cursor_id(), &cursor));
+                }
+
+                if let Some(id) = active_id {
+                    if let Some(pos) = new_cursors.iter().position(|c| c.id == id) {
+                        editor.active_cursor_index = pos;
+                    } else {
+                        editor.active_cursor_index = 0;
+                    }
+                } else {
+                    editor.active_cursor_index = 0;
+                }
+
+                editor.cursors = new_cursors;
+                editor.sort_and_dedup_cursors();
+
+                editor
+                    .cursors
+                    .iter()
+                    .map(|c| c.cursor.get_idx(&editor.buffer))
+                    .collect()
+            } else {
+                editor
+                    .cursors
+                    .iter()
+                    .map(|c| c.cursor.get_idx(&editor.buffer))
+                    .collect()
+            };
 
             editor.for_each_cursor_rev(|editor, i| {
                 if has_nl {
@@ -380,8 +455,6 @@ impl Editor {
     }
 
     fn insert_text_internal(&mut self, text: &str, i: usize, idxs: &mut [usize]) {
-        self.delete_selection_if_active();
-
         let pos = idxs[i];
 
         self.buffer.insert(pos, text);
@@ -405,8 +478,6 @@ impl Editor {
     }
 
     fn insert_newline(&mut self, text: &str, i: usize, idxs: &mut [usize]) {
-        self.delete_selection_if_active();
-
         let pos = idxs[i];
 
         self.buffer.insert(pos, text);
@@ -433,8 +504,6 @@ impl Editor {
     }
 
     fn insert_tab(&mut self, i: usize, idxs: &mut [usize]) {
-        self.delete_selection_if_active();
-
         let text = "    ";
         let pos = idxs[i];
 
@@ -684,7 +753,7 @@ impl Editor {
     pub fn select_left(&mut self) -> ChangeSet {
         let i = self.active_cursor_index;
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
+            editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Multiple, |c, b| {
                 c.move_left(b)
             });
         })
@@ -693,7 +762,7 @@ impl Editor {
     pub fn select_right(&mut self) -> ChangeSet {
         let i = self.active_cursor_index;
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
+            editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Multiple, |c, b| {
                 c.move_right(b)
             });
         })
@@ -702,7 +771,7 @@ impl Editor {
     pub fn select_up(&mut self) -> ChangeSet {
         let i = self.active_cursor_index;
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
+            editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Multiple, |c, b| {
                 c.move_up(b)
             });
         })
@@ -711,7 +780,7 @@ impl Editor {
     pub fn select_down(&mut self) -> ChangeSet {
         let i = self.active_cursor_index;
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Single, |c, b| {
+            editor.move_cursor_at(i, SelectionMode::Extend, CursorMode::Multiple, |c, b| {
                 c.move_down(b)
             });
         })
@@ -852,7 +921,7 @@ impl Editor {
             editor.move_cursor_at(
                 cursor_index,
                 SelectionMode::Extend,
-                CursorMode::Single,
+                CursorMode::Multiple,
                 |c, b| c.move_to(b, row, col),
             );
         })
@@ -1037,5 +1106,73 @@ impl Editor {
             | Change::WIDTHS
             | Change::LINE_COUNT;
         cs
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn insert_text_replaces_selection_at_anchor() {
+        let mut editor = Editor::new();
+        editor.load_file("hello world");
+        editor.move_to(0, 6, true);
+        editor.select_to(0, 11);
+
+        editor.insert_text("cat");
+
+        assert_eq!(editor.buffer.get_text(), "hello cat");
+        assert_eq!(editor.cursors.len(), 1);
+        assert_eq!(
+            (
+                editor.cursors[0].cursor.row,
+                editor.cursors[0].cursor.column
+            ),
+            (0, 9)
+        );
+    }
+
+    #[test]
+    fn insert_text_after_select_all_keeps_buffer_valid() {
+        let mut editor = Editor::new();
+        editor.load_file("abc");
+        editor.select_all();
+
+        editor.insert_text("z");
+
+        assert_eq!(editor.buffer.get_text(), "z");
+        assert_eq!(
+            (
+                editor.cursors[0].cursor.row,
+                editor.cursors[0].cursor.column
+            ),
+            (0, 1)
+        );
+    }
+
+    #[test]
+    fn inserting_after_selection_keeps_other_cursors() {
+        let mut editor = Editor::new();
+        editor.load_file("abcd\nefgh");
+
+        // Active cursor selects "bc"
+        editor.move_to(0, 1, true);
+        // Add another cursor on the second line
+        editor.add_cursor(AddCursorDirection::At { row: 1, col: 2 });
+        editor.select_to(0, 3);
+
+        editor.insert_text("X");
+
+        let positions: Vec<(usize, usize)> = editor
+            .cursors
+            .iter()
+            .map(|c| (c.cursor.row, c.cursor.column))
+            .collect();
+
+        assert_eq!(editor.buffer.get_text(), "aXd\nefXgh");
+        assert_eq!(editor.cursors.len(), 2);
+        assert!(positions.contains(&(0, 2)));
+        assert!(positions.contains(&(1, 3)));
     }
 }
