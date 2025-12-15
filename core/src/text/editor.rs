@@ -49,6 +49,10 @@ impl Editor {
         }
     }
 
+    pub fn last_added_cursor(&self) -> Cursor {
+        self.cursor_manager.get_last_added_cursor()
+    }
+
     pub fn active_cursor_index(&self) -> usize {
         let max = self.cursor_manager.cursors.len().saturating_sub(1);
         self.cursor_manager.active_cursor_index.min(max)

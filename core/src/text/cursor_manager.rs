@@ -1,6 +1,6 @@
 use super::{Buffer, Cursor};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct CursorEntry {
     pub id: u64,
     pub cursor: Cursor,
@@ -41,12 +41,24 @@ pub struct CursorManager {
 
 impl CursorManager {
     pub fn new() -> Self {
+        let cursor = CursorEntry::individual(0, &Cursor::new());
+        let next_cursor_id = 1;
+
         Self {
-            next_cursor_id: 1,
+            next_cursor_id,
             next_group_id: 0,
-            cursors: vec![CursorEntry::individual(0, &Cursor::new())],
+            cursors: vec![cursor.clone()],
             active_cursor_index: 0,
         }
+    }
+
+    pub fn get_last_added_cursor(&self) -> Cursor {
+        self.cursors
+            .clone()
+            .into_iter()
+            .max_by_key(|c| c.id)
+            .map(|c| c.cursor)
+            .unwrap_or(Cursor::default())
     }
 
     pub fn set_cursors(&mut self, cursors: Vec<CursorEntry>) {

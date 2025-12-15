@@ -28,10 +28,9 @@ void EditorWidget::applyChangeSet(const neko::ChangeSetFfi &cs) {
   const uint32_t m = cs.mask;
 
   if (m & (ChangeMask::Cursor | ChangeMask::Selection)) {
-    auto cursorPosition =
-        editor->get_cursor_positions()[editor->get_active_cursor_index()];
+    auto lastAddedCursor = editor->get_last_added_cursor();
     auto numberOfCursors = editor->get_cursor_positions().size();
-    emit cursorPositionChanged(cursorPosition.row, cursorPosition.col,
+    emit cursorPositionChanged(lastAddedCursor.row, lastAddedCursor.col,
                                numberOfCursors);
   }
 

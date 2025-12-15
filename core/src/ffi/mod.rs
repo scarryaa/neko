@@ -5,6 +5,7 @@ use bridge::{
     FontType, Selection,
 };
 
+use crate::Cursor;
 use crate::app::AppState;
 use crate::config::ConfigManager;
 use crate::file_system::FileTree;
@@ -34,6 +35,15 @@ impl From<AddCursorDirectionFfi> for AddCursorDirection {
                 col: dir.col,
             },
             _ => AddCursorDirection::Above,
+        }
+    }
+}
+
+impl From<Cursor> for CursorPosition {
+    fn from(c: Cursor) -> Self {
+        Self {
+            row: c.row,
+            col: c.column,
         }
     }
 }
@@ -203,6 +213,7 @@ mod bridge {
         fn cursor_exists_at_row(self: &Editor, row: usize) -> bool;
         #[cxx_name = "get_active_cursor_index"]
         fn active_cursor_index(self: &Editor) -> usize;
+        fn get_last_added_cursor(self: &Editor) -> CursorPosition;
 
         // FileTree
         #[cxx_name = "set_root_dir"]
@@ -528,6 +539,10 @@ impl Editor {
 
     fn add_cursor_wrapper(self: &mut Editor, direction: AddCursorDirectionFfi) {
         self.add_cursor(direction.into());
+    }
+
+    fn get_last_added_cursor(&self) -> CursorPosition {
+        self.last_added_cursor().into()
     }
 }
 
