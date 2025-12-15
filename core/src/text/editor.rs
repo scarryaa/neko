@@ -170,33 +170,29 @@ impl Editor {
             .set_cursors(vec![CursorEntry::individual(cursor_id, &Cursor::new())]);
         self.selection_manager.reset_selection();
 
-        self.clear_and_rebuild_line_widths();
+        self.widths
+            .clear_and_rebuild_line_widths(self.buffer.line_count());
 
         let mut cs = self.end_changes(lc0, cur0, &sel0);
         cs.change |= Change::BUFFER | Change::VIEWPORT | Change::WIDTHS;
         cs
     }
 
-    pub(crate) fn clear_and_rebuild_line_widths(&mut self) {
-        self.widths
-            .clear_and_rebuild_line_widths(self.buffer.line_count());
-    }
-
     pub(crate) fn apply_delete_result(&mut self, _i: usize, res: DeleteResult) {
         match res {
             DeleteResult::Text { invalidate } => {
                 if let Some(line) = invalidate {
-                    self.invalidate_line_width(line);
+                    self.widths.invalidate_line_width(line);
                 }
             }
             DeleteResult::Newline {
                 row, invalidate, ..
             } => {
                 if let Some(line) = invalidate {
-                    self.invalidate_line_width(line);
+                    self.widths.invalidate_line_width(line);
                 }
                 if row + 1 < self.buffer.line_count() {
-                    self.invalidate_line_width(row + 1);
+                    self.widths.invalidate_line_width(row + 1);
                 }
             }
         }
@@ -224,7 +220,8 @@ impl Editor {
             )]);
 
         let deleted = self.buffer.delete_range(start, end);
-        self.clear_and_rebuild_line_widths();
+        self.widths
+            .clear_and_rebuild_line_widths(self.buffer.line_count());
         self.record_edit(Edit::Delete {
             start,
             end,
@@ -232,7 +229,8 @@ impl Editor {
         });
 
         self.selection_manager.clear_selection();
-        self.invalidate_line_width(self.cursor_manager.cursors[0].cursor.row);
+        self.widths
+            .invalidate_line_width(self.cursor_manager.cursors[0].cursor.row);
     }
 
     pub fn for_each_cursor_rev(&mut self, mut f: impl FnMut(&mut Self, usize)) {
@@ -408,10 +406,6 @@ impl Editor {
         self.widths.sync_line_widths(self.buffer.line_count());
     }
 
-    pub fn invalidate_line_width(&mut self, line_idx: usize) {
-        self.widths.invalidate_line_width(line_idx);
-    }
-
     pub fn needs_width_measurement(&self, line_idx: usize) -> bool {
         self.widths.needs_width_measurement(line_idx)
     }
@@ -470,7 +464,8 @@ impl Editor {
         self.cursor_manager.set_cursors(tx.before.cursors.clone());
         self.selection_manager.set_selection(&tx.before.selection);
 
-        self.clear_and_rebuild_line_widths();
+        self.widths
+            .clear_and_rebuild_line_widths(self.buffer.line_count());
 
         self.history.redo.push(tx);
 
@@ -500,7 +495,8 @@ impl Editor {
         self.cursor_manager.set_cursors(tx.after.cursors.clone());
         self.selection_manager.set_selection(&tx.after.selection);
 
-        self.clear_and_rebuild_line_widths();
+        self.widths
+            .clear_and_rebuild_line_widths(self.buffer.line_count());
 
         self.history.undo.push(tx);
 

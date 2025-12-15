@@ -23,7 +23,7 @@ impl Editor {
             }
         });
 
-        self.sync_line_widths();
+        self.widths.sync_line_widths(self.buffer.line_count());
         res
     }
 
@@ -85,14 +85,14 @@ impl Editor {
 
     fn invalidate_insert_lines(&mut self, pos: usize, text: &str, has_nl: bool) {
         let row = self.buffer.byte_to_line(pos);
-        self.invalidate_line_width(row);
+        self.widths.invalidate_line_width(row);
 
         if has_nl {
             let extra_lines = text.bytes().filter(|b| *b == b'\n').count();
             for offset in 1..=extra_lines {
                 let line = row + offset;
                 if line < self.buffer.line_count() {
-                    self.invalidate_line_width(line);
+                    self.widths.invalidate_line_width(line);
                 }
             }
         }
@@ -147,7 +147,8 @@ impl Editor {
         });
 
         self.selection_manager.clear_selection();
-        self.clear_and_rebuild_line_widths();
+        self.widths
+            .clear_and_rebuild_line_widths(self.buffer.line_count());
 
         let mut new_cursors: Vec<CursorEntry> = Vec::new();
         for (entry, idx) in cursor_info {
