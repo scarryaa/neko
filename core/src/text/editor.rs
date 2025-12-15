@@ -198,7 +198,9 @@ impl Editor {
     ) -> ChangeSet {
         let (lc0, cur0, sel0) = self.begin_changes();
 
-        self.sort_and_dedup_cursors();
+        if self.cursors.len() > 1 {
+            self.sort_and_dedup_cursors();
+        }
 
         if tx {
             self.begin_tx();
@@ -210,7 +212,9 @@ impl Editor {
             self.commit_tx();
         }
 
-        self.sort_and_dedup_cursors();
+        if self.cursors.len() > 1 {
+            self.sort_and_dedup_cursors();
+        }
 
         let mut cs = self.end_changes(lc0, cur0, &sel0);
         match flags {
@@ -352,32 +356,15 @@ impl Editor {
     pub fn insert_text(&mut self, text: &str) -> ChangeSet {
         let res = self.with_op(true, OpFlags::BufferViewportWidths, |editor| {
             let has_nl = text.contains('\n');
-            let is_tab = text == "\t";
 
             let mut idxs: Vec<usize> = editor
                 .delete_selection_preserve_cursors()
                 .unwrap_or_else(|| editor.cursor_byte_idxs());
 
             editor.for_each_cursor_rev(|editor, i| {
-                if has_nl {
-                    editor.insert_at(text, i, &mut idxs, |pos: usize, editor: &mut Editor| {
-                        let row = editor.buffer.byte_to_line(pos);
-                        editor.invalidate_line_width(row);
-                        if row + 1 < editor.buffer.line_count() {
-                            editor.invalidate_line_width(row + 1);
-                        }
-                    });
-                } else if is_tab {
-                    editor.insert_at(text, i, &mut idxs, |pos: usize, editor: &mut Editor| {
-                        let row = editor.buffer.byte_to_line(pos);
-                        editor.invalidate_line_width(row);
-                    });
-                } else {
-                    editor.insert_at(text, i, &mut idxs, |pos: usize, editor: &mut Editor| {
-                        let row = editor.buffer.byte_to_line(pos);
-                        editor.invalidate_line_width(row);
-                    });
-                }
+                editor.insert_at(text, i, &mut idxs, |pos: usize, editor: &mut Editor| {
+                    editor.invalidate_insert_lines(pos, text, has_nl);
+                });
             });
 
             for (c, &idx) in editor.cursors.iter_mut().zip(idxs.iter()) {
@@ -493,6 +480,21 @@ impl Editor {
         });
 
         invalidate_lines(pos, self);
+    }
+
+    fn invalidate_insert_lines(&mut self, pos: usize, text: &str, has_nl: bool) {
+        let row = self.buffer.byte_to_line(pos);
+        self.invalidate_line_width(row);
+
+        if has_nl {
+            let extra_lines = text.bytes().filter(|b| *b == b'\n').count();
+            for offset in 1..=extra_lines {
+                let line = row + offset;
+                if line < self.buffer.line_count() {
+                    self.invalidate_line_width(line);
+                }
+            }
+        }
     }
 
     pub fn backspace(&mut self) -> ChangeSet {
