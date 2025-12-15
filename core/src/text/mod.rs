@@ -1,9 +1,13 @@
 pub mod buffer;
 pub mod change_set;
 pub mod cursor;
+pub mod cursor_manager;
+pub mod edit_ops;
 pub mod editor;
 pub mod history;
 pub mod selection;
+pub mod selection_manager;
+pub mod widths;
 
 pub use buffer::Buffer;
 pub use change_set::{Change, ChangeSet};

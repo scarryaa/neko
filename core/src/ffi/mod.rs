@@ -8,7 +8,7 @@ use bridge::{
 use crate::app::AppState;
 use crate::config::ConfigManager;
 use crate::file_system::FileTree;
-use crate::text::editor::AddCursorDirection;
+use crate::text::cursor_manager::AddCursorDirection;
 use crate::text::{ChangeSet, Editor};
 use crate::theme::ThemeManager;
 
@@ -390,7 +390,7 @@ impl Editor {
     }
 
     fn get_cursor_positions(self: &Editor) -> Vec<CursorPosition> {
-        self.cursors
+        self.cursors()
             .iter()
             .map(|c| CursorPosition {
                 row: c.cursor.row,
