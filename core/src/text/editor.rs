@@ -7,6 +7,7 @@ use super::{
     change_set::OpFlags,
     cursor_manager::{AddCursorDirection, CursorEntry, CursorManager},
     selection_manager::SelectionManager,
+    widths::WidthManager,
 };
 
 enum SelectionMode {
@@ -33,9 +34,7 @@ pub(crate) enum DeleteResult {
 #[derive(Default, Debug)]
 pub struct Editor {
     pub(crate) buffer: Buffer,
-    line_widths: Vec<f64>,
-    pub(crate) max_width: f64,
-    max_width_line: usize,
+    pub(crate) widths: WidthManager,
     pub(crate) cursor_manager: CursorManager,
     pub(crate) selection_manager: SelectionManager,
     pub(crate) history: UndoHistory,
@@ -45,9 +44,7 @@ impl Editor {
     pub fn new() -> Self {
         Self {
             buffer: Buffer::new(),
-            line_widths: vec![-1.0],
-            max_width: 0.0,
-            max_width_line: 0,
+            widths: WidthManager::new(),
             cursor_manager: CursorManager::new(),
             selection_manager: SelectionManager::new(),
             history: UndoHistory::default(),
@@ -181,12 +178,8 @@ impl Editor {
     }
 
     pub(crate) fn clear_and_rebuild_line_widths(&mut self) {
-        // Resize line_widths to match buffer
-        let line_count = self.buffer.line_count();
-        self.line_widths.clear();
-        self.line_widths.resize(line_count, -1.0);
-        self.max_width = 0.0;
-        self.max_width_line = 0;
+        self.widths
+            .clear_and_rebuild_line_widths(self.buffer.line_count());
     }
 
     pub(crate) fn apply_delete_result(&mut self, _i: usize, res: DeleteResult) {
@@ -412,69 +405,19 @@ impl Editor {
     }
 
     pub(crate) fn sync_line_widths(&mut self) {
-        let line_count = self.buffer.line_count();
-
-        match line_count.cmp(&self.line_widths.len()) {
-            std::cmp::Ordering::Greater => {
-                // Buffer grew, add invalidated entries
-                self.line_widths.resize(line_count, -1.0);
-            }
-            std::cmp::Ordering::Less => {
-                // Buffer shrunk, remove entries
-                self.line_widths.truncate(line_count);
-
-                // If we removed the max width line, recalculate
-                if self.max_width_line >= line_count {
-                    self.recalculate_max_width();
-                }
-            }
-            std::cmp::Ordering::Equal => {}
-        }
+        self.widths.sync_line_widths(self.buffer.line_count());
     }
 
     pub fn invalidate_line_width(&mut self, line_idx: usize) {
-        if line_idx >= self.line_widths.len() {
-            return;
-        }
-
-        self.line_widths[line_idx] = -1.0;
-
-        if line_idx == self.max_width_line {
-            self.recalculate_max_width();
-        }
+        self.widths.invalidate_line_width(line_idx);
     }
 
     pub fn needs_width_measurement(&self, line_idx: usize) -> bool {
-        if line_idx >= self.line_widths.len() {
-            return false;
-        }
-
-        self.line_widths[line_idx] == -1.0
+        self.widths.needs_width_measurement(line_idx)
     }
 
     pub fn update_line_width(&mut self, line_idx: usize, width: f64) {
-        if line_idx >= self.line_widths.len() {
-            return;
-        }
-
-        self.line_widths[line_idx] = width;
-
-        if width > self.max_width {
-            self.max_width = width;
-            self.max_width_line = line_idx;
-        }
-    }
-
-    fn recalculate_max_width(&mut self) {
-        self.max_width = 0.0;
-        self.max_width_line = 0;
-
-        for (idx, &width) in self.line_widths.iter().enumerate() {
-            if width > self.max_width {
-                self.max_width = width;
-                self.max_width_line = idx;
-            }
-        }
+        self.widths.update_line_width(line_idx, width);
     }
 
     fn view_state(&self) -> ViewState {

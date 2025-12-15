@@ -521,7 +521,7 @@ impl Editor {
     }
 
     fn get_max_width(&self) -> f64 {
-        self.max_width
+        self.widths.max_width()
     }
 
     fn add_cursor_wrapper(self: &mut Editor, direction: AddCursorDirectionFfi) {
