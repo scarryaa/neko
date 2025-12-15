@@ -15,8 +15,6 @@ MainWindow::MainWindow(QWidget *parent)
   neko::Editor *editor = &appState->get_editor_mut();
   neko::FileTree *fileTree = &appState->get_file_tree_mut();
 
-  this->editor = editor;
-
   emptyStateWidget = new QWidget(this);
   titleBarWidget = new TitleBarWidget(*configManager, *themeManager, this);
   fileExplorerWidget =
@@ -26,10 +24,8 @@ MainWindow::MainWindow(QWidget *parent)
   statusBarWidget =
       new StatusBarWidget(editor, *configManager, *themeManager, this);
 
-  auto cursorPosition = (editor->get_last_added_cursor());
-  int numberOfCursors = editor->get_cursor_positions().size();
-  statusBarWidget->updateCursorPosition(cursorPosition.row, cursorPosition.col,
-                                        numberOfCursors);
+  setActiveEditor(editor);
+  refreshStatusBarCursor(editor);
 
   setupKeyboardShortcuts();
 
@@ -211,6 +207,24 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow() {}
 
+void MainWindow::setActiveEditor(neko::Editor *newEditor) {
+  editor = newEditor;
+  editorWidget->setEditor(newEditor);
+  gutterWidget->setEditor(newEditor);
+  statusBarWidget->setEditor(newEditor);
+}
+
+void MainWindow::refreshStatusBarCursor(neko::Editor *editor) {
+  if (editor == nullptr) {
+    return;
+  }
+
+  auto cursorPosition = editor->get_last_added_cursor();
+  int numberOfCursors = editor->get_cursor_positions().size();
+  statusBarWidget->updateCursorPosition(cursorPosition.row, cursorPosition.col,
+                                        numberOfCursors);
+}
+
 void MainWindow::onFileExplorerToggled() {
   bool isOpen = fileExplorerWidget->isHidden();
 
@@ -356,10 +370,7 @@ void MainWindow::onTabCloseRequested(int index, int numberOfTabs) {
 
     statusBarWidget->onTabClosed(numberOfTabs - 1);
 
-    auto cursorPosition = (editor->get_last_added_cursor());
-    int numberOfCursors = editor->get_cursor_positions().size();
-    statusBarWidget->updateCursorPosition(cursorPosition.row,
-                                          cursorPosition.col, numberOfCursors);
+    refreshStatusBarCursor(editor);
     updateTabBar();
     switchToActiveTab();
   }
@@ -369,10 +380,7 @@ void MainWindow::onTabChanged(int index) {
   saveCurrentScrollState();
   appState->set_active_tab_index(index);
 
-  auto cursorPosition = (editor->get_last_added_cursor());
-  int numberOfCursors = editor->get_cursor_positions().size();
-  statusBarWidget->updateCursorPosition(cursorPosition.row, cursorPosition.col,
-                                        numberOfCursors);
+  refreshStatusBarCursor(editor);
 
   switchToActiveTab();
   updateTabBar();
@@ -382,12 +390,8 @@ void MainWindow::onNewTabRequested() {
   saveCurrentScrollState();
 
   appState->new_tab();
-  editor = &appState->get_editor_mut();
-
-  auto cursorPosition = (editor->get_last_added_cursor());
-  int numberOfCursors = editor->get_cursor_positions().size();
-  statusBarWidget->updateCursorPosition(cursorPosition.row, cursorPosition.col,
-                                        numberOfCursors);
+  setActiveEditor(&appState->get_editor_mut());
+  refreshStatusBarCursor(editor);
 
   updateTabBar();
   switchToActiveTab();
@@ -399,8 +403,7 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
     tabBarContainer->hide();
     editorWidget->hide();
     gutterWidget->hide();
-    editorWidget->setEditor(nullptr);
-    gutterWidget->setEditor(nullptr);
+    setActiveEditor(nullptr);
     emptyStateWidget->show();
 
     fileExplorerWidget->setFocus();
@@ -412,9 +415,7 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
     statusBarWidget->showCursorPositionInfo();
 
     neko::Editor &editor = appState->get_editor_mut();
-    this->editor = &editor;
-    editorWidget->setEditor(&editor);
-    gutterWidget->setEditor(&editor);
+    setActiveEditor(&editor);
     editorWidget->updateDimensionsAndRepaint();
     gutterWidget->updateDimensionsAndRepaint();
 
@@ -428,10 +429,7 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
       editorWidget->verticalScrollBar()->setValue(0);
     }
 
-    auto cursorPosition = editor.get_last_added_cursor();
-    int numberOfCursors = editor.get_cursor_positions().size();
-    statusBarWidget->updateCursorPosition(cursorPosition.row,
-                                          cursorPosition.col, numberOfCursors);
+    refreshStatusBarCursor(&editor);
 
     if (shouldFocusEditor) {
       editorWidget->setFocus();

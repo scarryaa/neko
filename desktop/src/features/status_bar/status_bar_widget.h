@@ -22,6 +22,7 @@ public:
                            QWidget *parent = nullptr);
   ~StatusBarWidget();
 
+  void setEditor(neko::Editor *newEditor);
   void updateCursorPosition(int row, int col, int numberOfCursors);
   void showCursorPositionInfo();
 

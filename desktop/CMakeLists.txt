@@ -1,6 +1,8 @@
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets LinguistTools)
 qt_standard_project_setup()
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 if(APPLE)
   find_library(COCOA_LIB Cocoa)
   list(APPEND PLATFORM_SRCS
@@ -13,6 +15,7 @@ endif()
 qt_add_executable(neko
     WIN32 MACOSX_BUNDLE
     src/main.cpp
+
     src/features/main_window/main_window.cpp
     src/features/main_window/main_window.h
     src/features/title_bar/title_bar_widget.cpp
@@ -29,6 +32,9 @@ qt_add_executable(neko
     src/features/tabs/tab_bar_widget.h
     src/features/tabs/tab_widget.cpp
     src/features/tabs/tab_widget.h
+
+    src/controllers/editor_controller.cpp
+    src/controllers/editor_controller.h
 
     src/utils/change_mask.h
     src/utils/editor_utils.cpp

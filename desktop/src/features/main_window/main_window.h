@@ -33,6 +33,8 @@ private slots:
   void onFileSaved(bool isSaveAs);
 
 private:
+  void setActiveEditor(neko::Editor *newEditor);
+  void refreshStatusBarCursor(neko::Editor *editor);
   void saveAs();
   void updateTabBar();
   void onTabCloseRequested(int index, int numberOfTabs);

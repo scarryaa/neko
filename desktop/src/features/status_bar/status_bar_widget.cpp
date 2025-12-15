@@ -85,6 +85,8 @@ StatusBarWidget::StatusBarWidget(neko::Editor *editor,
 
 StatusBarWidget::~StatusBarWidget() {}
 
+void StatusBarWidget::setEditor(neko::Editor *newEditor) { editor = newEditor; }
+
 void StatusBarWidget::onCursorPositionClicked() {
   emit cursorPositionClicked();
 }
@@ -95,6 +97,10 @@ void StatusBarWidget::showCursorPositionInfo() { cursorPosition->show(); }
 
 void StatusBarWidget::updateCursorPosition(int row, int col,
                                            int numberOfCursors) {
+  if (editor == nullptr) {
+    return;
+  }
+
   QString newPosition = QString("%1:%2").arg(row + 1).arg(col + 1);
 
   // TODO: Show selection lines, chars
@@ -114,6 +120,10 @@ void StatusBarWidget::onTabClosed(int numberOfTabs) {
 
 void StatusBarWidget::onCursorPositionChanged(int row, int col,
                                               int numberOfCursors) {
+  if (editor == nullptr) {
+    return;
+  }
+
   cursorPosition->show();
 
   QString newPosition = QString("%1:%2").arg(row + 1).arg(col + 1);
