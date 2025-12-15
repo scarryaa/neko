@@ -1,6 +1,7 @@
 #ifndef MAIN_WINDOW_H
 #define MAIN_WINDOW_H
 
+#include "controllers/editor_controller.h"
 #include "features/editor/editor_widget.h"
 #include "features/editor/gutter_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
@@ -14,7 +15,6 @@
 #include <QMainWindow>
 #include <QSplitter>
 #include <QVBoxLayout>
-#include <string>
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -50,6 +50,7 @@ private:
   rust::Box<neko::AppState> appState;
   rust::Box<neko::ThemeManager> themeManager;
   rust::Box<neko::ConfigManager> configManager;
+  EditorController *editorController;
   neko::Editor *editor;
   QWidget *emptyStateWidget;
   FileExplorerWidget *fileExplorerWidget;

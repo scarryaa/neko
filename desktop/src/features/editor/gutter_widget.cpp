@@ -27,6 +27,14 @@ GutterWidget::~GutterWidget() {}
 
 void GutterWidget::setEditor(neko::Editor *newEditor) { editor = newEditor; }
 
+void GutterWidget::onBufferChanged() { viewport()->update(); }
+
+void GutterWidget::onCursorChanged() { viewport()->update(); }
+
+void GutterWidget::onSelectionChanged() { viewport()->update(); }
+
+void GutterWidget::onViewportChanged() { updateDimensionsAndRepaint(); }
+
 QSize GutterWidget::sizeHint() const {
   return QSize(measureContent() + VIEWPORT_PADDING, height());
 }

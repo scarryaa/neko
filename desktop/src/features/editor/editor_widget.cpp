@@ -1,10 +1,11 @@
 #include "editor_widget.h"
 
 EditorWidget::EditorWidget(neko::Editor *editor,
+                           EditorController *editorController,
                            neko::ConfigManager &configManager,
                            neko::ThemeManager &themeManager, QWidget *parent)
-    : QScrollArea(parent), editor(editor), configManager(configManager),
-      themeManager(themeManager),
+    : QScrollArea(parent), editor(editor), editorController(editorController),
+      configManager(configManager), themeManager(themeManager),
       font(UiUtils::loadFont(configManager, neko::FontType::Editor)),
       fontMetrics(font) {
   setFocusPolicy(Qt::StrongFocus);
@@ -272,7 +273,7 @@ void EditorWidget::wheelEvent(QWheelEvent *event) {
 bool EditorWidget::focusNextPrevChild(bool next) { return false; }
 
 void EditorWidget::keyPressEvent(QKeyEvent *event) {
-  if (editor == nullptr) {
+  if (!editor) {
     return;
   }
 
@@ -281,27 +282,20 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
   const bool shift = mods.testFlag(Qt::ShiftModifier);
   const bool meta = mods.testFlag(Qt::MetaModifier);
 
-  auto nav = [&](auto moveFn, auto selectFn) -> neko::ChangeSetFfi {
-    if (shift)
-      return (editor->*selectFn)();
-    else
-      return (editor->*moveFn)();
-  };
-
   if (ctrl) {
     switch (event->key()) {
     case Qt::Key_A:
-      applyChangeSet(editor->select_all());
+      editorController->selectAll();
       return;
     case Qt::Key_C:
-      handleCopy();
+      editorController->copy();
       return;
     case Qt::Key_V: {
-      handlePaste();
+      editorController->paste();
       return;
     }
     case Qt::Key_X:
-      handleCut();
+      editorController->cut();
       return;
 
     case Qt::Key_P:
@@ -317,11 +311,12 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
 
     case Qt::Key_Z:
       if (shift) {
-        handleRedo();
+        editorController->redo();
       } else {
-        handleUndo();
+        editorController->undo();
       }
       return;
+
     case Qt::Key_Equal:
       increaseFontSize();
       handleViewportUpdate();
@@ -339,80 +334,49 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
 
   switch (event->key()) {
   case Qt::Key_Left:
-    applyChangeSet(nav(&neko::Editor::move_left, &neko::Editor::select_left));
+    editorController->moveOrSelectLeft(shift);
     break;
   case Qt::Key_Right:
-    applyChangeSet(nav(&neko::Editor::move_right, &neko::Editor::select_right));
+    editorController->moveOrSelectRight(shift);
     break;
   case Qt::Key_Up:
-    applyChangeSet(nav(&neko::Editor::move_up, &neko::Editor::select_up));
+    editorController->moveOrSelectUp(shift);
     break;
   case Qt::Key_Down:
-    applyChangeSet(nav(&neko::Editor::move_down, &neko::Editor::select_down));
+    editorController->moveOrSelectDown(shift);
     break;
   case Qt::Key_Enter:
   case Qt::Key_Return:
-    applyChangeSet(editor->insert_newline());
+    editorController->insertNewline();
     break;
   case Qt::Key_Backspace:
-    applyChangeSet(editor->backspace());
+    editorController->backspace();
     break;
   case Qt::Key_Delete:
-    applyChangeSet(editor->delete_forwards());
+    editorController->deleteForwards();
     break;
   case Qt::Key_Tab:
-    applyChangeSet(editor->insert_tab());
+    editorController->insertTab();
     break;
   case Qt::Key_Escape:
-    if (editor->has_active_selection()) {
-      applyChangeSet(editor->clear_selection());
-    } else {
-      applyChangeSet(editor->clear_cursors());
-    }
+    editorController->clearSelectionOrCursors();
     break;
-
   default:
-    if (event->text().isEmpty()) {
-      return;
-    }
-
-    applyChangeSet(editor->insert_text(event->text().toStdString()));
+    editorController->insertText(event->text().toStdString());
     break;
   }
 }
 
-void EditorWidget::handleCopy() {
-  if (editor->get_selection().active) {
-    auto rawText = editor->copy();
-    QString text = QString::fromUtf8(rawText);
+void EditorWidget::onBufferChanged() { viewport()->update(); }
 
-    if (!text.isEmpty()) {
-      QApplication::clipboard()->setText(text);
-    }
-  }
+void EditorWidget::onCursorChanged() {
+  viewport()->update();
+  scrollToCursor();
 }
 
-void EditorWidget::handlePaste() {
-  QString text = QApplication::clipboard()->text();
-  applyChangeSet(editor->paste(text.toStdString()));
-}
+void EditorWidget::onSelectionChanged() { viewport()->update(); }
 
-void EditorWidget::handleCut() {
-  if (editor->get_selection().active) {
-    auto rawText = editor->copy();
-    QString text = QString::fromUtf8(rawText);
-
-    if (!text.isEmpty()) {
-      QApplication::clipboard()->setText(text);
-    }
-
-    applyChangeSet(editor->delete_forwards());
-  }
-}
-
-void EditorWidget::handleRedo() { applyChangeSet(editor->redo()); }
-
-void EditorWidget::handleUndo() { applyChangeSet(editor->undo()); }
+void EditorWidget::onViewportChanged() { updateDimensionsAndRepaint(); }
 
 void EditorWidget::resetFontSize() { setFontSize(DEFAULT_FONT_SIZE); }
 

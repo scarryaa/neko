@@ -1,6 +1,7 @@
 #ifndef EDITOR_WIDGET_H
 #define EDITOR_WIDGET_H
 
+#include "controllers/editor_controller.h"
 #include "neko-core/src/ffi/mod.rs.h"
 #include "utils/change_mask.h"
 #include "utils/editor_utils.h"
@@ -23,6 +24,7 @@ class EditorWidget : public QScrollArea {
 
 public:
   explicit EditorWidget(neko::Editor *editor,
+                        EditorController *editorController,
                         neko::ConfigManager &configManager,
                         neko::ThemeManager &themeManager,
                         QWidget *parent = nullptr);
@@ -30,6 +32,12 @@ public:
 
   void updateDimensionsAndRepaint();
   void setEditor(neko::Editor *editor);
+
+public slots:
+  void onBufferChanged();
+  void onCursorChanged();
+  void onSelectionChanged();
+  void onViewportChanged();
 
 protected:
   void keyPressEvent(QKeyEvent *event) override;
@@ -53,11 +61,6 @@ private:
                  int col = 0);
 
   void applyChangeSet(const neko::ChangeSetFfi &cs);
-  void handleCopy();
-  void handleCut();
-  void handlePaste();
-  void handleUndo();
-  void handleRedo();
 
   void drawText(QPainter *painter, const ViewportContext &ctx);
   void drawCursors(QPainter *painter, const ViewportContext &ctx);
@@ -83,6 +86,7 @@ private:
 
   neko::ConfigManager &configManager;
   neko::ThemeManager &themeManager;
+  EditorController *editorController;
   neko::Editor *editor;
   QFont font;
   QFontMetricsF fontMetrics;

@@ -15,11 +15,14 @@ MainWindow::MainWindow(QWidget *parent)
   neko::Editor *editor = &appState->get_editor_mut();
   neko::FileTree *fileTree = &appState->get_file_tree_mut();
 
+  editorController = new EditorController(editor);
+
   emptyStateWidget = new QWidget(this);
   titleBarWidget = new TitleBarWidget(*configManager, *themeManager, this);
   fileExplorerWidget =
       new FileExplorerWidget(fileTree, *configManager, *themeManager, this);
-  editorWidget = new EditorWidget(editor, *configManager, *themeManager, this);
+  editorWidget = new EditorWidget(editor, editorController, *configManager,
+                                  *themeManager, this);
   gutterWidget = new GutterWidget(editor, *configManager, *themeManager, this);
   statusBarWidget =
       new StatusBarWidget(editor, *configManager, *themeManager, this);
@@ -55,6 +58,26 @@ MainWindow::MainWindow(QWidget *parent)
           &MainWindow::onCursorPositionClicked);
   connect(editorWidget, &EditorWidget::cursorPositionChanged, statusBarWidget,
           &StatusBarWidget::onCursorPositionChanged);
+
+  // EditorController -> EditorWidget connections
+  connect(editorController, &EditorController::bufferChanged, editorWidget,
+          &EditorWidget::onBufferChanged);
+  connect(editorController, &EditorController::cursorChanged, editorWidget,
+          &EditorWidget::onCursorChanged);
+  connect(editorController, &EditorController::selectionChanged, editorWidget,
+          &EditorWidget::onSelectionChanged);
+  connect(editorController, &EditorController::viewportChanged, editorWidget,
+          &EditorWidget::onViewportChanged);
+
+  // EditorController -> GutterWidget connections
+  connect(editorController, &EditorController::bufferChanged, gutterWidget,
+          &GutterWidget::onBufferChanged);
+  connect(editorController, &EditorController::cursorChanged, gutterWidget,
+          &GutterWidget::onCursorChanged);
+  connect(editorController, &EditorController::selectionChanged, gutterWidget,
+          &GutterWidget::onSelectionChanged);
+  connect(editorController, &EditorController::viewportChanged, gutterWidget,
+          &GutterWidget::onViewportChanged);
 
   QWidget *mainContainer = new QWidget(this);
   QVBoxLayout *mainLayout = new QVBoxLayout(mainContainer);
@@ -212,6 +235,7 @@ void MainWindow::setActiveEditor(neko::Editor *newEditor) {
   editorWidget->setEditor(newEditor);
   gutterWidget->setEditor(newEditor);
   statusBarWidget->setEditor(newEditor);
+  editorController->setEditor(newEditor);
 }
 
 void MainWindow::refreshStatusBarCursor(neko::Editor *editor) {

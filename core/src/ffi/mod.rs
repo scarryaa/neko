@@ -216,6 +216,8 @@ mod bridge {
         fn get_last_added_cursor(self: &Editor) -> CursorPosition;
         #[cxx_name = "get_number_of_selections"]
         fn number_of_selections(self: &Editor) -> usize;
+        #[cxx_name = "get_line_length"]
+        fn line_length(self: &Editor, row: usize) -> usize;
 
         // FileTree
         #[cxx_name = "set_root_dir"]

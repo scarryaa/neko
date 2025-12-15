@@ -35,6 +35,11 @@ public slots:
   void onEditorLineCountChanged();
   void onEditorCursorPositionChanged();
 
+  void onBufferChanged();
+  void onCursorChanged();
+  void onSelectionChanged();
+  void onViewportChanged();
+
 private:
   double measureContent() const;
   void handleViewportUpdate();

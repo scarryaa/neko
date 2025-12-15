@@ -58,6 +58,10 @@ impl Editor {
         }
     }
 
+    pub fn line_length(&self, row: usize) -> usize {
+        self.buffer.line_len(row)
+    }
+
     pub fn last_added_cursor(&self) -> Cursor {
         self.cursor_manager.get_last_added_cursor()
     }
