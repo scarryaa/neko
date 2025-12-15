@@ -185,7 +185,7 @@ impl FileTree {
         &'a self,
         path: &PathBuf,
         visible: &mut Vec<&'a FileNode>,
-        depth: usize,
+        _depth: usize,
     ) {
         if let Some(children) = self.expanded.get(path) {
             for node in children {
@@ -193,7 +193,7 @@ impl FileTree {
 
                 let node_path = PathBuf::from(node.path_str());
                 if node.is_dir && self.expanded.contains_key(&node_path) {
-                    self.collect_visible(&node_path, visible, depth + 1);
+                    self.collect_visible(&node_path, visible, _depth + 1);
                 }
             }
         }

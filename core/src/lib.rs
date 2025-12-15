@@ -15,4 +15,3 @@ pub use text::buffer::Buffer;
 pub use text::cursor::Cursor;
 pub use text::selection::Selection;
 pub use theme::Theme;
-
