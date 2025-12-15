@@ -30,7 +30,9 @@ void EditorWidget::applyChangeSet(const neko::ChangeSetFfi &cs) {
   if (m & (ChangeMask::Cursor | ChangeMask::Selection)) {
     auto cursorPosition =
         editor->get_cursor_positions()[editor->get_active_cursor_index()];
-    emit cursorPositionChanged(cursorPosition.row, cursorPosition.col);
+    auto numberOfCursors = editor->get_cursor_positions().size();
+    emit cursorPositionChanged(cursorPosition.row, cursorPosition.col,
+                               numberOfCursors);
   }
 
   if (m & (ChangeMask::Viewport | ChangeMask::LineCount | ChangeMask::Widths)) {
@@ -156,7 +158,8 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
     editor->move_to(rc.row, rc.col, true);
   }
 
-  emit cursorPositionChanged(rc.row, rc.col);
+  auto numberOfCursors = editor->get_cursor_positions().size();
+  emit cursorPositionChanged(rc.row, rc.col, numberOfCursors);
   viewport()->update();
 }
 
@@ -190,7 +193,9 @@ void EditorWidget::addCursor(neko::AddCursorDirectionKind dirKind, int row,
 
   auto cursorPosition =
       editor->get_cursor_positions()[editor->get_active_cursor_index()];
-  emit cursorPositionChanged(cursorPosition.row, cursorPosition.col);
+  auto numberOfCursors = editor->get_cursor_positions().size();
+  emit cursorPositionChanged(cursorPosition.row, cursorPosition.col,
+                             numberOfCursors);
 
   viewport()->update();
 }
@@ -205,7 +210,8 @@ void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
 
     editor->select_to(rc.row, rc.col);
-    emit cursorPositionChanged(rc.row, rc.col);
+    auto numberOfCursors = editor->get_cursor_positions().size();
+    emit cursorPositionChanged(rc.row, rc.col, numberOfCursors);
     viewport()->update();
   }
 }

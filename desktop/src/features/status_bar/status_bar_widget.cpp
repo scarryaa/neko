@@ -90,8 +90,12 @@ void StatusBarWidget::onCursorPositionClicked() {
 
 void StatusBarWidget::onFileExplorerToggled() { emit fileExplorerToggled(); }
 
-void StatusBarWidget::onCursorPositionChanged(int row, int col) {
+void StatusBarWidget::onCursorPositionChanged(int row, int col,
+                                              int numberOfCursors) {
   QString newPosition = QString("%1:%2").arg(row + 1).arg(col + 1);
+  if (numberOfCursors > 1) {
+    newPosition = newPosition.append(" (%1 selections)").arg(numberOfCursors);
+  }
   cursorPosition->setText(newPosition);
 }
 

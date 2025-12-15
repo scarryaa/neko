@@ -50,7 +50,17 @@ impl CursorManager {
     }
 
     pub fn set_cursors(&mut self, cursors: Vec<CursorEntry>) {
+        if cursors.is_empty() {
+            let fallback = CursorEntry::individual(self.new_cursor_id(), &Cursor::new());
+            self.cursors = vec![fallback];
+            self.active_cursor_index = 0;
+            return;
+        }
+
         self.cursors = cursors;
+        self.active_cursor_index = self
+            .active_cursor_index
+            .min(self.cursors.len().saturating_sub(1));
     }
 
     pub fn clear_cursors(&mut self) {

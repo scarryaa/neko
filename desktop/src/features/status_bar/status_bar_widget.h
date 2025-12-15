@@ -26,7 +26,7 @@ signals:
   void cursorPositionClicked();
 
 public slots:
-  void onCursorPositionChanged(int row, int col);
+  void onCursorPositionChanged(int row, int col, int numberOfCursors);
 
 protected:
   void paintEvent(QPaintEvent *event) override;

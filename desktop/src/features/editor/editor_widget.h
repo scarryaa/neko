@@ -42,7 +42,7 @@ protected:
 signals:
   void fontSizeChanged(qreal newSize);
   void lineCountChanged();
-  void cursorPositionChanged(int row, int col);
+  void cursorPositionChanged(int row, int col, int numberOfCursors);
   void newTabRequested();
   void closeTabRequested();
   void bufferChanged();

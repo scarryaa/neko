@@ -50,7 +50,8 @@ impl Editor {
     }
 
     pub fn active_cursor_index(&self) -> usize {
-        self.cursor_manager.active_cursor_index
+        let max = self.cursor_manager.cursors.len().saturating_sub(1);
+        self.cursor_manager.active_cursor_index.min(max)
     }
 
     pub(crate) fn buffer(&self) -> &Buffer {
@@ -261,10 +262,10 @@ impl Editor {
 
         let cursor_id = self.cursor_manager.new_cursor_id();
         self.cursor_manager
-            .set_cursors(vec![CursorEntry::individual(
+            .clear_and_set_cursors(CursorEntry::individual(
                 cursor_id,
                 &self.selection_manager.selection.start.clone(),
-            )]);
+            ));
 
         let deleted = self.buffer.delete_range(start, end);
         self.widths
