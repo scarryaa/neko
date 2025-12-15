@@ -400,7 +400,7 @@ impl Editor {
     }
 
     fn get_selection(&self) -> Selection {
-        let s = self.selection.clone();
+        let s = self.selection().clone();
         let start = s.start.clone();
         let end = s.end.clone();
         let anchor = s.anchor.clone();
@@ -424,7 +424,7 @@ impl Editor {
     }
 
     fn copy(self: &Editor) -> String {
-        let selection = self.selection.clone();
+        let selection = self.selection().clone();
 
         if selection.is_active() {
             self.buffer.get_text_range(

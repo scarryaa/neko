@@ -6,6 +6,7 @@ use super::{
     Change, ChangeSet, Edit, Transaction, UndoHistory, ViewState,
     change_set::OpFlags,
     cursor_manager::{AddCursorDirection, CursorEntry, CursorManager},
+    selection_manager::SelectionManager,
 };
 
 enum SelectionMode {
@@ -36,8 +37,7 @@ pub struct Editor {
     pub(crate) max_width: f64,
     max_width_line: usize,
     cursor_manager: CursorManager,
-    // Single shared selection across all cursors; TODO multi-selection per cursor
-    pub(crate) selection: Selection,
+    selection_manager: SelectionManager,
     history: UndoHistory,
 }
 
@@ -49,13 +49,13 @@ impl Editor {
             max_width: 0.0,
             max_width_line: 0,
             cursor_manager: CursorManager::new(),
-            selection: Selection::new(),
+            selection_manager: SelectionManager::new(),
             history: UndoHistory::default(),
         }
     }
 
     pub fn has_active_selection(&self) -> bool {
-        self.selection.is_active()
+        self.selection_manager.has_active_selection()
     }
 
     pub fn cursor_exists_at(&self, row: usize, col: usize) -> bool {
@@ -76,6 +76,10 @@ impl Editor {
 
     pub fn cursors(&self) -> Vec<CursorEntry> {
         self.cursor_manager.cursors.clone()
+    }
+
+    pub fn selection(&self) -> Selection {
+        self.selection_manager.selection.clone()
     }
 
     fn with_op<R>(
@@ -119,7 +123,7 @@ impl Editor {
         (
             self.buffer.line_count(),
             self.cursor_manager.cursors.clone(),
-            self.selection.clone(),
+            self.selection_manager.selection.clone(),
         )
     }
 
@@ -145,7 +149,7 @@ impl Editor {
         {
             c |= Change::CURSOR;
         }
-        if &self.selection != before_selection {
+        if &self.selection_manager.selection != before_selection {
             c |= Change::SELECTION;
         }
 
@@ -167,7 +171,7 @@ impl Editor {
         let cursor_id = self.cursor_manager.new_cursor_id();
         self.cursor_manager
             .set_cursors(vec![CursorEntry::individual(cursor_id, &Cursor::new())]);
-        self.selection = Selection::new();
+        self.selection_manager.reset_selection();
 
         self.clear_and_rebuild_line_widths();
 
@@ -206,7 +210,7 @@ impl Editor {
     }
 
     fn delete_selection_if_active(&mut self) -> bool {
-        if self.selection.is_active() {
+        if self.selection_manager.selection.is_active() {
             self.delete_selection_impl();
             true
         } else {
@@ -215,15 +219,15 @@ impl Editor {
     }
 
     fn delete_selection_impl(&mut self) {
-        let a = self.selection.start.get_idx(&self.buffer);
-        let b = self.selection.end.get_idx(&self.buffer);
+        let a = self.selection_manager.selection.start.get_idx(&self.buffer);
+        let b = self.selection_manager.selection.end.get_idx(&self.buffer);
         let (start, end) = if a <= b { (a, b) } else { (b, a) };
 
         let cursor_id = self.cursor_manager.new_cursor_id();
         self.cursor_manager
             .set_cursors(vec![CursorEntry::individual(
                 cursor_id,
-                &self.selection.start.clone(),
+                &self.selection_manager.selection.start.clone(),
             )]);
 
         let deleted = self.buffer.delete_range(start, end);
@@ -234,7 +238,7 @@ impl Editor {
             deleted,
         });
 
-        self.selection.clear();
+        self.selection_manager.clear_selection();
         self.invalidate_line_width(self.cursor_manager.cursors[0].cursor.row);
     }
 
@@ -263,12 +267,12 @@ impl Editor {
     }
 
     fn delete_selection_preserve_cursors(&mut self) -> Option<Vec<usize>> {
-        if !self.selection.is_active() {
+        if !self.selection_manager.selection.is_active() {
             return None;
         }
 
-        let a = self.selection.start.get_idx(&self.buffer);
-        let b = self.selection.end.get_idx(&self.buffer);
+        let a = self.selection_manager.selection.start.get_idx(&self.buffer);
+        let b = self.selection_manager.selection.end.get_idx(&self.buffer);
         let (start, end) = if a <= b { (a, b) } else { (b, a) };
         let delta = end - start;
 
@@ -295,7 +299,7 @@ impl Editor {
             deleted,
         });
 
-        self.selection.clear();
+        self.selection_manager.clear_selection();
         self.clear_and_rebuild_line_widths();
 
         let mut new_cursors: Vec<CursorEntry> = Vec::new();
@@ -594,8 +598,8 @@ impl Editor {
         let cursor = self.cursor_manager.cursors[i].clone();
 
         if let SelectionMode::Extend = mode {
-            if !self.selection.is_active() {
-                self.selection.begin(&cursor.cursor);
+            if !self.selection_manager.selection.is_active() {
+                self.selection_manager.ensure_begin(&cursor.cursor);
             }
         }
 
@@ -611,9 +615,10 @@ impl Editor {
 
         match mode {
             SelectionMode::Extend => self
+                .selection_manager
                 .selection
                 .update(&self.cursor_manager.cursors[new_i].cursor, &self.buffer),
-            SelectionMode::Clear => self.selection.clear(),
+            SelectionMode::Clear => self.selection_manager.clear_selection(),
             SelectionMode::Keep => {}
         }
     }
@@ -677,7 +682,7 @@ impl Editor {
 
     pub fn select_all(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.selection.begin(&Cursor::new());
+            editor.selection_manager.ensure_begin(&Cursor::new());
             editor.cursor_manager.cursors = vec![CursorEntry::individual(
                 editor.cursor_manager.new_cursor_id(),
                 &Cursor::new(),
@@ -687,6 +692,7 @@ impl Editor {
                 .cursor
                 .move_to_end(&editor.buffer);
             editor
+                .selection_manager
                 .selection
                 .update(&editor.cursor_manager.cursors[0].cursor, &editor.buffer);
         })
@@ -694,7 +700,7 @@ impl Editor {
 
     pub fn clear_selection(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
-            editor.selection.clear()
+            editor.selection_manager.clear_selection();
         })
     }
 
@@ -773,7 +779,7 @@ impl Editor {
     fn view_state(&self) -> ViewState {
         ViewState {
             cursors: self.cursor_manager.cursors.clone(),
-            selection: self.selection.clone(),
+            selection: self.selection_manager.selection.clone(),
         }
     }
 
@@ -818,7 +824,7 @@ impl Editor {
         }
 
         self.cursor_manager.set_cursors(tx.before.cursors.clone());
-        self.selection = tx.before.selection.clone();
+        self.selection_manager.set_selection(&tx.before.selection);
 
         self.clear_and_rebuild_line_widths();
 
@@ -848,7 +854,7 @@ impl Editor {
         }
 
         self.cursor_manager.set_cursors(tx.after.cursors.clone());
-        self.selection = tx.after.selection.clone();
+        self.selection_manager.set_selection(&tx.after.selection);
 
         self.clear_and_rebuild_line_widths();
 
