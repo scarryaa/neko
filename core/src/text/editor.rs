@@ -1,5 +1,3 @@
-use std::fmt::Debug;
-
 use crate::{Buffer, Cursor, Selection};
 
 use super::{
@@ -49,6 +47,10 @@ impl Editor {
             selection_manager: SelectionManager::new(),
             history: UndoHistory::default(),
         }
+    }
+
+    pub fn active_cursor_index(&self) -> usize {
+        self.cursor_manager.active_cursor_index
     }
 
     pub(crate) fn buffer(&self) -> &Buffer {

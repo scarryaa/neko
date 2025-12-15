@@ -201,6 +201,8 @@ mod bridge {
         fn clear_cursors_wrapper(self: &mut Editor) -> ChangeSetFfi;
         fn has_active_selection(self: &Editor) -> bool;
         fn cursor_exists_at_row(self: &Editor, row: usize) -> bool;
+        #[cxx_name = "get_active_cursor_index"]
+        fn active_cursor_index(self: &Editor) -> usize;
 
         // FileTree
         #[cxx_name = "set_root_dir"]

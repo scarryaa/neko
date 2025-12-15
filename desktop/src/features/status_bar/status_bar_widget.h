@@ -23,17 +23,23 @@ public:
 
 signals:
   void fileExplorerToggled();
+  void cursorPositionClicked();
+
+public slots:
+  void onCursorPositionChanged(int row, int col);
 
 protected:
   void paintEvent(QPaintEvent *event) override;
 
 private:
   void onFileExplorerToggled();
+  void onCursorPositionClicked();
 
   neko::ThemeManager &themeManager;
   neko::ConfigManager &configManager;
   double m_height;
   QPushButton *fileExplorerToggleButton;
+  QPushButton *cursorPosition;
 };
 
 #endif // STATUS_BAR_WIDGET_H

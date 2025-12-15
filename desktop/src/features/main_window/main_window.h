@@ -25,6 +25,7 @@ public:
 
 public slots:
   void onFileExplorerToggled();
+  void onCursorPositionClicked();
 
 private slots:
   void onFileSelected(const std::string &filePath,

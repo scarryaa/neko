@@ -11,7 +11,5 @@ pub use file_system::{
     operations,
     tree::{FileNode, FileTree},
 };
-pub use text::buffer::Buffer;
-pub use text::cursor::Cursor;
-pub use text::selection::Selection;
+pub use text::{Buffer, Cursor, Editor, Selection};
 pub use theme::Theme;

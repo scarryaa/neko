@@ -60,16 +60,40 @@ StatusBarWidget::StatusBarWidget(neko::ConfigManager &configManager,
   connect(fileExplorerToggleButton, &QPushButton::clicked, this,
           &StatusBarWidget::onFileExplorerToggled);
 
+  cursorPosition = new QPushButton(this);
+  cursorPosition->setStyleSheet(
+      QString("QPushButton {"
+              "  background-color: transparent;"
+              "  border-radius: 4px;"
+              "  padding: 2px 2px;"
+              "}"
+              "QPushButton:hover { background-color: %1; }"
+              "QPushButton:pressed { background-color: %2; }")
+          .arg(btnHover, btnPress));
+
+  connect(cursorPosition, &QPushButton::clicked, this,
+          &StatusBarWidget::onCursorPositionClicked);
+
   QHBoxLayout *layout = new QHBoxLayout(this);
 
   layout->setContentsMargins(10, 5, 10, 5);
   layout->addWidget(fileExplorerToggleButton);
+  layout->addWidget(cursorPosition);
   layout->addStretch();
 }
 
 StatusBarWidget::~StatusBarWidget() {}
 
+void StatusBarWidget::onCursorPositionClicked() {
+  emit cursorPositionClicked();
+}
+
 void StatusBarWidget::onFileExplorerToggled() { emit fileExplorerToggled(); }
+
+void StatusBarWidget::onCursorPositionChanged(int row, int col) {
+  QString newPosition = QString("%1:%2").arg(row + 1).arg(col + 1);
+  cursorPosition->setText(newPosition);
+}
 
 void StatusBarWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(this);

@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::{FileTree, text::Editor};
+use crate::{Editor, FileTree};
 
 #[derive(Debug)]
 pub struct AppState {

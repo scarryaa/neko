@@ -45,6 +45,10 @@ MainWindow::MainWindow(QWidget *parent)
           &MainWindow::onBufferChanged);
   connect(statusBarWidget, &StatusBarWidget::fileExplorerToggled, this,
           &MainWindow::onFileExplorerToggled);
+  connect(statusBarWidget, &StatusBarWidget::cursorPositionClicked, this,
+          &MainWindow::onCursorPositionClicked);
+  connect(editorWidget, &EditorWidget::cursorPositionChanged, statusBarWidget,
+          &StatusBarWidget::onCursorPositionChanged);
 
   QWidget *mainContainer = new QWidget(this);
   QVBoxLayout *mainLayout = new QVBoxLayout(mainContainer);
@@ -207,6 +211,10 @@ void MainWindow::onFileExplorerToggled() {
   }
 
   configManager->set_file_explorer_shown(isOpen);
+}
+
+void MainWindow::onCursorPositionClicked() {
+  // TODO: Show dialog to enter a new cursor position
 }
 
 void MainWindow::saveCurrentScrollState() {

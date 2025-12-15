@@ -10,7 +10,7 @@ pub mod selection_manager;
 pub mod widths;
 
 pub use buffer::Buffer;
-pub use change_set::{Change, ChangeSet};
+pub use change_set::{Change, ChangeSet, OpFlags};
 pub use cursor::Cursor;
 pub use editor::Editor;
 pub use history::{Edit, Transaction, UndoHistory, ViewState};
