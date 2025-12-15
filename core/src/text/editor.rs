@@ -611,8 +611,6 @@ impl Editor {
         cursor_mode: CursorMode,
         f: impl FnOnce(&mut Cursor, &Buffer),
     ) {
-        self.sort_and_dedup_cursors();
-
         let i = i.min(self.cursors.len().saturating_sub(1));
         let cursor = self.cursors[i].clone();
 
@@ -633,8 +631,6 @@ impl Editor {
         };
 
         f(&mut self.cursors[new_i].cursor, &self.buffer);
-
-        self.sort_and_dedup_cursors();
 
         match mode {
             SelectionMode::Extend => self
