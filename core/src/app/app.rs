@@ -90,7 +90,7 @@ impl AppState {
         self.tabs
             .iter()
             .map(|t| {
-                t.original_content.clone().unwrap_or("".to_string()) != t.editor.buffer.get_text()
+                t.original_content.clone().unwrap_or("".to_string()) != t.editor.buffer().get_text()
             })
             .collect()
     }
@@ -100,7 +100,7 @@ impl AppState {
             .get(index)
             .map(|t| {
                 let original = t.original_content.as_deref().unwrap_or("");
-                original != t.editor.buffer.get_text()
+                original != t.editor.buffer().get_text()
             })
             .unwrap_or(false)
     }
@@ -158,7 +158,7 @@ impl AppState {
             .as_ref()
             .ok_or_else(|| Error::new(ErrorKind::NotFound, "No current file"))?;
 
-        let content = tab.editor.buffer.get_text();
+        let content = tab.editor.buffer().get_text();
         tab.original_content = Some(content.clone());
         std::fs::write(path, content)?;
         Ok(())
@@ -174,7 +174,7 @@ impl AppState {
             .get_mut(self.active_tab_index)
             .ok_or_else(|| Error::new(ErrorKind::NotFound, "No active tab"))?;
 
-        let content = tab.editor.buffer.get_text();
+        let content = tab.editor.buffer().get_text();
         tab.original_content = Some(content.clone());
         std::fs::write(path, content)?;
         tab.file_path = Some(PathBuf::from(path));

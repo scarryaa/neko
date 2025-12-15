@@ -33,11 +33,11 @@ pub(crate) enum DeleteResult {
 
 #[derive(Default, Debug)]
 pub struct Editor {
-    pub(crate) buffer: Buffer,
-    pub(crate) widths: WidthManager,
-    pub(crate) cursor_manager: CursorManager,
-    pub(crate) selection_manager: SelectionManager,
-    pub(crate) history: UndoHistory,
+    buffer: Buffer,
+    widths: WidthManager,
+    cursor_manager: CursorManager,
+    selection_manager: SelectionManager,
+    history: UndoHistory,
 }
 
 impl Editor {
@@ -49,6 +49,47 @@ impl Editor {
             selection_manager: SelectionManager::new(),
             history: UndoHistory::default(),
         }
+    }
+
+    pub(crate) fn buffer(&self) -> &Buffer {
+        &self.buffer
+    }
+
+    pub(crate) fn buffer_mut(&mut self) -> &mut Buffer {
+        &mut self.buffer
+    }
+
+    pub(crate) fn buffer_and_cursors_mut(&mut self) -> (&mut Buffer, &mut [CursorEntry]) {
+        let Editor {
+            buffer,
+            cursor_manager,
+            ..
+        } = self;
+        (buffer, &mut cursor_manager.cursors)
+    }
+
+    pub(crate) fn selection_manager(&self) -> &SelectionManager {
+        &self.selection_manager
+    }
+
+    pub(crate) fn selection_manager_mut(&mut self) -> &mut SelectionManager {
+        &mut self.selection_manager
+    }
+
+    pub(crate) fn cursor_manager(&self) -> &CursorManager {
+        &self.cursor_manager
+    }
+
+    pub(crate) fn cursor_manager_mut(&mut self) -> &mut CursorManager {
+        &mut self.cursor_manager
+    }
+
+    pub(crate) fn widths(&self) -> &WidthManager {
+        &self.widths
+    }
+
+    pub(crate) fn widths_mut(&mut self) -> &mut WidthManager {
+        &mut self.widths
     }
 
     pub fn has_active_selection(&self) -> bool {
@@ -207,7 +248,7 @@ impl Editor {
         }
     }
 
-    pub(crate) fn delete_selection_impl(&mut self) {
+    fn delete_selection_impl(&mut self) {
         let a = self.selection_manager.selection.start.get_idx(&self.buffer);
         let b = self.selection_manager.selection.end.get_idx(&self.buffer);
         let (start, end) = if a <= b { (a, b) } else { (b, a) };
@@ -400,10 +441,6 @@ impl Editor {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
             editor.cursor_manager.clear_cursors();
         })
-    }
-
-    pub(crate) fn sync_line_widths(&mut self) {
-        self.widths.sync_line_widths(self.buffer.line_count());
     }
 
     pub fn needs_width_measurement(&self, line_idx: usize) -> bool {

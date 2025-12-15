@@ -378,15 +378,15 @@ impl ThemeManager {
 
 impl Editor {
     fn get_text(&self) -> String {
-        self.buffer.get_text()
+        self.buffer().get_text()
     }
 
     fn get_line(&self, line_idx: usize) -> String {
-        self.buffer.get_line(line_idx)
+        self.buffer().get_line(line_idx)
     }
 
     fn get_line_count(&self) -> usize {
-        self.buffer.line_count()
+        self.buffer().line_count()
     }
 
     fn get_cursor_positions(self: &Editor) -> Vec<CursorPosition> {
@@ -427,9 +427,9 @@ impl Editor {
         let selection = self.selection().clone();
 
         if selection.is_active() {
-            self.buffer.get_text_range(
-                selection.start.get_idx(&self.buffer),
-                selection.end.get_idx(&self.buffer),
+            self.buffer().get_text_range(
+                selection.start.get_idx(self.buffer()),
+                selection.end.get_idx(self.buffer()),
             )
         } else {
             "".to_string()
@@ -521,7 +521,7 @@ impl Editor {
     }
 
     fn get_max_width(&self) -> f64 {
-        self.widths.max_width()
+        self.widths().max_width()
     }
 
     fn add_cursor_wrapper(self: &mut Editor, direction: AddCursorDirectionFfi) {

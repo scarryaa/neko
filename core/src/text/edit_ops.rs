@@ -9,7 +9,7 @@ impl Editor {
 
             let mut idxs: Vec<usize> = editor
                 .delete_selection_preserve_cursors()
-                .unwrap_or_else(|| editor.cursor_manager.cursor_byte_idxs(&editor.buffer));
+                .unwrap_or_else(|| editor.cursor_manager().cursor_byte_idxs(editor.buffer()));
 
             editor.for_each_cursor_rev(|editor, i| {
                 editor.insert_at(text, i, &mut idxs, |pos: usize, editor: &mut Editor| {
@@ -17,13 +17,15 @@ impl Editor {
                 });
             });
 
-            for (c, &idx) in editor.cursor_manager.cursors.iter_mut().zip(idxs.iter()) {
-                let (row, col) = editor.buffer.byte_to_row_col(idx);
-                c.cursor.move_to(&editor.buffer, row, col);
+            let (buffer, cursors) = editor.buffer_and_cursors_mut();
+            for (c, &idx) in cursors.iter_mut().zip(idxs.iter()) {
+                let (row, col) = buffer.byte_to_row_col(idx);
+                c.cursor.move_to(buffer, row, col);
             }
         });
 
-        self.widths.sync_line_widths(self.buffer.line_count());
+        let line_count = self.buffer().line_count();
+        self.widths_mut().sync_line_widths(line_count);
         res
     }
 
@@ -33,11 +35,10 @@ impl Editor {
                 return;
             }
 
-            let mut idxs: Vec<usize> = editor
-                .cursor_manager
-                .cursors
+            let (before_buffer, before_cursors) = editor.buffer_and_cursors_mut();
+            let mut idxs: Vec<usize> = before_cursors
                 .iter()
-                .map(|c| c.cursor.get_idx(&editor.buffer))
+                .map(|c| c.cursor.get_idx(before_buffer))
                 .collect();
 
             editor.for_each_cursor_rev(|editor, i| {
@@ -45,13 +46,15 @@ impl Editor {
                 editor.apply_delete_result(i, res);
             });
 
-            for (c, &idx) in editor.cursor_manager.cursors.iter_mut().zip(idxs.iter()) {
-                let (row, col) = editor.buffer.byte_to_row_col(idx);
-                c.cursor.move_to(&editor.buffer, row, col);
+            let (buffer, cursors) = editor.buffer_and_cursors_mut();
+            for (c, &idx) in cursors.iter_mut().zip(idxs.iter()) {
+                let (row, col) = buffer.byte_to_row_col(idx);
+                c.cursor.move_to(buffer, row, col);
             }
         });
 
-        self.sync_line_widths();
+        let line_count = self.buffer().line_count();
+        self.widths_mut().sync_line_widths(line_count);
         res
     }
 
@@ -61,11 +64,10 @@ impl Editor {
                 return;
             }
 
-            let mut idxs: Vec<usize> = editor
-                .cursor_manager
-                .cursors
+            let (before_buffer, before_cursors) = editor.buffer_and_cursors_mut();
+            let mut idxs: Vec<usize> = before_cursors
                 .iter()
-                .map(|c| c.cursor.get_idx(&editor.buffer))
+                .map(|c| c.cursor.get_idx(before_buffer))
                 .collect();
 
             editor.for_each_cursor_rev(|editor, i| {
@@ -73,26 +75,28 @@ impl Editor {
                 editor.apply_delete_result(i, res);
             });
 
-            for (c, &idx) in editor.cursor_manager.cursors.iter_mut().zip(idxs.iter()) {
-                let (row, col) = editor.buffer.byte_to_row_col(idx);
-                c.cursor.move_to(&editor.buffer, row, col);
+            let (buffer, cursors) = editor.buffer_and_cursors_mut();
+            for (c, &idx) in cursors.iter_mut().zip(idxs.iter()) {
+                let (row, col) = buffer.byte_to_row_col(idx);
+                c.cursor.move_to(buffer, row, col);
             }
         });
 
-        self.sync_line_widths();
+        let line_count = self.buffer().line_count();
+        self.widths_mut().sync_line_widths(line_count);
         res
     }
 
     fn invalidate_insert_lines(&mut self, pos: usize, text: &str, has_nl: bool) {
-        let row = self.buffer.byte_to_line(pos);
-        self.widths.invalidate_line_width(row);
+        let row = self.buffer().byte_to_line(pos);
+        self.widths_mut().invalidate_line_width(row);
 
         if has_nl {
             let extra_lines = text.bytes().filter(|b| *b == b'\n').count();
             for offset in 1..=extra_lines {
                 let line = row + offset;
-                if line < self.buffer.line_count() {
-                    self.widths.invalidate_line_width(line);
+                if line < self.buffer().line_count() {
+                    self.widths_mut().invalidate_line_width(line);
                 }
             }
         }
@@ -114,41 +118,50 @@ impl Editor {
     }
 
     fn delete_selection_preserve_cursors(&mut self) -> Option<Vec<usize>> {
-        if !self.selection_manager.selection.is_active() {
+        if !self.selection_manager().selection.is_active() {
             return None;
         }
 
-        let a = self.selection_manager.selection.start.get_idx(&self.buffer);
-        let b = self.selection_manager.selection.end.get_idx(&self.buffer);
+        let a = self
+            .selection_manager()
+            .selection
+            .start
+            .get_idx(self.buffer());
+        let b = self
+            .selection_manager()
+            .selection
+            .end
+            .get_idx(self.buffer());
         let (start, end) = if a <= b { (a, b) } else { (b, a) };
         let delta = end - start;
 
         let cursor_info: Vec<(CursorEntry, usize)> = self
-            .cursor_manager
+            .cursor_manager()
             .cursors
             .iter()
             .cloned()
             .map(|entry| {
-                let idx = entry.cursor.get_idx(&self.buffer);
+                let idx = entry.cursor.get_idx(self.buffer());
                 (entry, idx)
             })
             .collect();
         let active_id = self
-            .cursor_manager
+            .cursor_manager()
             .cursors
-            .get(self.cursor_manager.active_cursor_index)
+            .get(self.cursor_manager().active_cursor_index)
             .map(|c| c.id);
 
-        let deleted = self.buffer.delete_range(start, end);
+        let deleted = self.buffer_mut().delete_range(start, end);
         self.record_edit(Edit::Delete {
             start,
             end,
             deleted,
         });
 
-        self.selection_manager.clear_selection();
-        self.widths
-            .clear_and_rebuild_line_widths(self.buffer.line_count());
+        self.selection_manager_mut().clear_selection();
+
+        let line_count = self.buffer().line_count();
+        self.widths_mut().clear_and_rebuild_line_widths(line_count);
 
         let mut new_cursors: Vec<CursorEntry> = Vec::new();
         for (entry, idx) in cursor_info {
@@ -160,9 +173,9 @@ impl Editor {
                 continue;
             };
 
-            let (row, col) = self.buffer.byte_to_row_col(new_idx);
+            let (row, col) = self.buffer().byte_to_row_col(new_idx);
             let mut cursor = entry.cursor.clone();
-            cursor.move_to(&self.buffer, row, col);
+            cursor.move_to(self.buffer(), row, col);
             new_cursors.push(CursorEntry {
                 id: entry.id,
                 cursor,
@@ -172,30 +185,30 @@ impl Editor {
 
         if new_cursors.is_empty() {
             let mut cursor = Cursor::new();
-            let (row, col) = self.buffer.byte_to_row_col(start);
-            cursor.move_to(&self.buffer, row, col);
+            let (row, col) = self.buffer().byte_to_row_col(start);
+            cursor.move_to(self.buffer(), row, col);
             new_cursors.push(CursorEntry::individual(
-                self.cursor_manager.new_cursor_id(),
+                self.cursor_manager_mut().new_cursor_id(),
                 &cursor,
             ));
         }
 
-        self.cursor_manager.set_cursors(new_cursors);
-        self.cursor_manager.sort_and_dedup_cursors();
+        self.cursor_manager_mut().set_cursors(new_cursors);
+        self.cursor_manager_mut().sort_and_dedup_cursors();
 
         if let Some(id) = active_id {
-            self.cursor_manager.set_active_cursor_index(
-                self.cursor_manager
-                    .cursors
-                    .iter()
-                    .position(|c| c.id == id)
-                    .unwrap_or(0),
-            );
+            let new_index = self
+                .cursor_manager()
+                .cursors
+                .iter()
+                .position(|c| c.id == id)
+                .unwrap_or(0);
+            self.cursor_manager_mut().set_active_cursor_index(new_index);
         } else {
-            self.cursor_manager.set_active_cursor_index(0);
+            self.cursor_manager_mut().set_active_cursor_index(0);
         }
 
-        Some(self.cursor_manager.cursor_byte_idxs(&self.buffer))
+        Some(self.cursor_manager().cursor_byte_idxs(self.buffer()))
     }
 
     fn insert_at(
@@ -207,7 +220,7 @@ impl Editor {
     ) {
         let pos = idxs[i];
 
-        self.buffer.insert(pos, text);
+        self.buffer_mut().insert(pos, text);
         self.record_edit(Edit::Insert {
             pos,
             text: text.to_string(),
@@ -232,14 +245,14 @@ impl Editor {
             return DeleteResult::Text { invalidate: None };
         }
 
-        let start = if pos >= 2 && self.buffer.get_text_range(pos - 2, pos) == "\r\n" {
+        let start = if pos >= 2 && self.buffer().get_text_range(pos - 2, pos) == "\r\n" {
             pos - 2
         } else {
             pos - 1
         };
         let end = pos;
 
-        let deleted = self.buffer.delete_range(start, end);
+        let deleted = self.buffer_mut().delete_range(start, end);
         self.record_edit(Edit::Delete {
             start,
             end,
@@ -249,13 +262,13 @@ impl Editor {
         self.apply_delete_to_idxs(start, end, idxs, i);
 
         if deleted.contains('\n') {
-            let row = self.buffer.byte_to_line(start);
+            let row = self.buffer().byte_to_line(start);
             DeleteResult::Newline {
                 row,
                 invalidate: Some(row),
             }
         } else {
-            let row = self.buffer.byte_to_line(start);
+            let row = self.buffer().byte_to_line(start);
             DeleteResult::Text {
                 invalidate: Some(row),
             }
@@ -264,19 +277,19 @@ impl Editor {
 
     fn delete_impl(&mut self, i: usize, idxs: &mut [usize]) -> DeleteResult {
         let start = idxs[i];
-        if start >= self.buffer.byte_len().saturating_sub(1) {
+        if start >= self.buffer().byte_len().saturating_sub(1) {
             return DeleteResult::Text { invalidate: None };
         }
 
         let mut end = start + 1;
-        if self.buffer.get_text_range(start, end) == "\r"
-            && start + 2 <= self.buffer.byte_len()
-            && self.buffer.get_text_range(start, start + 2) == "\r\n"
+        if self.buffer().get_text_range(start, end) == "\r"
+            && start + 2 <= self.buffer().byte_len()
+            && self.buffer().get_text_range(start, start + 2) == "\r\n"
         {
             end = start + 2;
         }
 
-        let deleted = self.buffer.delete_range(start, end);
+        let deleted = self.buffer_mut().delete_range(start, end);
         if deleted.is_empty() {
             return DeleteResult::Text { invalidate: None };
         }
@@ -290,13 +303,13 @@ impl Editor {
         self.apply_delete_to_idxs(start, end, idxs, i);
 
         if deleted.contains('\n') {
-            let row = self.buffer.byte_to_line(start);
+            let row = self.buffer().byte_to_line(start);
             DeleteResult::Newline {
                 row,
                 invalidate: Some(row),
             }
         } else {
-            let row = self.buffer.byte_to_line(start);
+            let row = self.buffer().byte_to_line(start);
             DeleteResult::Text {
                 invalidate: Some(row),
             }
