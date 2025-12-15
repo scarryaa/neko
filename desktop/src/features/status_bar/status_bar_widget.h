@@ -16,7 +16,8 @@ class StatusBarWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit StatusBarWidget(neko::ConfigManager &configManager,
+  explicit StatusBarWidget(neko::Editor *editor,
+                           neko::ConfigManager &configManager,
                            neko::ThemeManager &themeManager,
                            QWidget *parent = nullptr);
   ~StatusBarWidget();
@@ -37,6 +38,7 @@ private:
 
   neko::ThemeManager &themeManager;
   neko::ConfigManager &configManager;
+  neko::Editor *editor;
   double m_height;
   QPushButton *fileExplorerToggleButton;
   QPushButton *cursorPosition;

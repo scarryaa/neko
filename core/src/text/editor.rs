@@ -49,6 +49,15 @@ impl Editor {
         }
     }
 
+    pub fn number_of_selections(&self) -> usize {
+        // TODO: When converting to multi-selection, update this
+        if self.selection_manager.has_active_selection() {
+            1
+        } else {
+            0
+        }
+    }
+
     pub fn last_added_cursor(&self) -> Cursor {
         self.cursor_manager.get_last_added_cursor()
     }

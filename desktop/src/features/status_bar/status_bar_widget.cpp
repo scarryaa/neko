@@ -1,10 +1,11 @@
 #include "status_bar_widget.h"
 
-StatusBarWidget::StatusBarWidget(neko::ConfigManager &configManager,
+StatusBarWidget::StatusBarWidget(neko::Editor *editor,
+                                 neko::ConfigManager &configManager,
                                  neko::ThemeManager &themeManager,
                                  QWidget *parent)
-    : QWidget(parent), configManager(configManager),
-      themeManager(themeManager) {
+    : QWidget(parent), configManager(configManager), themeManager(themeManager),
+      editor(editor) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 
@@ -93,8 +94,12 @@ void StatusBarWidget::onFileExplorerToggled() { emit fileExplorerToggled(); }
 void StatusBarWidget::onCursorPositionChanged(int row, int col,
                                               int numberOfCursors) {
   QString newPosition = QString("%1:%2").arg(row + 1).arg(col + 1);
-  if (numberOfCursors > 1) {
-    newPosition = newPosition.append(" (%1 selections)").arg(numberOfCursors);
+
+  // TODO: Show selection lines, chars
+  int numberOfSelections = editor->get_number_of_selections();
+  if (numberOfCursors > 1 || numberOfSelections > 1) {
+    newPosition = newPosition.append(" (%1 selections)")
+                      .arg(std::max(numberOfCursors, numberOfSelections));
   }
   cursorPosition->setText(newPosition);
 }

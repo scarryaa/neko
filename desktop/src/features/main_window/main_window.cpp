@@ -17,7 +17,8 @@ MainWindow::MainWindow(QWidget *parent)
       new FileExplorerWidget(fileTree, *configManager, *themeManager, this);
   editorWidget = new EditorWidget(editor, *configManager, *themeManager, this);
   gutterWidget = new GutterWidget(editor, *configManager, *themeManager, this);
-  statusBarWidget = new StatusBarWidget(*configManager, *themeManager, this);
+  statusBarWidget =
+      new StatusBarWidget(editor, *configManager, *themeManager, this);
 
   setupKeyboardShortcuts();
 
