@@ -51,7 +51,8 @@ void TabBarWidget::setTabs(QStringList titles, rust::Vec<bool> modifiedStates) {
   tabs.clear();
 
   // Create new tabs
-  for (int i = 0; i < titles.size(); i++) {
+  int numberOfTitles = titles.size();
+  for (int i = 0; i < numberOfTitles; i++) {
     auto *tabWidget =
         new TabWidget(titles[i], i, configManager, themeManager, this);
     tabWidget->setModified(modifiedStates[i]);
@@ -61,7 +62,9 @@ void TabBarWidget::setTabs(QStringList titles, rust::Vec<bool> modifiedStates) {
       emit currentChanged(i);
     });
     connect(tabWidget, &TabWidget::closeRequested, this,
-            [this, i]() { emit tabCloseRequested(i); });
+            [this, i, numberOfTitles]() {
+              emit tabCloseRequested(i, numberOfTitles);
+            });
     layout->addWidget(tabWidget);
     tabs.append(tabWidget);
   }
@@ -69,6 +72,8 @@ void TabBarWidget::setTabs(QStringList titles, rust::Vec<bool> modifiedStates) {
   layout->addStretch();
   updateTabAppearance();
 }
+
+int TabBarWidget::getNumberOfTabs() { return tabs.size(); }
 
 void TabBarWidget::setCurrentIndex(size_t index) {
   if (index < tabs.size()) {

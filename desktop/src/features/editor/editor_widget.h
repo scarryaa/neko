@@ -44,7 +44,6 @@ signals:
   void lineCountChanged();
   void cursorPositionChanged(int row, int col, int numberOfCursors);
   void newTabRequested();
-  void closeTabRequested();
   void bufferChanged();
 
 private:

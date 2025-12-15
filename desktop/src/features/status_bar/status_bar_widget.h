@@ -22,12 +22,16 @@ public:
                            QWidget *parent = nullptr);
   ~StatusBarWidget();
 
+  void updateCursorPosition(int row, int col, int numberOfCursors);
+  void showCursorPositionInfo();
+
 signals:
   void fileExplorerToggled();
   void cursorPositionClicked();
 
 public slots:
   void onCursorPositionChanged(int row, int col, int numberOfCursors);
+  void onTabClosed(int numberOfTabs);
 
 protected:
   void paintEvent(QPaintEvent *event) override;

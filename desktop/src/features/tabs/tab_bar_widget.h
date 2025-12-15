@@ -24,10 +24,11 @@ public:
   void setTabs(QStringList titles, rust::Vec<bool> modifiedStates);
   void setCurrentIndex(size_t index);
   void setTabModified(int index, bool modified);
+  int getNumberOfTabs();
 
 signals:
   void currentChanged(int index);
-  void tabCloseRequested(int index);
+  void tabCloseRequested(int index, int numberOfTabs);
   void newTabRequested();
 
 private:

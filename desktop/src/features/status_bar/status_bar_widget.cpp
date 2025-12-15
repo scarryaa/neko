@@ -91,8 +91,31 @@ void StatusBarWidget::onCursorPositionClicked() {
 
 void StatusBarWidget::onFileExplorerToggled() { emit fileExplorerToggled(); }
 
+void StatusBarWidget::showCursorPositionInfo() { cursorPosition->show(); }
+
+void StatusBarWidget::updateCursorPosition(int row, int col,
+                                           int numberOfCursors) {
+  QString newPosition = QString("%1:%2").arg(row + 1).arg(col + 1);
+
+  // TODO: Show selection lines, chars
+  int numberOfSelections = editor->get_number_of_selections();
+  if (numberOfCursors > 1 || numberOfSelections > 1) {
+    newPosition = newPosition.append(" (%1 selections)")
+                      .arg(std::max(numberOfCursors, numberOfSelections));
+  }
+  cursorPosition->setText(newPosition);
+}
+
+void StatusBarWidget::onTabClosed(int numberOfTabs) {
+  if (numberOfTabs == 0) {
+    cursorPosition->hide();
+  }
+}
+
 void StatusBarWidget::onCursorPositionChanged(int row, int col,
                                               int numberOfCursors) {
+  cursorPosition->show();
+
   QString newPosition = QString("%1:%2").arg(row + 1).arg(col + 1);
 
   // TODO: Show selection lines, chars

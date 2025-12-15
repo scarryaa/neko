@@ -35,11 +35,11 @@ private slots:
 private:
   void saveAs();
   void updateTabBar();
-  void onTabCloseRequested(int index);
+  void onTabCloseRequested(int index, int numberOfTabs);
   void onTabChanged(int index);
   void onNewTabRequested();
   void switchToActiveTab(bool shouldFocusEditor = true);
-  void onActiveTabCloseRequested();
+  void onActiveTabCloseRequested(int numberOfTabs);
   void setupKeyboardShortcuts();
   void onBufferChanged();
   void switchToTabWithFile(const std::string &path);
@@ -48,6 +48,7 @@ private:
   rust::Box<neko::AppState> appState;
   rust::Box<neko::ThemeManager> themeManager;
   rust::Box<neko::ConfigManager> configManager;
+  neko::Editor *editor;
   QWidget *emptyStateWidget;
   FileExplorerWidget *fileExplorerWidget;
   EditorWidget *editorWidget;

@@ -1,5 +1,9 @@
 #include "main_window.h"
 
+// TODO: StatusBar signals/tab inform and MainWindow editor ref
+// are messy and need to be cleaned up. Also consider "rearchitecting"
+// to use the AppState consistently and extract common MainWindow/StatusBar
+// functionality.
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), appState(neko::new_app_state("")),
       themeManager(neko::new_theme_manager()),
@@ -11,6 +15,8 @@ MainWindow::MainWindow(QWidget *parent)
   neko::Editor *editor = &appState->get_editor_mut();
   neko::FileTree *fileTree = &appState->get_file_tree_mut();
 
+  this->editor = editor;
+
   emptyStateWidget = new QWidget(this);
   titleBarWidget = new TitleBarWidget(*configManager, *themeManager, this);
   fileExplorerWidget =
@@ -19,6 +25,11 @@ MainWindow::MainWindow(QWidget *parent)
   gutterWidget = new GutterWidget(editor, *configManager, *themeManager, this);
   statusBarWidget =
       new StatusBarWidget(editor, *configManager, *themeManager, this);
+
+  auto cursorPosition = (editor->get_last_added_cursor());
+  int numberOfCursors = editor->get_cursor_positions().size();
+  statusBarWidget->updateCursorPosition(cursorPosition.row, cursorPosition.col,
+                                        numberOfCursors);
 
   setupKeyboardShortcuts();
 
@@ -40,8 +51,6 @@ MainWindow::MainWindow(QWidget *parent)
           &GutterWidget::onEditorCursorPositionChanged);
   connect(editorWidget, &EditorWidget::newTabRequested, this,
           &MainWindow::onNewTabRequested);
-  connect(editorWidget, &EditorWidget::closeTabRequested, this,
-          &MainWindow::onActiveTabCloseRequested);
   connect(editorWidget, &EditorWidget::bufferChanged, this,
           &MainWindow::onBufferChanged);
   connect(statusBarWidget, &StatusBarWidget::fileExplorerToggled, this,
@@ -256,8 +265,9 @@ void MainWindow::setupKeyboardShortcuts() {
   QAction *closeTabAction = new QAction(this);
   closeTabAction->setShortcut(QKeySequence::Close);
   closeTabAction->setShortcutContext(Qt::WindowShortcut);
-  connect(closeTabAction, &QAction::triggered, this,
-          &MainWindow::onActiveTabCloseRequested);
+  connect(closeTabAction, &QAction::triggered, this, [this]() {
+    onActiveTabCloseRequested(tabBarWidget->getNumberOfTabs());
+  });
   addAction(closeTabAction);
 
   // Cmd+Tab for next tab
@@ -299,7 +309,7 @@ void MainWindow::onBufferChanged() {
   tabBarWidget->setTabModified(activeIndex, modified);
 }
 
-void MainWindow::onActiveTabCloseRequested() {
+void MainWindow::onActiveTabCloseRequested(int numberOfTabs) {
   int activeIndex = appState->get_active_tab_index();
 
   // Save current scroll offset before closing
@@ -319,13 +329,14 @@ void MainWindow::onActiveTabCloseRequested() {
       }
     }
     tabScrollOffsets = std::move(updatedOffsets);
+    statusBarWidget->onTabClosed(numberOfTabs - 1);
 
     updateTabBar();
     switchToActiveTab();
   }
 }
 
-void MainWindow::onTabCloseRequested(int index) {
+void MainWindow::onTabCloseRequested(int index, int numberOfTabs) {
   saveCurrentScrollState();
 
   if (appState->close_tab(index)) {
@@ -343,6 +354,12 @@ void MainWindow::onTabCloseRequested(int index) {
     }
     tabScrollOffsets = std::move(updatedOffsets);
 
+    statusBarWidget->onTabClosed(numberOfTabs - 1);
+
+    auto cursorPosition = (editor->get_last_added_cursor());
+    int numberOfCursors = editor->get_cursor_positions().size();
+    statusBarWidget->updateCursorPosition(cursorPosition.row,
+                                          cursorPosition.col, numberOfCursors);
     updateTabBar();
     switchToActiveTab();
   }
@@ -351,6 +368,12 @@ void MainWindow::onTabCloseRequested(int index) {
 void MainWindow::onTabChanged(int index) {
   saveCurrentScrollState();
   appState->set_active_tab_index(index);
+
+  auto cursorPosition = (editor->get_last_added_cursor());
+  int numberOfCursors = editor->get_cursor_positions().size();
+  statusBarWidget->updateCursorPosition(cursorPosition.row, cursorPosition.col,
+                                        numberOfCursors);
+
   switchToActiveTab();
   updateTabBar();
 }
@@ -359,6 +382,13 @@ void MainWindow::onNewTabRequested() {
   saveCurrentScrollState();
 
   appState->new_tab();
+  editor = &appState->get_editor_mut();
+
+  auto cursorPosition = (editor->get_last_added_cursor());
+  int numberOfCursors = editor->get_cursor_positions().size();
+  statusBarWidget->updateCursorPosition(cursorPosition.row, cursorPosition.col,
+                                        numberOfCursors);
+
   updateTabBar();
   switchToActiveTab();
 }
@@ -379,8 +409,10 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
     tabBarContainer->show();
     editorWidget->show();
     gutterWidget->show();
+    statusBarWidget->showCursorPositionInfo();
 
     neko::Editor &editor = appState->get_editor_mut();
+    this->editor = &editor;
     editorWidget->setEditor(&editor);
     gutterWidget->setEditor(&editor);
     editorWidget->updateDimensionsAndRepaint();
@@ -395,6 +427,11 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
       editorWidget->horizontalScrollBar()->setValue(0);
       editorWidget->verticalScrollBar()->setValue(0);
     }
+
+    auto cursorPosition = editor.get_last_added_cursor();
+    int numberOfCursors = editor.get_cursor_positions().size();
+    statusBarWidget->updateCursorPosition(cursorPosition.row,
+                                          cursorPosition.col, numberOfCursors);
 
     if (shouldFocusEditor) {
       editorWidget->setFocus();
