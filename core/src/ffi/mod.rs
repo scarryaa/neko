@@ -392,8 +392,8 @@ impl Editor {
         self.cursors
             .iter()
             .map(|c| CursorPosition {
-                row: c.row,
-                col: c.column,
+                row: c.cursor.row,
+                col: c.cursor.column,
             })
             .collect()
     }

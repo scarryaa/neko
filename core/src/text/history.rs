@@ -1,4 +1,4 @@
-use super::{Buffer, Cursor, Selection};
+use super::{Buffer, Selection, cursor::CursorEntry};
 
 #[derive(Clone, Debug)]
 pub enum Edit {
@@ -38,7 +38,7 @@ impl Edit {
 
 #[derive(Clone, Debug)]
 pub struct ViewState {
-    pub cursors: Vec<Cursor>,
+    pub cursors: Vec<CursorEntry>,
     pub selection: Selection,
 }
 

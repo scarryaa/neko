@@ -2,7 +2,10 @@ use std::fmt::Debug;
 
 use crate::{Buffer, Cursor, Selection};
 
-use super::{Change, ChangeSet, Edit, Transaction, UndoHistory, ViewState, change_set::OpFlags};
+use super::{
+    Change, ChangeSet, Edit, Transaction, UndoHistory, ViewState, change_set::OpFlags,
+    cursor::CursorEntry,
+};
 
 enum SelectionMode {
     Clear,
@@ -37,7 +40,9 @@ pub struct Editor {
     line_widths: Vec<f64>,
     pub(crate) max_width: f64,
     max_width_line: usize,
-    pub(crate) cursors: Vec<Cursor>,
+    next_cursor_id: u64,
+    next_group_id: u64,
+    pub(crate) cursors: Vec<CursorEntry>,
     pub(crate) active_cursor_index: usize,
     pub(crate) selection: Selection,
     history: UndoHistory,
@@ -50,7 +55,9 @@ impl Editor {
             line_widths: vec![-1.0],
             max_width: 0.0,
             max_width_line: 0,
-            cursors: vec![Cursor::new()],
+            next_cursor_id: 1,
+            next_group_id: 0,
+            cursors: vec![CursorEntry::individual(0, &Cursor::new())],
             active_cursor_index: 0,
             selection: Selection::new(),
             history: UndoHistory::default(),
@@ -58,11 +65,70 @@ impl Editor {
     }
 
     pub fn cursor_exists_at(&self, row: usize, col: usize) -> bool {
-        self.cursors.iter().any(|c| c.row == row && c.column == col)
+        self.cursors
+            .iter()
+            .any(|c| c.cursor.row == row && c.cursor.column == col)
     }
 
-    fn cursor_exists_at_row(&self, row: usize) -> bool {
-        self.cursors.iter().any(|c| c.row == row)
+    fn new_cursor_id(&mut self) -> u64 {
+        let id = self.next_cursor_id;
+        self.next_cursor_id += 1;
+        id
+    }
+
+    fn group_ids(&self) -> Vec<u64> {
+        let mut gs: Vec<u64> = self.cursors.iter().filter_map(|e| e.column_group).collect();
+        gs.sort_unstable();
+        gs.dedup();
+        gs
+    }
+
+    fn ensure_all_in_groups(&mut self) {
+        let mut next = self.next_group_id;
+
+        for i in 0..self.cursors.len() {
+            if self.cursors[i].column_group.is_none() {
+                self.cursors[i].column_group = Some(next);
+                next += 1;
+            }
+        }
+
+        self.next_group_id = next;
+    }
+
+    fn group_has_cursor_at_row(&self, group: u64, row: usize) -> bool {
+        self.cursors
+            .iter()
+            .any(|e| e.column_group == Some(group) && e.cursor.row == row)
+    }
+
+    fn group_main(&self, group: u64) -> Option<&CursorEntry> {
+        self.cursors
+            .iter()
+            .filter(|e| e.column_group == Some(group))
+            .min_by_key(|e| e.id)
+    }
+
+    fn group_contiguous_between(&self, group: u64, a: usize, b: usize) -> bool {
+        let (start, end) = if a <= b { (a, b) } else { (b, a) };
+        for r in start..=end {
+            if !self.group_has_cursor_at_row(group, r) {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn remove_one_in_group_at_row(&mut self, group: u64, row: usize) -> bool {
+        if let Some(idx) = self
+            .cursors
+            .iter()
+            .position(|e| e.column_group == Some(group) && e.cursor.row == row)
+        {
+            self.cursors.remove(idx);
+            return true;
+        }
+        false
     }
 
     pub fn remove_cursor(&mut self, row: usize, col: usize) {
@@ -73,7 +139,7 @@ impl Editor {
         let index = self
             .cursors
             .iter()
-            .position(|c| c.row == row && c.column == col);
+            .position(|c| c.cursor.row == row && c.cursor.column == col);
 
         if let Some(found_index) = index {
             self.cursors.remove(found_index);
@@ -100,18 +166,22 @@ impl Editor {
     }
 
     fn sort_and_dedup_cursors(&mut self) {
-        let active_key = {
-            let c = &self.cursors[self.active_cursor_index];
-            (c.row, c.column)
-        };
+        let active_id = self.cursors.get(self.active_cursor_index).map(|c| c.id);
 
-        self.cursors.sort_by_key(|c| (c.row, c.column));
-        self.cursors.dedup_by_key(|c| (c.row, c.column));
+        self.cursors.sort_by(|a, b| {
+            (a.cursor.row, a.cursor.column)
+                .cmp(&(b.cursor.row, b.cursor.column))
+                // independent first
+                .then_with(|| a.column_group.is_some().cmp(&b.column_group.is_some()))
+                // older first
+                .then_with(|| a.id.cmp(&b.id))
+        });
 
-        self.active_cursor_index = self
-            .cursors
-            .iter()
-            .position(|c| (c.row, c.column) == active_key)
+        self.cursors
+            .dedup_by(|a, b| a.cursor.row == b.cursor.row && a.cursor.column == b.cursor.column);
+
+        self.active_cursor_index = active_id
+            .and_then(|id| self.cursors.iter().position(|c| c.id == id))
             .unwrap_or(0);
     }
 
@@ -148,7 +218,7 @@ impl Editor {
         cs
     }
 
-    fn begin_changes(&self) -> (usize, Vec<Cursor>, Selection) {
+    fn begin_changes(&self) -> (usize, Vec<CursorEntry>, Selection) {
         (
             self.buffer.line_count(),
             self.cursors.clone(),
@@ -159,7 +229,7 @@ impl Editor {
     fn end_changes(
         &self,
         before_line_count: usize,
-        before_cursors: Vec<Cursor>,
+        before_cursors: Vec<CursorEntry>,
         before_selection: &Selection,
     ) -> ChangeSet {
         let after_line_count = self.buffer.line_count();
@@ -173,7 +243,7 @@ impl Editor {
                 .cursors
                 .iter()
                 .zip(before_cursors)
-                .any(|(c1, c2)| *c1 != c2)
+                .any(|(c1, c2)| c1.cursor != c2.cursor)
         {
             c |= Change::CURSOR;
         }
@@ -195,7 +265,10 @@ impl Editor {
 
         self.buffer.clear();
         self.buffer.insert(0, content);
-        self.cursors = vec![Cursor::new()];
+        self.cursors = vec![CursorEntry::individual(
+            self.new_cursor_id(),
+            &Cursor::new(),
+        )];
         self.selection = Selection::new();
 
         self.clear_and_rebuild_line_widths();
@@ -254,7 +327,10 @@ impl Editor {
         let b = self.selection.end.get_idx(&self.buffer);
         let (start, end) = if a <= b { (a, b) } else { (b, a) };
 
-        self.cursors = vec![self.selection.start.clone()];
+        self.cursors = vec![CursorEntry::individual(
+            self.new_cursor_id(),
+            &self.selection.start.clone(),
+        )];
 
         let deleted = self.buffer.delete_range(start, end);
         self.clear_and_rebuild_line_widths();
@@ -265,7 +341,7 @@ impl Editor {
         });
 
         self.selection.clear();
-        self.invalidate_line_width(self.cursors[0].row);
+        self.invalidate_line_width(self.cursors[0].cursor.row);
     }
 
     pub fn insert_text(&mut self, text: &str) -> ChangeSet {
@@ -276,7 +352,7 @@ impl Editor {
             let mut idxs: Vec<usize> = editor
                 .cursors
                 .iter()
-                .map(|c| c.get_idx(&editor.buffer))
+                .map(|c| c.cursor.get_idx(&editor.buffer))
                 .collect();
 
             editor.for_each_cursor_rev(|editor, i| {
@@ -291,7 +367,7 @@ impl Editor {
 
             for (c, &idx) in editor.cursors.iter_mut().zip(idxs.iter()) {
                 let (row, col) = editor.buffer.byte_to_row_col(idx);
-                c.move_to(&editor.buffer, row, col);
+                c.cursor.move_to(&editor.buffer, row, col);
             }
         });
 
@@ -387,7 +463,7 @@ impl Editor {
             let mut idxs: Vec<usize> = editor
                 .cursors
                 .iter()
-                .map(|c| c.get_idx(&editor.buffer))
+                .map(|c| c.cursor.get_idx(&editor.buffer))
                 .collect();
 
             editor.for_each_cursor_rev(|editor, i| {
@@ -397,7 +473,7 @@ impl Editor {
 
             for (c, &idx) in editor.cursors.iter_mut().zip(idxs.iter()) {
                 let (row, col) = editor.buffer.byte_to_row_col(idx);
-                c.move_to(&editor.buffer, row, col);
+                c.cursor.move_to(&editor.buffer, row, col);
             }
         });
 
@@ -465,7 +541,7 @@ impl Editor {
             let mut idxs: Vec<usize> = editor
                 .cursors
                 .iter()
-                .map(|c| c.get_idx(&editor.buffer))
+                .map(|c| c.cursor.get_idx(&editor.buffer))
                 .collect();
 
             editor.for_each_cursor_rev(|editor, i| {
@@ -475,7 +551,7 @@ impl Editor {
 
             for (c, &idx) in editor.cursors.iter_mut().zip(idxs.iter()) {
                 let (row, col) = editor.buffer.byte_to_row_col(idx);
-                c.move_to(&editor.buffer, row, col);
+                c.cursor.move_to(&editor.buffer, row, col);
             }
         });
 
@@ -538,7 +614,7 @@ impl Editor {
 
         if let SelectionMode::Extend = mode {
             if !self.selection.is_active() {
-                self.selection.begin(&cursor);
+                self.selection.begin(&cursor.cursor);
             }
         }
 
@@ -552,12 +628,14 @@ impl Editor {
             CursorMode::Multiple => i,
         };
 
-        f(&mut self.cursors[new_i], &self.buffer);
+        f(&mut self.cursors[new_i].cursor, &self.buffer);
 
         self.sort_and_dedup_cursors();
 
         match mode {
-            SelectionMode::Extend => self.selection.update(&self.cursors[new_i], &self.buffer),
+            SelectionMode::Extend => self
+                .selection
+                .update(&self.cursors[new_i].cursor, &self.buffer),
             SelectionMode::Clear => self.selection.clear(),
             SelectionMode::Keep => {}
         }
@@ -653,19 +731,6 @@ impl Editor {
         })
     }
 
-    fn cursors_are_contiguous(&self, first_cursor: &Cursor, last_cursor: &Cursor) -> bool {
-        let starting_row = first_cursor.row;
-        let ending_row = last_cursor.row;
-
-        for i in starting_row..ending_row {
-            if !self.cursor_exists_at_row(i) {
-                return false;
-            }
-        }
-
-        true
-    }
-
     pub fn add_cursor(&mut self, direction: AddCursorDirection) {
         match direction {
             AddCursorDirection::Above => self.add_cursor_above(),
@@ -675,54 +740,109 @@ impl Editor {
     }
 
     fn add_cursor_above(&mut self) {
-        let main_cursor = self.cursors[self.active_cursor_index].clone();
-        let last_cursor = self.cursors.last().unwrap_or(&main_cursor);
+        self.ensure_all_in_groups();
+        let groups = self.group_ids();
 
-        // If cursors have been added below, reverse them first
-        if self.cursors_are_contiguous(&main_cursor, last_cursor)
-            && last_cursor.row > main_cursor.row
-        {
-            self.remove_cursor(last_cursor.row, last_cursor.column);
-        } else {
-            self.for_each_cursor_rev(|editor, i| {
-                let (row, col) = (editor.cursors[i].row, editor.cursors[i].column);
+        for g in groups {
+            let Some(main) = self.group_main(g) else {
+                continue;
+            };
+            let main_row = main.cursor.row;
 
-                let mut cursor = Cursor::new();
-                cursor.move_to(&editor.buffer, row.saturating_sub(1), col);
+            // find bottommost cursor in this group
+            let max_row = self
+                .cursors
+                .iter()
+                .filter(|e| e.column_group == Some(g))
+                .map(|e| e.cursor.row)
+                .max()
+                .unwrap_or(main_row);
 
-                editor.cursors.push(cursor);
-                editor.sort_and_dedup_cursors();
-            });
+            // if group is contiguous from main..max and max is below main, shrink from bottom
+            if max_row > main_row
+                && self.group_contiguous_between(g, main_row, max_row)
+                && self.remove_one_in_group_at_row(g, max_row)
+            {
+                continue;
+            }
+
+            // otherwise add one above for every cursor in the group
+            let positions: Vec<(usize, usize)> = self
+                .cursors
+                .iter()
+                .filter(|e| e.column_group == Some(g))
+                .map(|e| (e.cursor.row, e.cursor.column))
+                .collect();
+
+            for (row, col) in positions {
+                let mut c = Cursor::new();
+                c.move_to(&self.buffer, row.saturating_sub(1), col);
+
+                let cursor_entry = CursorEntry::group(self.new_cursor_id(), &c, g);
+                self.cursors.push(cursor_entry);
+            }
         }
+
+        self.sort_and_dedup_cursors();
     }
 
     fn add_cursor_below(&mut self) {
-        let main_cursor = self.cursors[self.active_cursor_index].clone();
-        let first_cursor = self.cursors.first().unwrap_or(&main_cursor);
+        self.ensure_all_in_groups();
+        let groups = self.group_ids();
+        let last_row = self.buffer.line_count().saturating_sub(1);
 
-        // If cursors have been added above, reverse them first
-        if self.cursors_are_contiguous(&main_cursor, first_cursor)
-            && first_cursor.row < main_cursor.row
-        {
-            self.remove_cursor(first_cursor.row, first_cursor.column);
-        } else {
-            self.for_each_cursor_rev(|editor, i| {
-                let (row, col) = (editor.cursors[i].row, editor.cursors[i].column);
+        for g in groups {
+            let Some(main) = self.group_main(g) else {
+                continue;
+            };
+            let main_row = main.cursor.row;
 
-                let mut cursor = Cursor::new();
-                cursor.move_to(&editor.buffer, row.saturating_add(1), col);
+            // find topmost cursor in this group
+            let min_row = self
+                .cursors
+                .iter()
+                .filter(|e| e.column_group == Some(g))
+                .map(|e| e.cursor.row)
+                .min()
+                .unwrap_or(main_row);
 
-                editor.cursors.push(cursor);
-                editor.sort_and_dedup_cursors();
-            });
+            // if group is contiguous from min..main and min is above main, shrink from top
+            if min_row < main_row
+                && self.group_contiguous_between(g, min_row, main_row)
+                && self.remove_one_in_group_at_row(g, min_row)
+            {
+                continue;
+            }
+
+            // otherwise grow below
+            let positions: Vec<(usize, usize)> = self
+                .cursors
+                .iter()
+                .filter(|e| e.column_group == Some(g))
+                .map(|e| (e.cursor.row, e.cursor.column))
+                .collect();
+
+            for (row, col) in positions {
+                if row >= last_row {
+                    continue;
+                }
+                let mut c = Cursor::new();
+                c.move_to(&self.buffer, row.saturating_add(1), col);
+
+                let cursor_entry = CursorEntry::group(self.new_cursor_id(), &c, g);
+                self.cursors.push(cursor_entry);
+            }
         }
+
+        self.sort_and_dedup_cursors();
     }
 
     fn add_cursor_at(&mut self, row: usize, col: usize) {
         let mut cursor = Cursor::new();
         cursor.move_to(&self.buffer, row, col);
 
-        self.cursors.push(cursor);
+        let cursor_entry = CursorEntry::individual(self.new_cursor_id(), &cursor);
+        self.cursors.push(cursor_entry);
         self.sort_and_dedup_cursors();
     }
 
@@ -741,10 +861,15 @@ impl Editor {
     pub fn select_all(&mut self) -> ChangeSet {
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
             editor.selection.begin(&Cursor::new());
-            editor.cursors = vec![Cursor::new()];
+            editor.cursors = vec![CursorEntry::individual(
+                editor.new_cursor_id(),
+                &Cursor::new(),
+            )];
 
-            editor.cursors[0].move_to_end(&editor.buffer);
-            editor.selection.update(&editor.cursors[0], &editor.buffer);
+            editor.cursors[0].cursor.move_to_end(&editor.buffer);
+            editor
+                .selection
+                .update(&editor.cursors[0].cursor, &editor.buffer);
         })
     }
 
