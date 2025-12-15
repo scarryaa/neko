@@ -123,41 +123,34 @@ void GutterWidget::drawText(QPainter *painter, const ViewportContext &ctx,
       fontMetrics.horizontalAdvance(QString::number(maxLineNumber));
   double numWidth = fontMetrics.horizontalAdvance(QString::number(1));
 
-  auto cursors = editor->get_cursor_positions();
+  neko::Selection selection = editor->get_selection();
+  int selectionStartRow = selection.start.row;
+  int selectionEndRow = selection.end.row;
+  int selectionStartCol = selection.start.col;
+  int selectionEndCol = selection.end.col;
+  bool selectionActive = selection.active;
 
-  // TODO: Optimize this
-  for (auto cursor : cursors) {
-    int cursorRow = cursor.row;
-    int cursorCol = cursor.col;
+  for (int line = ctx.firstVisibleLine; line <= ctx.lastVisibleLine; ++line) {
+    bool cursorIsOnLine = editor->cursor_exists_at_row(line);
+    auto y =
+        (line * fontMetrics.height()) +
+        (fontMetrics.height() + fontMetrics.ascent() - fontMetrics.descent()) /
+            2.0 -
+        verticalOffset;
 
-    neko::Selection selection = editor->get_selection();
-    int selectionStartRow = selection.start.row;
-    int selectionEndRow = selection.end.row;
-    int selectionStartCol = selection.start.col;
-    int selectionEndCol = selection.end.col;
-    bool selectionActive = selection.active;
+    QString lineNum = QString::number(line + 1);
+    int lineNumWidth = fontMetrics.horizontalAdvance(lineNum);
+    double x = (width() - maxLineWidth - numWidth) / 2.0 +
+               (maxLineWidth - lineNumWidth) - horizontalOffset;
 
-    for (int line = ctx.firstVisibleLine; line <= ctx.lastVisibleLine; ++line) {
-      auto y = (line * fontMetrics.height()) +
-               (fontMetrics.height() + fontMetrics.ascent() -
-                fontMetrics.descent()) /
-                   2.0 -
-               verticalOffset;
-
-      QString lineNum = QString::number(line + 1);
-      int lineNumWidth = fontMetrics.horizontalAdvance(lineNum);
-      double x = (width() - maxLineWidth - numWidth) / 2.0 +
-                 (maxLineWidth - lineNumWidth) - horizontalOffset;
-
-      if (line == cursorRow || (selectionActive && line >= selectionStartRow &&
-                                line <= selectionEndRow)) {
-        painter->setPen(CURRENT_LINE_COLOR);
-      } else {
-        painter->setPen(TEXT_COLOR);
-      }
-
-      painter->drawText(QPointF(x, y), lineNum);
+    if (cursorIsOnLine || (selectionActive && line >= selectionStartRow &&
+                           line <= selectionEndRow)) {
+      painter->setPen(CURRENT_LINE_COLOR);
+    } else {
+      painter->setPen(TEXT_COLOR);
     }
+
+    painter->drawText(QPointF(x, y), lineNum);
   }
 }
 
@@ -165,8 +158,7 @@ void GutterWidget::drawLineHighlight(QPainter *painter,
                                      const ViewportContext &ctx) {
   auto cursors = editor->get_cursor_positions();
 
-  // TODO: Optimize this/avoid stacking highlights for multiple cursors
-  // on the same row
+  std::vector<int> highlightedLines = std::vector<int>();
   for (auto cursor : cursors) {
     int cursorRow = cursor.row;
     int cursorCol = cursor.col;
@@ -174,6 +166,13 @@ void GutterWidget::drawLineHighlight(QPainter *painter,
     if (cursorRow < ctx.firstVisibleLine || cursorRow > ctx.lastVisibleLine) {
       return;
     }
+
+    if (std::find(highlightedLines.begin(), highlightedLines.end(),
+                  cursorRow) != highlightedLines.end()) {
+      continue;
+    }
+
+    highlightedLines.push_back(cursorRow);
 
     // Draw line highlight
     painter->setPen(Qt::NoPen);

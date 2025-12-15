@@ -1,5 +1,4 @@
 #include "editor_widget.h"
-#include <neko-core/src/ffi/mod.rs.h>
 
 EditorWidget::EditorWidget(neko::Editor *editor,
                            neko::ConfigManager &configManager,
@@ -590,6 +589,7 @@ void EditorWidget::drawLastLineSelection(QPainter *painter,
 void EditorWidget::drawCursors(QPainter *painter, const ViewportContext &ctx) {
   auto cursors = editor->get_cursor_positions();
 
+  auto highlightedLines = std::vector<int>();
   for (auto cursor : cursors) {
     int cursorRow = cursor.row;
     int cursorCol = cursor.col;
@@ -599,10 +599,15 @@ void EditorWidget::drawCursors(QPainter *painter, const ViewportContext &ctx) {
     }
 
     // Draw line highlight
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(QBrush(LINE_HIGHLIGHT_COLOR));
-    painter->drawRect(getLineRect(
-        cursorRow, 0, viewport()->width() + ctx.horizontalOffset, ctx));
+    if (std::find(highlightedLines.begin(), highlightedLines.end(),
+                  cursorRow) == highlightedLines.end()) {
+      painter->setPen(Qt::NoPen);
+      painter->setBrush(QBrush(LINE_HIGHLIGHT_COLOR));
+      painter->drawRect(getLineRect(
+          cursorRow, 0, viewport()->width() + ctx.horizontalOffset, ctx));
+
+      highlightedLines.push_back(cursorRow);
+    }
 
     if (!hasFocus()) {
       return;

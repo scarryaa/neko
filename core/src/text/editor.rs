@@ -70,6 +70,10 @@ impl Editor {
             .any(|c| c.cursor.row == row && c.cursor.column == col)
     }
 
+    pub fn cursor_exists_at_row(&self, row: usize) -> bool {
+        self.cursors.iter().any(|c| c.cursor.row == row)
+    }
+
     fn new_cursor_id(&mut self) -> u64 {
         let id = self.next_cursor_id;
         self.next_cursor_id += 1;
