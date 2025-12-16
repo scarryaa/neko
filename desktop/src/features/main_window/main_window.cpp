@@ -441,7 +441,7 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
     neko::Editor &editor = appState->get_editor_mut();
     setActiveEditor(&editor);
     editorWidget->redraw();
-    gutterWidget->updateDimensionsAndRepaint();
+    gutterWidget->updateDimensions();
 
     int currentIndex = appState->get_active_tab_index();
     auto it = tabScrollOffsets.find(currentIndex);
@@ -507,7 +507,7 @@ void MainWindow::onFileSelected(const std::string &filePath,
     switchToActiveTab(false);
 
     editorWidget->redraw();
-    gutterWidget->updateDimensionsAndRepaint();
+    gutterWidget->updateDimensions();
 
     if (shouldFocusEditor) {
       editorWidget->setFocus();

@@ -19,29 +19,31 @@ GutterWidget::GutterWidget(neko::Editor *editor,
   setStyleSheet(QString("GutterWidget { background: %1; }").arg(bgHex));
 
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
-          [this]() { viewport()->update(); });
+          &GutterWidget::redraw);
   connect(horizontalScrollBar(), &QScrollBar::valueChanged, this,
-          [this]() { viewport()->update(); });
+          &GutterWidget::redraw);
 }
 
 GutterWidget::~GutterWidget() {}
 
+void GutterWidget::redraw() { viewport()->update(); }
+
+void GutterWidget::onBufferChanged() { redraw(); }
+
+void GutterWidget::onCursorChanged() { redraw(); }
+
+void GutterWidget::onSelectionChanged() { redraw(); }
+
+void GutterWidget::onViewportChanged() { updateDimensions(); }
+
 void GutterWidget::setEditor(neko::Editor *newEditor) { editor = newEditor; }
 
-void GutterWidget::onBufferChanged() { viewport()->update(); }
-
-void GutterWidget::onCursorChanged() { viewport()->update(); }
-
-void GutterWidget::onSelectionChanged() { viewport()->update(); }
-
-void GutterWidget::onViewportChanged() { updateDimensionsAndRepaint(); }
-
 QSize GutterWidget::sizeHint() const {
-  return QSize(measureContent() + VIEWPORT_PADDING, height());
+  return QSize(measureWidth() + VIEWPORT_PADDING, height());
 }
 
-double GutterWidget::measureContent() const {
-  if (editor == nullptr) {
+double GutterWidget::measureWidth() const {
+  if (!editor) {
     return 0;
   }
 
@@ -51,48 +53,42 @@ double GutterWidget::measureContent() const {
 }
 
 void GutterWidget::wheelEvent(QWheelEvent *event) {
-  auto horizontalScrollOffset = horizontalScrollBar()->value();
   auto verticalScrollOffset = verticalScrollBar()->value();
   double verticalDelta =
       (event->isInverted() ? -1 : 1) * event->angleDelta().y() / 4.0;
-
   auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;
 
   verticalScrollBar()->setValue(newVerticalScrollOffset);
-  viewport()->update();
+  redraw();
 }
 
-void GutterWidget::handleViewportUpdate() {
-  if (editor == nullptr) {
+void GutterWidget::updateDimensions() {
+  if (!editor) {
     return;
   }
 
   int lineCount = editor->get_line_count();
-
   auto viewportHeight = (lineCount * fontMetrics.height()) -
                         viewport()->height() + VIEWPORT_PADDING;
-  auto contentWidth = measureContent();
+  auto contentWidth = measureWidth();
   auto viewportWidth = contentWidth - viewport()->width() + VIEWPORT_PADDING;
 
   horizontalScrollBar()->setRange(0, viewportWidth);
   verticalScrollBar()->setRange(0, viewportHeight);
-}
 
-void GutterWidget::updateDimensionsAndRepaint() {
-  handleViewportUpdate();
   updateGeometry();
-  viewport()->update();
+  redraw();
 }
 
-void GutterWidget::onEditorLineCountChanged() { updateDimensionsAndRepaint(); }
+void GutterWidget::onEditorLineCountChanged() { updateDimensions(); }
 
-void GutterWidget::onEditorCursorPositionChanged() { viewport()->update(); }
+void GutterWidget::onEditorCursorPositionChanged() { redraw(); }
 
 void GutterWidget::onEditorFontSizeChanged(qreal newSize) {
   font.setPointSizeF(newSize);
   fontMetrics = QFontMetricsF(font);
-  updateDimensionsAndRepaint();
-  updateGeometry();
+
+  updateDimensions();
 }
 
 void GutterWidget::paintEvent(QPaintEvent *event) {

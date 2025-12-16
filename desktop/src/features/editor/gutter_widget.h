@@ -24,7 +24,7 @@ public:
                         QWidget *parent = nullptr);
   ~GutterWidget();
 
-  void updateDimensionsAndRepaint();
+  void updateDimensions();
   void setEditor(neko::Editor *editor);
 
 protected:
@@ -43,8 +43,8 @@ public slots:
   void onViewportChanged();
 
 private:
-  double measureContent() const;
-  void handleViewportUpdate();
+  double measureWidth() const;
+  void redraw();
   void drawText(QPainter *painter, const ViewportContext &ctx, int lineCount);
   void drawLineHighlight(QPainter *painter, const ViewportContext &ctx);
 
