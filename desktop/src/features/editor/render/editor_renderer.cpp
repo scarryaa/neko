@@ -1,5 +1,7 @@
 #include "editor_renderer.h"
 
+#include <algorithm>
+
 void EditorRenderer::paint(QPainter &painter, const RenderState &state,
                            const ViewportContext &ctx) {
   drawText(&painter, state, ctx);
@@ -12,9 +14,14 @@ void EditorRenderer::drawText(QPainter *painter, const RenderState &state,
   painter->setPen(state.theme.textColor);
   painter->setFont(state.font);
 
-  for (int line = ctx.firstVisibleLine; line <= ctx.lastVisibleLine; line++) {
-    auto rawLine = state.rawLines.at(line);
-    QString lineText = QString::fromUtf8(rawLine);
+  const int maxLine = std::min(ctx.lastVisibleLine,
+                               static_cast<int>(state.rawLines.size()) - 1);
+  if (maxLine < ctx.firstVisibleLine) {
+    return;
+  }
+
+  for (int line = ctx.firstVisibleLine; line <= maxLine; line++) {
+    QString lineText = QString::fromUtf8(state.rawLines.at(line));
 
     auto actualY =
         (line * ctx.lineHeight) +
@@ -57,8 +64,11 @@ void EditorRenderer::drawSingleLineSelection(QPainter *painter,
                                              const ViewportContext &ctx,
                                              size_t startRow, size_t startCol,
                                              size_t endCol) {
-  auto rawLine = state.rawLines.at(startRow);
-  QString text = QString::fromUtf8(rawLine);
+  if (startRow >= state.rawLines.size()) {
+    return;
+  }
+
+  QString text = QString::fromUtf8(state.rawLines.at(startRow));
 
   QString selection_text = text.mid(startCol, endCol - startCol);
   QString selection_before_text = text.mid(0, startCol);
@@ -80,8 +90,11 @@ void EditorRenderer::drawFirstLineSelection(QPainter *painter,
     return;
   }
 
-  auto rawLine = state.rawLines.at(startRow);
-  QString text = QString::fromUtf8(rawLine);
+  if (startRow >= state.rawLines.size()) {
+    return;
+  }
+
+  QString text = QString::fromUtf8(state.rawLines.at(startRow));
 
   if (text.isEmpty())
     text = " ";
@@ -103,12 +116,14 @@ void EditorRenderer::drawMiddleLinesSelection(QPainter *painter,
                                               const ViewportContext &ctx,
                                               size_t startRow, size_t endRow) {
   for (size_t i = startRow + 1; i < endRow; i++) {
+    if (i >= state.rawLines.size()) {
+      continue;
+    }
     if (i > ctx.lastVisibleLine || i < ctx.firstVisibleLine) {
       continue;
     }
 
-    auto rawLine = state.rawLines.at(i);
-    QString text = QString::fromUtf8(rawLine);
+    QString text = QString::fromUtf8(state.rawLines.at(i));
 
     if (text.isEmpty())
       text = " ";
@@ -128,8 +143,11 @@ void EditorRenderer::drawLastLineSelection(QPainter *painter,
     return;
   }
 
-  auto rawLine = state.rawLines.at(endRow);
-  QString text = QString::fromUtf8(rawLine);
+  if (endRow >= state.rawLines.size()) {
+    return;
+  }
+
+  QString text = QString::fromUtf8(state.rawLines.at(endRow));
   QString selectionText = text.mid(0, endCol);
 
   double width = state.measureWidth(selectionText);
@@ -147,8 +165,9 @@ void EditorRenderer::drawCursors(QPainter *painter, const RenderState &state,
     int cursorRow = cursor.row;
     int cursorCol = cursor.col;
 
-    if (cursorRow < ctx.firstVisibleLine || cursorRow > ctx.lastVisibleLine) {
-      return;
+    if (cursorRow >= static_cast<int>(state.rawLines.size()) ||
+        cursorRow < ctx.firstVisibleLine || cursorRow > ctx.lastVisibleLine) {
+      continue;
     }
 
     // Draw line highlight
@@ -163,16 +182,15 @@ void EditorRenderer::drawCursors(QPainter *painter, const RenderState &state,
     }
 
     if (!state.hasFocus) {
-      return;
+      continue;
     }
 
-    auto rawLine = state.rawLines.at(cursorRow);
-    QString text = QString::fromUtf8(rawLine);
+    QString text = QString::fromUtf8(state.rawLines.at(cursorRow));
     QString textBeforeCursor = text.left(cursorCol);
     qreal cursorX = state.measureWidth(textBeforeCursor);
 
     if (cursorX < 0 || cursorX > ctx.width + ctx.horizontalOffset) {
-      return;
+      continue;
     }
 
     painter->setPen(state.theme.accentColor);
