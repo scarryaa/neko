@@ -35,6 +35,10 @@ private slots:
   void onFileSaved(bool isSaveAs);
 
 private:
+  void setupWidgets(neko::Editor *editor, neko::FileTree *fileTree);
+  void setupLayout();
+  void connectSignals();
+  void applyInitialState(neko::Editor *editor);
   void setActiveEditor(neko::Editor *newEditor);
   void refreshStatusBarCursor(neko::Editor *editor);
   void saveAs();
@@ -50,12 +54,14 @@ private:
   void onBufferChanged();
   void switchToTabWithFile(const std::string &path);
   void saveCurrentScrollState();
+  template <typename Slot>
+  void addShortcut(QAction *action, const QKeySequence &sequence,
+                   Qt::ShortcutContext context, Slot &&slot);
 
   rust::Box<neko::AppState> appState;
   rust::Box<neko::ThemeManager> themeManager;
   rust::Box<neko::ConfigManager> configManager;
   EditorController *editorController;
-  neko::Editor *editor;
   QWidget *emptyStateWidget;
   FileExplorerWidget *fileExplorerWidget;
   EditorWidget *editorWidget;

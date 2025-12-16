@@ -1,4 +1,5 @@
 #include "main_window.h"
+#include <unistd.h>
 
 // TODO: StatusBar signals/tab inform and MainWindow editor ref
 // are messy and need to be cleaned up. Also consider "rearchitecting"
@@ -17,6 +18,16 @@ MainWindow::MainWindow(QWidget *parent)
 
   editorController = new EditorController(editor);
 
+  setupWidgets(editor, fileTree);
+  connectSignals();
+  setupLayout();
+  setupKeyboardShortcuts();
+  applyInitialState(editor);
+}
+
+MainWindow::~MainWindow() {}
+
+void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
   emptyStateWidget = new QWidget(this);
   titleBarWidget = new TitleBarWidget(*configManager, *themeManager, this);
   fileExplorerWidget =
@@ -27,11 +38,14 @@ MainWindow::MainWindow(QWidget *parent)
   statusBarWidget =
       new StatusBarWidget(editor, *configManager, *themeManager, this);
 
+  tabBarContainer = new QWidget(this);
+  tabBarWidget =
+      new TabBarWidget(*configManager, *themeManager, tabBarContainer);
+
   setActiveEditor(editor);
-  refreshStatusBarCursor(editor);
+}
 
-  setupKeyboardShortcuts();
-
+void MainWindow::connectSignals() {
   connect(fileExplorerWidget, &FileExplorerWidget::fileSelected, this,
           &MainWindow::onFileSelected);
   connect(fileExplorerWidget, &FileExplorerWidget::directorySelected,
@@ -79,6 +93,16 @@ MainWindow::MainWindow(QWidget *parent)
   connect(editorController, &EditorController::viewportChanged, gutterWidget,
           &GutterWidget::onViewportChanged);
 
+  // TabBarWidget -> MainWindow connections
+  connect(tabBarWidget, &TabBarWidget::tabCloseRequested, this,
+          &MainWindow::onTabCloseRequested);
+  connect(tabBarWidget, &TabBarWidget::currentChanged, this,
+          &MainWindow::onTabChanged);
+  connect(tabBarWidget, &TabBarWidget::newTabRequested, this,
+          &MainWindow::onNewTabRequested);
+}
+
+void MainWindow::setupLayout() {
   QWidget *mainContainer = new QWidget(this);
   QVBoxLayout *mainLayout = new QVBoxLayout(mainContainer);
   mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -91,13 +115,10 @@ MainWindow::MainWindow(QWidget *parent)
   editorSideLayout->setContentsMargins(0, 0, 0, 0);
   editorSideLayout->setSpacing(0);
 
-  tabBarContainer = new QWidget(this);
   QHBoxLayout *tabBarLayout = new QHBoxLayout(tabBarContainer);
   tabBarLayout->setContentsMargins(0, 0, 0, 0);
   tabBarLayout->setSpacing(0);
 
-  tabBarWidget =
-      new TabBarWidget(*configManager, *themeManager, tabBarContainer);
   QPushButton *newTabButton = new QPushButton("+", tabBarContainer);
 
   QFont uiFont = UiUtils::loadFont(*configManager, neko::FontType::Interface);
@@ -135,12 +156,6 @@ MainWindow::MainWindow(QWidget *parent)
   tabBarLayout->addWidget(tabBarWidget);
   tabBarLayout->addWidget(newTabButton);
 
-  connect(tabBarWidget, &TabBarWidget::tabCloseRequested, this,
-          &MainWindow::onTabCloseRequested);
-  connect(tabBarWidget, &TabBarWidget::currentChanged, this,
-          &MainWindow::onTabChanged);
-  connect(tabBarWidget, &TabBarWidget::newTabRequested, this,
-          &MainWindow::onNewTabRequested);
   connect(newTabButton, &QPushButton::clicked, this,
           &MainWindow::onNewTabRequested);
 
@@ -216,22 +231,22 @@ MainWindow::MainWindow(QWidget *parent)
   mainLayout->addWidget(splitter);
   mainLayout->addWidget(statusBarWidget);
   setCentralWidget(mainContainer);
+}
 
+void MainWindow::applyInitialState(neko::Editor *editor) {
   updateTabBar();
-
-  fileExplorerWidget->loadSavedDir();
+  refreshStatusBarCursor(editor);
 
   if (!configManager->get_file_explorer_shown()) {
     fileExplorerWidget->hide();
   }
 
+  fileExplorerWidget->loadSavedDir();
+  editorController->refresh();
   editorWidget->setFocus();
 }
 
-MainWindow::~MainWindow() {}
-
 void MainWindow::setActiveEditor(neko::Editor *newEditor) {
-  editor = newEditor;
   editorWidget->setEditor(newEditor);
   gutterWidget->setEditor(newEditor);
   statusBarWidget->setEditor(newEditor);
@@ -239,7 +254,7 @@ void MainWindow::setActiveEditor(neko::Editor *newEditor) {
 }
 
 void MainWindow::refreshStatusBarCursor(neko::Editor *editor) {
-  if (editor == nullptr) {
+  if (!editor) {
     return;
   }
 
@@ -297,66 +312,61 @@ void MainWindow::handleTabClosed(int closedIndex, int numberOfTabsBeforeClose) {
 void MainWindow::setupKeyboardShortcuts() {
   // Cmd+S for save
   QAction *saveAction = new QAction(this);
-  saveAction->setShortcut(QKeySequence::Save);
-  saveAction->setShortcutContext(Qt::WindowShortcut);
-  connect(saveAction, &QAction::triggered, this, &MainWindow::onFileSaved);
-  addAction(saveAction);
+  addShortcut(saveAction, QKeySequence::Save, Qt::WindowShortcut,
+              &MainWindow::onFileSaved);
 
   // Cmd+Shift+S for save as
   QAction *saveAsAction = new QAction(this);
-  saveAsAction->setShortcut(QKeySequence::SaveAs);
-  saveAsAction->setShortcutContext(Qt::WindowShortcut);
-  connect(saveAsAction, &QAction::triggered, this,
-          [this]() { onFileSaved(true); });
-  addAction(saveAsAction);
+  addShortcut(saveAsAction, QKeySequence::SaveAs, Qt::WindowShortcut,
+              [this]() { onFileSaved(true); });
 
   // Cmd+T for new tab
   QAction *newTabAction = new QAction(this);
-  newTabAction->setShortcut(QKeySequence::AddTab);
-  newTabAction->setShortcutContext(Qt::WindowShortcut);
-  connect(newTabAction, &QAction::triggered, this,
-          &MainWindow::onNewTabRequested);
-  addAction(newTabAction);
+  addShortcut(newTabAction, QKeySequence::AddTab, Qt::WindowShortcut,
+              &MainWindow::onNewTabRequested);
 
   // Cmd+W for close tab
   QAction *closeTabAction = new QAction(this);
-  closeTabAction->setShortcut(QKeySequence::Close);
-  closeTabAction->setShortcutContext(Qt::WindowShortcut);
-  connect(closeTabAction, &QAction::triggered, this, [this]() {
-    onActiveTabCloseRequested(tabBarWidget->getNumberOfTabs());
-  });
-  addAction(closeTabAction);
+  addShortcut(
+      closeTabAction, QKeySequence::Close, Qt::WindowShortcut,
+      [this]() { onActiveTabCloseRequested(tabBarWidget->getNumberOfTabs()); });
 
   // Cmd+Tab for next tab
   QAction *nextTabAction = new QAction(this);
-  nextTabAction->setShortcut(QKeySequence(Qt::MetaModifier | Qt::Key_Tab));
-  nextTabAction->setShortcutContext(Qt::WindowShortcut);
-  connect(nextTabAction, &QAction::triggered, this, [this]() {
-    int tabCount = appState->get_tab_count();
+  addShortcut(nextTabAction, QKeySequence(Qt::MetaModifier | Qt::Key_Tab),
+              Qt::WindowShortcut, [this]() {
+                int tabCount = appState->get_tab_count();
 
-    if (tabCount > 0) {
-      int currentIndex = appState->get_active_tab_index();
-      size_t nextIndex = (currentIndex + 1) % tabCount;
-      onTabChanged(nextIndex);
-    }
-  });
-  addAction(nextTabAction);
+                if (tabCount > 0) {
+                  int currentIndex = appState->get_active_tab_index();
+                  size_t nextIndex = (currentIndex + 1) % tabCount;
+                  onTabChanged(nextIndex);
+                }
+              });
 
   // Cmd+Shift+Tab for previous tab
   QAction *prevTabAction = new QAction(this);
-  prevTabAction->setShortcut(
-      QKeySequence(Qt::MetaModifier | Qt::ShiftModifier | Qt::Key_Tab));
-  prevTabAction->setShortcutContext(Qt::WindowShortcut);
-  connect(prevTabAction, &QAction::triggered, this, [this]() {
-    int tabCount = appState->get_tab_count();
+  addShortcut(prevTabAction,
+              QKeySequence(Qt::MetaModifier | Qt::ShiftModifier | Qt::Key_Tab),
+              Qt::WindowShortcut, [this]() {
+                int tabCount = appState->get_tab_count();
 
-    if (tabCount > 0) {
-      int currentIndex = appState->get_active_tab_index();
-      size_t prevIndex = (currentIndex == 0) ? tabCount - 1 : currentIndex - 1;
-      onTabChanged(prevIndex);
-    }
-  });
-  addAction(prevTabAction);
+                if (tabCount > 0) {
+                  int currentIndex = appState->get_active_tab_index();
+                  size_t prevIndex =
+                      (currentIndex == 0) ? tabCount - 1 : currentIndex - 1;
+                  onTabChanged(prevIndex);
+                }
+              });
+}
+
+template <typename Slot>
+void MainWindow::addShortcut(QAction *action, const QKeySequence &sequence,
+                             Qt::ShortcutContext context, Slot &&slot) {
+  action->setShortcut(sequence);
+  action->setShortcutContext(context);
+  connect(action, &QAction::triggered, this, std::forward<Slot>(slot));
+  addAction(action);
 }
 
 void MainWindow::onBufferChanged() {
