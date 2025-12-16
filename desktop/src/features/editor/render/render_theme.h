@@ -5,6 +5,7 @@
 
 struct RenderTheme {
   QString textColor;
+  QString activeLineTextColor;
   QString accentColor;
   QString highlightColor;
 };

@@ -29,6 +29,8 @@ qt_add_executable(neko
     src/features/editor/gutter_widget.h
     src/features/editor/render/editor_renderer.cpp
     src/features/editor/render/editor_renderer.h
+    src/features/editor/render/gutter_renderer.cpp
+    src/features/editor/render/gutter_renderer.h
     src/features/editor/render/render_state.h
     src/features/editor/render/render_theme.h
 

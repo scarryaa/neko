@@ -1,7 +1,9 @@
 #ifndef GUTTER_WIDGET_H
 #define GUTTER_WIDGET_H
 
+#include "features/editor/render/render_state.h"
 #include "neko-core/src/ffi/mod.rs.h"
+#include "render/gutter_renderer.h"
 #include "utils/editor_utils.h"
 #include "utils/gui_utils.h"
 #include <QApplication>
@@ -53,16 +55,16 @@ private:
   neko::ThemeManager &themeManager;
   neko::ConfigManager &configManager;
   neko::Editor *editor;
+  GutterRenderer *renderer;
   QFont font;
   QFontMetricsF fontMetrics;
 
+  int EXTRA_VERTICAL_LINES = 1;
   double FONT_STEP = 2.0;
   double DEFAULT_FONT_SIZE = 15.0;
   double FONT_UPPER_LIMIT = 96.0;
   double FONT_LOWER_LIMIT = 6.0;
   double VIEWPORT_PADDING = 74.0;
-  QColor TEXT_COLOR = QColor(80, 80, 80);
-  QColor CURRENT_LINE_COLOR = QColor(200, 200, 200);
 };
 
 #endif // GUTTER_WIDGET_H

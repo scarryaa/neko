@@ -19,6 +19,14 @@ impl Default for Theme {
             "editor.gutter.background".to_string(),
             "#000000".to_string(),
         );
+        colors.insert(
+            "editor.gutter.foreground".to_string(),
+            "#505050".to_string(),
+        );
+        colors.insert(
+            "editor.gutter.foreground.active".to_string(),
+            "#C8C8C8".to_string(),
+        );
         colors.insert("editor.foreground".to_string(), "#d4d4d4".to_string());
         colors.insert("editor.highlight".to_string(), "#19ffffff".to_string());
 

@@ -1,10 +1,11 @@
 #include "gutter_widget.h"
+#include "utils/gui_utils.h"
 
 GutterWidget::GutterWidget(neko::Editor *editor,
                            neko::ConfigManager &configManager,
                            neko::ThemeManager &themeManager, QWidget *parent)
     : QScrollArea(parent), editor(editor), configManager(configManager),
-      themeManager(themeManager),
+      renderer(new GutterRenderer()), themeManager(themeManager),
       font(UiUtils::loadFont(configManager, neko::FontType::Editor)),
       fontMetrics(font) {
   setFocusPolicy(Qt::NoFocus);
@@ -95,98 +96,63 @@ void GutterWidget::onEditorFontSizeChanged(qreal newSize) {
 }
 
 void GutterWidget::paintEvent(QPaintEvent *event) {
-  if (editor == nullptr) {
+  if (!editor) {
     return;
   }
 
   QPainter painter(viewport());
 
-  int lineCount = editor->get_line_count();
-  double lineHeight = fontMetrics.height();
   double verticalOffset = verticalScrollBar()->value();
-  double viewportHeight = viewport()->height();
   double horizontalOffset = horizontalScrollBar()->value();
+  double viewportHeight = viewport()->height();
+  double viewportWidth = viewport()->width();
+  double lineHeight = fontMetrics.height();
+
+  int lineCount = editor->get_line_count();
   int firstVisibleLine = verticalOffset / lineHeight;
   int visibleLineCount = viewportHeight / lineHeight;
   int lastVisibleLine =
-      qMin(firstVisibleLine + visibleLineCount + 1, (int)lineCount - 1);
-  ViewportContext ctx = {lineHeight, firstVisibleLine, lastVisibleLine,
-                         verticalOffset, horizontalOffset};
+      qMin(firstVisibleLine + visibleLineCount + EXTRA_VERTICAL_LINES,
+           lineCount - 1);
 
-  drawText(&painter, ctx, lineCount);
-  drawLineHighlight(&painter, ctx);
-}
+  ViewportContext ctx = {lineHeight,     firstVisibleLine, lastVisibleLine,
+                         verticalOffset, horizontalOffset, viewportWidth,
+                         viewportHeight};
 
-void GutterWidget::drawText(QPainter *painter, const ViewportContext &ctx,
-                            int lineCount) {
-  painter->setPen(TEXT_COLOR);
-  painter->setFont(font);
+  rust::Vec<neko::CursorPosition> cursors = editor->get_cursor_positions();
+  neko::Selection selections = editor->get_selection();
 
-  auto verticalOffset = verticalScrollBar()->value();
-  auto horizontalOffset = horizontalScrollBar()->value();
-  double viewportWidth = viewport()->width();
+  double fontAscent = fontMetrics.ascent();
+  double fontDescent = fontMetrics.descent();
+  bool hasFocus = this->hasFocus();
 
-  int maxLineNumber = lineCount;
-  int maxLineWidth =
-      fontMetrics.horizontalAdvance(QString::number(maxLineNumber));
-  double numWidth = fontMetrics.horizontalAdvance(QString::number(1));
+  QString textColor =
+      UiUtils::getThemeColor(themeManager, "editor.gutter.foreground");
+  QString accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+  QString highlightColor =
+      UiUtils::getThemeColor(themeManager, "editor.highlight");
+  QString activeLineTextColor =
+      UiUtils::getThemeColor(themeManager, "editor.gutter.foreground.active");
 
-  neko::Selection selection = editor->get_selection();
-  int selectionStartRow = selection.start.row;
-  int selectionEndRow = selection.end.row;
-  int selectionStartCol = selection.start.col;
-  int selectionEndCol = selection.end.col;
-  bool selectionActive = selection.active;
+  RenderTheme theme = {textColor, activeLineTextColor, accentColor,
+                       highlightColor};
 
-  for (int line = ctx.firstVisibleLine; line <= ctx.lastVisibleLine; ++line) {
-    bool cursorIsOnLine = editor->cursor_exists_at_row(line);
-    auto y =
-        (line * fontMetrics.height()) +
-        (fontMetrics.height() + fontMetrics.ascent() - fontMetrics.descent()) /
-            2.0 -
-        verticalOffset;
+  auto measureWidth = [this](const QString &s) {
+    return fontMetrics.horizontalAdvance(s);
+  };
+  RenderState state = {rust::Vec<rust::String>(),
+                       cursors,
+                       selections,
+                       theme,
+                       lineCount,
+                       verticalOffset,
+                       horizontalOffset,
+                       lineHeight,
+                       fontAscent,
+                       fontDescent,
+                       font,
+                       hasFocus,
+                       measureWidth};
 
-    QString lineNum = QString::number(line + 1);
-    int lineNumWidth = fontMetrics.horizontalAdvance(lineNum);
-    double x = (width() - maxLineWidth - numWidth) / 2.0 +
-               (maxLineWidth - lineNumWidth) - horizontalOffset;
-
-    if (cursorIsOnLine || (selectionActive && line >= selectionStartRow &&
-                           line <= selectionEndRow)) {
-      painter->setPen(CURRENT_LINE_COLOR);
-    } else {
-      painter->setPen(TEXT_COLOR);
-    }
-
-    painter->drawText(QPointF(x, y), lineNum);
-  }
-}
-
-void GutterWidget::drawLineHighlight(QPainter *painter,
-                                     const ViewportContext &ctx) {
-  auto cursors = editor->get_cursor_positions();
-
-  std::vector<int> highlightedLines = std::vector<int>();
-  for (auto cursor : cursors) {
-    int cursorRow = cursor.row;
-    int cursorCol = cursor.col;
-
-    if (cursorRow < ctx.firstVisibleLine || cursorRow > ctx.lastVisibleLine) {
-      return;
-    }
-
-    if (std::find(highlightedLines.begin(), highlightedLines.end(),
-                  cursorRow) != highlightedLines.end()) {
-      continue;
-    }
-
-    highlightedLines.push_back(cursorRow);
-
-    // Draw line highlight
-    auto lineHighlightColor =
-        UiUtils::getThemeColor(themeManager, "editor.highlight");
-    painter->setPen(Qt::NoPen);
-    painter->setBrush(lineHighlightColor);
-    painter->drawRect(getLineRect(cursorRow, 0, viewport()->width(), ctx));
-  }
+  renderer->paint(painter, state, ctx);
 }

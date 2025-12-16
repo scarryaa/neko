@@ -379,7 +379,7 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
   QString highlightColor =
       UiUtils::getThemeColor(themeManager, "editor.highlight");
 
-  RenderTheme theme = {textColor, accentColor, highlightColor};
+  RenderTheme theme = {textColor, textColor, accentColor, highlightColor};
 
   auto measureWidth = [this](const QString &s) {
     return fontMetrics.horizontalAdvance(s);
