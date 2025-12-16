@@ -275,6 +275,25 @@ void MainWindow::saveCurrentScrollState() {
   }
 }
 
+void MainWindow::removeTabScrollOffset(int closedIndex) {
+  tabScrollOffsets.erase(closedIndex);
+
+  std::unordered_map<int, ScrollOffset> updatedOffsets;
+  for (const auto &[tabIndex, offset] : tabScrollOffsets) {
+    int newIndex = tabIndex > closedIndex ? tabIndex - 1 : tabIndex;
+    updatedOffsets[newIndex] = offset;
+  }
+
+  tabScrollOffsets = std::move(updatedOffsets);
+}
+
+void MainWindow::handleTabClosed(int closedIndex, int numberOfTabsBeforeClose) {
+  removeTabScrollOffset(closedIndex);
+  statusBarWidget->onTabClosed(numberOfTabsBeforeClose - 1);
+  switchToActiveTab();
+  updateTabBar();
+}
+
 void MainWindow::setupKeyboardShortcuts() {
   // Cmd+S for save
   QAction *saveAction = new QAction(this);
@@ -354,23 +373,7 @@ void MainWindow::onActiveTabCloseRequested(int numberOfTabs) {
   saveCurrentScrollState();
 
   if (appState->close_tab(activeIndex)) {
-    // Remove scroll offset for closed tab
-    tabScrollOffsets.erase(activeIndex);
-
-    // Shift down indices for tabs after the closed one
-    std::unordered_map<int, ScrollOffset> updatedOffsets;
-    for (const auto &[tabIndex, offset] : tabScrollOffsets) {
-      if (tabIndex > activeIndex) {
-        updatedOffsets[tabIndex - 1] = offset;
-      } else {
-        updatedOffsets[tabIndex] = offset;
-      }
-    }
-    tabScrollOffsets = std::move(updatedOffsets);
-    statusBarWidget->onTabClosed(numberOfTabs - 1);
-
-    updateTabBar();
-    switchToActiveTab();
+    handleTabClosed(activeIndex, numberOfTabs);
   }
 }
 
@@ -378,33 +381,13 @@ void MainWindow::onTabCloseRequested(int index, int numberOfTabs) {
   saveCurrentScrollState();
 
   if (appState->close_tab(index)) {
-    // Remove scroll offset for closed tab
-    tabScrollOffsets.erase(index);
-
-    // Shift down indices for tabs after the closed one
-    std::unordered_map<int, ScrollOffset> updatedOffsets;
-    for (const auto &[tabIndex, offset] : tabScrollOffsets) {
-      if (tabIndex > index) {
-        updatedOffsets[tabIndex - 1] = offset;
-      } else {
-        updatedOffsets[tabIndex] = offset;
-      }
-    }
-    tabScrollOffsets = std::move(updatedOffsets);
-
-    statusBarWidget->onTabClosed(numberOfTabs - 1);
-
-    refreshStatusBarCursor(editor);
-    updateTabBar();
-    switchToActiveTab();
+    handleTabClosed(index, numberOfTabs);
   }
 }
 
 void MainWindow::onTabChanged(int index) {
   saveCurrentScrollState();
   appState->set_active_tab_index(index);
-
-  refreshStatusBarCursor(editor);
 
   switchToActiveTab();
   updateTabBar();
@@ -415,7 +398,6 @@ void MainWindow::onNewTabRequested() {
 
   appState->new_tab();
   setActiveEditor(&appState->get_editor_mut());
-  refreshStatusBarCursor(editor);
 
   updateTabBar();
   switchToActiveTab();
@@ -516,19 +498,7 @@ void MainWindow::onFileSelected(const std::string &filePath,
     int newTabIndex = appState->get_active_tab_index();
     appState->close_tab(newTabIndex);
 
-    // Clean up scroll offset for the failed tab
-    tabScrollOffsets.erase(newTabIndex);
-
-    // Shift down indices for tabs after the closed one
-    std::unordered_map<int, ScrollOffset> updatedOffsets;
-    for (const auto &[tabIndex, offset] : tabScrollOffsets) {
-      if (tabIndex > newTabIndex) {
-        updatedOffsets[tabIndex - 1] = offset;
-      } else {
-        updatedOffsets[tabIndex] = offset;
-      }
-    }
-    tabScrollOffsets = std::move(updatedOffsets);
+    removeTabScrollOffset(newTabIndex);
 
     updateTabBar();
   }

@@ -15,6 +15,8 @@
 #include <QMainWindow>
 #include <QSplitter>
 #include <QVBoxLayout>
+#include <string>
+#include <unordered_map>
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -37,6 +39,8 @@ private:
   void refreshStatusBarCursor(neko::Editor *editor);
   void saveAs();
   void updateTabBar();
+  void removeTabScrollOffset(int closedIndex);
+  void handleTabClosed(int closedIndex, int numberOfTabsBeforeClose);
   void onTabCloseRequested(int index, int numberOfTabs);
   void onTabChanged(int index);
   void onNewTabRequested();
