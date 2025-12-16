@@ -1,5 +1,4 @@
 #include "main_window.h"
-#include <unistd.h>
 
 // TODO: StatusBar signals/tab inform and MainWindow editor ref
 // are messy and need to be cleaned up. Also consider "rearchitecting"
@@ -16,6 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
   neko::Editor *editor = &appState->get_editor_mut();
   neko::FileTree *fileTree = &appState->get_file_tree_mut();
   editorController = new EditorController(editor);
+  tabController = new TabController(&*appState);
 
   setupWidgets(editor, fileTree);
   connectSignals();
@@ -46,6 +46,8 @@ void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
 }
 
 void MainWindow::connectSignals() {
+  // TODO: Remove/prune EditorWidget <-> GutterWidget connections to go
+  // thru EditorController
   connect(fileExplorerWidget, &FileExplorerWidget::fileSelected, this,
           &MainWindow::onFileSelected);
   connect(fileExplorerWidget, &FileExplorerWidget::directorySelected,
@@ -72,6 +74,12 @@ void MainWindow::connectSignals() {
           &MainWindow::onCursorPositionClicked);
   connect(editorWidget, &EditorWidget::cursorPositionChanged, statusBarWidget,
           &StatusBarWidget::onCursorPositionChanged);
+
+  // TabController -> MainWindow
+  connect(tabController, &TabController::tabListChanged, this,
+          &MainWindow::updateTabBar);
+  connect(tabController, &TabController::activeTabChanged, this,
+          &MainWindow::switchToActiveTab);
 
   // TabBarWidget -> MainWindow connections
   connect(tabBarWidget, &TabBarWidget::tabCloseRequested, this,
@@ -357,12 +365,12 @@ void MainWindow::onBufferChanged() {
 }
 
 void MainWindow::onActiveTabCloseRequested(int numberOfTabs) {
-  int activeIndex = appState->get_active_tab_index();
+  int activeIndex = tabController->getActiveTabIndex();
 
   // Save current scroll offset before closing
   saveCurrentScrollState();
 
-  if (appState->close_tab(activeIndex)) {
+  if (tabController->closeTab(activeIndex)) {
     handleTabClosed(activeIndex, numberOfTabs);
   }
 }
@@ -370,14 +378,14 @@ void MainWindow::onActiveTabCloseRequested(int numberOfTabs) {
 void MainWindow::onTabCloseRequested(int index, int numberOfTabs) {
   saveCurrentScrollState();
 
-  if (appState->close_tab(index)) {
+  if (tabController->closeTab(index)) {
     handleTabClosed(index, numberOfTabs);
   }
 }
 
 void MainWindow::onTabChanged(int index) {
   saveCurrentScrollState();
-  appState->set_active_tab_index(index);
+  tabController->setActiveTabIndex(index);
 
   switchToActiveTab();
   updateTabBar();
@@ -385,8 +393,7 @@ void MainWindow::onTabChanged(int index) {
 
 void MainWindow::onNewTabRequested() {
   saveCurrentScrollState();
-
-  appState->new_tab();
+  tabController->addTab();
   setActiveEditor(&appState->get_editor_mut());
 
   updateTabBar();
@@ -434,7 +441,7 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
 }
 
 void MainWindow::updateTabBar() {
-  auto rawTitles = appState->get_tab_titles();
+  auto rawTitles = tabController->getTabTitles();
   int count = rawTitles.size();
 
   QStringList tabTitles;
@@ -442,10 +449,10 @@ void MainWindow::updateTabBar() {
     tabTitles.append(QString::fromUtf8(rawTitles[i]));
   }
 
-  rust::Vec<bool> modifieds = appState->get_tab_modified_states();
+  rust::Vec<bool> modifieds = tabController->getTabModifiedStates();
 
   tabBarWidget->setTabs(tabTitles, modifieds);
-  tabBarWidget->setCurrentIndex(appState->get_active_tab_index());
+  tabBarWidget->setCurrentIndex(tabController->getActiveTabIndex());
 }
 
 void MainWindow::onFileSelected(const std::string &filePath,
@@ -472,7 +479,7 @@ void MainWindow::onFileSelected(const std::string &filePath,
   // Save current scroll offset
   saveCurrentScrollState();
 
-  appState->new_tab();
+  tabController->addTab();
 
   if (appState->open_file(filePath)) {
     updateTabBar();

@@ -6,6 +6,7 @@
 #include "features/editor/gutter_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/status_bar/status_bar_widget.h"
+#include "features/tabs/controllers/tab_controller.h"
 #include "features/tabs/tab_bar_widget.h"
 #include "features/title_bar/title_bar_widget.h"
 #include "neko-core/src/ffi/mod.rs.h"
@@ -62,6 +63,7 @@ private:
   rust::Box<neko::ThemeManager> themeManager;
   rust::Box<neko::ConfigManager> configManager;
   EditorController *editorController;
+  TabController *tabController;
   QWidget *emptyStateWidget;
   FileExplorerWidget *fileExplorerWidget;
   EditorWidget *editorWidget;
