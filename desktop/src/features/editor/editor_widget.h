@@ -2,6 +2,7 @@
 #define EDITOR_WIDGET_H
 
 #include "controllers/editor_controller.h"
+#include "features/editor/render/editor_renderer.h"
 #include "neko-core/src/ffi/mod.rs.h"
 #include "utils/change_mask.h"
 #include "utils/editor_utils.h"
@@ -30,8 +31,8 @@ public:
                         QWidget *parent = nullptr);
   ~EditorWidget();
 
-  void updateDimensionsAndRepaint();
   void setEditor(neko::Editor *editor);
+  void redraw();
 
 public slots:
   void onBufferChanged();
@@ -57,37 +58,21 @@ signals:
 private:
   double getTextWidth(const QString &text, double horizontalOffset) const;
   RowCol convertMousePositionToRowCol(double x, double y);
-  void addCursor(neko::AddCursorDirectionKind dirKind, int row = 0,
-                 int col = 0);
-
-  void applyChangeSet(const neko::ChangeSetFfi &cs);
-
-  void drawText(QPainter *painter, const ViewportContext &ctx);
-  void drawCursors(QPainter *painter, const ViewportContext &ctx);
-  void drawSelections(QPainter *painter, const ViewportContext &ctx);
-
-  void drawSingleLineSelection(QPainter *painter, const ViewportContext &ctx,
-                               size_t startRow, size_t startCol, size_t endCol);
-  void drawFirstLineSelection(QPainter *painter, const ViewportContext &ctx,
-                              size_t startRow, size_t startCol);
-  void drawMiddleLinesSelection(QPainter *painter, const ViewportContext &ctx,
-                                size_t startRow, size_t endRow);
-  void drawLastLineSelection(QPainter *painter, const ViewportContext &ctx,
-                             size_t endRow, size_t endCol);
 
   void increaseFontSize();
   void decreaseFontSize();
   void resetFontSize();
   void setFontSize(double newFontSize);
 
-  void handleViewportUpdate();
   void scrollToCursor();
-  double measureContent();
+  double measureWidth();
+  void updateDimensions();
 
   neko::ConfigManager &configManager;
   neko::ThemeManager &themeManager;
-  EditorController *editorController;
   neko::Editor *editor;
+  EditorController *editorController;
+  EditorRenderer *renderer;
   QFont font;
   QFontMetricsF fontMetrics;
 
@@ -96,7 +81,6 @@ private:
   double DEFAULT_FONT_SIZE = 15.0;
   double FONT_UPPER_LIMIT = 96.0;
   double FONT_LOWER_LIMIT = 6.0;
-  QColor LINE_HIGHLIGHT_COLOR = QColor(255, 255, 255, 25);
   QColor TEXT_COLOR = QColor(235, 235, 235);
   double VIEWPORT_PADDING = 74.0;
 };

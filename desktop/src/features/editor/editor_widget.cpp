@@ -1,11 +1,13 @@
 #include "editor_widget.h"
+#include "utils/gui_utils.h"
 
 EditorWidget::EditorWidget(neko::Editor *editor,
                            EditorController *editorController,
                            neko::ConfigManager &configManager,
                            neko::ThemeManager &themeManager, QWidget *parent)
     : QScrollArea(parent), editor(editor), editorController(editorController),
-      configManager(configManager), themeManager(themeManager),
+      renderer(new EditorRenderer()), configManager(configManager),
+      themeManager(themeManager),
       font(UiUtils::loadFont(configManager, neko::FontType::Editor)),
       fontMetrics(font) {
   setFocusPolicy(Qt::StrongFocus);
@@ -18,46 +20,17 @@ EditorWidget::EditorWidget(neko::Editor *editor,
   setStyleSheet(UiUtils::getScrollBarStylesheet("EditorWidget", bgHex));
 
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
-          [this]() { viewport()->update(); });
+          &EditorWidget::redraw);
   connect(horizontalScrollBar(), &QScrollBar::valueChanged, this,
-          [this]() { viewport()->update(); });
+          &EditorWidget::redraw);
 }
 
 EditorWidget::~EditorWidget() {}
 
-void EditorWidget::applyChangeSet(const neko::ChangeSetFfi &cs) {
-  const uint32_t m = cs.mask;
-
-  if (m & (ChangeMask::Cursor | ChangeMask::Selection)) {
-    auto lastAddedCursor = editor->get_last_added_cursor();
-    auto numberOfCursors = editor->get_cursor_positions().size();
-    emit cursorPositionChanged(lastAddedCursor.row, lastAddedCursor.col,
-                               numberOfCursors);
-  }
-
-  if (m & (ChangeMask::Viewport | ChangeMask::LineCount | ChangeMask::Widths)) {
-    handleViewportUpdate();
-  }
-
-  if (m & ChangeMask::LineCount) {
-    emit lineCountChanged();
-  }
-
-  if (m & ChangeMask::Cursor) {
-    scrollToCursor();
-  }
-
-  if (m & ChangeMask::Buffer) {
-    emit bufferChanged();
-  }
-
-  viewport()->update();
-}
-
 void EditorWidget::setEditor(neko::Editor *newEditor) { editor = newEditor; }
 
-double EditorWidget::measureContent() {
-  if (editor == nullptr) {
+double EditorWidget::measureWidth() {
+  if (!editor) {
     return 0;
   }
 
@@ -114,8 +87,8 @@ void EditorWidget::scrollToCursor() {
   }
 }
 
-void EditorWidget::handleViewportUpdate() {
-  if (editor == nullptr) {
+void EditorWidget::updateDimensions() {
+  if (!editor) {
     return;
   }
 
@@ -123,7 +96,7 @@ void EditorWidget::handleViewportUpdate() {
 
   auto viewportHeight = (lineCount * fontMetrics.height()) -
                         viewport()->height() + VIEWPORT_PADDING;
-  auto contentWidth = measureContent();
+  auto contentWidth = measureWidth();
   auto viewportWidth = contentWidth - viewport()->width() + VIEWPORT_PADDING;
 
   bool horizontalScrollBarVisible = horizontalScrollBar()->isVisible();
@@ -134,15 +107,13 @@ void EditorWidget::handleViewportUpdate() {
 
   horizontalScrollBar()->setRange(0, viewportWidth);
   verticalScrollBar()->setRange(0, adjustedVerticalRange);
+  redraw();
 }
 
-void EditorWidget::updateDimensionsAndRepaint() {
-  handleViewportUpdate();
-  viewport()->update();
-}
+void EditorWidget::redraw() { viewport()->update(); }
 
 void EditorWidget::mousePressEvent(QMouseEvent *event) {
-  if (editor == nullptr) {
+  if (!editor) {
     return;
   }
 
@@ -152,7 +123,8 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
     if (editor->cursor_exists_at(rc.row, rc.col)) {
       editor->remove_cursor(rc.row, rc.col);
     } else {
-      addCursor(neko::AddCursorDirectionKind::At, rc.row, rc.col);
+      editorController->addCursor(neko::AddCursorDirectionKind::At, rc.row,
+                                  rc.col);
     }
   } else {
     editor->move_to(rc.row, rc.col, true);
@@ -160,48 +132,12 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
 
   auto numberOfCursors = editor->get_cursor_positions().size();
   emit cursorPositionChanged(rc.row, rc.col, numberOfCursors);
-  viewport()->update();
-}
 
-void EditorWidget::addCursor(neko::AddCursorDirectionKind dirKind, int row,
-                             int col) {
-  switch (dirKind) {
-  case neko::AddCursorDirectionKind::Above: {
-    neko::AddCursorDirectionFfi dir;
-    dir.kind = dirKind;
-
-    editor->add_cursor(dir);
-    break;
-  }
-  case neko::AddCursorDirectionKind::Below: {
-    neko::AddCursorDirectionFfi dir;
-    dir.kind = dirKind;
-
-    editor->add_cursor(dir);
-    break;
-  }
-  case neko::AddCursorDirectionKind::At: {
-    neko::AddCursorDirectionFfi dir;
-    dir.kind = dirKind;
-    dir.row = row;
-    dir.col = col;
-
-    editor->add_cursor(dir);
-    break;
-  }
-  }
-
-  auto cursorPosition =
-      editor->get_cursor_positions()[editor->get_active_cursor_index()];
-  auto numberOfCursors = editor->get_cursor_positions().size();
-  emit cursorPositionChanged(cursorPosition.row, cursorPosition.col,
-                             numberOfCursors);
-
-  viewport()->update();
+  redraw();
 }
 
 void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
-  if (editor == nullptr) {
+  if (!editor) {
     return;
   }
 
@@ -210,9 +146,11 @@ void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
 
     editor->select_to(rc.row, rc.col);
+
     auto numberOfCursors = editor->get_cursor_positions().size();
     emit cursorPositionChanged(rc.row, rc.col, numberOfCursors);
-    viewport()->update();
+
+    redraw();
   }
 }
 
@@ -267,7 +205,7 @@ void EditorWidget::wheelEvent(QWheelEvent *event) {
 
   horizontalScrollBar()->setValue(newHorizontalScrollOffset);
   verticalScrollBar()->setValue(newVerticalScrollOffset);
-  viewport()->update();
+  redraw();
 }
 
 bool EditorWidget::focusNextPrevChild(bool next) { return false; }
@@ -300,12 +238,12 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
 
     case Qt::Key_P:
       if (meta) {
-        addCursor(neko::AddCursorDirectionKind::Above);
+        editorController->addCursor(neko::AddCursorDirectionKind::Above);
         return;
       }
     case Qt::Key_N:
       if (meta) {
-        addCursor(neko::AddCursorDirectionKind::Below);
+        editorController->addCursor(neko::AddCursorDirectionKind::Below);
         return;
       }
 
@@ -319,15 +257,12 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
 
     case Qt::Key_Equal:
       increaseFontSize();
-      handleViewportUpdate();
       return;
     case Qt::Key_Minus:
       decreaseFontSize();
-      handleViewportUpdate();
       return;
     case Qt::Key_0:
       resetFontSize();
-      handleViewportUpdate();
       return;
     }
   }
@@ -367,16 +302,16 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
   }
 }
 
-void EditorWidget::onBufferChanged() { viewport()->update(); }
+void EditorWidget::onBufferChanged() { redraw(); }
 
 void EditorWidget::onCursorChanged() {
-  viewport()->update();
   scrollToCursor();
+  redraw();
 }
 
-void EditorWidget::onSelectionChanged() { viewport()->update(); }
+void EditorWidget::onSelectionChanged() { redraw(); }
 
-void EditorWidget::onViewportChanged() { updateDimensionsAndRepaint(); }
+void EditorWidget::onViewportChanged() { updateDimensions(); }
 
 void EditorWidget::resetFontSize() { setFontSize(DEFAULT_FONT_SIZE); }
 
@@ -396,9 +331,10 @@ void EditorWidget::setFontSize(double newFontSize) {
   font.setPointSizeF(newFontSize);
   fontMetrics = QFontMetricsF(font);
 
-  viewport()->update();
   UiUtils::setFontSize(configManager, neko::FontType::Editor, newFontSize);
   emit fontSizeChanged(newFontSize);
+
+  updateDimensions();
 }
 
 double EditorWidget::getTextWidth(const QString &text,
@@ -407,13 +343,11 @@ double EditorWidget::getTextWidth(const QString &text,
 }
 
 void EditorWidget::paintEvent(QPaintEvent *event) {
-  if (editor == nullptr) {
+  if (!editor) {
     return;
   }
 
   QPainter painter(viewport());
-
-  int lineCount = editor->get_line_count();
 
   double verticalOffset = verticalScrollBar()->value();
   double horizontalOffset = horizontalScrollBar()->value();
@@ -421,188 +355,39 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
   double viewportWidth = viewport()->width();
   double lineHeight = fontMetrics.height();
 
+  int lineCount = editor->get_line_count();
   int firstVisibleLine = verticalOffset / lineHeight;
   int visibleLineCount = viewportHeight / lineHeight;
-  int lastVisibleLine = qMin(
-      firstVisibleLine + visibleLineCount + EXTRA_VERTICAL_LINES, lineCount);
+  int lastVisibleLine =
+      qMin(firstVisibleLine + visibleLineCount + EXTRA_VERTICAL_LINES,
+           lineCount - 1);
 
-  ViewportContext ctx = {lineHeight, firstVisibleLine, lastVisibleLine,
-                         verticalOffset, horizontalOffset};
+  ViewportContext ctx = {lineHeight,     firstVisibleLine, lastVisibleLine,
+                         verticalOffset, horizontalOffset, viewportWidth,
+                         viewportHeight};
 
-  drawText(&painter, ctx);
-  drawCursors(&painter, ctx);
-  drawSelections(&painter, ctx);
-}
+  rust::Vec<rust::String> rawLines = editor->get_lines();
+  rust::Vec<neko::CursorPosition> cursors = editor->get_cursor_positions();
+  neko::Selection selections = editor->get_selection();
 
-void EditorWidget::drawText(QPainter *painter, const ViewportContext &ctx) {
-  painter->setPen(TEXT_COLOR);
-  painter->setFont(font);
+  double fontAscent = fontMetrics.ascent();
+  double fontDescent = fontMetrics.descent();
+  bool hasFocus = this->hasFocus();
 
-  for (int line = ctx.firstVisibleLine; line <= ctx.lastVisibleLine; line++) {
-    auto rawLine = editor->get_line(line);
-    QString lineText = QString::fromUtf8(rawLine);
+  QString textColor = UiUtils::getThemeColor(themeManager, "editor.foreground");
+  QString accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+  QString highlightColor =
+      UiUtils::getThemeColor(themeManager, "editor.highlight");
 
-    auto actualY =
-        (line * ctx.lineHeight) +
-        (ctx.lineHeight + fontMetrics.ascent() - fontMetrics.descent()) / 2.0 -
-        ctx.verticalOffset;
+  RenderTheme theme = {textColor, accentColor, highlightColor};
 
-    painter->drawText(QPointF(-ctx.horizontalOffset, actualY), lineText);
-  }
-}
+  auto measureWidth = [this](const QString &s) {
+    return fontMetrics.horizontalAdvance(s);
+  };
+  RenderState state = {
+      rawLines,       cursors,          selections,  theme,      lineCount,
+      verticalOffset, horizontalOffset, lineHeight,  fontAscent, fontDescent,
+      font,           hasFocus,         measureWidth};
 
-void EditorWidget::drawSelections(QPainter *painter,
-                                  const ViewportContext &ctx) {
-  if (!editor->get_selection().active) {
-    return;
-  }
-
-  auto accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
-  QColor selectionColor = QColor(accentColor);
-  selectionColor.setAlpha(50);
-  painter->setBrush(selectionColor);
-  painter->setPen(Qt::transparent);
-
-  neko::Selection selection = editor->get_selection();
-  int startRow = selection.start.row;
-  int endRow = selection.end.row;
-  int startCol = selection.start.col;
-  int endCol = selection.end.col;
-
-  if (startRow == endRow) {
-    drawSingleLineSelection(painter, ctx, startRow, startCol, endCol);
-  } else {
-    drawFirstLineSelection(painter, ctx, startRow, startCol);
-    drawMiddleLinesSelection(painter, ctx, startRow, endRow);
-    drawLastLineSelection(painter, ctx, endRow, endCol);
-  }
-}
-
-void EditorWidget::drawSingleLineSelection(QPainter *painter,
-                                           const ViewportContext &ctx,
-                                           size_t startRow, size_t startCol,
-                                           size_t endCol) {
-  auto rawLine = editor->get_line(startRow);
-  QString text = QString::fromUtf8(rawLine);
-
-  QString selection_text = text.mid(startCol, endCol - startCol);
-  QString selection_before_text = text.mid(0, startCol);
-
-  double width = fontMetrics.horizontalAdvance(selection_text);
-  double widthBefore = fontMetrics.horizontalAdvance(selection_before_text);
-
-  double x1 = widthBefore - ctx.horizontalOffset;
-  double x2 = widthBefore + width - ctx.horizontalOffset;
-
-  painter->drawRect(getLineRect(startRow, x1, x2, ctx));
-}
-
-void EditorWidget::drawFirstLineSelection(QPainter *painter,
-                                          const ViewportContext &ctx,
-                                          size_t startRow, size_t startCol) {
-  if (startRow > ctx.lastVisibleLine || startRow < ctx.firstVisibleLine) {
-    return;
-  }
-
-  auto rawLine = editor->get_line(startRow);
-  QString text = QString::fromUtf8(rawLine);
-
-  if (text.isEmpty())
-    text = " ";
-
-  QString selectionText = text.mid(startCol);
-  QString beforeText = text.mid(0, startCol);
-
-  double widthBefore = fontMetrics.horizontalAdvance(beforeText);
-  double width = fontMetrics.horizontalAdvance(selectionText);
-
-  double x1 = widthBefore - ctx.horizontalOffset;
-  double x2 = widthBefore + width - ctx.horizontalOffset;
-
-  painter->drawRect(getLineRect(startRow, x1, x2, ctx));
-}
-
-void EditorWidget::drawMiddleLinesSelection(QPainter *painter,
-                                            const ViewportContext &ctx,
-                                            size_t startRow, size_t endRow) {
-  for (size_t i = startRow + 1; i < endRow; i++) {
-    if (i > ctx.lastVisibleLine || i < ctx.firstVisibleLine) {
-      continue;
-    }
-
-    auto rawLine = editor->get_line(i);
-    QString text = QString::fromUtf8(rawLine);
-
-    if (text.isEmpty())
-      text = " ";
-
-    double x1 = -ctx.horizontalOffset;
-    double x2 = fontMetrics.horizontalAdvance(text) - ctx.horizontalOffset;
-
-    painter->drawRect(getLineRect(i, x1, x2, ctx));
-  }
-}
-
-void EditorWidget::drawLastLineSelection(QPainter *painter,
-                                         const ViewportContext &ctx,
-                                         size_t endRow, size_t endCol) {
-  if (endRow > ctx.lastVisibleLine || endRow < ctx.firstVisibleLine) {
-    return;
-  }
-
-  auto rawLine = editor->get_line(endRow);
-  QString text = QString::fromUtf8(rawLine);
-  QString selectionText = text.mid(0, endCol);
-
-  double width = fontMetrics.horizontalAdvance(selectionText);
-
-  painter->drawRect(getLineRect(endRow, -ctx.horizontalOffset,
-                                width - ctx.horizontalOffset, ctx));
-}
-
-void EditorWidget::drawCursors(QPainter *painter, const ViewportContext &ctx) {
-  auto cursors = editor->get_cursor_positions();
-
-  auto highlightedLines = std::vector<int>();
-  for (auto cursor : cursors) {
-    int cursorRow = cursor.row;
-    int cursorCol = cursor.col;
-
-    if (cursorRow < ctx.firstVisibleLine || cursorRow > ctx.lastVisibleLine) {
-      return;
-    }
-
-    // Draw line highlight
-    if (std::find(highlightedLines.begin(), highlightedLines.end(),
-                  cursorRow) == highlightedLines.end()) {
-      painter->setPen(Qt::NoPen);
-      painter->setBrush(QBrush(LINE_HIGHLIGHT_COLOR));
-      painter->drawRect(getLineRect(
-          cursorRow, 0, viewport()->width() + ctx.horizontalOffset, ctx));
-
-      highlightedLines.push_back(cursorRow);
-    }
-
-    if (!hasFocus()) {
-      return;
-    }
-
-    auto rawLine = editor->get_line(cursorRow);
-    QString text = QString::fromUtf8(rawLine);
-    QString textBeforeCursor = text.left(cursorCol);
-
-    qreal cursorX = fontMetrics.horizontalAdvance(textBeforeCursor);
-
-    if (cursorX < 0 || cursorX > viewport()->width() + ctx.horizontalOffset) {
-      return;
-    }
-
-    auto accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
-    painter->setPen(accentColor);
-    painter->setBrush(Qt::NoBrush);
-
-    double x = cursorX - ctx.horizontalOffset;
-    painter->drawLine(QLineF(QPointF(x, getLineTopY(cursorRow, ctx)),
-                             QPointF(x, getLineBottomY(cursorRow, ctx))));
-  }
+  renderer->paint(painter, state, ctx);
 }

@@ -22,10 +22,16 @@ qt_add_executable(neko
     src/features/title_bar/title_bar_widget.h
     src/features/status_bar/status_bar_widget.cpp
     src/features/status_bar/status_bar_widget.h
+
     src/features/editor/editor_widget.cpp
     src/features/editor/editor_widget.h
     src/features/editor/gutter_widget.cpp
     src/features/editor/gutter_widget.h
+    src/features/editor/render/editor_renderer.cpp
+    src/features/editor/render/editor_renderer.h
+    src/features/editor/render/render_state.h
+    src/features/editor/render/render_theme.h
+
     src/features/file_explorer/file_explorer_widget.cpp
     src/features/file_explorer/file_explorer_widget.h
     src/features/tabs/tab_bar_widget.cpp

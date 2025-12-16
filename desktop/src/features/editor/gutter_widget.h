@@ -63,7 +63,6 @@ private:
   double VIEWPORT_PADDING = 74.0;
   QColor TEXT_COLOR = QColor(80, 80, 80);
   QColor CURRENT_LINE_COLOR = QColor(200, 200, 200);
-  QColor LINE_HIGHLIGHT_COLOR = QColor(255, 255, 255, 25);
 };
 
 #endif // GUTTER_WIDGET_H

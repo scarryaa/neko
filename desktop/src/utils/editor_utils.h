@@ -1,6 +1,7 @@
 #ifndef EDITOR_UTILS_H
 #define EDITOR_UTILS_H
 
+#include <QAbstractScrollArea>
 #include <QRectF>
 
 struct ViewportContext {
@@ -9,6 +10,8 @@ struct ViewportContext {
   int lastVisibleLine;
   double verticalOffset;
   double horizontalOffset;
+  double width;
+  double height;
 };
 
 double getLineTopY(size_t lineIndex, const ViewportContext &ctx);

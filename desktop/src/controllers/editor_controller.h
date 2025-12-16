@@ -46,6 +46,8 @@ public slots:
   void redo();
 
   void clearSelectionOrCursors();
+  void addCursor(neko::AddCursorDirectionKind dirKind, int row = 0,
+                 int col = 0);
 
   void refresh();
 
@@ -53,7 +55,6 @@ private:
   void nav(neko::ChangeSetFfi (neko::Editor::*moveFn)(),
            neko::ChangeSetFfi (neko::Editor::*selectFn)(), bool shouldSelect);
   template <typename Fn, typename... Args> void do_op(Fn &&fn, Args &&...args);
-
   void do_op(std::function<neko::ChangeSetFfi()> f);
 
   neko::Editor *editor;

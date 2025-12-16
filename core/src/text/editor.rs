@@ -49,6 +49,10 @@ impl Editor {
         }
     }
 
+    pub fn lines(&self) -> Vec<String> {
+        self.buffer.get_lines()
+    }
+
     pub fn number_of_selections(&self) -> usize {
         // TODO: When converting to multi-selection, update this
         if self.selection_manager.has_active_selection() {

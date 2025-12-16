@@ -54,6 +54,10 @@ impl Buffer {
         self.content.to_string()
     }
 
+    pub fn get_lines(&self) -> Vec<String> {
+        self.content.lines().map(|l| l.to_string()).collect()
+    }
+
     pub fn get_text_range(&self, start_idx: usize, end_idx: usize) -> String {
         self.content.byte_slice(start_idx..end_idx).to_string()
     }

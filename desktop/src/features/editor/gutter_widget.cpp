@@ -183,8 +183,10 @@ void GutterWidget::drawLineHighlight(QPainter *painter,
     highlightedLines.push_back(cursorRow);
 
     // Draw line highlight
+    auto lineHighlightColor =
+        UiUtils::getThemeColor(themeManager, "editor.highlight");
     painter->setPen(Qt::NoPen);
-    painter->setBrush(QBrush(LINE_HIGHLIGHT_COLOR));
+    painter->setBrush(lineHighlightColor);
     painter->drawRect(getLineRect(cursorRow, 0, viewport()->width(), ctx));
   }
 }

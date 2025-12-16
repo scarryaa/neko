@@ -440,7 +440,7 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
 
     neko::Editor &editor = appState->get_editor_mut();
     setActiveEditor(&editor);
-    editorWidget->updateDimensionsAndRepaint();
+    editorWidget->redraw();
     gutterWidget->updateDimensionsAndRepaint();
 
     int currentIndex = appState->get_active_tab_index();
@@ -505,8 +505,10 @@ void MainWindow::onFileSelected(const std::string &filePath,
   if (appState->open_file(filePath)) {
     updateTabBar();
     switchToActiveTab(false);
-    editorWidget->updateDimensionsAndRepaint();
+
+    editorWidget->redraw();
     gutterWidget->updateDimensionsAndRepaint();
+
     if (shouldFocusEditor) {
       editorWidget->setFocus();
     }

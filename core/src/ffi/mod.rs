@@ -218,6 +218,8 @@ mod bridge {
         fn number_of_selections(self: &Editor) -> usize;
         #[cxx_name = "get_line_length"]
         fn line_length(self: &Editor, row: usize) -> usize;
+        #[cxx_name = "get_lines"]
+        fn lines(self: &Editor) -> Vec<String>;
 
         // FileTree
         #[cxx_name = "set_root_dir"]

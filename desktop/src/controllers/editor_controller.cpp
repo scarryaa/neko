@@ -148,6 +148,45 @@ void EditorController::clearSelectionOrCursors() {
   }
 }
 
+void EditorController::addCursor(neko::AddCursorDirectionKind dirKind, int row,
+                                 int column) {
+  switch (dirKind) {
+  case neko::AddCursorDirectionKind::Above: {
+    neko::AddCursorDirectionFfi dir;
+    dir.kind = dirKind;
+
+    editor->add_cursor(dir);
+    break;
+  }
+  case neko::AddCursorDirectionKind::Below: {
+    neko::AddCursorDirectionFfi dir;
+    dir.kind = dirKind;
+
+    editor->add_cursor(dir);
+    break;
+  }
+  case neko::AddCursorDirectionKind::At: {
+    neko::AddCursorDirectionFfi dir;
+    dir.kind = dirKind;
+    dir.row = row;
+    dir.col = column;
+
+    editor->add_cursor(dir);
+    break;
+  }
+  }
+
+  auto cursorPosition =
+      editor->get_cursor_positions()[editor->get_active_cursor_index()];
+
+  auto cursorCount = editor->get_cursor_positions().size();
+  auto selectionCount = editor->get_number_of_selections();
+  emit cursorChanged(cursorPosition.row, cursorPosition.col, cursorCount,
+                     selectionCount);
+
+  emit viewportChanged();
+}
+
 void EditorController::refresh() {
   // TODO: Emit current state after change (e.g. opening a file)
 }
