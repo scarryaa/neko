@@ -1,7 +1,7 @@
 #include "gutter_widget.h"
-#include "utils/gui_utils.h"
 
 GutterWidget::GutterWidget(neko::Editor *editor,
+                           EditorController *editorController,
                            neko::ConfigManager &configManager,
                            neko::ThemeManager &themeManager, QWidget *parent)
     : QScrollArea(parent), editor(editor), configManager(configManager),
@@ -22,6 +22,16 @@ GutterWidget::GutterWidget(neko::Editor *editor,
           &GutterWidget::redraw);
   connect(horizontalScrollBar(), &QScrollBar::valueChanged, this,
           &GutterWidget::redraw);
+
+  // EditorController -> GutterWidget connections
+  connect(editorController, &EditorController::bufferChanged, this,
+          &GutterWidget::onBufferChanged);
+  connect(editorController, &EditorController::cursorChanged, this,
+          &GutterWidget::onCursorChanged);
+  connect(editorController, &EditorController::selectionChanged, this,
+          &GutterWidget::onSelectionChanged);
+  connect(editorController, &EditorController::viewportChanged, this,
+          &GutterWidget::onViewportChanged);
 }
 
 GutterWidget::~GutterWidget() {}

@@ -33,6 +33,8 @@ qt_add_executable(neko
     src/features/editor/render/gutter_renderer.h
     src/features/editor/render/render_state.h
     src/features/editor/render/render_theme.h
+    src/features/editor/controllers/editor_controller.cpp
+    src/features/editor/controllers/editor_controller.h
 
     src/features/file_explorer/file_explorer_widget.cpp
     src/features/file_explorer/file_explorer_widget.h
@@ -40,9 +42,6 @@ qt_add_executable(neko
     src/features/tabs/tab_bar_widget.h
     src/features/tabs/tab_widget.cpp
     src/features/tabs/tab_widget.h
-
-    src/controllers/editor_controller.cpp
-    src/controllers/editor_controller.h
 
     src/utils/change_mask.h
     src/utils/editor_utils.cpp

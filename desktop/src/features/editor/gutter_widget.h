@@ -1,6 +1,7 @@
 #ifndef GUTTER_WIDGET_H
 #define GUTTER_WIDGET_H
 
+#include "controllers/editor_controller.h"
 #include "features/editor/render/render_state.h"
 #include "neko-core/src/ffi/mod.rs.h"
 #include "render/gutter_renderer.h"
@@ -19,6 +20,7 @@ class GutterWidget : public QScrollArea {
 
 public:
   explicit GutterWidget(neko::Editor *editor,
+                        EditorController *editorController,
                         neko::ConfigManager &configManager,
                         neko::ThemeManager &themeManager,
                         QWidget *parent = nullptr);

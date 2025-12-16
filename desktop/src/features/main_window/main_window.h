@@ -1,7 +1,7 @@
 #ifndef MAIN_WINDOW_H
 #define MAIN_WINDOW_H
 
-#include "controllers/editor_controller.h"
+#include "features/editor/controllers/editor_controller.h"
 #include "features/editor/editor_widget.h"
 #include "features/editor/gutter_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
