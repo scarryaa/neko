@@ -1,6 +1,4 @@
 #include "main_window.h"
-#include "features/editor/controllers/editor_controller.h"
-#include "features/editor/editor_widget.h"
 
 // TODO: StatusBar signals/tab inform and MainWindow editor ref
 // are messy and need to be cleaned up. Also consider "rearchitecting"
@@ -33,6 +31,7 @@ void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
   titleBarWidget = new TitleBarWidget(*configManager, *themeManager, this);
   fileExplorerWidget =
       new FileExplorerWidget(fileTree, *configManager, *themeManager, this);
+  commandPaletteWidget = new CommandPaletteWidget(this);
   editorWidget = new EditorWidget(editor, editorController, *configManager,
                                   *themeManager, this);
   gutterWidget = new GutterWidget(editor, editorController, *configManager,
@@ -284,9 +283,7 @@ void MainWindow::onFileExplorerToggled() {
   configManager->set_file_explorer_shown(isOpen);
 }
 
-void MainWindow::onCursorPositionClicked() {
-  // TODO: Show dialog to enter a new cursor position
-}
+void MainWindow::onCursorPositionClicked() { commandPaletteWidget->show(); }
 
 void MainWindow::saveCurrentScrollState() {
   if (appState->get_tab_count() > 0) {

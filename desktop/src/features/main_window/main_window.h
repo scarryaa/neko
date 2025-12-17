@@ -1,6 +1,7 @@
 #ifndef MAIN_WINDOW_H
 #define MAIN_WINDOW_H
 
+#include "features/command_palette/command_palette_widget.h"
 #include "features/editor/controllers/editor_controller.h"
 #include "features/editor/editor_widget.h"
 #include "features/editor/gutter_widget.h"
@@ -72,6 +73,7 @@ private:
 
   QWidget *emptyStateWidget;
   FileExplorerWidget *fileExplorerWidget;
+  CommandPaletteWidget *commandPaletteWidget;
   EditorWidget *editorWidget;
   GutterWidget *gutterWidget;
   TitleBarWidget *titleBarWidget;

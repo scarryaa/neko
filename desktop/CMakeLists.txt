@@ -46,6 +46,9 @@ qt_add_executable(neko
     src/features/tabs/controllers/tab_controller.cpp
     src/features/tabs/controllers/tab_controller.h
 
+    src/features/command_palette/command_palette_widget.cpp
+    src/features/command_palette/command_palette_widget.h
+
     src/utils/change_mask.h
     src/utils/editor_utils.cpp
     src/utils/editor_utils.h
