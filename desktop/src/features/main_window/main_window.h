@@ -38,8 +38,13 @@ private slots:
 private:
   void setupWidgets(neko::Editor *editor, neko::FileTree *fileTree);
   void setupLayout();
+  QWidget *buildTabBarSection();
+  QWidget *buildEmptyStateSection();
+  QWidget *buildEditorSection(QWidget *emptyState);
+  QSplitter *buildSplitter(QWidget *editorSideContainer);
   void connectSignals();
   void applyInitialState(neko::Editor *editor);
+
   void setActiveEditor(neko::Editor *newEditor);
   void refreshStatusBarCursor(neko::Editor *editor);
   void saveAs();

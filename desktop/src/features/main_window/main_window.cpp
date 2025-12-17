@@ -37,7 +37,6 @@ void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
                                   *themeManager, this);
   statusBarWidget =
       new StatusBarWidget(editor, *configManager, *themeManager, this);
-
   tabBarContainer = new QWidget(this);
   tabBarWidget =
       new TabBarWidget(*configManager, *themeManager, tabBarContainer);
@@ -48,10 +47,8 @@ void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
 void MainWindow::connectSignals() {
   // TODO: Remove/prune EditorWidget <-> GutterWidget connections to go
   // thru EditorController
-  connect(fileExplorerWidget, &FileExplorerWidget::fileSelected, this,
-          &MainWindow::onFileSelected);
-  connect(fileExplorerWidget, &FileExplorerWidget::directorySelected,
-          titleBarWidget, &TitleBarWidget::onDirChanged);
+
+  // GutterWidget <-> EditorWidget
   connect(gutterWidget->verticalScrollBar(), &QScrollBar::valueChanged,
           editorWidget->verticalScrollBar(), &QScrollBar::setValue);
   connect(editorWidget->verticalScrollBar(), &QScrollBar::valueChanged,
@@ -60,18 +57,34 @@ void MainWindow::connectSignals() {
           &GutterWidget::onEditorFontSizeChanged);
   connect(editorWidget, &EditorWidget::lineCountChanged, gutterWidget,
           &GutterWidget::onEditorLineCountChanged);
-  connect(titleBarWidget, &TitleBarWidget::directorySelectionButtonPressed,
-          fileExplorerWidget, &FileExplorerWidget::directorySelectionRequested);
   connect(editorWidget, &EditorWidget::cursorPositionChanged, gutterWidget,
           &GutterWidget::onEditorCursorPositionChanged);
+
+  // FileExplorerWidget -> MainWindow
+  connect(fileExplorerWidget, &FileExplorerWidget::fileSelected, this,
+          &MainWindow::onFileSelected);
+
+  // FileExplorerWidget <-> TitleBarWidget
+  connect(fileExplorerWidget, &FileExplorerWidget::directorySelected,
+          titleBarWidget, &TitleBarWidget::onDirChanged);
+
+  // TitleBarWidget -> FileExplorerWidget
+  connect(titleBarWidget, &TitleBarWidget::directorySelectionButtonPressed,
+          fileExplorerWidget, &FileExplorerWidget::directorySelectionRequested);
+
+  // EditorWidget -> MainWindow
   connect(editorWidget, &EditorWidget::newTabRequested, this,
           &MainWindow::onNewTabRequested);
   connect(editorWidget, &EditorWidget::bufferChanged, this,
           &MainWindow::onBufferChanged);
+
+  // StatusBarWidget -> MainWindow
   connect(statusBarWidget, &StatusBarWidget::fileExplorerToggled, this,
           &MainWindow::onFileExplorerToggled);
   connect(statusBarWidget, &StatusBarWidget::cursorPositionClicked, this,
           &MainWindow::onCursorPositionClicked);
+
+  // EditorWidget -> StatusBarWidget
   connect(editorWidget, &EditorWidget::cursorPositionChanged, statusBarWidget,
           &StatusBarWidget::onCursorPositionChanged);
 
@@ -103,15 +116,25 @@ void MainWindow::setupLayout() {
   editorSideLayout->setContentsMargins(0, 0, 0, 0);
   editorSideLayout->setSpacing(0);
 
-  QHBoxLayout *tabBarLayout = new QHBoxLayout(tabBarContainer);
+  editorSideLayout->addWidget(buildTabBarSection());
+  QWidget *emptyState = buildEmptyStateSection();
+  editorSideLayout->addWidget(buildEditorSection(emptyState));
+
+  auto *splitter = buildSplitter(editorSideContainer);
+
+  mainLayout->addWidget(splitter);
+  mainLayout->addWidget(statusBarWidget);
+  setCentralWidget(mainContainer);
+}
+
+QWidget *MainWindow::buildTabBarSection() {
+  auto *tabBarLayout = new QHBoxLayout(tabBarContainer);
   tabBarLayout->setContentsMargins(0, 0, 0, 0);
   tabBarLayout->setSpacing(0);
 
-  QPushButton *newTabButton = new QPushButton("+", tabBarContainer);
+  auto *newTabButton = new QPushButton("+", tabBarContainer);
 
   QFont uiFont = UiUtils::loadFont(*configManager, neko::FontType::Interface);
-
-  // Height = Font Height + Top Padding (8) + Bottom Padding (8)
   QFontMetrics fm(uiFont);
   int dynamicHeight = fm.height() + 16;
 
@@ -147,9 +170,10 @@ void MainWindow::setupLayout() {
   connect(newTabButton, &QPushButton::clicked, this,
           &MainWindow::onNewTabRequested);
 
-  editorSideLayout->addWidget(tabBarContainer);
+  return tabBarContainer;
+}
 
-  // Empty state layout
+QWidget *MainWindow::buildEmptyStateSection() {
   QString accentMutedColor =
       UiUtils::getThemeColor(*themeManager, "ui.accent.muted");
   QString foregroundColor =
@@ -163,30 +187,31 @@ void MainWindow::setupLayout() {
               "%3; }")
           .arg(emptyStateBackgroundColor, accentMutedColor, foregroundColor);
   emptyStateWidget->setStyleSheet(emptyStateStylesheet);
-  QVBoxLayout *emptyLayout = new QVBoxLayout(emptyStateWidget);
+  auto *emptyLayout = new QVBoxLayout(emptyStateWidget);
   emptyLayout->setAlignment(Qt::AlignCenter);
 
-  QPushButton *emptyStateNewTabButton =
-      new QPushButton("New Tab", emptyStateWidget);
+  auto *emptyStateNewTabButton = new QPushButton("New Tab", emptyStateWidget);
   emptyStateNewTabButton->setFixedSize(80, 35);
   connect(emptyStateNewTabButton, &QPushButton::clicked, this,
           &MainWindow::onNewTabRequested);
 
   emptyLayout->addWidget(emptyStateNewTabButton);
+  emptyStateWidget->hide();
+  return emptyStateWidget;
+}
 
-  // Editor and gutter
+QWidget *MainWindow::buildEditorSection(QWidget *emptyState) {
   QWidget *editorContainer = new QWidget(this);
-  QHBoxLayout *editorLayout = new QHBoxLayout(editorContainer);
+  auto *editorLayout = new QHBoxLayout(editorContainer);
   editorLayout->setContentsMargins(0, 0, 0, 0);
   editorLayout->setSpacing(0);
   editorLayout->addWidget(gutterWidget, 0);
   editorLayout->addWidget(editorWidget, 1);
-  editorLayout->addWidget(emptyStateWidget);
+  editorLayout->addWidget(emptyState);
+  return editorContainer;
+}
 
-  emptyStateWidget->hide();
-
-  editorSideLayout->addWidget(editorContainer);
-
+QSplitter *MainWindow::buildSplitter(QWidget *editorSideContainer) {
   auto *splitter = new QSplitter(Qt::Horizontal, this);
   splitter->addWidget(fileExplorerWidget);
   splitter->addWidget(editorSideContainer);
@@ -216,9 +241,7 @@ void MainWindow::setupLayout() {
                      }
                    });
 
-  mainLayout->addWidget(splitter);
-  mainLayout->addWidget(statusBarWidget);
-  setCentralWidget(mainContainer);
+  return splitter;
 }
 
 void MainWindow::applyInitialState(neko::Editor *editor) {
