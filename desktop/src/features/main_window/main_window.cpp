@@ -31,7 +31,7 @@ void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
   titleBarWidget = new TitleBarWidget(*configManager, *themeManager, this);
   fileExplorerWidget =
       new FileExplorerWidget(fileTree, *configManager, *themeManager, this);
-  commandPaletteWidget = new CommandPaletteWidget(this);
+  commandPaletteWidget = new CommandPaletteWidget(*themeManager, this);
   editorWidget = new EditorWidget(editor, editorController, *configManager,
                                   *themeManager, this);
   gutterWidget = new GutterWidget(editor, editorController, *configManager,

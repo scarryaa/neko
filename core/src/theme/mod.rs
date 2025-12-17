@@ -36,6 +36,18 @@ impl Default for Theme {
             "file_explorer.background".to_string(),
             "#000000".to_string(),
         );
+        colors.insert(
+            "command_palette.background".to_string(),
+            "#000000".to_string(),
+        );
+        colors.insert(
+            "command_palette.border".to_string(),
+            "#40ffffff".to_string(),
+        );
+        colors.insert(
+            "command_palette.shadow".to_string(),
+            "#66000000".to_string(),
+        );
 
         colors.insert("sidebar.background".to_string(), "#000000".to_string());
         colors.insert("ui.foreground".to_string(), "#d4d4d4".to_string());

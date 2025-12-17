@@ -1,28 +1,40 @@
 #import "command_palette_widget.h"
+#include "utils/gui_utils.h"
 
-CommandPaletteWidget::CommandPaletteWidget(QWidget *parent)
-    : QWidget(parent), parent(parent) {
+CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
+                                           QWidget *parent)
+    : QWidget(parent), parent(parent), themeManager(themeManager) {
   setWindowFlags(Qt::Popup | Qt::FramelessWindowHint |
                  Qt::WindowStaysOnTopHint | Qt::NoDropShadowWindowHint);
   setAttribute(Qt::WA_TranslucentBackground);
   setAutoFillBackground(false);
+  setFixedSize(QSize(WIDTH, HEIGHT));
   installEventFilter(this);
-  setFixedSize(QSize(800, 300));
-  setStyleSheet(
+
+  auto backgroundColor =
+      UiUtils::getThemeColor(themeManager, "command_palette.background");
+  auto borderColor =
+      UiUtils::getThemeColor(themeManager, "command_palette.border");
+  auto shadowColor =
+      UiUtils::getThemeColor(themeManager, "command_palette.shadow");
+
+  QString stylesheet =
       "CommandPaletteWidget { background: transparent; border: none; "
-      "} QFrame{ border-radius: 12px; background: black; border: 1.5px "
-      "solid #40ffffff; }");
+      "} QFrame{ border-radius: 12px; background: %1; border: 1.5px "
+      "solid %2; }";
+  setStyleSheet(stylesheet.arg(backgroundColor, borderColor));
 
   QFrame *mainFrame = new QFrame(this);
 
   QVBoxLayout *layout = new QVBoxLayout(this);
-  layout->setContentsMargins(20, 20, 20, 20);
+  layout->setContentsMargins(CONTENT_MARGIN, CONTENT_MARGIN, CONTENT_MARGIN,
+                             CONTENT_MARGIN);
   layout->addWidget(mainFrame);
 
   QGraphicsDropShadowEffect *shadow = new QGraphicsDropShadowEffect(this);
-  shadow->setBlurRadius(25.0);
-  shadow->setColor(QColor(0, 0, 0, 100));
-  shadow->setOffset(0, 5);
+  shadow->setBlurRadius(SHADOW_BLUR_RADIUS);
+  shadow->setColor(shadowColor);
+  shadow->setOffset(SHADOW_X_OFFSET, SHADOW_Y_OFFSET);
 
   mainFrame->setGraphicsEffect(shadow);
 }
@@ -34,7 +46,7 @@ void CommandPaletteWidget::showEvent(QShowEvent *event) {
     return;
 
   int x = (parentWidget()->width() - this->width()) / 2;
-  int y = 300;
+  int y = TOP_OFFSET;
 
   move(parentWidget()->mapToGlobal(QPoint(x, y)));
 
