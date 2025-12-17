@@ -50,10 +50,7 @@ protected:
 
 signals:
   void fontSizeChanged(qreal newSize);
-  void lineCountChanged();
-  void cursorPositionChanged(int row, int col, int numberOfCursors);
   void newTabRequested();
-  void bufferChanged();
 
 private:
   double getTextWidth(const QString &text, double horizontalOffset) const;

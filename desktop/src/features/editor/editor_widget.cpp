@@ -140,9 +140,6 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
     editorController->moveTo(rc.row, rc.col, true);
   }
 
-  auto numberOfCursors = editor->get_cursor_positions().size();
-  emit cursorPositionChanged(rc.row, rc.col, numberOfCursors);
-
   redraw();
 }
 
@@ -154,11 +151,7 @@ void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
   if (event->buttons() == Qt::LeftButton) {
     RowCol rc =
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
-
     editorController->selectTo(rc.row, rc.col);
-
-    auto numberOfCursors = editor->get_cursor_positions().size();
-    emit cursorPositionChanged(rc.row, rc.col, numberOfCursors);
 
     redraw();
   }

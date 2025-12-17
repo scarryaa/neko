@@ -70,7 +70,9 @@ void MainWindow::connectSignals() {
   // EditorWidget -> MainWindow
   connect(editorWidget, &EditorWidget::newTabRequested, this,
           &MainWindow::onNewTabRequested);
-  connect(editorWidget, &EditorWidget::bufferChanged, this,
+
+  // EditorController -> MainWindow
+  connect(editorController, &EditorController::bufferChanged, this,
           &MainWindow::onBufferChanged);
 
   // StatusBarWidget -> MainWindow
@@ -79,8 +81,8 @@ void MainWindow::connectSignals() {
   connect(statusBarWidget, &StatusBarWidget::cursorPositionClicked, this,
           &MainWindow::onCursorPositionClicked);
 
-  // EditorWidget -> StatusBarWidget
-  connect(editorWidget, &EditorWidget::cursorPositionChanged, statusBarWidget,
+  // EditorController -> StatusBarWidget
+  connect(editorController, &EditorController::cursorChanged, statusBarWidget,
           &StatusBarWidget::onCursorPositionChanged);
 
   // TabController -> MainWindow
