@@ -25,7 +25,7 @@ public:
                                 QWidget *parent = nullptr);
   ~CommandPaletteWidget();
 
-  void jumpToRowColumn(int currentRow = 0, int currentCol = 0,
+  void jumpToRowColumn(int currentRow = 0, int currentCol = 0, int maxCol = 1,
                        int lineCount = 1);
 
 signals:
@@ -53,13 +53,18 @@ private:
   QVBoxLayout *frameLayout;
   QLineEdit *jumpInput;
   int maxLineCount = 1;
+  int maxColumn = 1;
+  int currentRow = 1;
 
   enum class Mode { None, GoToPosition };
   Mode currentMode = Mode::None;
 
   void clearContent();
-  void buildJumpContent(int currentRow, int currentCol, int lineCount);
+  void buildJumpContent(int currentRow, int currentCol, int maxCol,
+                        int lineCount);
   void emitJumpRequestFromInput();
+  void jumpToLineStart();
+  void jumpToLineEnd();
 };
 
 #endif // COMMAND_PALETTE_WIDGET_H

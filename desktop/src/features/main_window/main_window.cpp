@@ -293,7 +293,9 @@ void MainWindow::onCursorPositionClicked() {
 
   auto cursor = appState->get_editor_mut().get_last_added_cursor();
   auto lineCount = appState->get_editor_mut().get_line_count();
-  commandPaletteWidget->jumpToRowColumn(cursor.row, cursor.col, lineCount);
+  auto maxCol = appState->get_editor_mut().get_line_length(cursor.row);
+  commandPaletteWidget->jumpToRowColumn(cursor.row, cursor.col, maxCol,
+                                        lineCount);
 }
 
 void MainWindow::onCommandPaletteGoToPosition(int row, int col) {

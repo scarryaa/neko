@@ -59,13 +59,25 @@ void CommandPaletteWidget::showEvent(QShowEvent *event) {
 }
 
 void CommandPaletteWidget::jumpToRowColumn(int currentRow, int currentCol,
-                                           int lineCount) {
-  buildJumpContent(currentRow, currentCol, lineCount);
+                                           int maxCol, int lineCount) {
+  buildJumpContent(currentRow, currentCol, maxCol, lineCount);
   show();
   if (jumpInput) {
     jumpInput->setFocus();
     jumpInput->selectAll();
   }
+}
+
+void dkdkdkdkd() {}
+
+void CommandPaletteWidget::jumpToLineStart() {
+  emit goToPositionRequested(currentRow, 0);
+  close();
+}
+
+void CommandPaletteWidget::jumpToLineEnd() {
+  emit goToPositionRequested(currentRow, maxColumn);
+  close();
 }
 
 void CommandPaletteWidget::emitJumpRequestFromInput() {
@@ -81,6 +93,16 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
   const QStringList parts = text.split(':', Qt::SkipEmptyParts);
   bool okRow = false;
   bool okCol = true;
+
+  if (text == "le") {
+    // Jump to end of current line
+    jumpToLineEnd();
+    return;
+  } else if (text == "lb") {
+    // Jump to start of current line
+    jumpToLineStart();
+    return;
+  }
 
   int row = parts.value(0).toInt(&okRow);
   int col = parts.size() > 1 ? parts.value(1).toInt(&okCol) : 1;
@@ -115,14 +137,18 @@ void CommandPaletteWidget::clearContent() {
 }
 
 void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
-                                            int lineCount) {
+                                            int maxCol, int lineCount) {
   clearContent();
   currentMode = Mode::GoToPosition;
   maxLineCount = std::max(1, lineCount);
+  maxColumn = maxCol;
+  this->currentRow = currentRow;
   int clampedRow = std::clamp(currentRow, 0, maxLineCount - 1);
-  int clampedCol = std::max(0, currentCol);
+  int clampedCol = std::clamp(currentCol, 0, maxCol - 1);
 
   auto foregroundColor = UiUtils::getThemeColor(themeManager, "ui.foreground");
+  auto foregroundVeryMutedColor =
+      UiUtils::getThemeColor(themeManager, "ui.foreground.very_muted");
   auto font = UiUtils::loadFont(configManager, neko::FontType::Interface);
   font.setPointSizeF(20.0);
 
@@ -167,10 +193,30 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
   label->setWordWrap(false);
   label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
+  // TODO: Move these elsewhere when shortcuts grow?
+  auto *leHintLabel = new QLabel(QString("le = current line end"), mainFrame);
+  QString leStyleSheet("color: %1; border: 0px; padding-left: 12px; "
+                       "padding-right: 12px;");
+  leHintLabel->setStyleSheet(styleSheet.arg(foregroundVeryMutedColor));
+  leHintLabel->setFont(font);
+  font.setPointSizeF(16.0);
+  leHintLabel->setWordWrap(false);
+  leHintLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+  auto *lbHintLabel = new QLabel(QString("lb = current line start"), mainFrame);
+  QString lbStyleSheet("color: %1; border: 0px; padding-left: 12px; "
+                       "padding-right: 12px;");
+  lbHintLabel->setStyleSheet(styleSheet.arg(foregroundVeryMutedColor));
+  lbHintLabel->setFont(font);
+  lbHintLabel->setWordWrap(false);
+  lbHintLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
   auto *topLabelSpacer =
       new QSpacerItem(0, 4, QSizePolicy::Minimum, QSizePolicy::Fixed);
   frameLayout->addItem(topLabelSpacer);
   frameLayout->addWidget(label);
+  frameLayout->addWidget(leHintLabel);
+  frameLayout->addWidget(lbHintLabel);
   auto *bottomLabelSpacer =
       new QSpacerItem(0, 12, QSizePolicy::Minimum, QSizePolicy::Fixed);
   frameLayout->addItem(bottomLabelSpacer);
