@@ -33,15 +33,25 @@ FileExplorerWidget::FileExplorerWidget(neko::FileTree *tree,
   connect(directorySelectionButton, &QPushButton::clicked, this,
           [this]() { directorySelectionRequested(); });
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
-          [this]() { viewport()->repaint(); });
+          [this]() { redraw(); });
   connect(horizontalScrollBar(), &QScrollBar::valueChanged, this,
-          [this]() { viewport()->repaint(); });
+          [this]() { redraw(); });
 }
 
 FileExplorerWidget::~FileExplorerWidget() {}
 
+void FileExplorerWidget::focusInEvent(QFocusEvent *event) {
+  focusReceivedFromMouse = event->reason() == Qt::MouseFocusReason;
+  QScrollArea::focusInEvent(event);
+}
+
+void FileExplorerWidget::focusOutEvent(QFocusEvent *event) {
+  focusReceivedFromMouse = false;
+  QScrollArea::focusOutEvent(event);
+}
+
 void FileExplorerWidget::resizeEvent(QResizeEvent *event) {
-  handleViewportUpdate();
+  updateDimensions();
 }
 
 void FileExplorerWidget::loadSavedDir() {
@@ -72,13 +82,25 @@ void FileExplorerWidget::initialize(std::string path) {
   tree->set_root_dir(path);
   emit directorySelected(path);
   loadDirectory(path);
-  handleViewportUpdate();
 }
 
 void FileExplorerWidget::loadDirectory(const std::string path) {
-  fileNodes = tree->get_children(path);
+  setFileNodes(tree->get_children(path));
+  redraw();
+}
+
+void FileExplorerWidget::setFileNodes(rust::Vec<neko::FileNode> nodes,
+                                      bool updateScrollbars) {
+  fileNodes = std::move(nodes);
   fileCount = fileNodes.size();
-  viewport()->repaint();
+
+  if (updateScrollbars) {
+    updateDimensions();
+  }
+}
+
+void FileExplorerWidget::refreshVisibleNodes(bool updateScrollbars) {
+  setFileNodes(tree->get_visible_nodes(), updateScrollbars);
 }
 
 double FileExplorerWidget::measureContent() {
@@ -95,11 +117,12 @@ double FileExplorerWidget::measureContent() {
   return finalWidth;
 }
 
-void FileExplorerWidget::handleViewportUpdate() {
-  auto viewportHeight = (fileCount * fontMetrics.height()) -
-                        viewport()->height() + VIEWPORT_PADDING;
-  auto contentWidth = measureContent();
-  auto viewportWidth = contentWidth - viewport()->width() + VIEWPORT_PADDING;
+void FileExplorerWidget::updateDimensions() {
+  const double lineHeight = fontMetrics.height();
+  const double viewportHeight = std::max(
+      0.0, (fileCount * lineHeight) - viewport()->height() + VIEWPORT_PADDING);
+  const double viewportWidth =
+      std::max(0.0, measureContent() - viewport()->width() + VIEWPORT_PADDING);
 
   horizontalScrollBar()->setRange(0, viewportWidth);
   verticalScrollBar()->setRange(0, viewportHeight);
@@ -118,15 +141,23 @@ void FileExplorerWidget::wheelEvent(QWheelEvent *event) {
 
   horizontalScrollBar()->setValue(newHorizontalScrollOffset);
   verticalScrollBar()->setValue(newVerticalScrollOffset);
-  viewport()->repaint();
+  redraw();
 }
 
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
+  const bool refocusClick = focusReceivedFromMouse;
+  focusReceivedFromMouse = false;
+
   int row = convertMousePositionToRow(event->pos().y());
 
   if (row >= fileCount) {
+    if (refocusClick) {
+      setFocus();
+      return;
+    }
+
     tree->clear_current();
-    viewport()->repaint();
+    redraw();
     return;
   }
 
@@ -135,20 +166,17 @@ void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
 
   if (node.is_dir) {
     tree->toggle_expanded(node.path);
-    fileNodes = tree->get_visible_nodes();
-    fileCount = fileNodes.size();
-    handleViewportUpdate();
+    refreshVisibleNodes();
   } else {
     QString fileStr = QString::fromUtf8(node.path);
     emit fileSelected(fileStr.toStdString(), false);
   }
 
-  viewport()->repaint();
+  redraw();
 }
 
 int FileExplorerWidget::convertMousePositionToRow(double y) {
   const double lineHeight = fontMetrics.height();
-  const int scrollX = horizontalScrollBar()->value();
   const int scrollY = verticalScrollBar()->value();
 
   const size_t targetRow = (y + scrollY) / lineHeight;
@@ -158,7 +186,30 @@ int FileExplorerWidget::convertMousePositionToRow(double y) {
 
 void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   bool shouldScroll = false;
-  bool shouldUpdateViewport = false;
+
+  const auto mods = event->modifiers();
+  const bool ctrl = mods.testFlag(Qt::ControlModifier);
+  const bool shift = mods.testFlag(Qt::ShiftModifier);
+
+  if (ctrl) {
+    switch (event->key()) {
+    case Qt::Key_C:
+      handleCopy();
+      return;
+    case Qt::Key_V:
+      handlePaste();
+      return;
+    case Qt::Key_Equal:
+      increaseFontSize();
+      return;
+    case Qt::Key_Minus:
+      decreaseFontSize();
+      return;
+    case Qt::Key_0:
+      resetFontSize();
+      return;
+    }
+  }
 
   switch (event->key()) {
   case Qt::Key_Up:
@@ -184,50 +235,12 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   case Qt::Key_Return:
     handleEnter();
     break;
-  case Qt::Key_C:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
-      handleCopy();
-    }
-    break;
-  case Qt::Key_V:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
-      handlePaste();
-    }
-    break;
   case Qt::Key_Delete:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ShiftModifier)) {
+    if (shift) {
       handleDeleteNoConfirm();
     } else {
       handleDeleteConfirm();
     }
-
-  case Qt::Key_Equal:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
-      increaseFontSize();
-      shouldScroll = true;
-      shouldUpdateViewport = true;
-    }
-    break;
-  case Qt::Key_Minus:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
-      decreaseFontSize();
-    } else {
-      shouldScroll = true;
-      shouldUpdateViewport = true;
-    }
-    break;
-  case Qt::Key_0:
-    if (event->modifiers().testFlag(Qt::KeyboardModifier::ControlModifier)) {
-      resetFontSize();
-    } else {
-      shouldScroll = true;
-      shouldUpdateViewport = true;
-    }
-    break;
-  }
-
-  if (shouldUpdateViewport) {
-    handleViewportUpdate();
   }
 
   if (shouldScroll) {
@@ -235,8 +248,10 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
     scrollToNode(index);
   }
 
-  viewport()->repaint();
+  redraw();
 }
+
+void FileExplorerWidget::redraw() { viewport()->update(); }
 
 void FileExplorerWidget::resetFontSize() { setFontSize(DEFAULT_FONT_SIZE); }
 
@@ -256,7 +271,7 @@ void FileExplorerWidget::setFontSize(double newFontSize) {
   font.setPointSizeF(newFontSize);
   fontMetrics = QFontMetricsF(font);
 
-  viewport()->repaint();
+  redraw();
   UiUtils::setFontSize(configManager, neko::FontType::FileExplorer,
                        newFontSize);
 }
@@ -307,11 +322,9 @@ void FileExplorerWidget::deleteItem(std::string path,
 
     if (dir.removeRecursively()) {
       tree->refresh_dir(parentPath);
-      fileNodes = tree->get_visible_nodes();
-      fileCount = fileNodes.size();
+      refreshVisibleNodes();
 
       tree->set_current(prevNode.path);
-      handleViewportUpdate();
     } else {
       qDebug() << "Failed to remove directory";
     }
@@ -320,11 +333,9 @@ void FileExplorerWidget::deleteItem(std::string path,
 
     if (file.remove()) {
       tree->refresh_dir(parentPath);
-      fileNodes = tree->get_visible_nodes();
-      fileCount = fileNodes.size();
+      refreshVisibleNodes();
 
       tree->set_current(prevNode.path);
-      handleViewportUpdate();
     } else {
       qDebug() << "Failed to remove file";
     }
@@ -371,9 +382,7 @@ void FileExplorerWidget::handlePaste() {
   }
 
   tree->refresh_dir(currentIsDir ? rawCurrentPath : parentPath);
-  fileNodes = tree->get_visible_nodes();
-  fileCount = fileNodes.size();
-  handleViewportUpdate();
+  refreshVisibleNodes();
 }
 
 bool FileExplorerWidget::copyRecursively(QString sourceFolder,
@@ -419,9 +428,7 @@ void FileExplorerWidget::handleLeft() {
     collapseNode();
   }
 
-  fileNodes = tree->get_visible_nodes();
-  fileCount = fileNodes.size();
-  handleViewportUpdate();
+  refreshVisibleNodes();
 }
 
 void FileExplorerWidget::handleRight() {
@@ -439,9 +446,7 @@ void FileExplorerWidget::handleRight() {
     }
   }
 
-  fileNodes = tree->get_visible_nodes();
-  fileCount = fileNodes.size();
-  handleViewportUpdate();
+  refreshVisibleNodes();
 }
 
 void FileExplorerWidget::handleEnter() {
@@ -470,8 +475,7 @@ void FileExplorerWidget::handleEnter() {
     }
   }
 
-  fileNodes = tree->get_visible_nodes();
-  fileCount = fileNodes.size();
+  refreshVisibleNodes();
 }
 
 void FileExplorerWidget::selectNextNode() {
@@ -546,10 +550,7 @@ void FileExplorerWidget::expandNode() {
   }
 
   tree->set_expanded(rawCurrentPath);
-  fileNodes = tree->get_visible_nodes();
-  fileCount = fileNodes.size();
-
-  handleViewportUpdate();
+  refreshVisibleNodes();
 }
 
 void FileExplorerWidget::collapseNode() {
@@ -565,10 +566,7 @@ void FileExplorerWidget::collapseNode() {
   }
 
   tree->set_collapsed(rawCurrentPath);
-  fileNodes = tree->get_visible_nodes();
-  fileCount = fileNodes.size();
-
-  handleViewportUpdate();
+  refreshVisibleNodes();
 }
 
 void FileExplorerWidget::scrollToNode(int index) {
@@ -636,7 +634,6 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   }
 
   // Current item border
-  bool verticalScrollBarShown = !verticalScrollBar()->isHidden();
   if (isCurrent && hasFocus()) {
     painter->setBrush(Qt::NoBrush);
     painter->setPen(accentColor);

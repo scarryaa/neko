@@ -6,6 +6,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QFileDialog>
+#include <QFocusEvent>
 #include <QFont>
 #include <QFontMetricsF>
 #include <QIcon>
@@ -19,6 +20,7 @@
 #include <QStyle>
 #include <QVBoxLayout>
 #include <QWheelEvent>
+#include <algorithm>
 #include <string>
 
 struct FileTree;
@@ -42,6 +44,8 @@ protected:
   void paintEvent(QPaintEvent *event) override;
   void wheelEvent(QWheelEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
+  void focusInEvent(QFocusEvent *event) override;
+  void focusOutEvent(QFocusEvent *event) override;
 
 signals:
   void directorySelected(const std::string path);
@@ -51,12 +55,17 @@ public slots:
   void directorySelectionRequested();
 
 private:
+  void redraw();
   void drawFiles(QPainter *painter, size_t count, rust::Vec<neko::FileNode>);
   void drawFile(QPainter *painter, double x, double y, neko::FileNode node);
 
   void loadDirectory(const std::string path);
+  void setFileNodes(rust::Vec<neko::FileNode> nodes,
+                    bool updateScrollbars = true);
+  void refreshVisibleNodes(bool updateScrollbars = true);
 
   double measureContent();
+  void updateDimensions();
   void handleViewportUpdate();
   void scrollToNode(int index);
 
@@ -92,6 +101,7 @@ private:
   QPushButton *directorySelectionButton;
   QFont font;
   QFontMetricsF fontMetrics;
+  bool focusReceivedFromMouse = false;
 
   double ICON_EDGE_PADDING = 10.0;
   double ICON_ADJUSTMENT = 6.0;
