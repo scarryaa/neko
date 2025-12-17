@@ -54,6 +54,7 @@ private:
   QLineEdit *jumpInput;
   int maxLineCount = 1;
   int maxColumn = 1;
+  int maxRow = 1;
   int currentRow = 1;
 
   enum class Mode { None, GoToPosition };
@@ -65,6 +66,8 @@ private:
   void emitJumpRequestFromInput();
   void jumpToLineStart();
   void jumpToLineEnd();
+  void jumpToDocumentStart();
+  void jumpToDocumentEnd();
 };
 
 #endif // COMMAND_PALETTE_WIDGET_H

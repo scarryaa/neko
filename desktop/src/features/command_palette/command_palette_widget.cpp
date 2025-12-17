@@ -67,7 +67,13 @@ void CommandPaletteWidget::jumpToRowColumn(int currentRow, int currentCol,
   }
 }
 
-void dkdkdkdkd() {}
+void CommandPaletteWidget::jumpToDocumentStart() {
+  emit goToPositionRequested(0, 0);
+}
+
+void CommandPaletteWidget::jumpToDocumentEnd() {
+  emit goToPositionRequested(maxRow, maxColumn);
+}
 
 void CommandPaletteWidget::jumpToLineStart() {
   emit goToPositionRequested(currentRow, 0);
@@ -98,15 +104,21 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
     jumpToLineEnd();
     return;
   } else if (text == "lb") {
-    // Jump to start of current line
+    // Jump to beginning of current line
     jumpToLineStart();
     return;
+  } else if (text == "de") {
+    // Jump to document end
+    jumpToDocumentEnd();
+  } else if (text == "db") {
+    // Jump to document beginning
+    jumpToDocumentStart();
   }
 
   int row = parts.value(0).toInt(&okRow);
   int col = parts.size() > 1 ? parts.value(1).toInt(&okCol) : 1;
 
-  if (!okRow || !okCol || row <= 0 || col <= 0) {
+  if (!okRow || !okCol || row < 0 || col < 0) {
     close();
     return;
   }
@@ -115,7 +127,7 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
   row = std::clamp(row, 1, effectiveMaxLine);
   col = std::max(1, col);
 
-  emit goToPositionRequested(row - 1, col);
+  emit goToPositionRequested(row - 1, col - 1);
   close();
 }
 
@@ -140,7 +152,8 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
   clearContent();
   currentMode = Mode::GoToPosition;
   maxLineCount = std::max(1, lineCount);
-  maxColumn = std::max(1, maxCol);
+  this->maxColumn = std::max(1, maxCol);
+  this->maxRow = std::max(1, lineCount);
   int clampedRow = std::clamp(currentRow, 0, maxLineCount - 1);
   int clampedCol = std::clamp(currentCol, 0, maxColumn - 1);
   this->currentRow = clampedRow;
@@ -195,21 +208,30 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
   // dropdown
   // TODO: Allow command aliases?
   auto *leHintLabel = new QLabel(QString("le = current line end"), mainFrame);
-  QString leStyleSheet("color: %1; border: 0px; padding-left: 12px; "
-                       "padding-right: 12px;");
   leHintLabel->setStyleSheet(styleSheet.arg(foregroundVeryMutedColor));
   leHintLabel->setFont(font);
   font.setPointSizeF(16.0);
   leHintLabel->setWordWrap(false);
   leHintLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  auto *lbHintLabel = new QLabel(QString("lb = current line start"), mainFrame);
-  QString lbStyleSheet("color: %1; border: 0px; padding-left: 12px; "
-                       "padding-right: 12px;");
+  auto *lbHintLabel =
+      new QLabel(QString("lb = current line beginning"), mainFrame);
   lbHintLabel->setStyleSheet(styleSheet.arg(foregroundVeryMutedColor));
   lbHintLabel->setFont(font);
   lbHintLabel->setWordWrap(false);
   lbHintLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+  auto *deHintLabel = new QLabel(QString("de = document end"), mainFrame);
+  deHintLabel->setStyleSheet(styleSheet.arg(foregroundVeryMutedColor));
+  deHintLabel->setFont(font);
+  deHintLabel->setWordWrap(false);
+  deHintLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+  auto *dbHintLabel = new QLabel(QString("db = document beginning"), mainFrame);
+  dbHintLabel->setStyleSheet(styleSheet.arg(foregroundVeryMutedColor));
+  dbHintLabel->setFont(font);
+  dbHintLabel->setWordWrap(false);
+  dbHintLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
   auto *topLabelSpacer =
       new QSpacerItem(0, 4, QSizePolicy::Minimum, QSizePolicy::Fixed);
@@ -217,6 +239,8 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
   frameLayout->addWidget(label);
   frameLayout->addWidget(leHintLabel);
   frameLayout->addWidget(lbHintLabel);
+  frameLayout->addWidget(deHintLabel);
+  frameLayout->addWidget(dbHintLabel);
   auto *bottomLabelSpacer =
       new QSpacerItem(0, 12, QSizePolicy::Minimum, QSizePolicy::Fixed);
   frameLayout->addItem(bottomLabelSpacer);

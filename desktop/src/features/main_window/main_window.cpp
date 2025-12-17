@@ -389,7 +389,7 @@ void MainWindow::setupKeyboardShortcuts() {
 
   // Ctrl+G for jump to
   QAction *jumpToAction = new QAction(this);
-  addShortcut(prevTabAction, QKeySequence(Qt::ControlModifier | Qt::Key_G),
+  addShortcut(jumpToAction, QKeySequence(Qt::ControlModifier | Qt::Key_G),
               Qt::WindowShortcut, [this]() { onCursorPositionClicked(); });
 }
 
