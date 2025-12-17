@@ -1,0 +1,21 @@
+#include "palette_divider.h"
+
+PaletteDivider::PaletteDivider(const QColor &color, QWidget *parent)
+    : QWidget(parent), color(color) {
+  setFixedHeight(1);
+  setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  setAttribute(Qt::WA_TranslucentBackground);
+}
+
+void PaletteDivider::paintEvent(QPaintEvent *) {
+  QPainter p(this);
+  p.setRenderHint(QPainter::Antialiasing, true);
+
+  QPen pen(color, 1.0);
+  pen.setCosmetic(true);
+  pen.setCapStyle(Qt::FlatCap);
+  pen.setJoinStyle(Qt::MiterJoin);
+
+  p.setPen(pen);
+  p.drawLine(QPointF(0, height() / 2.0), QPointF(width(), height() / 2.0));
+}

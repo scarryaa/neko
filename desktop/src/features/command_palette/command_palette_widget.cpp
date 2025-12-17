@@ -20,11 +20,11 @@ CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
 
   QString stylesheet =
       "CommandPaletteWidget { background: transparent; border: none; "
-      "} QFrame{ border-radius: 12px; background: %1; border: 1.5px "
+      "} QFrame{ border-radius: 12px; background: %1; border: 2px "
       "solid %2; }";
   setStyleSheet(stylesheet.arg(backgroundColor, borderColor));
 
-  mainFrame = new QFrame(this);
+  mainFrame = new PaletteFrame(themeManager, this);
 
   QVBoxLayout *rootLayout = new QVBoxLayout(this);
   rootLayout->setContentsMargins(CONTENT_MARGIN, CONTENT_MARGIN, CONTENT_MARGIN,
@@ -146,10 +146,10 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
 
   auto borderColor =
       UiUtils::getThemeColor(themeManager, "command_palette.border");
-  auto *divider = new QFrame(mainFrame);
-  divider->setFrameShape(QFrame::NoFrame);
+  auto *divider = new PaletteDivider(borderColor, mainFrame);
+
   divider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  divider->setFixedWidth(WIDTH);
+  divider->setFixedWidth(WIDTH / 1.5);
   divider->setFixedHeight(1);
   divider->setStyleSheet(QString("background-color: %1;").arg(borderColor));
   frameLayout->addWidget(divider);

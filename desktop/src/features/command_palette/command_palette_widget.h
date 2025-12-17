@@ -1,6 +1,8 @@
 #ifndef COMMAND_PALETTE_WIDGET_H
 #define COMMAND_PALETTE_WIDGET_H
 
+#include "features/command_palette/palette_divider.h"
+#include "features/command_palette/palette_frame.h"
 #include "utils/gui_utils.h"
 #include <QDialog>
 #include <QEvent>
@@ -47,9 +49,9 @@ private:
   const double HEIGHT = 300.0;
   const int MIN_WIDTH = 360;
 
-  QFrame *mainFrame = nullptr;
-  QVBoxLayout *frameLayout = nullptr;
-  QLineEdit *jumpInput = nullptr;
+  PaletteFrame *mainFrame;
+  QVBoxLayout *frameLayout;
+  QLineEdit *jumpInput;
   int maxLineCount = 1;
 
   enum class Mode { None, GoToPosition };

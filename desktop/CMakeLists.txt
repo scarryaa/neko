@@ -48,6 +48,10 @@ qt_add_executable(neko
 
     src/features/command_palette/command_palette_widget.cpp
     src/features/command_palette/command_palette_widget.h
+    src/features/command_palette/palette_frame.cpp
+    src/features/command_palette/palette_frame.h
+    src/features/command_palette/palette_divider.cpp
+    src/features/command_palette/palette_divider.h
 
     src/utils/change_mask.h
     src/utils/editor_utils.cpp

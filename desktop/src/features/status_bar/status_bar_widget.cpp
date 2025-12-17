@@ -88,6 +88,9 @@ StatusBarWidget::~StatusBarWidget() {}
 void StatusBarWidget::setEditor(neko::Editor *newEditor) { editor = newEditor; }
 
 void StatusBarWidget::onCursorPositionClicked() {
+  // Toggle disabled to force clear hover effect
+  cursorPosition->setDisabled(true);
+  cursorPosition->setDisabled(false);
   emit cursorPositionClicked();
 }
 
