@@ -293,7 +293,8 @@ void MainWindow::onCursorPositionClicked() {
 
   auto cursor = appState->get_editor_mut().get_last_added_cursor();
   auto lineCount = appState->get_editor_mut().get_line_count();
-  auto maxCol = appState->get_editor_mut().get_line_length(cursor.row);
+  auto maxCol = std::max<size_t>(
+      1, appState->get_editor_mut().get_line_length(cursor.row));
   commandPaletteWidget->jumpToRowColumn(cursor.row, cursor.col, maxCol,
                                         lineCount);
 }
@@ -385,6 +386,11 @@ void MainWindow::setupKeyboardShortcuts() {
                   onTabChanged(prevIndex);
                 }
               });
+
+  // Ctrl+G for jump to
+  QAction *jumpToAction = new QAction(this);
+  addShortcut(prevTabAction, QKeySequence(Qt::ControlModifier | Qt::Key_G),
+              Qt::WindowShortcut, [this]() { onCursorPositionClicked(); });
 }
 
 template <typename Slot>

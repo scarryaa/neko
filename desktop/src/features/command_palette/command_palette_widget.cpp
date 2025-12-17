@@ -64,7 +64,6 @@ void CommandPaletteWidget::jumpToRowColumn(int currentRow, int currentCol,
   show();
   if (jumpInput) {
     jumpInput->setFocus();
-    jumpInput->selectAll();
   }
 }
 
@@ -116,7 +115,7 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
   row = std::clamp(row, 1, effectiveMaxLine);
   col = std::max(1, col);
 
-  emit goToPositionRequested(row - 1, col - 1);
+  emit goToPositionRequested(row - 1, col);
   close();
 }
 
@@ -141,10 +140,10 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
   clearContent();
   currentMode = Mode::GoToPosition;
   maxLineCount = std::max(1, lineCount);
-  maxColumn = maxCol;
-  this->currentRow = currentRow;
+  maxColumn = std::max(1, maxCol);
   int clampedRow = std::clamp(currentRow, 0, maxLineCount - 1);
-  int clampedCol = std::clamp(currentCol, 0, maxCol - 1);
+  int clampedCol = std::clamp(currentCol, 0, maxColumn - 1);
+  this->currentRow = clampedRow;
 
   auto foregroundColor = UiUtils::getThemeColor(themeManager, "ui.foreground");
   auto foregroundVeryMutedColor =
@@ -155,8 +154,8 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
   QString jumpStyleSheet("color: %1; border: 0px; background: transparent;");
   jumpInput = new QLineEdit(mainFrame);
   jumpInput->setFont(font);
-  jumpInput->setPlaceholderText(
-      QString("%1:%2").arg(clampedRow + 1).arg(clampedCol + 1));
+  QString displayPos = QString("%1:%2").arg(clampedRow + 1).arg(clampedCol + 1);
+  jumpInput->setPlaceholderText(displayPos);
   jumpInput->setStyleSheet(jumpStyleSheet.arg(foregroundColor) +
                            QString("padding-left: 12px; padding-right: 12px;"));
   jumpInput->setClearButtonEnabled(false);
@@ -168,7 +167,6 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
   frameLayout->addWidget(jumpInput);
   auto *bottomSpacer =
       new QSpacerItem(0, 12, QSizePolicy::Minimum, QSizePolicy::Fixed);
-  frameLayout->addWidget(jumpInput);
 
   auto borderColor =
       UiUtils::getThemeColor(themeManager, "command_palette.border");
@@ -193,7 +191,9 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
   label->setWordWrap(false);
   label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  // TODO: Move these elsewhere when shortcuts grow?
+  // TODO: Move these elsewhere when shortcuts grow? Or add a toggleable
+  // dropdown
+  // TODO: Allow command aliases?
   auto *leHintLabel = new QLabel(QString("le = current line end"), mainFrame);
   QString leStyleSheet("color: %1; border: 0px; padding-left: 12px; "
                        "padding-right: 12px;");
