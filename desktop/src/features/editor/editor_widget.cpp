@@ -59,7 +59,7 @@ double EditorWidget::measureWidth() {
 }
 
 void EditorWidget::scrollToCursor() {
-  if (editor == nullptr) {
+  if (!editor) {
     return;
   }
 

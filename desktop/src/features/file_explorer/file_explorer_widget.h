@@ -100,8 +100,6 @@ private:
   double FONT_UPPER_LIMIT = 96.0;
   double FONT_LOWER_LIMIT = 6.0;
   double VIEWPORT_PADDING = 74.0;
-  QColor SELECTION_COLOR = QColor(66, 181, 212, 50);
-  QPen SELECTION_PEN = QPen(QColor(66, 181, 212, 175), 1);
 };
 
 #endif // FILE_EXPLORER_WIDGET_H

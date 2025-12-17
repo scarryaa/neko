@@ -97,7 +97,7 @@ void StatusBarWidget::showCursorPositionInfo() { cursorPosition->show(); }
 
 void StatusBarWidget::updateCursorPosition(int row, int col,
                                            int numberOfCursors) {
-  if (editor == nullptr) {
+  if (!editor) {
     return;
   }
 
@@ -120,7 +120,7 @@ void StatusBarWidget::onTabClosed(int numberOfTabs) {
 
 void StatusBarWidget::onCursorPositionChanged(int row, int col,
                                               int numberOfCursors) {
-  if (editor == nullptr) {
+  if (!editor) {
     return;
   }
 

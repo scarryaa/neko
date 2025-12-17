@@ -1,4 +1,5 @@
 #include "tab_bar_widget.h"
+#include "utils/gui_utils.h"
 
 TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
                            neko::ThemeManager &themeManager, QWidget *parent)
@@ -19,8 +20,10 @@ TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
   setAutoFillBackground(false);
   setFrameShape(QFrame::NoFrame);
 
+  auto backgroundColor =
+      UiUtils::getThemeColor(themeManager, "tab_bar.background");
   viewport()->setStyleSheet(UiUtils::getScrollBarStylesheet(
-      "QWidget", "black",
+      "QWidget", backgroundColor,
       QString("border-bottom: 1px solid %1")
           .arg(UiUtils::getThemeColor(themeManager, "ui.border"))));
 

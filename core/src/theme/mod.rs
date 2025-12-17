@@ -30,6 +30,13 @@ impl Default for Theme {
         colors.insert("editor.foreground".to_string(), "#d4d4d4".to_string());
         colors.insert("editor.highlight".to_string(), "#19ffffff".to_string());
 
+        colors.insert("tab_bar.background".to_string(), "#000000".to_string());
+
+        colors.insert(
+            "file_explorer.background".to_string(),
+            "#000000".to_string(),
+        );
+
         colors.insert("sidebar.background".to_string(), "#000000".to_string());
         colors.insert("ui.foreground".to_string(), "#d4d4d4".to_string());
         colors.insert("ui.foreground.muted".to_string(), "#a4a4a4".to_string());

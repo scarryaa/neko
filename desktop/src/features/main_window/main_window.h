@@ -69,6 +69,7 @@ private:
   rust::Box<neko::ConfigManager> configManager;
   EditorController *editorController;
   TabController *tabController;
+
   QWidget *emptyStateWidget;
   FileExplorerWidget *fileExplorerWidget;
   EditorWidget *editorWidget;
@@ -77,6 +78,7 @@ private:
   QWidget *tabBarContainer;
   TabBarWidget *tabBarWidget;
   StatusBarWidget *statusBarWidget;
+
   std::unordered_map<int, ScrollOffset> tabScrollOffsets;
 };
 
