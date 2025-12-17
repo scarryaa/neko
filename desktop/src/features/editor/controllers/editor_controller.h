@@ -58,6 +58,7 @@ private:
            neko::ChangeSetFfi (neko::Editor::*selectFn)(), bool shouldSelect);
   template <typename Fn, typename... Args> void do_op(Fn &&fn, Args &&...args);
   void do_op(std::function<neko::ChangeSetFfi()> f);
+  std::pair<int, int> normalizeCursorPosition(int row, int col) const;
 
   neko::Editor *editor;
 };

@@ -31,16 +31,10 @@ void EditorController::applyChangeSet(const neko::ChangeSetFfi &changeSet) {
 
   if (m & ChangeMask::Cursor) {
     auto lastAddedCursor = editor->get_last_added_cursor();
+    auto [clampedRow, clampedColumn] =
+        normalizeCursorPosition(lastAddedCursor.row, lastAddedCursor.col);
     auto cursorCount = editor->get_cursor_positions().size();
     auto selectionCount = editor->get_number_of_selections();
-
-    auto lineCount = editor->get_line_count();
-    auto clampedRow =
-        std::clamp((int)lastAddedCursor.row, 0, (int)lineCount - 1);
-
-    auto cursorLineLength = editor->get_line_length(clampedRow);
-    auto clampedColumn =
-        std::clamp((int)lastAddedCursor.col, 0, (int)cursorLineLength - 1);
 
     emit cursorChanged(clampedRow, clampedColumn, cursorCount, selectionCount);
   }
@@ -182,11 +176,12 @@ void EditorController::addCursor(neko::AddCursorDirectionKind dirKind, int row,
 
   auto cursorPosition =
       editor->get_cursor_positions()[editor->get_active_cursor_index()];
+  auto [normalizedRow, normalizedCol] =
+      normalizeCursorPosition(cursorPosition.row, cursorPosition.col);
 
   auto cursorCount = editor->get_cursor_positions().size();
   auto selectionCount = editor->get_number_of_selections();
-  emit cursorChanged(cursorPosition.row, cursorPosition.col, cursorCount,
-                     selectionCount);
+  emit cursorChanged(normalizedRow, normalizedCol, cursorCount, selectionCount);
 
   emit viewportChanged();
 }
@@ -196,11 +191,12 @@ void EditorController::removeCursor(int row, int col) {
 
   auto cursorPosition =
       editor->get_cursor_positions()[editor->get_active_cursor_index()];
+  auto [normalizedRow, normalizedCol] =
+      normalizeCursorPosition(cursorPosition.row, cursorPosition.col);
 
   auto cursorCount = editor->get_cursor_positions().size();
   auto selectionCount = editor->get_number_of_selections();
-  emit cursorChanged(cursorPosition.row, cursorPosition.col, cursorCount,
-                     selectionCount);
+  emit cursorChanged(normalizedRow, normalizedCol, cursorCount, selectionCount);
 
   emit viewportChanged();
 }
@@ -217,4 +213,18 @@ void EditorController::do_op(Fn &&fn, Args &&...args) {
   auto changeSet =
       std::invoke(std::forward<Fn>(fn), editor, std::forward<Args>(args)...);
   applyChangeSet(changeSet);
+}
+
+std::pair<int, int> EditorController::normalizeCursorPosition(int row,
+                                                              int col) const {
+  if (!editor) {
+    return {row, col};
+  }
+
+  int lineCount = static_cast<int>(editor->get_line_count());
+  int clampedRow = std::clamp(row, 0, std::max(0, lineCount - 1));
+  int lineLength = static_cast<int>(editor->get_line_length(clampedRow));
+  int clampedCol = std::clamp(col, 0, std::max(0, lineLength));
+
+  return {clampedRow, clampedCol};
 }

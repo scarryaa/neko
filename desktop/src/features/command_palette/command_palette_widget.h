@@ -45,10 +45,12 @@ private:
   const double CONTENT_MARGIN = 20.0; // Content margin for drop shadow
   const double WIDTH = 800.0;
   const double HEIGHT = 300.0;
+  const int MIN_WIDTH = 360;
 
   QFrame *mainFrame = nullptr;
   QVBoxLayout *frameLayout = nullptr;
   QLineEdit *jumpInput = nullptr;
+  int maxLineCount = 1;
 
   enum class Mode { None, GoToPosition };
   Mode currentMode = Mode::None;

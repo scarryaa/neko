@@ -1,5 +1,4 @@
 #import "command_palette_widget.h"
-#include "utils/gui_utils.h"
 
 CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
                                            neko::ConfigManager &configManager,
@@ -92,6 +91,10 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
     return;
   }
 
+  int effectiveMaxLine = std::max(1, maxLineCount);
+  row = std::clamp(row, 1, effectiveMaxLine);
+  col = std::max(1, col);
+
   emit goToPositionRequested(row - 1, col - 1);
   close();
 }
@@ -116,6 +119,9 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
                                             int lineCount) {
   clearContent();
   currentMode = Mode::GoToPosition;
+  maxLineCount = std::max(1, lineCount);
+  int clampedRow = std::clamp(currentRow, 0, maxLineCount - 1);
+  int clampedCol = std::max(0, currentCol);
 
   auto foregroundColor = UiUtils::getThemeColor(themeManager, "ui.foreground");
   auto font = UiUtils::loadFont(configManager, neko::FontType::Interface);
@@ -124,7 +130,7 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
   jumpInput = new QLineEdit(mainFrame);
   jumpInput->setFont(font);
   jumpInput->setPlaceholderText(
-      QString("%1:%2").arg(currentRow).arg(currentCol));
+      QString("%1:%2").arg(clampedRow + 1).arg(clampedCol + 1));
   jumpInput->setStyleSheet(jumpStyleSheet.arg(foregroundColor));
   jumpInput->setClearButtonEnabled(false);
   jumpInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -148,9 +154,9 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
   frameLayout->addWidget(divider);
 
   auto *label = new QLabel(QString("Current line: %1 of %2 (column %3)")
-                               .arg(currentRow + 1)
-                               .arg(lineCount)
-                               .arg(currentCol),
+                               .arg(clampedRow + 1)
+                               .arg(maxLineCount)
+                               .arg(clampedCol + 1),
                            mainFrame);
   QString styleSheet("color: %1; border: 0px;");
   label->setStyleSheet(styleSheet.arg(foregroundColor));
