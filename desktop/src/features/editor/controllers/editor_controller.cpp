@@ -67,6 +67,10 @@ void EditorController::moveTo(int row, int column, bool clearSelection) {
   do_op(&neko::Editor::move_to, row, column, clearSelection);
 }
 
+void EditorController::selectTo(int row, int column) {
+  do_op(&neko::Editor::select_to, row, column);
+}
+
 void EditorController::moveOrSelectLeft(bool shouldSelect) {
   nav(&neko::Editor::move_left, &neko::Editor::select_left, shouldSelect);
 }
@@ -175,6 +179,20 @@ void EditorController::addCursor(neko::AddCursorDirectionKind dirKind, int row,
     break;
   }
   }
+
+  auto cursorPosition =
+      editor->get_cursor_positions()[editor->get_active_cursor_index()];
+
+  auto cursorCount = editor->get_cursor_positions().size();
+  auto selectionCount = editor->get_number_of_selections();
+  emit cursorChanged(cursorPosition.row, cursorPosition.col, cursorCount,
+                     selectionCount);
+
+  emit viewportChanged();
+}
+
+void EditorController::removeCursor(int row, int col) {
+  editor->remove_cursor(row, col);
 
   auto cursorPosition =
       editor->get_cursor_positions()[editor->get_active_cursor_index()];

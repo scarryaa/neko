@@ -131,13 +131,13 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
 
   if (event->modifiers().testFlag(Qt::AltModifier)) {
     if (editor->cursor_exists_at(rc.row, rc.col)) {
-      editor->remove_cursor(rc.row, rc.col);
+      editorController->removeCursor(rc.row, rc.col);
     } else {
       editorController->addCursor(neko::AddCursorDirectionKind::At, rc.row,
                                   rc.col);
     }
   } else {
-    editor->move_to(rc.row, rc.col, true);
+    editorController->moveTo(rc.row, rc.col, true);
   }
 
   auto numberOfCursors = editor->get_cursor_positions().size();
@@ -155,7 +155,7 @@ void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
     RowCol rc =
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
 
-    editor->select_to(rc.row, rc.col);
+    editorController->selectTo(rc.row, rc.col);
 
     auto numberOfCursors = editor->get_cursor_positions().size();
     emit cursorPositionChanged(rc.row, rc.col, numberOfCursors);

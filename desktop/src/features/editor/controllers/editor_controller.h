@@ -31,6 +31,7 @@ public slots:
   void moveOrSelectRight(bool shouldSelect);
   void moveOrSelectUp(bool shouldSelect);
   void moveOrSelectDown(bool shouldSelect);
+  void selectTo(int row, int column);
 
   void insertText(std::string text);
   void insertNewline();
@@ -48,6 +49,7 @@ public slots:
   void clearSelectionOrCursors();
   void addCursor(neko::AddCursorDirectionKind dirKind, int row = 0,
                  int col = 0);
+  void removeCursor(int row, int col);
 
   void refresh();
 
