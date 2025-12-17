@@ -31,7 +31,8 @@ void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
   titleBarWidget = new TitleBarWidget(*configManager, *themeManager, this);
   fileExplorerWidget =
       new FileExplorerWidget(fileTree, *configManager, *themeManager, this);
-  commandPaletteWidget = new CommandPaletteWidget(*themeManager, this);
+  commandPaletteWidget =
+      new CommandPaletteWidget(*themeManager, *configManager, this);
   editorWidget = new EditorWidget(editor, editorController, *configManager,
                                   *themeManager, this);
   gutterWidget = new GutterWidget(editor, editorController, *configManager,
@@ -79,6 +80,8 @@ void MainWindow::connectSignals() {
           &MainWindow::onFileExplorerToggled);
   connect(statusBarWidget, &StatusBarWidget::cursorPositionClicked, this,
           &MainWindow::onCursorPositionClicked);
+  connect(commandPaletteWidget, &CommandPaletteWidget::goToPositionRequested,
+          this, &MainWindow::onCommandPaletteGoToPosition);
 
   // EditorController -> StatusBarWidget
   connect(editorController, &EditorController::cursorChanged, statusBarWidget,
@@ -283,7 +286,24 @@ void MainWindow::onFileExplorerToggled() {
   configManager->set_file_explorer_shown(isOpen);
 }
 
-void MainWindow::onCursorPositionClicked() { commandPaletteWidget->show(); }
+void MainWindow::onCursorPositionClicked() {
+  if (appState->get_tab_count() == 0) {
+    return;
+  }
+
+  auto cursor = appState->get_editor_mut().get_last_added_cursor();
+  auto lineCount = appState->get_editor_mut().get_line_count();
+  commandPaletteWidget->jumpToRowColumn(cursor.row, cursor.col, lineCount);
+}
+
+void MainWindow::onCommandPaletteGoToPosition(int row, int col) {
+  if (appState->get_tab_count() == 0) {
+    return;
+  }
+
+  editorController->moveTo(row, col, true);
+  editorWidget->setFocus();
+}
 
 void MainWindow::saveCurrentScrollState() {
   if (appState->get_tab_count() > 0) {

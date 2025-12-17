@@ -30,6 +30,7 @@ public:
 public slots:
   void onFileExplorerToggled();
   void onCursorPositionClicked();
+  void onCommandPaletteGoToPosition(int row, int col);
 
 private slots:
   void onFileSelected(const std::string &filePath,
