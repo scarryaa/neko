@@ -23,7 +23,6 @@ CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
       "} QFrame{ border-radius: 12px; background: %1; border: 1.5px "
       "solid %2; }";
   setStyleSheet(stylesheet.arg(backgroundColor, borderColor));
-  setFixedSize(WIDTH, HEIGHT);
 
   mainFrame = new QFrame(this);
 
@@ -87,7 +86,7 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
   int col = parts.size() > 1 ? parts.value(1).toInt(&okCol) : 1;
 
   if (!okRow || !okCol || row <= 0 || col <= 0) {
-    jumpInput->selectAll();
+    close();
     return;
   }
 
@@ -125,23 +124,25 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
 
   auto foregroundColor = UiUtils::getThemeColor(themeManager, "ui.foreground");
   auto font = UiUtils::loadFont(configManager, neko::FontType::Interface);
+  font.setPointSizeF(20.0);
 
   QString jumpStyleSheet("color: %1; border: 0px; background: transparent;");
   jumpInput = new QLineEdit(mainFrame);
   jumpInput->setFont(font);
   jumpInput->setPlaceholderText(
       QString("%1:%2").arg(clampedRow + 1).arg(clampedCol + 1));
-  jumpInput->setStyleSheet(jumpStyleSheet.arg(foregroundColor));
+  jumpInput->setStyleSheet(jumpStyleSheet.arg(foregroundColor) +
+                           QString("padding-left: 12px; padding-right: 12px;"));
   jumpInput->setClearButtonEnabled(false);
   jumpInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  jumpInput->setMinimumHeight(30.0);
+
   auto *topSpacer =
       new QSpacerItem(0, 8, QSizePolicy::Minimum, QSizePolicy::Fixed);
   frameLayout->addItem(topSpacer);
   frameLayout->addWidget(jumpInput);
   auto *bottomSpacer =
-      new QSpacerItem(0, 4, QSizePolicy::Minimum, QSizePolicy::Fixed);
-  frameLayout->addItem(bottomSpacer);
+      new QSpacerItem(0, 12, QSizePolicy::Minimum, QSizePolicy::Fixed);
+  frameLayout->addWidget(jumpInput);
 
   auto borderColor =
       UiUtils::getThemeColor(themeManager, "command_palette.border");
@@ -153,17 +154,26 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
   divider->setStyleSheet(QString("background-color: %1;").arg(borderColor));
   frameLayout->addWidget(divider);
 
+  font.setPointSizeF(18.0);
   auto *label = new QLabel(QString("Current line: %1 of %2 (column %3)")
                                .arg(clampedRow + 1)
                                .arg(maxLineCount)
                                .arg(clampedCol + 1),
                            mainFrame);
-  QString styleSheet("color: %1; border: 0px;");
+  QString styleSheet("color: %1; border: 0px; padding-left: 12px; "
+                     "padding-right: 12px;");
   label->setStyleSheet(styleSheet.arg(foregroundColor));
   label->setFont(font);
   label->setWordWrap(false);
   label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+  auto *topLabelSpacer =
+      new QSpacerItem(0, 4, QSizePolicy::Minimum, QSizePolicy::Fixed);
+  frameLayout->addItem(topLabelSpacer);
   frameLayout->addWidget(label);
+  auto *bottomLabelSpacer =
+      new QSpacerItem(0, 12, QSizePolicy::Minimum, QSizePolicy::Fixed);
+  frameLayout->addItem(bottomLabelSpacer);
 
   connect(jumpInput, &QLineEdit::returnPressed, this,
           &CommandPaletteWidget::emitJumpRequestFromInput);
