@@ -24,6 +24,8 @@ GutterWidget::GutterWidget(neko::Editor *editor,
           &GutterWidget::redraw);
 
   // EditorController -> GutterWidget connections
+  connect(editorController, &EditorController::lineCountChanged, this,
+          &GutterWidget::onEditorLineCountChanged);
   connect(editorController, &EditorController::bufferChanged, this,
           &GutterWidget::onBufferChanged);
   connect(editorController, &EditorController::cursorChanged, this,

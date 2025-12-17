@@ -1,4 +1,6 @@
 #include "main_window.h"
+#include "features/editor/controllers/editor_controller.h"
+#include "features/editor/editor_widget.h"
 
 // TODO: StatusBar signals/tab inform and MainWindow editor ref
 // are messy and need to be cleaned up. Also consider "rearchitecting"
@@ -45,9 +47,6 @@ void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
 }
 
 void MainWindow::connectSignals() {
-  // TODO: Remove/prune EditorWidget <-> GutterWidget connections to go
-  // thru EditorController
-
   // GutterWidget <-> EditorWidget
   connect(gutterWidget->verticalScrollBar(), &QScrollBar::valueChanged,
           editorWidget->verticalScrollBar(), &QScrollBar::setValue);
@@ -55,10 +54,6 @@ void MainWindow::connectSignals() {
           gutterWidget->verticalScrollBar(), &QScrollBar::setValue);
   connect(editorWidget, &EditorWidget::fontSizeChanged, gutterWidget,
           &GutterWidget::onEditorFontSizeChanged);
-  connect(editorWidget, &EditorWidget::lineCountChanged, gutterWidget,
-          &GutterWidget::onEditorLineCountChanged);
-  connect(editorWidget, &EditorWidget::cursorPositionChanged, gutterWidget,
-          &GutterWidget::onEditorCursorPositionChanged);
 
   // FileExplorerWidget -> MainWindow
   connect(fileExplorerWidget, &FileExplorerWidget::fileSelected, this,
