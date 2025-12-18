@@ -119,7 +119,26 @@ impl FileTree {
     }
 
     pub fn set_root_path(&mut self, path: &str) {
-        self.root_path = path.into();
+        self.root_path = PathBuf::from(path);
+
+        self.expanded.clear();
+        self.selected.clear();
+        self.current = None;
+        self.cached_visible.clear();
+        self.nodes.clear();
+
+        if path.is_empty() {
+            return;
+        }
+
+        self.nodes = fs::read_dir(path)
+            .ok()
+            .map(|entries| {
+                entries
+                    .filter_map(|entry| FileNode::from_entry(entry.ok()?))
+                    .collect()
+            })
+            .unwrap_or_default();
     }
 
     pub fn get_children(&mut self, path: &str) -> &[FileNode] {
