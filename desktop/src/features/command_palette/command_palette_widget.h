@@ -35,6 +35,7 @@ public:
 
 signals:
   void goToPositionRequested(int row, int col);
+  void commandRequested(const QString &command);
 
 protected:
   void showEvent(QShowEvent *event) override;
@@ -54,7 +55,9 @@ private:
   QLineEdit *jumpInput;
   QLineEdit *commandInput;
   QStringList jumpHistory;
+  QStringList commandHistory;
   QString jumpInputDraft;
+  QString commandInputDraft;
   int maxLineCount = 1;
   int maxColumn = 1;
   int lastLineMaxColumn = 1;
@@ -62,6 +65,7 @@ private:
   int currentRow = 1;
   int currentColumn = 1;
   int jumpHistoryIndex = 0;
+  int commandHistoryIndex = 0;
   bool showJumpShortcuts = false;
 
   enum class Mode { None, GoToPosition };
@@ -73,6 +77,7 @@ private:
   void buildJumpContent(int currentRow, int currentCol, int maxCol,
                         int lineCount, int lastLineMaxCol);
   void buildCommandPalette();
+  void emitCommandRequestFromInput();
   void emitJumpRequestFromInput();
   void jumpToLineStart();
   void jumpToLineEnd();
@@ -105,9 +110,12 @@ private:
   void updateHistoryHint(QWidget *targetInput, const QString &placeholder);
   void createHistoryHint(QWidget *targetInput,
                          const PaletteColors &paletteColors, QFont &font);
+  void saveCommandHistoryEntry(const QString &entry);
   void saveJumpHistoryEntry(const QString &entry);
   void resetJumpHistoryNavigation();
   bool handleJumpHistoryNavigation(QKeyEvent *event);
+  void resetCommandHistoryNavigation();
+  bool handleCommandHistoryNavigation(QKeyEvent *event);
 
   static constexpr double TOP_OFFSET = 300.0;
   static constexpr double SHADOW_X_OFFSET = 0.0;
@@ -134,8 +142,13 @@ private:
       "QToolButton { color: %1; border: none; background: transparent; "
       "padding-left: 16px; padding-right: 16px; }"
       "QToolButton:hover { color: %2; }";
+
+  static constexpr char TOGGLE_FILE_EXPLORER_COMMAND[] =
+      "file explorer: toggle";
+
   static constexpr char SHORTCUTS_BUTTON_TEXT[] = "  Shortcuts";
   static constexpr int JUMP_HISTORY_LIMIT = 20;
+  static constexpr int COMMAND_HISTORY_LIMIT = 20;
   static constexpr char LINE_END_SHORTCUT[] = "le";
   static constexpr char LINE_START_SHORTCUT[] = "lb";
   static constexpr char LINE_MIDDLE_SHORTCUT[] = "lm";
@@ -146,6 +159,7 @@ private:
   static constexpr char DOCUMENT_MIDDLE_SHORTCUT[] = "dm";
   static constexpr char LAST_TARGET_SHORTCUT[] = "ls";
   static constexpr char HISTORY_HINT[] = "↑↓ History";
+  static constexpr char COMMAND_PLACEHOLDER_TEXT[] = "Enter a command";
 };
 
 #endif // COMMAND_PALETTE_WIDGET_H

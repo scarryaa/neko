@@ -31,6 +31,7 @@ public slots:
   void onFileExplorerToggled();
   void onCursorPositionClicked();
   void onCommandPaletteGoToPosition(int row, int col);
+  void onCommandPaletteCommand(const QString &command);
 
 private slots:
   void onFileSelected(const std::string &filePath,

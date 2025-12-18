@@ -149,6 +149,29 @@ void CommandPaletteWidget::jumpToLastTarget() {
   close();
 }
 
+void CommandPaletteWidget::emitCommandRequestFromInput() {
+  if (!commandInput)
+    return;
+
+  const QString text = commandInput->text().trimmed();
+  if (text.isEmpty()) {
+    close();
+    return;
+  }
+
+  auto storeEntry = [this](const QString &entry) {
+    saveCommandHistoryEntry(entry);
+  };
+
+  // TODO: Allow aliases?
+  if (text == TOGGLE_FILE_EXPLORER_COMMAND) {
+    storeEntry(text);
+    emit commandRequested(text);
+  }
+
+  close();
+}
+
 void CommandPaletteWidget::emitJumpRequestFromInput() {
   if (!jumpInput)
     return;
@@ -235,6 +258,7 @@ void CommandPaletteWidget::clearContent() {
     delete item;
   }
 
+  commandInput = nullptr;
   jumpInput = nullptr;
   historyHint = nullptr;
   shortcutsContainer = nullptr;
@@ -295,17 +319,18 @@ void CommandPaletteWidget::addCommandInputRow(
 
   commandInput = new QLineEdit(mainFrame);
   commandInput->setFont(font);
-  const QString placeholderText = "Execute a command";
+  const QString placeholderText = COMMAND_PLACEHOLDER_TEXT;
   commandInput->setPlaceholderText(placeholderText);
   commandInput->setStyleSheet(
       QString(JUMP_INPUT_STYLE).arg(paletteColors.foreground));
   commandInput->setClearButtonEnabled(false);
   commandInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   commandInput->installEventFilter(this);
+
   commandInput->setMinimumWidth(WIDTH / 1.25);
 
   connect(commandInput, &QLineEdit::textEdited, this,
-          [this](const QString &) {});
+          [this](const QString &) { resetCommandHistoryNavigation(); });
   connect(commandInput, &QLineEdit::textChanged, this, [this](const QString &) {
     updateHistoryHint(commandInput, HISTORY_HINT);
   });
@@ -483,8 +508,11 @@ void CommandPaletteWidget::buildCommandPalette() {
 
   addSpacer(TOP_SPACER_HEIGHT);
   addCommandInputRow(paletteColors, baseFont);
-  addSpacer(LABEL_TOP_SPACER_HEIGHT);
+  addSpacer(TOP_SPACER_HEIGHT);
 
+  connect(commandInput, &QLineEdit::returnPressed, this,
+          &CommandPaletteWidget::emitCommandRequestFromInput);
+  resetCommandHistoryNavigation();
   adjustSize();
 }
 
@@ -542,6 +570,20 @@ void CommandPaletteWidget::updateHistoryHint(QWidget *targetInput,
   historyHint->setGeometry(targetInput->rect().adjusted(0, 0, 0, 0));
 }
 
+void CommandPaletteWidget::saveCommandHistoryEntry(const QString &entry) {
+  if (entry.isEmpty())
+    return;
+
+  if (commandHistory.isEmpty() || commandHistory.back() != entry) {
+    commandHistory.append(entry);
+    if (commandHistory.size() > COMMAND_HISTORY_LIMIT) {
+      commandHistory.removeFirst();
+    }
+  }
+
+  resetCommandHistoryNavigation();
+}
+
 void CommandPaletteWidget::saveJumpHistoryEntry(const QString &entry) {
   if (entry.isEmpty())
     return;
@@ -554,6 +596,57 @@ void CommandPaletteWidget::saveJumpHistoryEntry(const QString &entry) {
   }
 
   resetJumpHistoryNavigation();
+}
+
+void CommandPaletteWidget::resetCommandHistoryNavigation() {
+  commandHistoryIndex = commandHistory.size();
+  commandInputDraft = commandInput ? commandInput->text() : QString();
+}
+
+bool CommandPaletteWidget::handleCommandHistoryNavigation(QKeyEvent *event) {
+  if (!commandInput)
+    return false;
+
+  Qt::KeyboardModifiers mods =
+      event->modifiers() &
+      static_cast<Qt::KeyboardModifier>(~Qt::KeypadModifier);
+  if (mods != Qt::NoModifier)
+    return false;
+
+  if (commandHistory.isEmpty())
+    return false;
+
+  auto applyHistoryEntry = [this](int index) {
+    if (index >= 0 && index < commandHistory.size()) {
+      commandInput->setText(commandHistory.at(index));
+    } else {
+      commandInput->setText(commandInputDraft);
+    }
+    commandInput->setCursorPosition(commandInput->text().length());
+  };
+
+  if (event->key() == Qt::Key_Up) {
+    if (commandHistoryIndex == commandHistory.size()) {
+      commandInputDraft = commandInput->text();
+    }
+
+    commandHistoryIndex = std::max(0, commandHistoryIndex - 1);
+    applyHistoryEntry(commandHistoryIndex);
+    return true;
+  }
+
+  if (event->key() == Qt::Key_Down) {
+    if (commandHistoryIndex == commandHistory.size()) {
+      commandInputDraft = commandInput->text();
+    }
+
+    commandHistoryIndex =
+        std::min(commandHistoryIndex + 1, (int)commandHistory.size());
+    applyHistoryEntry(commandHistoryIndex);
+    return true;
+  }
+
+  return false;
 }
 
 void CommandPaletteWidget::resetJumpHistoryNavigation() {
@@ -611,6 +704,14 @@ bool CommandPaletteWidget::eventFilter(QObject *obj, QEvent *event) {
     auto *keyEvent = static_cast<QKeyEvent *>(event);
 
     if (handleJumpHistoryNavigation(keyEvent)) {
+      return true;
+    }
+  }
+
+  if (obj == commandInput && event->type() == QEvent::KeyPress) {
+    auto *keyEvent = static_cast<QKeyEvent *>(event);
+
+    if (handleCommandHistoryNavigation(keyEvent)) {
       return true;
     }
   }

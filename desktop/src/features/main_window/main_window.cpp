@@ -87,8 +87,12 @@ void MainWindow::connectSignals() {
           &StatusBarWidget::onFileExplorerToggledExternally);
   connect(statusBarWidget, &StatusBarWidget::cursorPositionClicked, this,
           &MainWindow::onCursorPositionClicked);
+
+  // CommandPalette -> MainWindow
   connect(commandPaletteWidget, &CommandPaletteWidget::goToPositionRequested,
           this, &MainWindow::onCommandPaletteGoToPosition);
+  connect(commandPaletteWidget, &CommandPaletteWidget::commandRequested, this,
+          &MainWindow::onCommandPaletteCommand);
 
   // EditorController -> StatusBarWidget
   connect(editorController, &EditorController::cursorChanged, statusBarWidget,
@@ -322,6 +326,16 @@ void MainWindow::onCursorPositionClicked() {
 
   commandPaletteWidget->jumpToRowColumn(cursor.row, cursor.col, maxCol,
                                         lineCount, lastLineMaxCol);
+}
+
+// TODO: Create enum
+void MainWindow::onCommandPaletteCommand(const QString &command) {
+  if (command == "file explorer: toggle") {
+    onFileExplorerToggled();
+
+    bool isOpen = !fileExplorerWidget->isHidden();
+    emit onFileExplorerToggledViaShortcut(isOpen);
+  }
 }
 
 void MainWindow::onCommandPaletteGoToPosition(int row, int col) {
