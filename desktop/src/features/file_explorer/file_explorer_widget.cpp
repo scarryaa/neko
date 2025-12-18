@@ -624,6 +624,8 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   QColor selectionColor = QColor(accentColor);
   selectionColor.setAlpha(60);
 
+  auto fileTextColor = UiUtils::getThemeColor(themeManager, "ui.foreground");
+
   // Selection background
   if (isSelected) {
     painter->setBrush(selectionColor);
@@ -656,6 +658,8 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   int iconSize = lineHeight - ICON_ADJUSTMENT;
   QIcon colorizedIcon = UiUtils::createColorizedIcon(icon, accentColor,
                                                      QSize(iconSize, iconSize));
+  QIcon normalIcon = UiUtils::createColorizedIcon(icon, fileTextColor,
+                                                  QSize(iconSize, iconSize));
   QPixmap pixmap = colorizedIcon.pixmap(iconSize, iconSize);
 
   if (node.is_hidden) {
@@ -664,7 +668,7 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   }
 
   if (!node.is_dir) {
-    pixmap = icon.pixmap(iconSize, iconSize);
+    pixmap = normalIcon.pixmap(iconSize, iconSize);
   }
 
   // Draw icon with indentation
@@ -675,13 +679,13 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   // Draw text after icon
   double textX = iconX + iconSize + 4;
   if (node.is_hidden) {
-    QString foregroundMuted =
-        UiUtils::getThemeColor(themeManager, "ui.foreground.muted");
-    painter->setBrush(foregroundMuted);
-    painter->setPen(foregroundMuted);
+    QString foregroundVeryMuted =
+        UiUtils::getThemeColor(themeManager, "ui.foreground.very_muted");
+    painter->setBrush(foregroundVeryMuted);
+    painter->setPen(foregroundVeryMuted);
   } else {
-    painter->setBrush(Qt::white);
-    painter->setPen(Qt::white);
+    painter->setBrush(fileTextColor);
+    painter->setPen(fileTextColor);
   }
   painter->drawText(QPointF(textX, y + fontMetrics.ascent()),
                     QString::fromUtf8(node.name));

@@ -65,12 +65,13 @@ StatusBarWidget::StatusBarWidget(neko::Editor *editor,
   cursorPosition->setStyleSheet(
       QString("QPushButton {"
               "  background-color: transparent;"
+              "  color: %1;"
               "  border-radius: 4px;"
               "  padding: 2px 2px;"
               "}"
-              "QPushButton:hover { background-color: %1; }"
-              "QPushButton:pressed { background-color: %2; }")
-          .arg(btnHover, btnPress));
+              "QPushButton:hover { background-color: %2; }"
+              "QPushButton:pressed { background-color: %3; }")
+          .arg(btnText, btnHover, btnPress));
 
   connect(cursorPosition, &QPushButton::clicked, this,
           &StatusBarWidget::onCursorPositionClicked);

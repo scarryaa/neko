@@ -17,6 +17,7 @@ impl ThemeManager {
     pub fn new() -> Self {
         let default_theme = Theme::default();
         let mut themes = HashMap::new();
+
         themes.insert(default_theme.name.clone(), default_theme.clone());
 
         Self {
@@ -34,6 +35,7 @@ impl ThemeManager {
             self.current_theme = theme.clone();
             return true;
         }
+
         false
     }
 
