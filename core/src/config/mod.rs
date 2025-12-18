@@ -12,6 +12,7 @@ pub struct Config {
     pub file_explorer_directory: Option<String>,
     pub file_explorer_shown: bool,
     pub file_explorer_width: usize,
+    pub file_explorer_right: bool,
 }
 
 impl Default for Config {
@@ -24,6 +25,7 @@ impl Default for Config {
             file_explorer_directory: None,
             file_explorer_shown: true,
             file_explorer_width: 250,
+            file_explorer_right: false,
         }
     }
 }

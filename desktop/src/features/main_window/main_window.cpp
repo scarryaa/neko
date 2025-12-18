@@ -1,9 +1,12 @@
 #include "main_window.h"
+#include "utils/gui_utils.h"
 
 // TODO: StatusBar signals/tab inform and MainWindow editor ref
 // are messy and need to be cleaned up. Also consider "rearchitecting"
 // to use the AppState consistently and extract common MainWindow/StatusBar
 // functionality.
+// TODO: Auto detect config file save in editor
+// TODO: Prevent config reset on updating model
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), appState(neko::new_app_state("")),
       themeManager(neko::new_theme_manager()),
@@ -213,13 +216,23 @@ QWidget *MainWindow::buildEditorSection(QWidget *emptyState) {
 
 QSplitter *MainWindow::buildSplitter(QWidget *editorSideContainer) {
   auto *splitter = new QSplitter(Qt::Horizontal, this);
-  splitter->addWidget(fileExplorerWidget);
-  splitter->addWidget(editorSideContainer);
-  splitter->setStretchFactor(0, 0);
-  splitter->setStretchFactor(1, 1);
-
+  auto fileExplorerRight = configManager->get_file_explorer_right();
   int savedSidebarWidth = configManager->get_file_explorer_width();
-  splitter->setSizes(QList<int>() << savedSidebarWidth << 1000000);
+
+  if (fileExplorerRight) {
+    splitter->addWidget(editorSideContainer);
+    splitter->addWidget(fileExplorerWidget);
+    splitter->setStretchFactor(0, 1);
+    splitter->setStretchFactor(1, 0);
+    splitter->setSizes(QList<int>() << 1000000 << savedSidebarWidth);
+  } else {
+    splitter->addWidget(fileExplorerWidget);
+    splitter->addWidget(editorSideContainer);
+    splitter->setStretchFactor(0, 0);
+    splitter->setStretchFactor(1, 1);
+    splitter->setSizes(QList<int>() << savedSidebarWidth << 1000000);
+  }
+
   splitter->setHandleWidth(1);
 
   QString borderColor = UiUtils::getThemeColor(*themeManager, "ui.border");
@@ -480,6 +493,13 @@ void MainWindow::setupKeyboardShortcuts() {
       focusEditorAction,
       seqFor("Editor::Focus", QKeySequence(Qt::MetaModifier | Qt::Key_L)),
       Qt::WindowShortcut, [this]() { editorWidget->setFocus(); });
+
+  // Ctrl + , for open config
+  QAction *openConfigAction = new QAction(this);
+  addShortcut(openConfigAction,
+              seqFor("Editor::OpenConfig",
+                     QKeySequence(Qt::ControlModifier | Qt::Key_Comma)),
+              Qt::WindowShortcut, &MainWindow::openConfig);
 }
 
 template <typename Slot>
@@ -645,6 +665,14 @@ void MainWindow::switchToTabWithFile(const std::string &path) {
     appState->set_active_tab_index(index);
     switchToActiveTab();
     updateTabBar();
+  }
+}
+
+void MainWindow::openConfig() {
+  auto configPath = configManager->get_config_path();
+
+  if (!configPath.empty()) {
+    onFileSelected(configPath.c_str());
   }
 }
 

@@ -23,7 +23,7 @@ impl ConfigManager {
         }
     }
 
-    fn get_config_path() -> PathBuf {
+    pub fn get_config_path() -> PathBuf {
         let mut path = dirs::config_dir().unwrap_or_else(|| PathBuf::from("."));
 
         #[cfg(target_os = "macos")]

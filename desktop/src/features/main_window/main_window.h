@@ -62,6 +62,7 @@ private:
   void onBufferChanged();
   void switchToTabWithFile(const std::string &path);
   void saveCurrentScrollState();
+  void openConfig();
   template <typename Slot>
   void addShortcut(QAction *action, const QKeySequence &sequence,
                    Qt::ShortcutContext context, Slot &&slot);

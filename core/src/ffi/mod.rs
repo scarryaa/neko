@@ -146,6 +146,8 @@ mod bridge {
 
         // ConfigManager
         fn new_config_manager() -> Result<Box<ConfigManager>>;
+        #[cxx_name = "get_config_path"]
+        fn get_config_path_wrapper(self: &ConfigManager) -> String;
         fn get_font_size(self: &ConfigManager, font_type: FontType) -> usize;
         fn get_font_family(self: &ConfigManager, font_type: FontType) -> String;
         #[cxx_name = "save_config"]
@@ -158,6 +160,8 @@ mod bridge {
         fn get_file_explorer_shown(self: &ConfigManager) -> bool;
         fn set_file_explorer_width(self: &mut ConfigManager, width: usize);
         fn get_file_explorer_width(self: &ConfigManager) -> usize;
+        fn get_file_explorer_right(self: &ConfigManager) -> bool;
+        fn set_file_explorer_right(self: &ConfigManager, is_right: bool);
 
         // ShortcutsManager
         fn new_shortcuts_manager() -> Result<Box<ShortcutsManager>>;
@@ -346,6 +350,14 @@ impl ConfigManager {
         }
     }
 
+    fn get_config_path_wrapper(&self) -> String {
+        if let Some(s) = ConfigManager::get_config_path().to_str() {
+            s.to_string()
+        } else {
+            "".to_string()
+        }
+    }
+
     fn get_font_family(&self, font_type: FontType) -> String {
         match font_type {
             FontType::Editor => self.get_snapshot().editor_font_family,
@@ -405,6 +417,14 @@ impl ConfigManager {
 
     fn get_file_explorer_width(&self) -> usize {
         self.get_snapshot().file_explorer_width
+    }
+
+    fn get_file_explorer_right(self: &ConfigManager) -> bool {
+        self.get_snapshot().file_explorer_right
+    }
+
+    fn set_file_explorer_right(self: &ConfigManager, is_right: bool) {
+        self.update(|c| c.file_explorer_right = is_right);
     }
 }
 

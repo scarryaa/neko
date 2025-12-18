@@ -58,6 +58,7 @@ impl Default for Shortcuts {
         let toggle_explorer = Shortcut::new("FileExplorer::Toggle".into(), "Ctrl+E".into());
         let focus_explorer = Shortcut::new("FileExplorer::Focus".into(), "Meta+H".into());
         let focus_editor = Shortcut::new("Editor::Focus".into(), "Meta+L".into());
+        let open_config = Shortcut::new("Editor::OpenConfig".into(), "Ctrl+,".into());
 
         let shortcuts = vec![
             open,
@@ -71,6 +72,7 @@ impl Default for Shortcuts {
             toggle_explorer,
             focus_explorer,
             focus_editor,
+            open_config,
         ];
 
         Shortcuts { shortcuts }
