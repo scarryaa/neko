@@ -194,21 +194,18 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
   divider->setStyleSheet(QString("background-color: %1;").arg(borderColor));
   frameLayout->addWidget(divider);
 
+  QString styleSheet("color: %1; border: 0px; padding-left: 12px; "
+                     "padding-right: 12px;");
   font.setPointSizeF(18.0);
-  auto *label = new QLabel(QString("Current line: %1 of %2 (column %3)")
+  auto *label =
+      UiUtils::createLabel(QString("Current line: %1 of %2 (column %3)")
                                .arg(clampedRow + 1)
                                .arg(maxLineCount)
                                .arg(clampedCol + 1),
-                           mainFrame);
-  QString styleSheet("color: %1; border: 0px; padding-left: 12px; "
-                     "padding-right: 12px;");
-  label->setStyleSheet(styleSheet.arg(foregroundColor));
-  label->setFont(font);
-  label->setWordWrap(false);
-  label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+                           styleSheet.arg(foregroundColor), font, mainFrame,
+                           false, QSizePolicy::Fixed, QSizePolicy::Fixed);
 
   QFont shortcutFont = font;
-
   QWidget *shortcutsRow = new QWidget(mainFrame);
   auto *shortcutsRowLayout = new QHBoxLayout(shortcutsRow);
   shortcutsRowLayout->setContentsMargins(0, 0, 0, 0);
@@ -236,30 +233,24 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
   adjustShortcutsAfterToggle(showJumpShortcuts);
 
   // TODO: Allow command aliases?
-  auto *leHintLabel = new QLabel(QString("le - current line end"), mainFrame);
-  leHintLabel->setStyleSheet(styleSheet.arg(foregroundVeryMutedColor));
-  leHintLabel->setFont(shortcutFont);
-  leHintLabel->setWordWrap(false);
-  leHintLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  auto *leHintLabel = UiUtils::createLabel(
+      QString("le - current line end"),
+      styleSheet.arg(foregroundVeryMutedColor), shortcutFont, mainFrame, false,
+      QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  auto *lbHintLabel =
-      new QLabel(QString("lb - current line beginning"), mainFrame);
-  lbHintLabel->setStyleSheet(styleSheet.arg(foregroundVeryMutedColor));
-  lbHintLabel->setFont(shortcutFont);
-  lbHintLabel->setWordWrap(false);
-  lbHintLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  auto *lbHintLabel = UiUtils::createLabel(
+      QString("lb - current line beginning"),
+      styleSheet.arg(foregroundVeryMutedColor), shortcutFont, mainFrame, false,
+      QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  auto *deHintLabel = new QLabel(QString("de - document end"), mainFrame);
-  deHintLabel->setStyleSheet(styleSheet.arg(foregroundVeryMutedColor));
-  deHintLabel->setFont(shortcutFont);
-  deHintLabel->setWordWrap(false);
-  deHintLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  auto *deHintLabel = UiUtils::createLabel(
+      QString("de - document end"), styleSheet.arg(foregroundVeryMutedColor),
+      shortcutFont, mainFrame, false, QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  auto *dbHintLabel = new QLabel(QString("db - document beginning"), mainFrame);
-  dbHintLabel->setStyleSheet(styleSheet.arg(foregroundVeryMutedColor));
-  dbHintLabel->setFont(shortcutFont);
-  dbHintLabel->setWordWrap(false);
-  dbHintLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  auto *dbHintLabel = UiUtils::createLabel(
+      QString("db - document beginning"),
+      styleSheet.arg(foregroundVeryMutedColor), shortcutFont, mainFrame, false,
+      QSizePolicy::Fixed, QSizePolicy::Fixed);
 
   shortcutsLayout->addWidget(leHintLabel);
   shortcutsLayout->addWidget(lbHintLabel);

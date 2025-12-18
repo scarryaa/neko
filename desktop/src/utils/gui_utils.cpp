@@ -79,6 +79,19 @@ QIcon UiUtils::createColorizedIcon(const QIcon &originalIcon,
   return QIcon(pixmap);
 }
 
+QLabel *UiUtils::createLabel(QString text, QString styleSheet, QFont font,
+                             QWidget *parent, bool wordWrap,
+                             QSizePolicy::Policy sizePolicyHorizontal,
+                             QSizePolicy::Policy sizePolicyVertical) {
+  QLabel *label = new QLabel(text, parent);
+  label->setStyleSheet(styleSheet);
+  label->setWordWrap(wordWrap);
+  label->setSizePolicy(sizePolicyHorizontal, sizePolicyVertical);
+  label->setFont(font);
+
+  return label;
+}
+
 double UiUtils::getTitleBarContentMargin() {
 #if defined(Q_OS_MACOS)
   return 84; // Spacing for traffic lights

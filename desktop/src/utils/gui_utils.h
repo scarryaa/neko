@@ -7,6 +7,7 @@
 #include <QFont>
 #include <QFontDatabase>
 #include <QIcon>
+#include <QLabel>
 #include <QPainter>
 #include <QSize>
 #include <QString>
@@ -25,6 +26,11 @@ QString getScrollBarStylesheet(const QString &widgetName,
 double getTitleBarContentMargin();
 QIcon createColorizedIcon(const QIcon &originalIcon, const QColor &color,
                           const QSize &size);
+QLabel *
+createLabel(QString text, QString styleSheet, QFont font = QFont(),
+            QWidget *parent = nullptr, bool wordWrap = true,
+            QSizePolicy::Policy sizePolicyHorizontal = QSizePolicy::Expanding,
+            QSizePolicy::Policy sizePolicyVertical = QSizePolicy::Expanding);
 } // namespace UiUtils
 
 #endif // UI_UTILS_H
