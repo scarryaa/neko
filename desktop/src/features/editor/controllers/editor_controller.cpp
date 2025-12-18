@@ -126,7 +126,7 @@ void EditorController::cut() {
   }
 
   auto rawText = editor->copy();
-  if (!rawText.empty()) {
+  if (rawText.empty()) {
     return;
   }
 
