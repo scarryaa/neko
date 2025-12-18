@@ -123,7 +123,7 @@ private:
       "color: %1; border: 0px; background: transparent; padding-left: 12px; "
       "padding-right: 12px;";
   static constexpr char LABEL_STYLE[] =
-      "color: %1; border: 0px; padding-left: 12px; padding-right: 12px;";
+      "color: %1; border: 0px; padding-left: 0px; padding-right: 0px;";
   static constexpr char SHORTCUTS_BUTTON_STYLE[] =
       "QToolButton { color: %1; border: none; background: transparent; "
       "padding-left: 16px; padding-right: 16px; }"

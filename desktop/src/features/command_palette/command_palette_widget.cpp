@@ -303,8 +303,10 @@ void CommandPaletteWidget::addJumpInputRow(int clampedRow, int clampedCol,
   });
 
   jumpPlaceholderHint = UiUtils::createLabel(
-      "", QString(LABEL_STYLE).arg(paletteColors.foregroundVeryMuted), font,
-      jumpInput, false, QSizePolicy::Expanding, QSizePolicy::Preferred);
+      "",
+      QString(LABEL_STYLE).arg(paletteColors.foregroundVeryMuted) +
+          "padding-right: 12px;",
+      font, jumpInput, false, QSizePolicy::Expanding, QSizePolicy::Preferred);
   jumpPlaceholderHint->setAttribute(Qt::WA_TransparentForMouseEvents);
   jumpPlaceholderHint->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
@@ -323,14 +325,38 @@ void CommandPaletteWidget::addCurrentLineLabel(
                                .arg(clampedRow + 1)
                                .arg(maxLineCount)
                                .arg(clampedCol + 1),
-                           styleSheet, font, mainFrame, false,
-                           QSizePolicy::Fixed, QSizePolicy::Fixed);
+                           styleSheet + "padding-left: 12px;", font, mainFrame,
+                           false, QSizePolicy::Fixed, QSizePolicy::Fixed);
   frameLayout->addWidget(label);
 }
 
 void CommandPaletteWidget::addShortcutsSection(
     const PaletteColors &paletteColors, const QFont &font) {
   QFont shortcutFont = font;
+
+  struct ShortcutRow {
+    const char *code;
+    const char *desc;
+  };
+
+  static const ShortcutRow rows[] = {
+      {LINE_END_SHORTCUT, "current line end"},
+      {LINE_MIDDLE_SHORTCUT, "current line middle"},
+      {LINE_START_SHORTCUT, "current line beginning"},
+      {DOCUMENT_END_SHORTCUT, "document end"},
+      {DOCUMENT_START_SHORTCUT, "document beginning"},
+      {DOCUMENT_MIDDLE_SHORTCUT, "document middle"},
+      {DOCUMENT_QUARTER_SHORTCUT, "document quarter"},
+      {DOCUMENT_THREE_QUARTERS_SHORTCUT, "document three-quarters"},
+      {LAST_TARGET_SHORTCUT, "last jumped-to position"},
+  };
+
+  QFontMetrics metrics(shortcutFont);
+  int codeColWidth = 0;
+  for (const auto &row : rows) {
+    codeColWidth = std::max(codeColWidth, metrics.horizontalAdvance(row.code));
+  }
+  codeColWidth += metrics.horizontalAdvance("  ");
 
   QWidget *shortcutsRow = new QWidget(mainFrame);
   auto *shortcutsRowLayout = new QHBoxLayout(shortcutsRow);
@@ -356,7 +382,8 @@ void CommandPaletteWidget::addShortcutsSection(
     if (!shortcutText.isEmpty()) {
       auto *shortcutHint = UiUtils::createLabel(
           shortcutText,
-          QString(LABEL_STYLE).arg(paletteColors.foregroundVeryMuted),
+          QString(LABEL_STYLE).arg(paletteColors.foregroundVeryMuted) +
+              QString("padding-right: 12px;"),
           shortcutFont, mainFrame, false, QSizePolicy::Fixed,
           QSizePolicy::Fixed);
       shortcutHint->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -377,15 +404,31 @@ void CommandPaletteWidget::addShortcutsSection(
                                 QSizePolicy::Fixed, QSizePolicy::Fixed);
   };
 
-  shortcutsLayout->addWidget(createHintLabel("lb - current line beginning"));
-  shortcutsLayout->addWidget(createHintLabel("lm - current line middle"));
-  shortcutsLayout->addWidget(createHintLabel("le - current line end"));
-  shortcutsLayout->addWidget(createHintLabel("db - document beginning"));
-  shortcutsLayout->addWidget(createHintLabel("dm - document middle"));
-  shortcutsLayout->addWidget(createHintLabel("de - document end"));
-  shortcutsLayout->addWidget(createHintLabel("dh - document quarter"));
-  shortcutsLayout->addWidget(createHintLabel("dt - document three-quarters"));
-  shortcutsLayout->addWidget(createHintLabel("ls - last jumped-to position"));
+  for (const auto &row : rows) {
+    auto *rowWidget = new QWidget(shortcutsContainer);
+    auto *rowLayout = new QHBoxLayout(rowWidget);
+    rowLayout->setContentsMargins(16, 0, 16, 0);
+    rowLayout->setSpacing(4);
+
+    auto *codeLabel =
+        UiUtils::createLabel(row.code, hintStyle, shortcutFont, rowWidget,
+                             false, QSizePolicy::Fixed, QSizePolicy::Fixed);
+    codeLabel->setMinimumWidth(codeColWidth);
+
+    auto *dashLabel =
+        UiUtils::createLabel("-", hintStyle, shortcutFont, rowWidget, false,
+                             QSizePolicy::Fixed, QSizePolicy::Fixed);
+    dashLabel->setMinimumWidth(codeColWidth / 1.5);
+    auto *descLabel =
+        UiUtils::createLabel(row.desc, hintStyle, shortcutFont, rowWidget,
+                             false, QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+    rowLayout->addWidget(codeLabel);
+    rowLayout->addWidget(dashLabel);
+    rowLayout->addWidget(descLabel);
+    rowLayout->addStretch(1);
+    shortcutsLayout->addWidget(rowWidget);
+  }
 
   frameLayout->addWidget(shortcutsContainer);
   adjustShortcutsAfterToggle(showJumpShortcuts);
