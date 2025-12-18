@@ -55,6 +55,9 @@ impl Default for Shortcuts {
         let next_tab = Shortcut::new("Tab::Next".into(), "Meta+Tab".into());
         let previous_tab = Shortcut::new("Tab::Previous".into(), "Meta+Shift+Tab".into());
         let jump_to = Shortcut::new("Cursor::JumpTo".into(), "Ctrl+G".into());
+        let toggle_explorer = Shortcut::new("FileExplorer::Toggle".into(), "Ctrl+E".into());
+        let focus_explorer = Shortcut::new("FileExplorer::Focus".into(), "Meta+H".into());
+        let focus_editor = Shortcut::new("Editor::Focus".into(), "Meta+L".into());
 
         let shortcuts = vec![
             open,
@@ -65,6 +68,9 @@ impl Default for Shortcuts {
             next_tab,
             previous_tab,
             jump_to,
+            toggle_explorer,
+            focus_explorer,
+            focus_editor,
         ];
 
         Shortcuts { shortcuts }

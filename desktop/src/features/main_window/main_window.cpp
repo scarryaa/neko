@@ -457,6 +457,29 @@ void MainWindow::setupKeyboardShortcuts() {
       jumpToAction,
       seqFor("Cursor::JumpTo", QKeySequence(Qt::ControlModifier | Qt::Key_G)),
       Qt::WindowShortcut, [this]() { onCursorPositionClicked(); });
+
+  // Ctrl + E for File Explorer toggle
+  QAction *toggleExplorerAction = new QAction(this);
+  addShortcut(toggleExplorerAction,
+              seqFor("FileExplorer::Toggle",
+                     QKeySequence(Qt::ControlModifier | Qt::Key_E)),
+              Qt::WindowShortcut, &MainWindow::onFileExplorerToggled);
+
+  // Ctrl + H for focus File Explorer
+  // TODO: Generalize this, i.e. "focus left widget/pane"
+  QAction *focusExplorerAction = new QAction(this);
+  addShortcut(
+      focusExplorerAction,
+      seqFor("FileExplorer::Focus", QKeySequence(Qt::MetaModifier | Qt::Key_H)),
+      Qt::WindowShortcut, [this]() { fileExplorerWidget->setFocus(); });
+
+  // Ctrl + L for focus Editor
+  // TODO: Generalize this, i.e. "focus right widget/pane"
+  QAction *focusEditorAction = new QAction(this);
+  addShortcut(
+      focusEditorAction,
+      seqFor("Editor::Focus", QKeySequence(Qt::MetaModifier | Qt::Key_L)),
+      Qt::WindowShortcut, [this]() { editorWidget->setFocus(); });
 }
 
 template <typename Slot>
