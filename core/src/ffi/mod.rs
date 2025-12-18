@@ -163,6 +163,10 @@ mod bridge {
         fn new_shortcuts_manager() -> Result<Box<ShortcutsManager>>;
         #[cxx_name = "get_shortcut"]
         fn get_shortcut_wrapper(self: &ShortcutsManager, key: String) -> Shortcut;
+        #[cxx_name = "get_shortcuts"]
+        fn get_shortcuts_wrapper(self: &ShortcutsManager) -> Vec<Shortcut>;
+        #[cxx_name = "add_shortcuts"]
+        fn add_shortcuts_wrapper(self: &ShortcutsManager, shortcuts: Vec<Shortcut>);
 
         // ThemeManager
         fn new_theme_manager() -> Result<Box<ThemeManager>>;
@@ -418,6 +422,18 @@ impl ShortcutsManager {
                 key,
                 key_combo: String::new(),
             })
+    }
+
+    fn get_shortcuts_wrapper(&self) -> Vec<Shortcut> {
+        self.get_all().into_iter().map(Into::into).collect()
+    }
+
+    fn add_shortcuts_wrapper(&self, shortcuts: Vec<Shortcut>) {
+        let shortcuts = shortcuts
+            .into_iter()
+            .map(|s| crate::shortcuts::Shortcut::new(s.key, s.key_combo));
+
+        self.add_shortcuts(shortcuts);
     }
 }
 

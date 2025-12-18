@@ -347,36 +347,83 @@ void MainWindow::handleTabClosed(int closedIndex, int numberOfTabsBeforeClose) {
 }
 
 void MainWindow::setupKeyboardShortcuts() {
-  auto saveShortcut = shortcutsManager->get_shortcut("Tab::Save");
-  auto saveAsShortcut = shortcutsManager->get_shortcut("Tab::SaveAs");
-  auto newTabShortcut = shortcutsManager->get_shortcut("Tab::New");
-  auto closeTabShortcut = shortcutsManager->get_shortcut("Tab::Close");
+  auto rustShortcuts = shortcutsManager->get_shortcuts();
+  std::unordered_map<std::string, std::string> shortcutMap;
+  shortcutMap.reserve(rustShortcuts.size());
+
+  for (const auto &shortcut : rustShortcuts) {
+    shortcutMap.emplace(
+        std::string(static_cast<rust::String>(shortcut.key).c_str()),
+        std::string(static_cast<rust::String>(shortcut.key_combo).c_str()));
+  }
+
+  rust::Vec<neko::Shortcut> missingShortcuts;
+  auto ensureShortcut = [&](const std::string &key,
+                            const std::string &keyCombo) {
+    auto it = shortcutMap.find(key);
+    if (it == shortcutMap.end() || it->second.empty()) {
+      neko::Shortcut shortcut;
+      shortcut.key = key;
+      shortcut.key_combo = keyCombo;
+      missingShortcuts.push_back(std::move(shortcut));
+      shortcutMap[key] = keyCombo;
+    }
+  };
+
+  ensureShortcut("Tab::Save", "Ctrl+S");
+  ensureShortcut("Tab::SaveAs", "Ctrl+Shift+S");
+  ensureShortcut("Tab::New", "Ctrl+T");
+  ensureShortcut("Tab::Close", "Ctrl+W");
+  ensureShortcut("Tab::Next", "Ctrl+Tab");
+  ensureShortcut("Tab::Previous", "Ctrl+Shift+Tab");
+  ensureShortcut("Cursor::JumpTo", "Ctrl+G");
+
+  if (!missingShortcuts.empty()) {
+    shortcutsManager->add_shortcuts(std::move(missingShortcuts));
+  }
+
+  auto seqFor = [&](const std::string &key,
+                    const QKeySequence &fallback) -> QKeySequence {
+    auto it = shortcutMap.find(key);
+    if (it != shortcutMap.end() && !it->second.empty()) {
+      return QKeySequence(it->second.c_str());
+    }
+    return fallback;
+  };
 
   // Cmd+S for save
   QAction *saveAction = new QAction(this);
-  addShortcut(saveAction, QKeySequence(saveShortcut.key_combo.c_str()),
-              Qt::WindowShortcut, &MainWindow::onFileSaved);
+  addShortcut(
+      saveAction,
+      seqFor("Tab::Save", QKeySequence(Qt::ControlModifier | Qt::Key_S)),
+      Qt::WindowShortcut, &MainWindow::onFileSaved);
 
   // Cmd+Shift+S for save as
   QAction *saveAsAction = new QAction(this);
-  addShortcut(saveAsAction, QKeySequence(saveAsShortcut.key_combo.c_str()),
-              Qt::WindowShortcut, [this]() { onFileSaved(true); });
+  addShortcut(
+      saveAsAction,
+      seqFor("Tab::SaveAs",
+             QKeySequence(Qt::ControlModifier | Qt::ShiftModifier | Qt::Key_S)),
+      Qt::WindowShortcut, [this]() { onFileSaved(true); });
 
   // Cmd+T for new tab
   QAction *newTabAction = new QAction(this);
-  addShortcut(newTabAction, QKeySequence(newTabShortcut.key_combo.c_str()),
+  addShortcut(newTabAction,
+              seqFor("Tab::New", QKeySequence(Qt::ControlModifier | Qt::Key_T)),
               Qt::WindowShortcut, &MainWindow::onNewTabRequested);
 
   // Cmd+W for close tab
   QAction *closeTabAction = new QAction(this);
-  addShortcut(closeTabAction, QKeySequence(closeTabShortcut.key_combo.c_str()),
-              Qt::WindowShortcut, [this]() {
-                onActiveTabCloseRequested(tabBarWidget->getNumberOfTabs());
-              });
+  addShortcut(
+      closeTabAction,
+      seqFor("Tab::Close", QKeySequence(Qt::ControlModifier | Qt::Key_W)),
+      Qt::WindowShortcut,
+      [this]() { onActiveTabCloseRequested(tabBarWidget->getNumberOfTabs()); });
 
   // Cmd+Tab for next tab
   QAction *nextTabAction = new QAction(this);
-  addShortcut(nextTabAction, QKeySequence(Qt::MetaModifier | Qt::Key_Tab),
+  addShortcut(nextTabAction,
+              seqFor("Tab::Next", QKeySequence(Qt::MetaModifier | Qt::Key_Tab)),
               Qt::WindowShortcut, [this]() {
                 int tabCount = appState->get_tab_count();
 
@@ -389,23 +436,27 @@ void MainWindow::setupKeyboardShortcuts() {
 
   // Cmd+Shift+Tab for previous tab
   QAction *prevTabAction = new QAction(this);
-  addShortcut(prevTabAction,
-              QKeySequence(Qt::MetaModifier | Qt::ShiftModifier | Qt::Key_Tab),
-              Qt::WindowShortcut, [this]() {
-                int tabCount = appState->get_tab_count();
+  addShortcut(
+      prevTabAction,
+      seqFor("Tab::Previous",
+             QKeySequence(Qt::MetaModifier | Qt::ShiftModifier | Qt::Key_Tab)),
+      Qt::WindowShortcut, [this]() {
+        int tabCount = appState->get_tab_count();
 
-                if (tabCount > 0) {
-                  int currentIndex = appState->get_active_tab_index();
-                  size_t prevIndex =
-                      (currentIndex == 0) ? tabCount - 1 : currentIndex - 1;
-                  onTabChanged(prevIndex);
-                }
-              });
+        if (tabCount > 0) {
+          int currentIndex = appState->get_active_tab_index();
+          size_t prevIndex =
+              (currentIndex == 0) ? tabCount - 1 : currentIndex - 1;
+          onTabChanged(prevIndex);
+        }
+      });
 
   // Ctrl+G for jump to
   QAction *jumpToAction = new QAction(this);
-  addShortcut(jumpToAction, QKeySequence(Qt::ControlModifier | Qt::Key_G),
-              Qt::WindowShortcut, [this]() { onCursorPositionClicked(); });
+  addShortcut(
+      jumpToAction,
+      seqFor("Cursor::JumpTo", QKeySequence(Qt::ControlModifier | Qt::Key_G)),
+      Qt::WindowShortcut, [this]() { onCursorPositionClicked(); });
 }
 
 template <typename Slot>

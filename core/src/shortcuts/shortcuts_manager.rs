@@ -65,6 +65,20 @@ impl ShortcutsManager {
             .and_then(|shortcuts| shortcuts.get(key).cloned())
     }
 
+    pub fn get_all(&self) -> Vec<Shortcut> {
+        self.inner
+            .read()
+            .map(|shortcuts| shortcuts.as_vec())
+            .unwrap_or_default()
+    }
+
+    pub fn add_shortcuts<I>(&self, new_shortcuts: I)
+    where
+        I: IntoIterator<Item = Shortcut>,
+    {
+        self.update(|shortcuts| shortcuts.extend(new_shortcuts));
+    }
+
     pub fn get_snapshot(&self) -> Shortcuts {
         self.inner.read().unwrap().clone()
     }

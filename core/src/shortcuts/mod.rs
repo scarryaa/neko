@@ -25,16 +25,47 @@ impl Shortcuts {
     pub fn get(&self, key: &str) -> Option<&Shortcut> {
         self.shortcuts.iter().find(|s| s.key == key)
     }
+
+    pub fn upsert(&mut self, shortcut: Shortcut) {
+        if let Some(existing) = self.shortcuts.iter_mut().find(|s| s.key == shortcut.key) {
+            *existing = shortcut;
+        } else {
+            self.shortcuts.push(shortcut);
+        }
+    }
+
+    pub fn extend<I: IntoIterator<Item = Shortcut>>(&mut self, shortcuts: I) {
+        for s in shortcuts {
+            self.upsert(s);
+        }
+    }
+
+    pub fn as_vec(&self) -> Vec<Shortcut> {
+        self.shortcuts.clone()
+    }
 }
 
 impl Default for Shortcuts {
     fn default() -> Self {
         let open = Shortcut::new("Tab::Open".into(), "Ctrl+O".into());
         let save = Shortcut::new("Tab::Save".into(), "Ctrl+S".into());
+        let save_as = Shortcut::new("Tab::SaveAs".into(), "Ctrl+Shift+S".into());
         let close_tab = Shortcut::new("Tab::Close".into(), "Ctrl+W".into());
         let new_tab = Shortcut::new("Tab::New".into(), "Ctrl+T".into());
+        let next_tab = Shortcut::new("Tab::Next".into(), "Meta+Tab".into());
+        let previous_tab = Shortcut::new("Tab::Previous".into(), "Meta+Shift+Tab".into());
+        let jump_to = Shortcut::new("Cursor::JumpTo".into(), "Ctrl+G".into());
 
-        let shortcuts = vec![open, save, close_tab, new_tab];
+        let shortcuts = vec![
+            open,
+            save,
+            save_as,
+            close_tab,
+            new_tab,
+            next_tab,
+            previous_tab,
+            jump_to,
+        ];
 
         Shortcuts { shortcuts }
     }
