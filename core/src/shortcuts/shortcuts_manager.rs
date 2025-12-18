@@ -34,9 +34,7 @@ impl ShortcutsManager {
         }
         path.push("neko");
 
-        if let Err(e) = fs::create_dir(&path) {
-            eprintln!("Failed to create shortcuts directory: {e}");
-        }
+        _ = fs::create_dir_all(&path);
 
         path.push("keymap.json");
         path

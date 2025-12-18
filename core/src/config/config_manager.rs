@@ -34,9 +34,7 @@ impl ConfigManager {
         }
         path.push("neko");
 
-        if let Err(e) = fs::create_dir(&path) {
-            eprintln!("Failed to create config directory: {e}");
-        }
+        _ = fs::create_dir_all(&path);
 
         path.push("settings.json");
         path
