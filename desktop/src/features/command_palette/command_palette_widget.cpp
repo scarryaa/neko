@@ -413,12 +413,12 @@ void CommandPaletteWidget::addShortcutsSection(
     auto *codeLabel =
         UiUtils::createLabel(row.code, hintStyle, shortcutFont, rowWidget,
                              false, QSizePolicy::Fixed, QSizePolicy::Fixed);
-    codeLabel->setMinimumWidth(codeColWidth);
+    codeLabel->setMinimumWidth(codeColWidth / 1.5);
 
     auto *dashLabel =
-        UiUtils::createLabel("-", hintStyle, shortcutFont, rowWidget, false,
+        UiUtils::createLabel("", hintStyle, shortcutFont, rowWidget, false,
                              QSizePolicy::Fixed, QSizePolicy::Fixed);
-    dashLabel->setMinimumWidth(codeColWidth / 1.5);
+    dashLabel->setMinimumWidth(codeColWidth / 1.93);
     auto *descLabel =
         UiUtils::createLabel(row.desc, hintStyle, shortcutFont, rowWidget,
                              false, QSizePolicy::Fixed, QSizePolicy::Fixed);
