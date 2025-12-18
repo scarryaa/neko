@@ -20,7 +20,8 @@ QString getThemeColor(neko::ThemeManager &manager, const char *key,
 QFont loadFont(neko::ConfigManager &manager, neko::FontType type);
 void setFontSize(neko::ConfigManager &manager, neko::FontType type,
                  double newFontSize);
-QString getScrollBarStylesheet(const QString &widgetName,
+QString getScrollBarStylesheet(neko::ThemeManager &themeManager,
+                               const QString &widgetName,
                                const QString &bgColor,
                                const QString &additions = nullptr);
 double getTitleBarContentMargin();

@@ -17,7 +17,8 @@ EditorWidget::EditorWidget(neko::Editor *editor,
   QString bgHex =
       UiUtils::getThemeColor(themeManager, "editor.background", "#000000");
 
-  setStyleSheet(UiUtils::getScrollBarStylesheet("EditorWidget", bgHex));
+  setStyleSheet(
+      UiUtils::getScrollBarStylesheet(themeManager, "EditorWidget", bgHex));
 
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
           &EditorWidget::redraw);

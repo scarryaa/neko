@@ -23,7 +23,7 @@ TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
   auto backgroundColor =
       UiUtils::getThemeColor(themeManager, "tab_bar.background");
   viewport()->setStyleSheet(UiUtils::getScrollBarStylesheet(
-      "QWidget", backgroundColor,
+      themeManager, "QWidget", backgroundColor,
       QString("border-bottom: 1px solid %1")
           .arg(UiUtils::getThemeColor(themeManager, "ui.border"))));
 

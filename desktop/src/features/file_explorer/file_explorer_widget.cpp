@@ -15,8 +15,8 @@ FileExplorerWidget::FileExplorerWidget(neko::FileTree *tree,
 
   auto backgroundColor =
       UiUtils::getThemeColor(themeManager, "file_explorer.background");
-  setStyleSheet(
-      UiUtils::getScrollBarStylesheet("FileExplorerWidget", backgroundColor));
+  setStyleSheet(UiUtils::getScrollBarStylesheet(
+      themeManager, "FileExplorerWidget", backgroundColor));
 
   directorySelectionButton = new QPushButton("Select a directory");
   directorySelectionButton->setStyleSheet(

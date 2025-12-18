@@ -73,6 +73,12 @@ impl Theme {
             "#33000000".to_string(),
         );
 
+        colors.insert("ui.scrollbar.thumb".to_string(), "#aaaaaa".to_string());
+        colors.insert(
+            "ui.scrollbar.thumb.hover".to_string(),
+            "#cccccc".to_string(),
+        );
+
         colors.insert("sidebar.background".to_string(), "#f5f5f5".to_string());
         colors.insert("ui.foreground".to_string(), "#2d2d2d".to_string());
         colors.insert("ui.foreground.muted".to_string(), "#828282".to_string());
@@ -139,6 +145,12 @@ impl Theme {
         colors.insert(
             "command_palette.shadow".to_string(),
             "#66000000".to_string(),
+        );
+
+        colors.insert("ui.scrollbar.thumb".to_string(), "#555555".to_string());
+        colors.insert(
+            "ui.scrollbar.thumb.hover".to_string(),
+            "#666666".to_string(),
         );
 
         colors.insert("sidebar.background".to_string(), "#000000".to_string());
