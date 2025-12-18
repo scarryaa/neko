@@ -12,6 +12,7 @@
 #include <QLineEdit>
 #include <QMouseEvent>
 #include <QStyle>
+#include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <neko-core/src/ffi/mod.rs.h>
@@ -37,6 +38,8 @@ protected:
 
 private:
   QWidget *parent;
+  QWidget *shortcutsContainer;
+  QToolButton *shortcutsToggle;
   neko::ThemeManager &themeManager;
   neko::ConfigManager &configManager;
 
@@ -56,6 +59,7 @@ private:
   int maxColumn = 1;
   int maxRow = 1;
   int currentRow = 1;
+  bool showJumpShortcuts = false;
 
   enum class Mode { None, GoToPosition };
   Mode currentMode = Mode::None;
@@ -68,6 +72,7 @@ private:
   void jumpToLineEnd();
   void jumpToDocumentStart();
   void jumpToDocumentEnd();
+  void adjustShortcutsAfterToggle(bool checked);
 };
 
 #endif // COMMAND_PALETTE_WIDGET_H

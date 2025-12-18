@@ -23,12 +23,15 @@ CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
       "} QFrame{ border-radius: 12px; background: %1; border: 2px "
       "solid %2; }";
   setStyleSheet(stylesheet.arg(backgroundColor, borderColor));
+  setMinimumWidth(MIN_WIDTH);
+  setMaximumWidth(WIDTH);
 
   mainFrame = new PaletteFrame(themeManager, this);
 
   QVBoxLayout *rootLayout = new QVBoxLayout(this);
   rootLayout->setContentsMargins(CONTENT_MARGIN, CONTENT_MARGIN, CONTENT_MARGIN,
                                  CONTENT_MARGIN);
+  rootLayout->setSizeConstraint(QLayout::SetFixedSize);
   rootLayout->addWidget(mainFrame);
 
   frameLayout = new QVBoxLayout(mainFrame);
@@ -204,49 +207,91 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
   label->setWordWrap(false);
   label->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  // TODO: Move these elsewhere when shortcuts grow? Or add a toggleable
-  // dropdown
+  QFont shortcutFont = font;
+
+  QWidget *shortcutsRow = new QWidget(mainFrame);
+  auto *shortcutsRowLayout = new QHBoxLayout(shortcutsRow);
+  shortcutsRowLayout->setContentsMargins(0, 0, 0, 0);
+  shortcutsRowLayout->setSpacing(6);
+
+  shortcutsToggle = new QToolButton(mainFrame);
+  shortcutsToggle->setText("  Shortcuts");
+  shortcutsToggle->setCheckable(true);
+  shortcutsToggle->setChecked(showJumpShortcuts);
+  shortcutsToggle->setArrowType(Qt::DownArrow);
+  shortcutsToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  shortcutsToggle->setFont(shortcutFont);
+  shortcutsToggle->setStyleSheet(
+      QString("QToolButton { color: %1; border: none; background: transparent; "
+              "padding-left: 16px; padding-right: 16px; }"
+              "QToolButton:hover { color: %2; }")
+          .arg(foregroundColor, foregroundVeryMutedColor));
+  shortcutsToggle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  shortcutsRowLayout->addWidget(shortcutsToggle);
+
+  shortcutsContainer = new QWidget(mainFrame);
+  auto *shortcutsLayout = new QVBoxLayout(shortcutsContainer);
+  shortcutsLayout->setContentsMargins(4, 0, 4, 0);
+  shortcutsLayout->setSpacing(2);
+  adjustShortcutsAfterToggle(showJumpShortcuts);
+
   // TODO: Allow command aliases?
-  auto *leHintLabel = new QLabel(QString("le = current line end"), mainFrame);
+  auto *leHintLabel = new QLabel(QString("le - current line end"), mainFrame);
   leHintLabel->setStyleSheet(styleSheet.arg(foregroundVeryMutedColor));
-  leHintLabel->setFont(font);
-  font.setPointSizeF(16.0);
+  leHintLabel->setFont(shortcutFont);
   leHintLabel->setWordWrap(false);
   leHintLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
   auto *lbHintLabel =
-      new QLabel(QString("lb = current line beginning"), mainFrame);
+      new QLabel(QString("lb - current line beginning"), mainFrame);
   lbHintLabel->setStyleSheet(styleSheet.arg(foregroundVeryMutedColor));
-  lbHintLabel->setFont(font);
+  lbHintLabel->setFont(shortcutFont);
   lbHintLabel->setWordWrap(false);
   lbHintLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  auto *deHintLabel = new QLabel(QString("de = document end"), mainFrame);
+  auto *deHintLabel = new QLabel(QString("de - document end"), mainFrame);
   deHintLabel->setStyleSheet(styleSheet.arg(foregroundVeryMutedColor));
-  deHintLabel->setFont(font);
+  deHintLabel->setFont(shortcutFont);
   deHintLabel->setWordWrap(false);
   deHintLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
 
-  auto *dbHintLabel = new QLabel(QString("db = document beginning"), mainFrame);
+  auto *dbHintLabel = new QLabel(QString("db - document beginning"), mainFrame);
   dbHintLabel->setStyleSheet(styleSheet.arg(foregroundVeryMutedColor));
-  dbHintLabel->setFont(font);
+  dbHintLabel->setFont(shortcutFont);
   dbHintLabel->setWordWrap(false);
   dbHintLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+  shortcutsLayout->addWidget(leHintLabel);
+  shortcutsLayout->addWidget(lbHintLabel);
+  shortcutsLayout->addWidget(deHintLabel);
+  shortcutsLayout->addWidget(dbHintLabel);
 
   auto *topLabelSpacer =
       new QSpacerItem(0, 4, QSizePolicy::Minimum, QSizePolicy::Fixed);
   frameLayout->addItem(topLabelSpacer);
   frameLayout->addWidget(label);
-  frameLayout->addWidget(leHintLabel);
-  frameLayout->addWidget(lbHintLabel);
-  frameLayout->addWidget(deHintLabel);
-  frameLayout->addWidget(dbHintLabel);
+  frameLayout->addWidget(shortcutsRow);
+  frameLayout->addWidget(shortcutsContainer);
   auto *bottomLabelSpacer =
       new QSpacerItem(0, 12, QSizePolicy::Minimum, QSizePolicy::Fixed);
   frameLayout->addItem(bottomLabelSpacer);
 
+  connect(shortcutsToggle, &QToolButton::toggled, this,
+          [this](bool checked) { adjustShortcutsAfterToggle(checked); });
+
   connect(jumpInput, &QLineEdit::returnPressed, this,
           &CommandPaletteWidget::emitJumpRequestFromInput);
+  adjustSize();
+}
+
+void CommandPaletteWidget::adjustShortcutsAfterToggle(bool checked) {
+  shortcutsContainer->setVisible(checked);
+  shortcutsToggle->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
+  shortcutsContainer->adjustSize();
+  shortcutsToggle->updateGeometry();
+  shortcutsContainer->updateGeometry();
+  showJumpShortcuts = checked;
+  this->adjustSize();
 }
 
 bool CommandPaletteWidget::eventFilter(QObject *obj, QEvent *event) {
