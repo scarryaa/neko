@@ -30,7 +30,7 @@ public:
   ~CommandPaletteWidget();
 
   void jumpToRowColumn(int currentRow = 0, int currentCol = 0, int maxCol = 1,
-                       int lineCount = 1);
+                       int lineCount = 1, int lastLineMaxCol = 1);
 
 signals:
   void goToPositionRequested(int row, int col);
@@ -55,8 +55,10 @@ private:
   QString jumpInputDraft;
   int maxLineCount = 1;
   int maxColumn = 1;
+  int lastLineMaxColumn = 1;
   int maxRow = 1;
   int currentRow = 1;
+  int currentColumn = 1;
   int jumpHistoryIndex = 0;
   bool showJumpShortcuts = false;
 
@@ -65,14 +67,19 @@ private:
 
   void clearContent();
   void prepareJumpState(int currentRow, int currentCol, int maxCol,
-                        int lineCount);
+                        int lineCount, int lastLineMaxCol);
   void buildJumpContent(int currentRow, int currentCol, int maxCol,
-                        int lineCount);
+                        int lineCount, int lastLineMaxCol);
   void emitJumpRequestFromInput();
   void jumpToLineStart();
   void jumpToLineEnd();
+  void jumpToLineMiddle();
   void jumpToDocumentStart();
   void jumpToDocumentEnd();
+  void jumpToDocumentMiddle();
+  void jumpToDocumentQuarter();
+  void jumpToDocumentThreeQuarters();
+  void jumpToLastTarget();
   void adjustShortcutsAfterToggle(bool checked);
 
   struct PaletteColors {
@@ -125,8 +132,13 @@ private:
   static constexpr int JUMP_HISTORY_LIMIT = 20;
   static constexpr char LINE_END_SHORTCUT[] = "le";
   static constexpr char LINE_START_SHORTCUT[] = "lb";
+  static constexpr char LINE_MIDDLE_SHORTCUT[] = "lm";
+  static constexpr char DOCUMENT_QUARTER_SHORTCUT[] = "dh";
+  static constexpr char DOCUMENT_THREE_QUARTERS_SHORTCUT[] = "dt";
   static constexpr char DOCUMENT_END_SHORTCUT[] = "de";
   static constexpr char DOCUMENT_START_SHORTCUT[] = "db";
+  static constexpr char DOCUMENT_MIDDLE_SHORTCUT[] = "dm";
+  static constexpr char LAST_TARGET_SHORTCUT[] = "ls";
   static constexpr char JUMP_PLACEHOLDER_HINT[] = "↑↓ History";
 };
 

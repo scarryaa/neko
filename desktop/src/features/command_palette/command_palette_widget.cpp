@@ -71,8 +71,9 @@ void CommandPaletteWidget::showEvent(QShowEvent *event) {
 }
 
 void CommandPaletteWidget::jumpToRowColumn(int currentRow, int currentCol,
-                                           int maxCol, int lineCount) {
-  buildJumpContent(currentRow, currentCol, maxCol, lineCount);
+                                           int maxCol, int lineCount,
+                                           int lastLineMaxCol) {
+  buildJumpContent(currentRow, currentCol, maxCol, lineCount, lastLineMaxCol);
   show();
 
   if (jumpInput) {
@@ -82,10 +83,12 @@ void CommandPaletteWidget::jumpToRowColumn(int currentRow, int currentCol,
 
 void CommandPaletteWidget::jumpToDocumentStart() {
   emit goToPositionRequested(0, 0);
+  close();
 }
 
 void CommandPaletteWidget::jumpToDocumentEnd() {
-  emit goToPositionRequested(maxRow, maxColumn);
+  emit goToPositionRequested(maxRow, lastLineMaxColumn);
+  close();
 }
 
 void CommandPaletteWidget::jumpToLineStart() {
@@ -95,6 +98,45 @@ void CommandPaletteWidget::jumpToLineStart() {
 
 void CommandPaletteWidget::jumpToLineEnd() {
   emit goToPositionRequested(currentRow, maxColumn);
+  close();
+}
+
+void CommandPaletteWidget::jumpToLineMiddle() {
+  emit goToPositionRequested(currentRow, maxColumn / 2);
+  close();
+}
+
+void CommandPaletteWidget::jumpToDocumentMiddle() {
+  emit goToPositionRequested(maxRow / 2, currentColumn);
+  close();
+}
+
+void CommandPaletteWidget::jumpToDocumentQuarter() {
+  emit goToPositionRequested(maxRow / 4, currentColumn);
+  close();
+}
+
+void CommandPaletteWidget::jumpToDocumentThreeQuarters() {
+  emit goToPositionRequested((maxRow / 4) * 3, currentColumn);
+  close();
+}
+
+void CommandPaletteWidget::jumpToLastTarget() {
+  if (!jumpInput || jumpHistory.isEmpty()) {
+    close();
+    return;
+  }
+
+  for (int i = jumpHistory.size() - 1; i >= 0; --i) {
+    const auto &entry = jumpHistory.at(i);
+    if (entry == LAST_TARGET_SHORTCUT)
+      continue;
+
+    jumpInput->setText(entry);
+    emitJumpRequestFromInput();
+    return;
+  }
+
   close();
 }
 
@@ -125,6 +167,10 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
     storeEntry(text);
     jumpToLineStart();
     return;
+  } else if (text == LINE_MIDDLE_SHORTCUT) {
+    storeEntry(text);
+    jumpToLineMiddle();
+    return;
   } else if (text == DOCUMENT_END_SHORTCUT) {
     storeEntry(text);
     jumpToDocumentEnd();
@@ -132,6 +178,21 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
   } else if (text == DOCUMENT_START_SHORTCUT) {
     storeEntry(text);
     jumpToDocumentStart();
+    return;
+  } else if (text == DOCUMENT_MIDDLE_SHORTCUT) {
+    storeEntry(text);
+    jumpToDocumentMiddle();
+    return;
+  } else if (text == DOCUMENT_QUARTER_SHORTCUT) {
+    storeEntry(text);
+    jumpToDocumentQuarter();
+    return;
+  } else if (text == DOCUMENT_THREE_QUARTERS_SHORTCUT) {
+    storeEntry(text);
+    jumpToDocumentThreeQuarters();
+    return;
+  } else if (text == LAST_TARGET_SHORTCUT) {
+    jumpToLastTarget();
     return;
   }
 
@@ -173,12 +234,15 @@ void CommandPaletteWidget::clearContent() {
 }
 
 void CommandPaletteWidget::prepareJumpState(int currentRow, int currentCol,
-                                            int maxCol, int lineCount) {
+                                            int maxCol, int lineCount,
+                                            int lastLineMaxCol) {
   currentMode = Mode::GoToPosition;
   maxLineCount = std::max(1, lineCount);
   maxColumn = std::max(1, maxCol);
+  lastLineMaxColumn = std::max(1, lastLineMaxCol);
   maxRow = std::max(1, lineCount);
   this->currentRow = std::clamp(currentRow, 0, maxLineCount - 1);
+  this->currentColumn = std::clamp(currentCol, 0, maxCol);
 }
 
 CommandPaletteWidget::PaletteColors
@@ -270,7 +334,7 @@ void CommandPaletteWidget::addShortcutsSection(
 
   QWidget *shortcutsRow = new QWidget(mainFrame);
   auto *shortcutsRowLayout = new QHBoxLayout(shortcutsRow);
-  shortcutsRowLayout->setContentsMargins(0, 0, 0, 0);
+  shortcutsRowLayout->setContentsMargins(0, 2, 0, 0);
   shortcutsRowLayout->setSpacing(6);
 
   shortcutsToggle = new QToolButton(mainFrame);
@@ -313,20 +377,26 @@ void CommandPaletteWidget::addShortcutsSection(
                                 QSizePolicy::Fixed, QSizePolicy::Fixed);
   };
 
-  shortcutsLayout->addWidget(createHintLabel("le - current line end"));
   shortcutsLayout->addWidget(createHintLabel("lb - current line beginning"));
-  shortcutsLayout->addWidget(createHintLabel("de - document end"));
+  shortcutsLayout->addWidget(createHintLabel("lm - current line middle"));
+  shortcutsLayout->addWidget(createHintLabel("le - current line end"));
   shortcutsLayout->addWidget(createHintLabel("db - document beginning"));
+  shortcutsLayout->addWidget(createHintLabel("dm - document middle"));
+  shortcutsLayout->addWidget(createHintLabel("de - document end"));
+  shortcutsLayout->addWidget(createHintLabel("dh - document quarter"));
+  shortcutsLayout->addWidget(createHintLabel("dt - document three-quarters"));
+  shortcutsLayout->addWidget(createHintLabel("ls - last jumped-to position"));
 
   frameLayout->addWidget(shortcutsContainer);
   adjustShortcutsAfterToggle(showJumpShortcuts);
 }
 
 void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
-                                            int maxCol, int lineCount) {
+                                            int maxCol, int lineCount,
+                                            int lastLineMaxCol) {
   clearContent();
 
-  prepareJumpState(currentRow, currentCol, maxCol, lineCount);
+  prepareJumpState(currentRow, currentCol, maxCol, lineCount, lastLineMaxCol);
 
   const auto paletteColors = loadPaletteColors();
   QFont baseFont = makeInterfaceFont(JUMP_FONT_SIZE);

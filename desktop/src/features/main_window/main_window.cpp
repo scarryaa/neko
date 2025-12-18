@@ -293,10 +293,18 @@ void MainWindow::onCursorPositionClicked() {
 
   auto cursor = appState->get_editor_mut().get_last_added_cursor();
   auto lineCount = appState->get_editor_mut().get_line_count();
+
+  if (lineCount == 0) {
+    return;
+  }
+
   auto maxCol = std::max<size_t>(
       1, appState->get_editor_mut().get_line_length(cursor.row));
+  auto lastLineMaxCol = std::max<size_t>(
+      1, appState->get_editor_mut().get_line_length(lineCount - 1));
+
   commandPaletteWidget->jumpToRowColumn(cursor.row, cursor.col, maxCol,
-                                        lineCount);
+                                        lineCount, lastLineMaxCol);
 }
 
 void MainWindow::onCommandPaletteGoToPosition(int row, int col) {
