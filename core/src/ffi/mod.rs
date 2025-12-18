@@ -2,13 +2,14 @@ use std::path::PathBuf;
 
 use bridge::{
     AddCursorDirectionFfi, AddCursorDirectionKind, ChangeSetFfi, CursorPosition, FileNode,
-    FontType, Selection,
+    FontType, Selection, Shortcut,
 };
 
 use crate::Cursor;
 use crate::app::AppState;
 use crate::config::ConfigManager;
 use crate::file_system::FileTree;
+use crate::shortcuts::ShortcutsManager;
 use crate::text::cursor_manager::AddCursorDirection;
 use crate::text::{ChangeSet, Editor};
 use crate::theme::ThemeManager;
@@ -44,6 +45,15 @@ impl From<Cursor> for CursorPosition {
         Self {
             row: c.row,
             col: c.column,
+        }
+    }
+}
+
+impl From<crate::shortcuts::Shortcut> for Shortcut {
+    fn from(s: crate::shortcuts::Shortcut) -> Self {
+        Self {
+            key: s.key,
+            action: s.action,
         }
     }
 }
@@ -99,9 +109,15 @@ mod bridge {
         col: usize,
     }
 
+    struct Shortcut {
+        key: String,
+        action: String,
+    }
+
     extern "Rust" {
         type AppState;
         type ConfigManager;
+        type ShortcutsManager;
         type ThemeManager;
         type Editor;
         type FileTree;
@@ -142,6 +158,11 @@ mod bridge {
         fn get_file_explorer_shown(self: &ConfigManager) -> bool;
         fn set_file_explorer_width(self: &mut ConfigManager, width: usize);
         fn get_file_explorer_width(self: &ConfigManager) -> usize;
+
+        // ShortcutsManager
+        fn new_shortcuts_manager() -> Result<Box<ShortcutsManager>>;
+        #[cxx_name = "get_shortcut"]
+        fn get_shortcut_wrapper(self: &ShortcutsManager, key: String) -> Shortcut;
 
         // ThemeManager
         fn new_theme_manager() -> Result<Box<ThemeManager>>;
@@ -380,6 +401,23 @@ impl ConfigManager {
 
     fn get_file_explorer_width(&self) -> usize {
         self.get_snapshot().file_explorer_width
+    }
+}
+
+fn new_shortcuts_manager() -> std::io::Result<Box<ShortcutsManager>> {
+    let shortcuts_manager = ShortcutsManager::new();
+
+    Ok(Box::new(shortcuts_manager))
+}
+
+impl ShortcutsManager {
+    fn get_shortcut_wrapper(&self, key: String) -> Shortcut {
+        self.get_shortcut(&key)
+            .map(Into::into)
+            .unwrap_or_else(|| Shortcut {
+                key,
+                action: String::new(),
+            })
     }
 }
 
