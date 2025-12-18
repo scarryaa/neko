@@ -33,6 +33,7 @@ signals:
 public slots:
   void onCursorPositionChanged(int row, int col, int numberOfCursors);
   void onTabClosed(int numberOfTabs);
+  void onFileExplorerToggledExternally(bool isOpen);
 
 protected:
   void paintEvent(QPaintEvent *event) override;

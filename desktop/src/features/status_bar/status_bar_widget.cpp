@@ -96,6 +96,10 @@ void StatusBarWidget::onCursorPositionClicked() {
 
 void StatusBarWidget::onFileExplorerToggled() { emit fileExplorerToggled(); }
 
+void StatusBarWidget::onFileExplorerToggledExternally(bool isOpen) {
+  fileExplorerToggleButton->setChecked(isOpen);
+}
+
 void StatusBarWidget::showCursorPositionInfo() { cursorPosition->show(); }
 
 void StatusBarWidget::updateCursorPosition(int row, int col,

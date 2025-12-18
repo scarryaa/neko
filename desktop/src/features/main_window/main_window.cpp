@@ -1,4 +1,5 @@
 #include "main_window.h"
+#include "features/status_bar/status_bar_widget.h"
 #include "utils/gui_utils.h"
 
 // TODO: StatusBar signals/tab inform and MainWindow editor ref
@@ -82,6 +83,8 @@ void MainWindow::connectSignals() {
   // StatusBarWidget -> MainWindow
   connect(statusBarWidget, &StatusBarWidget::fileExplorerToggled, this,
           &MainWindow::onFileExplorerToggled);
+  connect(this, &MainWindow::onFileExplorerToggledViaShortcut, statusBarWidget,
+          &StatusBarWidget::onFileExplorerToggledExternally);
   connect(statusBarWidget, &StatusBarWidget::cursorPositionClicked, this,
           &MainWindow::onCursorPositionClicked);
   connect(commandPaletteWidget, &CommandPaletteWidget::goToPositionRequested,
@@ -472,7 +475,12 @@ void MainWindow::setupKeyboardShortcuts() {
   addShortcut(toggleExplorerAction,
               seqFor("FileExplorer::Toggle",
                      QKeySequence(Qt::ControlModifier | Qt::Key_E)),
-              Qt::WindowShortcut, &MainWindow::onFileExplorerToggled);
+              Qt::WindowShortcut, [this]() {
+                onFileExplorerToggled();
+
+                bool isOpen = !fileExplorerWidget->isHidden();
+                emit onFileExplorerToggledViaShortcut(isOpen);
+              });
 
   // Ctrl + H for focus File Explorer
   // TODO: Generalize this, i.e. "focus left widget/pane"

@@ -37,6 +37,9 @@ private slots:
                       bool shouldFocusEditor = true);
   void onFileSaved(bool isSaveAs);
 
+signals:
+  void onFileExplorerToggledViaShortcut(bool isOpen);
+
 private:
   void setupWidgets(neko::Editor *editor, neko::FileTree *fileTree);
   void setupLayout();
