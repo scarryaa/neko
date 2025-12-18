@@ -7,7 +7,8 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), appState(neko::new_app_state("")),
       themeManager(neko::new_theme_manager()),
-      configManager(neko::new_config_manager()) {
+      configManager(neko::new_config_manager()),
+      shortcutsManager(neko::new_shortcuts_manager()) {
   setupMacOSTitleBar(this);
   setAttribute(Qt::WA_NativeWindow);
   setAttribute(Qt::WA_LayoutOnEntireRect);
@@ -346,26 +347,32 @@ void MainWindow::handleTabClosed(int closedIndex, int numberOfTabsBeforeClose) {
 }
 
 void MainWindow::setupKeyboardShortcuts() {
+  auto saveShortcut = shortcutsManager->get_shortcut("Tab::Save");
+  auto saveAsShortcut = shortcutsManager->get_shortcut("Tab::SaveAs");
+  auto newTabShortcut = shortcutsManager->get_shortcut("Tab::New");
+  auto closeTabShortcut = shortcutsManager->get_shortcut("Tab::Close");
+
   // Cmd+S for save
   QAction *saveAction = new QAction(this);
-  addShortcut(saveAction, QKeySequence::Save, Qt::WindowShortcut,
-              &MainWindow::onFileSaved);
+  addShortcut(saveAction, QKeySequence(saveShortcut.key_combo.c_str()),
+              Qt::WindowShortcut, &MainWindow::onFileSaved);
 
   // Cmd+Shift+S for save as
   QAction *saveAsAction = new QAction(this);
-  addShortcut(saveAsAction, QKeySequence::SaveAs, Qt::WindowShortcut,
-              [this]() { onFileSaved(true); });
+  addShortcut(saveAsAction, QKeySequence(saveAsShortcut.key_combo.c_str()),
+              Qt::WindowShortcut, [this]() { onFileSaved(true); });
 
   // Cmd+T for new tab
   QAction *newTabAction = new QAction(this);
-  addShortcut(newTabAction, QKeySequence::AddTab, Qt::WindowShortcut,
-              &MainWindow::onNewTabRequested);
+  addShortcut(newTabAction, QKeySequence(newTabShortcut.key_combo.c_str()),
+              Qt::WindowShortcut, &MainWindow::onNewTabRequested);
 
   // Cmd+W for close tab
   QAction *closeTabAction = new QAction(this);
-  addShortcut(
-      closeTabAction, QKeySequence::Close, Qt::WindowShortcut,
-      [this]() { onActiveTabCloseRequested(tabBarWidget->getNumberOfTabs()); });
+  addShortcut(closeTabAction, QKeySequence(closeTabShortcut.key_combo.c_str()),
+              Qt::WindowShortcut, [this]() {
+                onActiveTabCloseRequested(tabBarWidget->getNumberOfTabs());
+              });
 
   // Cmd+Tab for next tab
   QAction *nextTabAction = new QAction(this);

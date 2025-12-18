@@ -53,7 +53,7 @@ impl From<crate::shortcuts::Shortcut> for Shortcut {
     fn from(s: crate::shortcuts::Shortcut) -> Self {
         Self {
             key: s.key,
-            action: s.action,
+            key_combo: s.key_combo,
         }
     }
 }
@@ -111,7 +111,7 @@ mod bridge {
 
     struct Shortcut {
         key: String,
-        action: String,
+        key_combo: String,
     }
 
     extern "Rust" {
@@ -416,7 +416,7 @@ impl ShortcutsManager {
             .map(Into::into)
             .unwrap_or_else(|| Shortcut {
                 key,
-                action: String::new(),
+                key_combo: String::new(),
             })
     }
 }

@@ -69,6 +69,7 @@ private:
   rust::Box<neko::AppState> appState;
   rust::Box<neko::ThemeManager> themeManager;
   rust::Box<neko::ConfigManager> configManager;
+  rust::Box<neko::ShortcutsManager> shortcutsManager;
   EditorController *editorController;
   TabController *tabController;
 
