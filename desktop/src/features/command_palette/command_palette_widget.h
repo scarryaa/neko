@@ -8,9 +8,12 @@
 #include <QEvent>
 #include <QFrame>
 #include <QGraphicsDropShadowEffect>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMouseEvent>
+#include <QShortcut>
+#include <QStringList>
 #include <QStyle>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -40,16 +43,21 @@ private:
   QWidget *parent;
   QWidget *shortcutsContainer;
   QToolButton *shortcutsToggle;
+  QShortcut *shortcutsToggleShortcut;
   neko::ThemeManager &themeManager;
   neko::ConfigManager &configManager;
 
   PaletteFrame *mainFrame;
   QVBoxLayout *frameLayout;
   QLineEdit *jumpInput;
+  QLabel *jumpPlaceholderHint;
+  QStringList jumpHistory;
+  QString jumpInputDraft;
   int maxLineCount = 1;
   int maxColumn = 1;
   int maxRow = 1;
   int currentRow = 1;
+  int jumpHistoryIndex = 0;
   bool showJumpShortcuts = false;
 
   enum class Mode { None, GoToPosition };
@@ -83,6 +91,10 @@ private:
                            const PaletteColors &paletteColors, QFont font);
   void addShortcutsSection(const PaletteColors &paletteColors,
                            const QFont &font);
+  void updateJumpPlaceholderHint(const QString &placeholder);
+  void saveJumpHistoryEntry(const QString &entry);
+  void resetJumpHistoryNavigation();
+  bool handleJumpHistoryNavigation(QKeyEvent *event);
 
   static constexpr double TOP_OFFSET = 300.0;
   static constexpr double SHADOW_X_OFFSET = 0.0;
@@ -110,10 +122,12 @@ private:
       "padding-left: 16px; padding-right: 16px; }"
       "QToolButton:hover { color: %2; }";
   static constexpr char SHORTCUTS_BUTTON_TEXT[] = "  Shortcuts";
+  static constexpr int JUMP_HISTORY_LIMIT = 20;
   static constexpr char LINE_END_SHORTCUT[] = "le";
   static constexpr char LINE_START_SHORTCUT[] = "lb";
   static constexpr char DOCUMENT_END_SHORTCUT[] = "de";
   static constexpr char DOCUMENT_START_SHORTCUT[] = "db";
+  static constexpr char JUMP_PLACEHOLDER_HINT[] = "↑↓ History";
 };
 
 #endif // COMMAND_PALETTE_WIDGET_H
