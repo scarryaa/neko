@@ -383,13 +383,9 @@ void MainWindow::setupKeyboardShortcuts() {
     }
   };
 
-  ensureShortcut("Tab::Save", "Ctrl+S");
-  ensureShortcut("Tab::SaveAs", "Ctrl+Shift+S");
-  ensureShortcut("Tab::New", "Ctrl+T");
-  ensureShortcut("Tab::Close", "Ctrl+W");
-  ensureShortcut("Tab::Next", "Ctrl+Tab");
-  ensureShortcut("Tab::Previous", "Ctrl+Shift+Tab");
-  ensureShortcut("Cursor::JumpTo", "Ctrl+G");
+  for (const auto &shortcut : rustShortcuts) {
+    ensureShortcut(shortcut.key.data(), shortcut.key_combo.data());
+  }
 
   if (!missingShortcuts.empty()) {
     shortcutsManager->add_shortcuts(std::move(missingShortcuts));
@@ -519,13 +515,18 @@ void MainWindow::onBufferChanged() {
 }
 
 void MainWindow::onActiveTabCloseRequested(int numberOfTabs) {
-  int activeIndex = tabController->getActiveTabIndex();
+  if (tabController->getTabTitles().empty()) {
+    // Close the window
+    QApplication::quit();
+  } else {
+    int activeIndex = tabController->getActiveTabIndex();
 
-  // Save current scroll offset before closing
-  saveCurrentScrollState();
+    // Save current scroll offset before closing
+    saveCurrentScrollState();
 
-  if (tabController->closeTab(activeIndex)) {
-    handleTabClosed(activeIndex, numberOfTabs);
+    if (tabController->closeTab(activeIndex)) {
+      handleTabClosed(activeIndex, numberOfTabs);
+    }
   }
 }
 
