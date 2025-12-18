@@ -149,17 +149,26 @@ private:
   static constexpr char SHORTCUTS_BUTTON_TEXT[] = "  Shortcuts";
   static constexpr int JUMP_HISTORY_LIMIT = 20;
   static constexpr int COMMAND_HISTORY_LIMIT = 20;
-  static constexpr char LINE_END_SHORTCUT[] = "le";
-  static constexpr char LINE_START_SHORTCUT[] = "lb";
-  static constexpr char LINE_MIDDLE_SHORTCUT[] = "lm";
-  static constexpr char DOCUMENT_QUARTER_SHORTCUT[] = "dh";
-  static constexpr char DOCUMENT_THREE_QUARTERS_SHORTCUT[] = "dt";
-  static constexpr char DOCUMENT_END_SHORTCUT[] = "de";
-  static constexpr char DOCUMENT_START_SHORTCUT[] = "db";
-  static constexpr char DOCUMENT_MIDDLE_SHORTCUT[] = "dm";
-  static constexpr char LAST_TARGET_SHORTCUT[] = "ls";
   static constexpr char HISTORY_HINT[] = "↑↓ History";
   static constexpr char COMMAND_PLACEHOLDER_TEXT[] = "Enter a command";
+
+  using NavFn = void (CommandPaletteWidget::*)();
+  struct NavEntry {
+    std::string_view key;
+    NavFn fn;
+  };
+
+  inline static constexpr std::array<NavEntry, 9> NAV = {{
+      {"lb", &CommandPaletteWidget::jumpToLineStart},
+      {"lm", &CommandPaletteWidget::jumpToLineMiddle},
+      {"le", &CommandPaletteWidget::jumpToLineEnd},
+      {"db", &CommandPaletteWidget::jumpToDocumentStart},
+      {"dm", &CommandPaletteWidget::jumpToDocumentMiddle},
+      {"de", &CommandPaletteWidget::jumpToDocumentEnd},
+      {"dh", &CommandPaletteWidget::jumpToDocumentQuarter},
+      {"dt", &CommandPaletteWidget::jumpToDocumentThreeQuarters},
+      {"ls", &CommandPaletteWidget::jumpToLastTarget},
+  }};
 };
 
 #endif // COMMAND_PALETTE_WIDGET_H

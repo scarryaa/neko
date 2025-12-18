@@ -136,9 +136,11 @@ void CommandPaletteWidget::jumpToLastTarget() {
     return;
   }
 
+  const auto lsKey = NAV[8].key;
   for (int i = jumpHistory.size() - 1; i >= 0; --i) {
     const auto &entry = jumpHistory.at(i);
-    if (entry == LAST_TARGET_SHORTCUT)
+    if (entry.trimmed() ==
+        QString::fromLatin1(lsKey.data(), static_cast<int>(lsKey.size())))
       continue;
 
     jumpInput->setText(entry);
@@ -191,40 +193,16 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
   };
 
   // TODO: Allow aliases?
-  if (text == LINE_END_SHORTCUT) {
-    storeEntry(text);
-    jumpToLineEnd();
-    return;
-  } else if (text == LINE_START_SHORTCUT) {
-    storeEntry(text);
-    jumpToLineStart();
-    return;
-  } else if (text == LINE_MIDDLE_SHORTCUT) {
-    storeEntry(text);
-    jumpToLineMiddle();
-    return;
-  } else if (text == DOCUMENT_END_SHORTCUT) {
-    storeEntry(text);
-    jumpToDocumentEnd();
-    return;
-  } else if (text == DOCUMENT_START_SHORTCUT) {
-    storeEntry(text);
-    jumpToDocumentStart();
-    return;
-  } else if (text == DOCUMENT_MIDDLE_SHORTCUT) {
-    storeEntry(text);
-    jumpToDocumentMiddle();
-    return;
-  } else if (text == DOCUMENT_QUARTER_SHORTCUT) {
-    storeEntry(text);
-    jumpToDocumentQuarter();
-    return;
-  } else if (text == DOCUMENT_THREE_QUARTERS_SHORTCUT) {
-    storeEntry(text);
-    jumpToDocumentThreeQuarters();
-    return;
-  } else if (text == LAST_TARGET_SHORTCUT) {
-    jumpToLastTarget();
+  QString value = text;
+
+  auto it = std::find_if(NAV.begin(), NAV.end(),
+                         [&](const NavEntry &e) { return e.key == value; });
+  if (it != NAV.end()) {
+    if (text != NAV[8].key.data()) {
+      storeEntry(text);
+    }
+
+    (this->*(it->fn))();
     return;
   }
 
@@ -406,15 +384,15 @@ void CommandPaletteWidget::addShortcutsSection(
   };
 
   static const ShortcutRow rows[] = {
-      {LINE_END_SHORTCUT, "current line end"},
-      {LINE_MIDDLE_SHORTCUT, "current line middle"},
-      {LINE_START_SHORTCUT, "current line beginning"},
-      {DOCUMENT_END_SHORTCUT, "document end"},
-      {DOCUMENT_START_SHORTCUT, "document beginning"},
-      {DOCUMENT_MIDDLE_SHORTCUT, "document middle"},
-      {DOCUMENT_QUARTER_SHORTCUT, "document quarter"},
-      {DOCUMENT_THREE_QUARTERS_SHORTCUT, "document three-quarters"},
-      {LAST_TARGET_SHORTCUT, "last jumped-to position"},
+      {NAV[0].key.data(), "current line beginning"},
+      {NAV[1].key.data(), "current line middle"},
+      {NAV[2].key.data(), "current line end"},
+      {NAV[3].key.data(), "document beginning"},
+      {NAV[4].key.data(), "document middle"},
+      {NAV[5].key.data(), "document end"},
+      {NAV[6].key.data(), "document quarter"},
+      {NAV[7].key.data(), "document three-quarters"},
+      {NAV[8].key.data(), "last jumped-to position"},
   };
 
   QFontMetrics metrics(shortcutFont);
