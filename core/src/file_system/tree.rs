@@ -1,6 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
-    ffi::{CStr, CString, OsStr, c_char},
+    ffi::OsStr,
     fs::{self, DirEntry},
     io,
     path::{Path, PathBuf},
@@ -8,8 +8,8 @@ use std::{
 
 #[derive(Clone, Debug)]
 pub struct FileNode {
-    pub path: *const c_char,
-    pub name: *const c_char,
+    pub path: String,
+    pub name: String,
     pub is_dir: bool,
     pub is_hidden: bool,
     pub size: u64,
@@ -24,12 +24,8 @@ impl FileNode {
         let file_name = path.file_name()?.to_string_lossy().into_owned();
 
         Some(FileNode {
-            path: CString::new(path.to_string_lossy().as_ref())
-                .ok()?
-                .into_raw(),
-            name: CString::new(path.file_name()?.to_string_lossy().as_ref())
-                .ok()?
-                .into_raw(),
+            path: path.to_string_lossy().into_owned(),
+            name: path.file_name()?.to_string_lossy().into_owned(),
             is_dir: metadata.is_dir(),
             is_hidden: file_name.starts_with('.')
                 || path.ancestors().any(|a| {
@@ -51,27 +47,11 @@ impl FileNode {
     }
 
     pub fn path_str(&self) -> String {
-        unsafe { CStr::from_ptr(self.path).to_string_lossy().into_owned() }
+        self.path.clone()
     }
 
     pub fn name_str(&self) -> String {
-        unsafe { CStr::from_ptr(self.name).to_string_lossy().into_owned() }
-    }
-
-    /// Returns the free strings of this [`FileNode`].
-    ///
-    /// # Safety
-    ///
-    /// Call this manually when C side is done with the strings
-    pub unsafe fn free_strings(&mut self) {
-        if !self.path.is_null() {
-            let _ = unsafe { CString::from_raw(self.path as *mut c_char) };
-            self.path = std::ptr::null();
-        }
-        if !self.name.is_null() {
-            let _ = unsafe { CString::from_raw(self.name as *mut c_char) };
-            self.name = std::ptr::null();
-        }
+        self.name.clone()
     }
 }
 
@@ -108,12 +88,8 @@ impl FileTree {
                 let metadata = entry.metadata().ok()?;
 
                 Some(FileNode {
-                    path: CString::new(path.to_string_lossy().as_ref())
-                        .ok()?
-                        .into_raw(),
-                    name: CString::new(path.file_name()?.to_string_lossy().as_ref())
-                        .ok()?
-                        .into_raw(),
+                    path: path.to_string_lossy().into_owned(),
+                    name: path.file_name()?.to_string_lossy().into_owned(),
                     is_dir: metadata.is_dir(),
                     is_hidden: path
                         .file_name()
@@ -165,10 +141,7 @@ impl FileTree {
             children.sort_by(|a, b| match (a.is_dir, b.is_dir) {
                 (true, false) => std::cmp::Ordering::Less,
                 (false, true) => std::cmp::Ordering::Greater,
-                _ => a
-                    .name_str()
-                    .to_lowercase()
-                    .cmp(&b.name_str().to_lowercase()),
+                _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
             });
 
             children
@@ -202,12 +175,9 @@ impl FileTree {
     pub fn collect_visible_owned(&self, path: &PathBuf, visible: &mut Vec<FileNode>, depth: usize) {
         if let Some(children) = self.expanded.get(path) {
             for node in children {
-                let path_string = node.path_str().to_string();
-                let name_string = node.name_str().to_string();
-
                 let node_with_depth = FileNode {
-                    path: CString::new(path_string).unwrap().into_raw(),
-                    name: CString::new(name_string).unwrap().into_raw(),
+                    path: node.path.clone(),
+                    name: node.name.clone(),
                     is_dir: node.is_dir,
                     is_hidden: node.is_hidden,
                     size: node.size,
@@ -217,7 +187,7 @@ impl FileTree {
 
                 visible.push(node_with_depth);
 
-                let node_path = PathBuf::from(node.path_str());
+                let node_path = PathBuf::from(&node.path);
                 if node.is_dir && self.expanded.contains_key(&node_path) {
                     self.collect_visible_owned(&node_path, visible, depth + 1);
                 }
@@ -233,19 +203,19 @@ impl FileTree {
 
     pub fn get_node(&self, current_path: &str) -> Option<&FileNode> {
         let visible = self.get_visible_nodes();
-        let current_idx = visible.iter().position(|n| n.path_str() == current_path)?;
+        let current_idx = visible.iter().position(|n| n.path == current_path)?;
         visible.get(current_idx).copied()
     }
 
     pub fn next(&self, current_path: &str) -> Option<&FileNode> {
         let visible = self.get_visible_nodes();
-        let current_idx = visible.iter().position(|n| n.path_str() == current_path)?;
+        let current_idx = visible.iter().position(|n| n.path == current_path)?;
         visible.get(current_idx + 1).copied()
     }
 
     pub fn prev(&self, current_path: &str) -> Option<&FileNode> {
         let visible = self.get_visible_nodes();
-        let current_idx = visible.iter().position(|n| n.path_str() == current_path)?;
+        let current_idx = visible.iter().position(|n| n.path == current_path)?;
         if current_idx > 0 {
             visible.get(current_idx - 1).copied()
         } else {
@@ -350,34 +320,7 @@ impl FileTree {
         let visible = self.get_visible_nodes();
         visible
             .iter()
-            .position(|n| n.path_str() == self.current.clone().unwrap().to_str().unwrap())
+            .position(|n| n.path == self.current.clone().unwrap().to_str().unwrap())
             .unwrap()
-    }
-}
-
-impl Drop for FileTree {
-    fn drop(&mut self) {
-        // Free all cached visible strings
-        for mut node in std::mem::take(&mut self.cached_visible) {
-            unsafe {
-                node.free_strings();
-            }
-        }
-
-        // Free strings in expanded nodes
-        for (_, nodes) in std::mem::take(&mut self.expanded) {
-            for mut node in nodes {
-                unsafe {
-                    node.free_strings();
-                }
-            }
-        }
-
-        // Free strings in root nodes
-        for mut node in std::mem::take(&mut self.nodes) {
-            unsafe {
-                node.free_strings();
-            }
-        }
     }
 }
