@@ -70,6 +70,15 @@ void CommandPaletteWidget::showEvent(QShowEvent *event) {
   QWidget::showEvent(event);
 }
 
+void CommandPaletteWidget::showPalette() {
+  buildCommandPalette();
+  show();
+
+  if (commandInput) {
+    commandInput->setFocus();
+  }
+}
+
 void CommandPaletteWidget::jumpToRowColumn(int currentRow, int currentCol,
                                            int maxCol, int lineCount,
                                            int lastLineMaxCol) {
@@ -227,7 +236,7 @@ void CommandPaletteWidget::clearContent() {
   }
 
   jumpInput = nullptr;
-  jumpPlaceholderHint = nullptr;
+  historyHint = nullptr;
   shortcutsContainer = nullptr;
   shortcutsToggle = nullptr;
   currentMode = Mode::None;
@@ -280,6 +289,33 @@ void CommandPaletteWidget::addDivider(const QString &borderColor) {
   frameLayout->addWidget(divider);
 }
 
+void CommandPaletteWidget::addCommandInputRow(
+    const PaletteColors &paletteColors, QFont &font) {
+  font.setPointSizeF(JUMP_FONT_SIZE);
+
+  commandInput = new QLineEdit(mainFrame);
+  commandInput->setFont(font);
+  const QString placeholderText = "Execute a command";
+  commandInput->setPlaceholderText(placeholderText);
+  commandInput->setStyleSheet(
+      QString(JUMP_INPUT_STYLE).arg(paletteColors.foreground));
+  commandInput->setClearButtonEnabled(false);
+  commandInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  commandInput->installEventFilter(this);
+  commandInput->setMinimumWidth(WIDTH / 1.25);
+
+  connect(commandInput, &QLineEdit::textEdited, this,
+          [this](const QString &) {});
+  connect(commandInput, &QLineEdit::textChanged, this, [this](const QString &) {
+    updateHistoryHint(commandInput, HISTORY_HINT);
+  });
+
+  createHistoryHint(commandInput, paletteColors, font);
+  updateHistoryHint(commandInput, HISTORY_HINT);
+
+  frameLayout->addWidget(commandInput);
+}
+
 void CommandPaletteWidget::addJumpInputRow(int clampedRow, int clampedCol,
                                            const PaletteColors &paletteColors,
                                            QFont &font) {
@@ -299,20 +335,25 @@ void CommandPaletteWidget::addJumpInputRow(int clampedRow, int clampedCol,
   connect(jumpInput, &QLineEdit::textEdited, this,
           [this](const QString &) { resetJumpHistoryNavigation(); });
   connect(jumpInput, &QLineEdit::textChanged, this, [this](const QString &) {
-    updateJumpPlaceholderHint(JUMP_PLACEHOLDER_HINT);
+    updateHistoryHint(jumpInput, HISTORY_HINT);
   });
 
-  jumpPlaceholderHint = UiUtils::createLabel(
+  createHistoryHint(jumpInput, paletteColors, font);
+  updateHistoryHint(jumpInput, HISTORY_HINT);
+
+  frameLayout->addWidget(jumpInput);
+}
+
+void CommandPaletteWidget::createHistoryHint(QWidget *targetInput,
+                                             const PaletteColors &paletteColors,
+                                             QFont &font) {
+  historyHint = UiUtils::createLabel(
       "",
       QString(LABEL_STYLE).arg(paletteColors.foregroundVeryMuted) +
           "padding-right: 12px;",
-      font, jumpInput, false, QSizePolicy::Expanding, QSizePolicy::Preferred);
-  jumpPlaceholderHint->setAttribute(Qt::WA_TransparentForMouseEvents);
-  jumpPlaceholderHint->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-
-  updateJumpPlaceholderHint(JUMP_PLACEHOLDER_HINT);
-
-  frameLayout->addWidget(jumpInput);
+      font, targetInput, false, QSizePolicy::Expanding, QSizePolicy::Preferred);
+  historyHint->setAttribute(Qt::WA_TransparentForMouseEvents);
+  historyHint->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 }
 
 void CommandPaletteWidget::addCurrentLineLabel(
@@ -434,6 +475,19 @@ void CommandPaletteWidget::addShortcutsSection(
   adjustShortcutsAfterToggle(showJumpShortcuts);
 }
 
+void CommandPaletteWidget::buildCommandPalette() {
+  clearContent();
+
+  const auto paletteColors = loadPaletteColors();
+  QFont baseFont = makeInterfaceFont(JUMP_FONT_SIZE);
+
+  addSpacer(TOP_SPACER_HEIGHT);
+  addCommandInputRow(paletteColors, baseFont);
+  addSpacer(LABEL_TOP_SPACER_HEIGHT);
+
+  adjustSize();
+}
+
 void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
                                             int maxCol, int lineCount,
                                             int lastLineMaxCol) {
@@ -477,15 +531,15 @@ void CommandPaletteWidget::adjustShortcutsAfterToggle(bool checked) {
   this->adjustSize();
 }
 
-void CommandPaletteWidget::updateJumpPlaceholderHint(
-    const QString &placeholder) {
-  if (!jumpInput || !jumpPlaceholderHint)
+void CommandPaletteWidget::updateHistoryHint(QWidget *targetInput,
+                                             const QString &placeholder) {
+  if (!targetInput || !historyHint)
     return;
 
-  jumpPlaceholderHint->setText(placeholder);
-  bool shouldShow = jumpInput->text().isEmpty();
-  jumpPlaceholderHint->setVisible(shouldShow);
-  jumpPlaceholderHint->setGeometry(jumpInput->rect().adjusted(0, 0, 0, 0));
+  historyHint->setText(placeholder);
+  bool shouldShow = static_cast<QLineEdit *>(targetInput)->text().isEmpty();
+  historyHint->setVisible(shouldShow);
+  historyHint->setGeometry(targetInput->rect().adjusted(0, 0, 0, 0));
 }
 
 void CommandPaletteWidget::saveJumpHistoryEntry(const QString &entry) {
@@ -561,8 +615,12 @@ bool CommandPaletteWidget::eventFilter(QObject *obj, QEvent *event) {
     }
   }
 
-  if (obj == jumpInput && event->type() == QEvent::Resize) {
-    updateJumpPlaceholderHint(JUMP_PLACEHOLDER_HINT);
+  if (event->type() == QEvent::Resize) {
+    if (obj == jumpInput) {
+      updateHistoryHint(jumpInput, HISTORY_HINT);
+    } else if (obj == commandInput) {
+      updateHistoryHint(commandInput, HISTORY_HINT);
+    }
   }
 
   if (event->type() == QEvent::MouseButtonPress) {

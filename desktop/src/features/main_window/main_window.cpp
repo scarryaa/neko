@@ -504,6 +504,14 @@ void MainWindow::setupKeyboardShortcuts() {
               seqFor("Editor::OpenConfig",
                      QKeySequence(Qt::ControlModifier | Qt::Key_Comma)),
               Qt::WindowShortcut, &MainWindow::openConfig);
+
+  // Ctrl + P for show command palette
+  QAction *showCommandPalette = new QAction(this);
+  addShortcut(showCommandPalette,
+              seqFor("CommandPalette::Show",
+                     QKeySequence(Qt::ControlModifier | Qt::Key_P)),
+              Qt::WindowShortcut,
+              [this]() { commandPaletteWidget->showPalette(); });
 }
 
 template <typename Slot>

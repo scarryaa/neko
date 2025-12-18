@@ -31,6 +31,7 @@ public:
 
   void jumpToRowColumn(int currentRow = 0, int currentCol = 0, int maxCol = 1,
                        int lineCount = 1, int lastLineMaxCol = 1);
+  void showPalette();
 
 signals:
   void goToPositionRequested(int row, int col);
@@ -49,8 +50,9 @@ private:
 
   PaletteFrame *mainFrame;
   QVBoxLayout *frameLayout;
+  QLabel *historyHint;
   QLineEdit *jumpInput;
-  QLabel *jumpPlaceholderHint;
+  QLineEdit *commandInput;
   QStringList jumpHistory;
   QString jumpInputDraft;
   int maxLineCount = 1;
@@ -70,6 +72,7 @@ private:
                         int lineCount, int lastLineMaxCol);
   void buildJumpContent(int currentRow, int currentCol, int maxCol,
                         int lineCount, int lastLineMaxCol);
+  void buildCommandPalette();
   void emitJumpRequestFromInput();
   void jumpToLineStart();
   void jumpToLineEnd();
@@ -94,11 +97,14 @@ private:
   void addDivider(const QString &borderColor);
   void addJumpInputRow(int clampedRow, int clampedCol,
                        const PaletteColors &paletteColors, QFont &font);
+  void addCommandInputRow(const PaletteColors &paletteColors, QFont &font);
   void addCurrentLineLabel(int clampedRow, int clampedCol,
                            const PaletteColors &paletteColors, QFont font);
   void addShortcutsSection(const PaletteColors &paletteColors,
                            const QFont &font);
-  void updateJumpPlaceholderHint(const QString &placeholder);
+  void updateHistoryHint(QWidget *targetInput, const QString &placeholder);
+  void createHistoryHint(QWidget *targetInput,
+                         const PaletteColors &paletteColors, QFont &font);
   void saveJumpHistoryEntry(const QString &entry);
   void resetJumpHistoryNavigation();
   bool handleJumpHistoryNavigation(QKeyEvent *event);
@@ -139,7 +145,7 @@ private:
   static constexpr char DOCUMENT_START_SHORTCUT[] = "db";
   static constexpr char DOCUMENT_MIDDLE_SHORTCUT[] = "dm";
   static constexpr char LAST_TARGET_SHORTCUT[] = "ls";
-  static constexpr char JUMP_PLACEHOLDER_HINT[] = "↑↓ History";
+  static constexpr char HISTORY_HINT[] = "↑↓ History";
 };
 
 #endif // COMMAND_PALETTE_WIDGET_H
