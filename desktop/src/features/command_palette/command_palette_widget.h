@@ -78,6 +78,7 @@ private:
   Mode currentMode = Mode::None;
 
   void clearContent();
+  void adjustPosition();
   void prepareJumpState(int currentRow, int currentCol, int maxCol,
                         int lineCount, int lastLineMaxCol);
   void buildJumpContent(int currentRow, int currentCol, int maxCol,

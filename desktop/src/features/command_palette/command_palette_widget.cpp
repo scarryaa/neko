@@ -80,12 +80,22 @@ void CommandPaletteWidget::showEvent(QShowEvent *event) {
   if (!parentWidget())
     return;
 
-  int x = (parentWidget()->width() - WIDTH) / 2;
-  int y = TOP_OFFSET;
+  adjustPosition();
+  QWidget::showEvent(event);
+}
+
+void CommandPaletteWidget::adjustPosition() {
+  if (!parentWidget())
+    return;
+
+  const int availableWidth = std::max(
+      0, parentWidget()->width() - static_cast<int>(CONTENT_MARGIN * 2));
+  setFixedWidth(WIDTH);
+
+  const int x = (parentWidget()->width() - WIDTH) / 2;
+  const int y = TOP_OFFSET;
 
   move(parentWidget()->mapToGlobal(QPoint(x, y)));
-
-  QWidget::showEvent(event);
 }
 
 void CommandPaletteWidget::showPalette() {
@@ -266,6 +276,7 @@ void CommandPaletteWidget::clearContent() {
   shortcutsContainer = nullptr;
   shortcutsToggle = nullptr;
   commandSuggestions = nullptr;
+  commandPaletteBottomDivider = nullptr;
   currentMode = Mode::None;
 }
 
@@ -558,6 +569,7 @@ void CommandPaletteWidget::buildCommandPalette() {
   resetCommandHistoryNavigation();
   updateCommandSuggestions(commandInput->text());
   adjustSize();
+  adjustPosition();
 }
 
 void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
@@ -588,6 +600,7 @@ void CommandPaletteWidget::buildJumpContent(int currentRow, int currentCol,
           &CommandPaletteWidget::emitJumpRequestFromInput);
   resetJumpHistoryNavigation();
   adjustSize();
+  adjustPosition();
 }
 
 void CommandPaletteWidget::adjustShortcutsAfterToggle(bool checked) {
@@ -605,7 +618,8 @@ void CommandPaletteWidget::adjustShortcutsAfterToggle(bool checked) {
 
 void CommandPaletteWidget::updateCommandSuggestions(const QString &text) {
   if (!commandSuggestions) {
-    commandPaletteBottomDivider->hide();
+    if (commandPaletteBottomDivider)
+      commandPaletteBottomDivider->hide();
     return;
   }
 
@@ -623,11 +637,13 @@ void CommandPaletteWidget::updateCommandSuggestions(const QString &text) {
   if (!hasSuggestions) {
     commandSuggestions->setVisible(false);
     commandSuggestions->setFixedHeight(0);
-    commandPaletteBottomDivider->hide();
+    if (commandPaletteBottomDivider)
+      commandPaletteBottomDivider->hide();
     return;
   }
 
-  commandPaletteBottomDivider->show();
+  if (commandPaletteBottomDivider)
+    commandPaletteBottomDivider->show();
   commandSuggestions->setVisible(true);
 
   const int rowHeight = std::max(1, commandSuggestions->sizeHintForRow(0));
