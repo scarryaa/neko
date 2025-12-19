@@ -5,7 +5,6 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QObject>
-#include <functional>
 #include <neko-core/src/ffi/mod.rs.h>
 
 class EditorController : public QObject {
@@ -16,6 +15,7 @@ public:
   ~EditorController();
 
   void selectWord(int row, int column);
+  void selectLine(int row);
 
 signals:
   void cursorChanged(int row, int col, int cursorCount, int selectionCount);

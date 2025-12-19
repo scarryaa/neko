@@ -65,6 +65,29 @@ void EditorController::selectWord(int row, int column) {
   do_op(&neko::Editor::select_word, row, column);
 }
 
+void EditorController::selectLine(int row) {
+  if (!editor) {
+    return;
+  }
+
+  int lineCount = static_cast<int>(editor->get_line_count());
+  if (lineCount == 0) {
+    return;
+  }
+
+  int maxRow = std::max(0, lineCount - 1);
+  int clampedRow = std::clamp(row, 0, maxRow);
+
+  moveTo(clampedRow, 0, true);
+
+  if (clampedRow + 1 < lineCount) {
+    selectTo(clampedRow + 1, 0);
+  } else {
+    int lineLength = static_cast<int>(editor->get_line_length(clampedRow));
+    selectTo(clampedRow, lineLength);
+  }
+}
+
 void EditorController::selectTo(int row, int column) {
   do_op(&neko::Editor::select_to, row, column);
 }

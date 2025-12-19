@@ -17,6 +17,7 @@
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QTextLayout>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <QtDebug>
 
@@ -75,12 +76,22 @@ private:
   QFont font;
   QFontMetricsF fontMetrics;
 
+  QTimer suppressDblTimer;
+  bool suppressNextDouble = false;
+  QPoint suppressDblPos{};
+  QTimer tripleArmTimer;
+  bool tripleArmed = false;
+  QPoint triplePos{};
+  int tripleRow = 0;
+
   int EXTRA_VERTICAL_LINES = 1;
   double FONT_STEP = 2.0;
   double DEFAULT_FONT_SIZE = 15.0;
   double FONT_UPPER_LIMIT = 96.0;
   double FONT_LOWER_LIMIT = 6.0;
   double VIEWPORT_PADDING = 74.0;
+
+  static constexpr int TRIPLE_CLICK_MS = 200;
 };
 
 #endif // EDITOR_WIDGET_H

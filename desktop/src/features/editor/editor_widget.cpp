@@ -1,5 +1,4 @@
 #include "editor_widget.h"
-#include "utils/gui_utils.h"
 
 EditorWidget::EditorWidget(neko::Editor *editor,
                            EditorController *editorController,
@@ -13,6 +12,14 @@ EditorWidget::EditorWidget(neko::Editor *editor,
   setFocusPolicy(Qt::StrongFocus);
   setFrameShape(QFrame::NoFrame);
   setAutoFillBackground(false);
+
+  tripleArmTimer.setSingleShot(true);
+  suppressDblTimer.setSingleShot(true);
+
+  connect(&tripleArmTimer, &QTimer::timeout, this,
+          [this] { tripleArmed = false; });
+  connect(&suppressDblTimer, &QTimer::timeout, this,
+          [this] { suppressNextDouble = false; });
 
   applyTheme();
 
@@ -128,35 +135,103 @@ void EditorWidget::updateDimensions() {
 
 void EditorWidget::redraw() { viewport()->update(); }
 
+static int tripleWindowMs() {
+  return std::max(120, QApplication::doubleClickInterval() / 2);
+}
+
+static bool nearPos(const QPoint &a, const QPoint &b, int px = 4) {
+  return (a - b).manhattanLength() <= px;
+}
+
 void EditorWidget::mousePressEvent(QMouseEvent *event) {
-  if (!editor) {
+  if (!editor)
     return;
-  }
 
   RowCol rc = convertMousePositionToRowCol(event->pos().x(), event->pos().y());
 
   if (event->modifiers().testFlag(Qt::AltModifier)) {
+    tripleArmed = false;
+    tripleArmTimer.stop();
+
     if (editor->cursor_exists_at(rc.row, rc.col)) {
       editorController->removeCursor(rc.row, rc.col);
     } else {
       editorController->addCursor(neko::AddCursorDirectionKind::At, rc.row,
                                   rc.col);
     }
-  } else {
-    editorController->moveTo(rc.row, rc.col, true);
+
+    redraw();
+
+    event->accept();
+
+    return;
   }
 
-  redraw();
+  if (event->button() == Qt::LeftButton) {
+    if (tripleArmed && tripleArmTimer.isActive() &&
+        nearPos(event->pos(), triplePos)) {
+      tripleArmed = false;
+      tripleArmTimer.stop();
+
+      editorController->selectLine(tripleRow);
+
+      redraw();
+
+      event->accept();
+
+      suppressNextDouble = true;
+      suppressDblPos = event->pos();
+      suppressDblTimer.start(QApplication::doubleClickInterval());
+
+      return;
+    }
+
+    tripleArmed = false;
+    tripleArmTimer.stop();
+
+    editorController->moveTo(rc.row, rc.col, true);
+
+    redraw();
+
+    event->accept();
+    return;
+  }
+
+  QWidget::mousePressEvent(event);
 }
 
 void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
   if (!editor)
     return;
 
+  if (suppressNextDouble && suppressDblTimer.isActive() &&
+      nearPos(event->pos(), suppressDblPos)) {
+
+    suppressNextDouble = false;
+    suppressDblTimer.stop();
+    tripleArmTimer.stop();
+
+    RowCol rc =
+        convertMousePositionToRowCol(event->pos().x(), event->pos().y());
+
+    editorController->moveTo(rc.row, rc.col, true);
+
+    redraw();
+
+    event->accept();
+    return;
+  }
+
   RowCol rc = convertMousePositionToRowCol(event->pos().x(), event->pos().y());
   editorController->selectWord(rc.row, rc.col);
 
+  tripleArmed = true;
+  triplePos = event->pos();
+  tripleRow = rc.row;
+  tripleArmTimer.start(tripleWindowMs());
+
   redraw();
+  event->accept();
 }
 
 void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
