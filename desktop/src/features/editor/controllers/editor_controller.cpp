@@ -88,6 +88,17 @@ void EditorController::selectLine(int row) {
   }
 }
 
+void EditorController::selectWordDrag(int anchorStartRow, int anchorStartCol,
+                                      int anchorEndRow, int anchorEndCol,
+                                      int row, int col) {
+  do_op(&neko::Editor::select_word_drag, anchorStartRow, anchorStartCol,
+        anchorEndRow, anchorEndCol, row, col);
+}
+
+void EditorController::selectLineDrag(int anchorRow, int row) {
+  do_op(&neko::Editor::select_line_drag, anchorRow, row);
+}
+
 void EditorController::selectTo(int row, int column) {
   do_op(&neko::Editor::select_to, row, column);
 }

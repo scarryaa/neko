@@ -404,55 +404,18 @@ impl Editor {
             });
 
             let cursor = editor.cursor_manager.cursors[0].cursor.clone();
-            let line_len = editor.buffer.line_len_without_newline(cursor.row);
 
-            if line_len == 0 {
+            let Some((word_row, word_start, word_end)) =
+                editor.word_range_at(cursor.row, cursor.column)
+            else {
                 editor.selection_manager.clear_selection();
                 return;
-            }
-
-            let line = editor.buffer.get_line(cursor.row);
-            let line_bytes = line.as_bytes();
-            let line_len = line_len.min(line_bytes.len());
-
-            if line_len == 0 {
-                editor.selection_manager.clear_selection();
-                return;
-            }
-
-            let target_col = if cursor.column >= line_len {
-                line_len.saturating_sub(1)
-            } else {
-                cursor.column
             };
 
-            let classify = |b: u8| {
-                if b.is_ascii_alphanumeric() || b == b'_' {
-                    0u8
-                } else if b.is_ascii_whitespace() {
-                    1u8
-                } else {
-                    2u8
-                }
-            };
-
-            let kind = classify(line_bytes[target_col]);
-
-            let mut start = target_col;
-            while start > 0 && classify(line_bytes[start - 1]) == kind {
-                start -= 1;
-            }
-
-            let mut end = target_col;
-            while end + 1 < line_len && classify(line_bytes[end + 1]) == kind {
-                end += 1;
-            }
-
-            let mut start_cursor = cursor.clone();
-            start_cursor.set_col(start);
-
-            let mut end_cursor = cursor;
-            end_cursor.set_col(end + 1);
+            let mut start_cursor = Cursor::new();
+            start_cursor.move_to(&editor.buffer, word_row, word_start);
+            let mut end_cursor = Cursor::new();
+            end_cursor.move_to(&editor.buffer, word_row, word_end);
 
             editor.selection_manager.selection.begin(&start_cursor);
             editor
@@ -461,6 +424,101 @@ impl Editor {
                 .update(&end_cursor, &editor.buffer);
 
             editor.cursor_manager.cursors[0].cursor = end_cursor;
+        })
+    }
+
+    pub fn select_word_drag(
+        &mut self,
+        anchor_start_row: usize,
+        anchor_start_col: usize,
+        anchor_end_row: usize,
+        anchor_end_col: usize,
+        row: usize,
+        col: usize,
+    ) -> ChangeSet {
+        self.with_op(false, OpFlags::ViewportOnly, |editor| {
+            let Some((word_row, word_start, word_end)) = editor.word_range_at(row, col) else {
+                return;
+            };
+
+            let mut anchor_start = Cursor::new();
+            anchor_start.move_to(&editor.buffer, anchor_start_row, anchor_start_col);
+
+            let mut anchor_end = Cursor::new();
+            anchor_end.move_to(&editor.buffer, anchor_end_row, anchor_end_col);
+
+            let word_start_pos = (word_row, word_start);
+            let word_end_pos = (word_row, word_end);
+            let anchor_start_pos = (anchor_start.row, anchor_start.column);
+            let anchor_end_pos = (anchor_end.row, anchor_end.column);
+
+            let mut target_start = anchor_start_pos;
+            let mut target_end = anchor_end_pos;
+            let mut cursor_at_start = false;
+
+            if word_start_pos < anchor_start_pos {
+                target_start = word_start_pos;
+                cursor_at_start = true;
+            } else if word_end_pos > anchor_end_pos {
+                target_end = word_end_pos;
+            }
+
+            let mut start_cursor = Cursor::new();
+            start_cursor.move_to(&editor.buffer, target_start.0, target_start.1);
+
+            let mut end_cursor = Cursor::new();
+            end_cursor.move_to(&editor.buffer, target_end.0, target_end.1);
+
+            editor.selection_manager.selection.begin(&start_cursor);
+            editor
+                .selection_manager
+                .selection
+                .update(&end_cursor, &editor.buffer);
+
+            if cursor_at_start {
+                editor.cursor_manager.cursors[0].cursor = start_cursor;
+            } else {
+                editor.cursor_manager.cursors[0].cursor = end_cursor;
+            }
+        })
+    }
+
+    pub fn select_line_drag(&mut self, anchor_row: usize, row: usize) -> ChangeSet {
+        self.with_op(false, OpFlags::ViewportOnly, |editor| {
+            let line_count = editor.buffer.line_count();
+            if line_count == 0 {
+                return;
+            }
+
+            let anchor_row = anchor_row.min(line_count - 1);
+            let row = row.min(line_count - 1);
+            let start_row = anchor_row.min(row);
+            let end_row = anchor_row.max(row);
+            let cursor_at_start = row < anchor_row;
+
+            let mut start_cursor = Cursor::new();
+            start_cursor.move_to(&editor.buffer, start_row, 0);
+
+            let (end_row, end_col) = if end_row + 1 < line_count {
+                (end_row + 1, 0)
+            } else {
+                (end_row, editor.buffer.line_len(end_row))
+            };
+
+            let mut end_cursor = Cursor::new();
+            end_cursor.move_to(&editor.buffer, end_row, end_col);
+
+            editor.selection_manager.selection.begin(&start_cursor);
+            editor
+                .selection_manager
+                .selection
+                .update(&end_cursor, &editor.buffer);
+
+            if cursor_at_start {
+                editor.cursor_manager.cursors[0].cursor = start_cursor;
+            } else {
+                editor.cursor_manager.cursors[0].cursor = end_cursor;
+            }
         })
     }
 
@@ -641,6 +699,52 @@ impl Editor {
             | Change::WIDTHS
             | Change::LINE_COUNT;
         cs
+    }
+
+    fn word_range_at(&self, row: usize, column: usize) -> Option<(usize, usize, usize)> {
+        let line_len = self.buffer.line_len_without_newline(row);
+
+        if line_len == 0 {
+            return None;
+        }
+
+        let line = self.buffer.get_line(row);
+        let line_bytes = line.as_bytes();
+        let line_len = line_len.min(line_bytes.len());
+
+        if line_len == 0 {
+            return None;
+        }
+
+        let target_col = if column >= line_len {
+            line_len.saturating_sub(1)
+        } else {
+            column
+        };
+
+        let classify = |b: u8| {
+            if b.is_ascii_alphanumeric() || b == b'_' {
+                0u8
+            } else if b.is_ascii_whitespace() {
+                1u8
+            } else {
+                2u8
+            }
+        };
+
+        let kind = classify(line_bytes[target_col]);
+
+        let mut start = target_col;
+        while start > 0 && classify(line_bytes[start - 1]) == kind {
+            start -= 1;
+        }
+
+        let mut end = target_col;
+        while end + 1 < line_len && classify(line_bytes[end + 1]) == kind {
+            end += 1;
+        }
+
+        Some((row, start, end + 1))
     }
 }
 

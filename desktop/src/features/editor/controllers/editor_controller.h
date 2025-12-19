@@ -16,6 +16,9 @@ public:
 
   void selectWord(int row, int column);
   void selectLine(int row);
+  void selectWordDrag(int anchorStartRow, int anchorStartCol, int anchorEndRow,
+                      int anchorEndCol, int row, int col);
+  void selectLineDrag(int anchorRow, int row);
 
 signals:
   void cursorChanged(int row, int col, int cursorCount, int selectionCount);

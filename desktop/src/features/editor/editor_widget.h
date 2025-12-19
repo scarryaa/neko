@@ -48,6 +48,7 @@ protected:
   void mousePressEvent(QMouseEvent *event) override;
   void mouseDoubleClickEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override;
   void paintEvent(QPaintEvent *event) override;
   void wheelEvent(QWheelEvent *event) override;
   bool focusNextPrevChild(bool next) override;
@@ -83,6 +84,11 @@ private:
   bool tripleArmed = false;
   QPoint triplePos{};
   int tripleRow = 0;
+  bool lineSelectMode = false;
+  bool wordSelectMode = false;
+  RowCol wordAnchorStart{0, 0};
+  RowCol wordAnchorEnd{0, 0};
+  int lineAnchorRow = 0;
 
   int EXTRA_VERTICAL_LINES = 1;
   double FONT_STEP = 2.0;

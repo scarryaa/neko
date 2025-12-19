@@ -175,6 +175,16 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
 
       editorController->selectLine(tripleRow);
 
+      int lineCount = static_cast<int>(editor->get_line_count());
+
+      if (lineCount > 0) {
+        lineSelectMode = true;
+        wordSelectMode = false;
+        lineAnchorRow = std::clamp(tripleRow, 0, lineCount - 1);
+      } else {
+        lineSelectMode = false;
+      }
+
       redraw();
 
       event->accept();
@@ -189,6 +199,8 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
     tripleArmed = false;
     tripleArmTimer.stop();
 
+    wordSelectMode = false;
+    lineSelectMode = false;
     editorController->moveTo(rc.row, rc.col, true);
 
     redraw();
@@ -206,7 +218,6 @@ void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
 
   if (suppressNextDouble && suppressDblTimer.isActive() &&
       nearPos(event->pos(), suppressDblPos)) {
-
     suppressNextDouble = false;
     suppressDblTimer.stop();
     tripleArmTimer.stop();
@@ -225,6 +236,20 @@ void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
   RowCol rc = convertMousePositionToRowCol(event->pos().x(), event->pos().y());
   editorController->selectWord(rc.row, rc.col);
 
+  auto selection = editor->get_selection();
+
+  if (selection.active) {
+    wordSelectMode = true;
+    lineSelectMode = false;
+    wordAnchorStart = {static_cast<int>(selection.start.row),
+                       static_cast<int>(selection.start.col)};
+    wordAnchorEnd = {static_cast<int>(selection.end.row),
+                     static_cast<int>(selection.end.col)};
+  } else {
+    wordSelectMode = false;
+    lineSelectMode = false;
+  }
+
   tripleArmed = true;
   triplePos = event->pos();
   tripleRow = rc.row;
@@ -239,13 +264,46 @@ void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
     return;
   }
 
-  if (event->buttons() == Qt::LeftButton) {
+  if (wordSelectMode) {
+    if (!event->buttons().testFlag(Qt::LeftButton)) {
+      return;
+    }
+
     RowCol rc =
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
-    editorController->selectTo(rc.row, rc.col);
+    editorController->selectWordDrag(wordAnchorStart.row, wordAnchorStart.col,
+                                     wordAnchorEnd.row, wordAnchorEnd.col,
+                                     rc.row, rc.col);
 
     redraw();
+  } else if (lineSelectMode) {
+    if (!event->buttons().testFlag(Qt::LeftButton)) {
+      return;
+    }
+
+    RowCol rc =
+        convertMousePositionToRowCol(event->pos().x(), event->pos().y());
+    editorController->selectLineDrag(lineAnchorRow, rc.row);
+
+    redraw();
+  } else {
+    if (event->buttons() == Qt::LeftButton) {
+      RowCol rc =
+          convertMousePositionToRowCol(event->pos().x(), event->pos().y());
+      editorController->selectTo(rc.row, rc.col);
+
+      redraw();
+    }
   }
+}
+
+void EditorWidget::mouseReleaseEvent(QMouseEvent *event) {
+  if (event->button() == Qt::LeftButton) {
+    wordSelectMode = false;
+    lineSelectMode = false;
+  }
+
+  QWidget::mouseReleaseEvent(event);
 }
 
 static int xToCursorIndex(const QString &line, const QFont &font, qreal x) {

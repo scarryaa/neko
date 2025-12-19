@@ -360,6 +360,22 @@ mod bridge {
         fn lines(self: &Editor) -> Vec<String>;
         #[cxx_name = "select_word"]
         fn select_word_wrapper(self: &mut Editor, row: usize, col: usize) -> ChangeSetFfi;
+        #[cxx_name = "select_word_drag"]
+        fn select_word_drag_wrapper(
+            self: &mut Editor,
+            anchor_start_row: usize,
+            anchor_start_col: usize,
+            anchor_end_row: usize,
+            anchor_end_col: usize,
+            row: usize,
+            col: usize,
+        ) -> ChangeSetFfi;
+        #[cxx_name = "select_line_drag"]
+        fn select_line_drag_wrapper(
+            self: &mut Editor,
+            anchor_row: usize,
+            row: usize,
+        ) -> ChangeSetFfi;
 
         // FileTree
         #[cxx_name = "set_root_dir"]
@@ -679,6 +695,30 @@ impl Editor {
 
     fn select_word_wrapper(&mut self, row: usize, col: usize) -> ChangeSetFfi {
         self.select_word(row, col).into()
+    }
+
+    fn select_word_drag_wrapper(
+        &mut self,
+        anchor_start_row: usize,
+        anchor_start_col: usize,
+        anchor_end_row: usize,
+        anchor_end_col: usize,
+        row: usize,
+        col: usize,
+    ) -> ChangeSetFfi {
+        self.select_word_drag(
+            anchor_start_row,
+            anchor_start_col,
+            anchor_end_row,
+            anchor_end_col,
+            row,
+            col,
+        )
+        .into()
+    }
+
+    fn select_line_drag_wrapper(&mut self, anchor_row: usize, row: usize) -> ChangeSetFfi {
+        self.select_line_drag(anchor_row, row).into()
     }
 
     fn move_left_wrapper(&mut self) -> ChangeSetFfi {
