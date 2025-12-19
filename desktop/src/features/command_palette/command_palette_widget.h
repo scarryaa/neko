@@ -11,6 +11,7 @@
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListWidget>
 #include <QMouseEvent>
 #include <QShortcut>
 #include <QStringList>
@@ -55,6 +56,7 @@ private:
   QLabel *historyHint;
   QLineEdit *jumpInput;
   QLineEdit *commandInput;
+  QListWidget *commandSuggestions;
   QStringList jumpHistory;
   QStringList commandHistory;
   QString jumpInputDraft;
@@ -69,6 +71,7 @@ private:
   int jumpHistoryIndex = 0;
   int commandHistoryIndex = 0;
   bool showJumpShortcuts = false;
+  bool currentlyInHistory = false;
 
   enum class Mode { None, GoToPosition };
   Mode currentMode = Mode::None;
@@ -96,6 +99,8 @@ private:
     QString foreground;
     QString foregroundVeryMuted;
     QString border;
+    QString accent;
+    QString accentForeground;
   };
 
   PaletteColors loadPaletteColors() const;
@@ -105,6 +110,8 @@ private:
   void addJumpInputRow(int clampedRow, int clampedCol,
                        const PaletteColors &paletteColors, QFont &font);
   void addCommandInputRow(const PaletteColors &paletteColors, QFont &font);
+  void addCommandSuggestionsList(const PaletteColors &paletteColors,
+                                 const QFont &font);
   void addCurrentLineLabel(int clampedRow, int clampedCol,
                            const PaletteColors &paletteColors, QFont font);
   void addShortcutsSection(const PaletteColors &paletteColors,
@@ -118,6 +125,8 @@ private:
   bool handleJumpHistoryNavigation(QKeyEvent *event);
   void resetCommandHistoryNavigation();
   bool handleCommandHistoryNavigation(QKeyEvent *event);
+  bool handleCommandSuggestionNavigation(QKeyEvent *event);
+  void updateCommandSuggestions(const QString &text);
 
   static constexpr double TOP_OFFSET = 300.0;
   static constexpr double SHADOW_X_OFFSET = 0.0;
@@ -145,6 +154,12 @@ private:
       "padding-left: 16px; padding-right: 16px; }"
       "QToolButton:hover { color: %2; }";
 
+  static constexpr char COMMAND_SUGGESTION_STYLE[] =
+      "QListWidget { background: transparent; border: none; padding-left: 8px; "
+      "padding-right: 8px; }"
+      "QListWidget::item { padding: 6px 8px; color: %1; border-radius: 6px; }"
+      "QListWidget::item:selected { background: %2; color: %3; }";
+
   // TODO: Move to rust
   // TODO: Add autocomplete/correct
   static constexpr char TOGGLE_FILE_EXPLORER_COMMAND[] =
@@ -162,6 +177,12 @@ private:
   struct NavEntry {
     std::string_view key;
     NavFn fn;
+  };
+
+  inline static const QStringList AVAILABLE_COMMANDS = {
+      TOGGLE_FILE_EXPLORER_COMMAND,
+      SET_THEME_TO_LIGHT,
+      SET_THEME_TO_DARK,
   };
 
   inline static constexpr std::array<NavEntry, 9> NAV = {{
