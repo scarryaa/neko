@@ -700,6 +700,7 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
     neko::Editor &editor = appState->get_editor_mut();
     setActiveEditor(&editor);
     editorWidget->redraw();
+    editorWidget->updateDimensions();
     gutterWidget->updateDimensions();
 
     int currentIndex = appState->get_active_tab_index();

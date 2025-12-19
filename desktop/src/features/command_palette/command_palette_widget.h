@@ -42,13 +42,13 @@ protected:
   bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
+  neko::ThemeManager &themeManager;
+  neko::ConfigManager &configManager;
+
   QWidget *parent;
   QWidget *shortcutsContainer;
   QToolButton *shortcutsToggle;
   QShortcut *shortcutsToggleShortcut;
-  neko::ThemeManager &themeManager;
-  neko::ConfigManager &configManager;
-
   PaletteFrame *mainFrame;
   QVBoxLayout *frameLayout;
   QLabel *historyHint;
@@ -58,6 +58,7 @@ private:
   QStringList commandHistory;
   QString jumpInputDraft;
   QString commandInputDraft;
+
   int maxLineCount = 1;
   int maxColumn = 1;
   int lastLineMaxColumn = 1;

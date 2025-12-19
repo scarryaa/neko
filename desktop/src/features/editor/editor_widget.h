@@ -33,6 +33,7 @@ public:
 
   void setEditor(neko::Editor *editor);
   void redraw();
+  void updateDimensions();
 
 public slots:
   void onBufferChanged();
@@ -63,7 +64,6 @@ private:
 
   void scrollToCursor();
   double measureWidth();
-  void updateDimensions();
 
   neko::ConfigManager &configManager;
   neko::ThemeManager &themeManager;
