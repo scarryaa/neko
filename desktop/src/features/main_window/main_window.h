@@ -23,6 +23,10 @@
 class MainWindow : public QMainWindow {
   Q_OBJECT
 
+private:
+  enum class SaveResult { Saved, Canceled, Failed };
+  enum class CloseDecision { Save, DontSave, Cancel };
+
 public:
   explicit MainWindow(QWidget *parent = nullptr);
   ~MainWindow();
@@ -36,7 +40,7 @@ public slots:
 private slots:
   void onFileSelected(const std::string &filePath,
                       bool shouldFocusEditor = true);
-  void onFileSaved(bool isSaveAs);
+  MainWindow::SaveResult onFileSaved(bool isSaveAs);
 
 signals:
   void onFileExplorerToggledViaShortcut(bool isOpen);
@@ -50,10 +54,13 @@ private:
   QSplitter *buildSplitter(QWidget *editorSideContainer);
   void connectSignals();
   void applyInitialState(neko::Editor *editor);
+  CloseDecision
+  showTabCloseConfirmationDialog(int index,
+                                 const rust::Vec<rust::String> &titles);
 
   void setActiveEditor(neko::Editor *newEditor);
   void refreshStatusBarCursor(neko::Editor *editor);
-  void saveAs();
+  SaveResult saveAs();
   void updateTabBar();
   void removeTabScrollOffset(int closedIndex);
   void handleTabClosed(int closedIndex, int numberOfTabsBeforeClose);

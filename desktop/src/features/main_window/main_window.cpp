@@ -545,26 +545,102 @@ void MainWindow::onBufferChanged() {
 }
 
 void MainWindow::onActiveTabCloseRequested(int numberOfTabs) {
-  if (tabController->getTabTitles().empty()) {
-    // Close the window
-    QApplication::quit();
-  } else {
-    int activeIndex = tabController->getActiveTabIndex();
-
+  auto closeTab = [this](int activeIndex, int numberOfTabs) {
     // Save current scroll offset before closing
     saveCurrentScrollState();
 
     if (tabController->closeTab(activeIndex)) {
       handleTabClosed(activeIndex, numberOfTabs);
     }
+  };
+
+  if (tabController->getTabTitles().empty()) {
+    // Close the window
+    QApplication::quit();
+  } else {
+    int activeIndex = tabController->getActiveTabIndex();
+
+    if (appState->get_tab_modified(activeIndex)) {
+      const auto titles = tabController->getTabTitles();
+      const CloseDecision closeResult =
+          showTabCloseConfirmationDialog(activeIndex, titles);
+
+      switch (closeResult) {
+      case CloseDecision::Save: {
+        auto result = onFileSaved(false);
+
+        if (result == SaveResult::Saved) {
+          closeTab(activeIndex, numberOfTabs);
+        }
+
+        return;
+      }
+      case CloseDecision::DontSave:
+        closeTab(activeIndex, numberOfTabs);
+        return;
+      case CloseDecision::Cancel:
+        return;
+      }
+    } else {
+      closeTab(activeIndex, numberOfTabs);
+    }
   }
+}
+
+MainWindow::CloseDecision MainWindow::showTabCloseConfirmationDialog(
+    int index, const rust::Vec<rust::String> &titles) {
+  QMessageBox box(QMessageBox::Warning, tr("Close Tab"),
+                  tr("%1 has unsaved edits.").arg(titles[index]),
+                  QMessageBox::NoButton, this->window());
+
+  auto *saveBtn = box.addButton(tr("Save"), QMessageBox::AcceptRole);
+  auto *dontSaveBtn =
+      box.addButton(tr("Don’t Save"), QMessageBox::DestructiveRole);
+  auto *cancelBtn = box.addButton(QMessageBox::Cancel);
+
+  box.setDefaultButton(cancelBtn);
+  box.setEscapeButton(cancelBtn);
+
+  box.exec();
+
+  if (box.clickedButton() == saveBtn)
+    return CloseDecision::Save;
+  if (box.clickedButton() == dontSaveBtn)
+    return CloseDecision::DontSave;
+
+  return CloseDecision::Cancel;
 }
 
 void MainWindow::onTabCloseRequested(int index, int numberOfTabs) {
   saveCurrentScrollState();
 
-  if (tabController->closeTab(index)) {
-    handleTabClosed(index, numberOfTabs);
+  auto close = [this, index, numberOfTabs]() {
+    if (tabController->closeTab(index)) {
+      handleTabClosed(index, numberOfTabs);
+    }
+  };
+
+  if (!appState->get_tab_modified(index)) {
+    close();
+    return;
+  }
+
+  auto titles = tabController->getTabTitles();
+
+  switch (showTabCloseConfirmationDialog(index, titles)) {
+  case CloseDecision::Save: {
+    SaveResult result = onFileSaved(false);
+
+    if (result == SaveResult::Saved)
+      close();
+
+    return;
+  }
+  case CloseDecision::DontSave:
+    close();
+    return;
+  case CloseDecision::Cancel:
+    return;
   }
 }
 
@@ -707,32 +783,40 @@ void MainWindow::openConfig() {
   }
 }
 
-void MainWindow::onFileSaved(bool isSaveAs) {
+MainWindow::SaveResult MainWindow::onFileSaved(bool isSaveAs) {
   if (isSaveAs) {
-    saveAs();
+    auto result = saveAs();
+    return result;
+  }
+
+  if (appState->save_active_file()) {
+    int activeIndex = appState->get_active_tab_index();
+    tabBarWidget->setTabModified(activeIndex, false);
+
+    return SaveResult::Saved;
   } else {
-    if (appState->save_active_file()) {
-      // Save successful
-      int activeIndex = appState->get_active_tab_index();
-      tabBarWidget->setTabModified(activeIndex, false);
-    } else {
-      // Save failed, fallback to save as
-      saveAs();
-    }
+    // Save failed, fallback to save as
+    SaveResult result = saveAs();
+    return result;
   }
 }
 
-void MainWindow::saveAs() {
+MainWindow::SaveResult MainWindow::saveAs() {
   QString filePath =
-      QFileDialog::getSaveFileName(this, "Save As", QDir::homePath());
+      QFileDialog::getSaveFileName(this, tr("Save As"), QDir::homePath());
 
-  if (!filePath.isEmpty()) {
-    if (appState->save_and_set_path(filePath.toStdString())) {
-      int activeIndex = appState->get_active_tab_index();
-      tabBarWidget->setTabModified(activeIndex, false);
-      updateTabBar();
-    } else {
-      qDebug() << "Save as failed";
-    }
+  if (filePath.isEmpty())
+    return SaveResult::Canceled;
+
+  if (appState->save_and_set_path(filePath.toStdString())) {
+    int activeIndex = appState->get_active_tab_index();
+    tabBarWidget->setTabModified(activeIndex, false);
+
+    updateTabBar();
+
+    return SaveResult::Saved;
   }
+
+  qDebug() << "Save as failed";
+  return SaveResult::Failed;
 }

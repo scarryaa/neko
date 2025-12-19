@@ -146,9 +146,9 @@ private:
   static constexpr char TOGGLE_FILE_EXPLORER_COMMAND[] =
       "file explorer: toggle";
 
-  static constexpr char SHORTCUTS_BUTTON_TEXT[] = "  Shortcuts";
   static constexpr int JUMP_HISTORY_LIMIT = 20;
   static constexpr int COMMAND_HISTORY_LIMIT = 20;
+  static constexpr char SHORTCUTS_BUTTON_TEXT[] = "  Shortcuts";
   static constexpr char HISTORY_HINT[] = "↑↓ History";
   static constexpr char COMMAND_PLACEHOLDER_TEXT[] = "Enter a command";
 
