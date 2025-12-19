@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use crate::config::ConfigManager;
+use crate::{config::ConfigManager, theme::ThemeManager};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Command {
@@ -50,7 +50,11 @@ pub struct CommandResult {
     pub intents: Vec<UiIntent>,
 }
 
-pub fn execute_command(cmd: Command, config: &mut ConfigManager) -> CommandResult {
+pub fn execute_command(
+    cmd: Command,
+    config: &mut ConfigManager,
+    theme: &mut ThemeManager,
+) -> CommandResult {
     match cmd {
         Command::FileExplorerToggle => {
             let new_state = !config.get_snapshot().file_explorer_shown;
@@ -61,6 +65,7 @@ pub fn execute_command(cmd: Command, config: &mut ConfigManager) -> CommandResul
             }
         }
         Command::ChangeTheme(name) => {
+            theme.set_theme(&name);
             config.update(|c| c.current_theme = name.clone());
 
             CommandResult {

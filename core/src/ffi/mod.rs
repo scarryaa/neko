@@ -396,8 +396,11 @@ mod bridge {
 
         // Commands
         #[cxx_name = "execute_command"]
-        fn execute_command_wrapper(cmd: CommandFfi, config: &mut ConfigManager)
-        -> CommandResultFfi;
+        fn execute_command_wrapper(
+            cmd: CommandFfi,
+            config: &mut ConfigManager,
+            theme: &mut ThemeManager,
+        ) -> CommandResultFfi;
         fn new_command(kind: CommandKindFfi, argument: String) -> CommandFfi;
     }
 }
@@ -875,8 +878,12 @@ impl FileNode {
     }
 }
 
-fn execute_command_wrapper(cmd: CommandFfi, config: &mut ConfigManager) -> CommandResultFfi {
-    execute_command(cmd.into(), config).into()
+fn execute_command_wrapper(
+    cmd: CommandFfi,
+    config: &mut ConfigManager,
+    theme: &mut ThemeManager,
+) -> CommandResultFfi {
+    execute_command(cmd.into(), config, theme).into()
 }
 
 fn new_command(kind: CommandKindFfi, argument: String) -> CommandFfi {

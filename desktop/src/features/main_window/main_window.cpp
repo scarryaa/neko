@@ -321,7 +321,8 @@ void MainWindow::onCommandPaletteCommand(const QString &command) {
   }
 
   auto commandFfi = neko::new_command(kind, std::move(argument));
-  auto result = neko::execute_command(commandFfi, *configManager);
+  auto result =
+      neko::execute_command(commandFfi, *configManager, *themeManager);
 
   for (auto &intent : result.intents) {
     switch (intent.kind) {
@@ -805,16 +806,10 @@ void MainWindow::applyTheme(const std::string &themeName) {
   std::string targetTheme = themeName;
 
   if (targetTheme.empty()) {
-    auto current = themeManager->get_current_theme_name();
-    targetTheme = std::string(current.c_str());
+    return;
   }
 
-  if (!themeManager->set_theme(targetTheme)) {
-    targetTheme = "Default Dark";
-    themeManager->set_theme(targetTheme);
-  }
-
-  configManager->set_theme(targetTheme);
+  themeManager->set_theme(targetTheme);
 
   if (titleBarWidget)
     titleBarWidget->applyTheme();
