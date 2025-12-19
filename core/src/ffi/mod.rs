@@ -1,18 +1,20 @@
 use std::path::PathBuf;
 
 use bridge::{
-    AddCursorDirectionFfi, AddCursorDirectionKind, ChangeSetFfi, CursorPosition, FileNode,
-    FontType, Selection, Shortcut,
+    AddCursorDirectionFfi, AddCursorDirectionKind, ChangeSetFfi, CommandFfi, CommandKindFfi,
+    CommandResultFfi, CursorPosition, FileNode, FontType, Selection, Shortcut, UiIntentFfi,
+    UiIntentKindFfi,
 };
 
-use crate::Cursor;
 use crate::app::AppState;
+use crate::commands::execute_command;
 use crate::config::ConfigManager;
 use crate::file_system::FileTree;
 use crate::shortcuts::ShortcutsManager;
 use crate::text::cursor_manager::AddCursorDirection;
 use crate::text::{ChangeSet, Editor};
 use crate::theme::ThemeManager;
+use crate::{Command, CommandResult, Cursor, UiIntent};
 
 impl From<ChangeSet> for bridge::ChangeSetFfi {
     fn from(cs: ChangeSet) -> Self {
@@ -54,6 +56,84 @@ impl From<crate::shortcuts::Shortcut> for Shortcut {
         Self {
             key: s.key,
             key_combo: s.key_combo,
+        }
+    }
+}
+
+impl From<UiIntentFfi> for UiIntent {
+    fn from(intent: UiIntentFfi) -> Self {
+        match intent.kind {
+            UiIntentKindFfi::ToggleFileExplorer => UiIntent::ToggleFileExplorer,
+            UiIntentKindFfi::ApplyTheme => UiIntent::ApplyTheme {
+                name: intent.argument,
+            },
+            // Should not happen
+            _ => UiIntent::ToggleFileExplorer,
+        }
+    }
+}
+
+impl From<UiIntent> for UiIntentFfi {
+    fn from(intent: UiIntent) -> Self {
+        match intent {
+            UiIntent::ToggleFileExplorer => UiIntentFfi {
+                kind: UiIntentKindFfi::ToggleFileExplorer,
+                argument: String::new(),
+            },
+            UiIntent::ApplyTheme { name } => UiIntentFfi {
+                kind: UiIntentKindFfi::ApplyTheme,
+                argument: name,
+            },
+        }
+    }
+}
+
+impl From<CommandFfi> for Command {
+    fn from(command: CommandFfi) -> Self {
+        match command.kind {
+            CommandKindFfi::FileExplorerToggle => Command::FileExplorerToggle,
+            CommandKindFfi::ChangeTheme => Command::ChangeTheme(command.argument),
+            // Should not happen
+            _ => Command::FileExplorerToggle,
+        }
+    }
+}
+
+impl From<Command> for CommandFfi {
+    fn from(command: Command) -> Self {
+        match command {
+            Command::FileExplorerToggle => CommandFfi {
+                kind: CommandKindFfi::FileExplorerToggle,
+                argument: String::new(),
+            },
+            Command::ChangeTheme(t) => CommandFfi {
+                kind: CommandKindFfi::ChangeTheme,
+                argument: t,
+            },
+        }
+    }
+}
+
+impl From<CommandResult> for CommandResultFfi {
+    fn from(command_result: CommandResult) -> Self {
+        CommandResultFfi {
+            intents: command_result
+                .intents
+                .into_iter()
+                .map(UiIntentFfi::from)
+                .collect(),
+        }
+    }
+}
+
+impl From<CommandResultFfi> for CommandResult {
+    fn from(command_result: CommandResultFfi) -> Self {
+        CommandResult {
+            intents: command_result
+                .intents
+                .into_iter()
+                .map(UiIntent::from)
+                .collect(),
         }
     }
 }
@@ -112,6 +192,30 @@ mod bridge {
     struct Shortcut {
         key: String,
         key_combo: String,
+    }
+
+    enum CommandKindFfi {
+        FileExplorerToggle,
+        ChangeTheme,
+    }
+
+    struct CommandFfi {
+        kind: CommandKindFfi,
+        argument: String,
+    }
+
+    enum UiIntentKindFfi {
+        ToggleFileExplorer,
+        ApplyTheme,
+    }
+
+    struct UiIntentFfi {
+        pub kind: UiIntentKindFfi,
+        pub argument: String,
+    }
+
+    struct CommandResultFfi {
+        pub intents: Vec<UiIntentFfi>,
     }
 
     extern "Rust" {
@@ -289,6 +393,12 @@ mod bridge {
         fn get_size(self: &FileNode) -> u64;
         fn get_modified(self: &FileNode) -> u64;
         fn get_depth(self: &FileNode) -> usize;
+
+        // Commands
+        #[cxx_name = "execute_command"]
+        fn execute_command_wrapper(cmd: CommandFfi, config: &mut ConfigManager)
+        -> CommandResultFfi;
+        fn new_command(kind: CommandKindFfi, argument: String) -> CommandFfi;
     }
 }
 
@@ -763,4 +873,12 @@ impl FileNode {
     fn get_depth(&self) -> usize {
         self.depth
     }
+}
+
+fn execute_command_wrapper(cmd: CommandFfi, config: &mut ConfigManager) -> CommandResultFfi {
+    execute_command(cmd.into(), config).into()
+}
+
+fn new_command(kind: CommandKindFfi, argument: String) -> CommandFfi {
+    CommandFfi { kind, argument }
 }

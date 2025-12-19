@@ -1,6 +1,4 @@
 #include "main_window.h"
-#include "features/status_bar/status_bar_widget.h"
-#include "utils/gui_utils.h"
 
 // TODO: StatusBar signals/tab inform and MainWindow editor ref
 // are messy and need to be cleaned up. Also consider "rearchitecting"
@@ -306,17 +304,35 @@ void MainWindow::onCursorPositionClicked() {
                                         lineCount, lastLineMaxCol);
 }
 
-// TODO: Create enum
 void MainWindow::onCommandPaletteCommand(const QString &command) {
-  if (command == "file explorer: toggle") {
-    onFileExplorerToggled();
+  neko::CommandKindFfi kind;
+  rust::String argument;
 
-    bool isOpen = !fileExplorerWidget->isHidden();
-    emit onFileExplorerToggledViaShortcut(isOpen);
+  if (command == "file explorer: toggle") {
+    kind = neko::CommandKindFfi::FileExplorerToggle;
   } else if (command == "set theme: light") {
-    applyTheme("Default Light");
+    kind = neko::CommandKindFfi::ChangeTheme;
+    argument = rust::String("Default Light");
   } else if (command == "set theme: dark") {
-    applyTheme("Default Dark");
+    kind = neko::CommandKindFfi::ChangeTheme;
+    argument = rust::String("Default Dark");
+  } else {
+    return;
+  }
+
+  auto commandFfi = neko::new_command(kind, std::move(argument));
+  auto result = neko::execute_command(commandFfi, *configManager);
+
+  for (auto &intent : result.intents) {
+    switch (intent.kind) {
+    case neko::UiIntentKindFfi::ToggleFileExplorer:
+      onFileExplorerToggled();
+      emit onFileExplorerToggledViaShortcut(!fileExplorerWidget->isHidden());
+      break;
+    case neko::UiIntentKindFfi::ApplyTheme:
+      applyTheme(std::string(intent.argument.c_str()));
+      break;
+    }
   }
 }
 
