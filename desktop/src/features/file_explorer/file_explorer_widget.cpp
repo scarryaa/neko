@@ -48,7 +48,7 @@ void FileExplorerWidget::applyTheme() {
 
     directorySelectionButton->setStyleSheet(
         QString("QPushButton { background-color: %1; color: %2; border-radius: "
-                "6px; padding: 8px 16px; font-size: 13px; border: none; }"
+                "6px; padding: 8px 16px; font-size: 15px; border: none; }"
                 "QPushButton:hover { background-color: %3; }"
                 "QPushButton:pressed { background-color: %4; }")
             .arg(buttonBg, buttonText, buttonHover, buttonPressed));
