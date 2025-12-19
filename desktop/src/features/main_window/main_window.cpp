@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
   setupWidgets(editor, fileTree);
   connectSignals();
   setupLayout();
-  auto currentTheme = themeManager->get_current_theme_name();
+  auto currentTheme = configManager->get_theme();
   applyTheme(std::string(currentTheme.c_str()));
   setupKeyboardShortcuts();
   applyInitialState(editor);
@@ -786,9 +786,19 @@ void MainWindow::openConfig() {
 }
 
 void MainWindow::applyTheme(const std::string &themeName) {
-  if (!themeName.empty()) {
-    themeManager->set_theme(themeName);
+  std::string targetTheme = themeName;
+
+  if (targetTheme.empty()) {
+    auto current = themeManager->get_current_theme_name();
+    targetTheme = std::string(current.c_str());
   }
+
+  if (!themeManager->set_theme(targetTheme)) {
+    targetTheme = "Default Dark";
+    themeManager->set_theme(targetTheme);
+  }
+
+  configManager->set_theme(targetTheme);
 
   if (titleBarWidget)
     titleBarWidget->applyTheme();

@@ -38,12 +38,13 @@ void FileExplorerWidget::applyTheme() {
       themeManager, "FileExplorerWidget", backgroundColor));
 
   if (directorySelectionButton) {
-    QString buttonBg = UiUtils::getThemeColor(themeManager, "ui.accent.muted");
+    QString buttonBg = UiUtils::getThemeColor(themeManager, "ui.accent");
     QString buttonHover =
         UiUtils::getThemeColor(themeManager, "ui.accent.hover");
     QString buttonPressed =
         UiUtils::getThemeColor(themeManager, "ui.accent.pressed");
-    QString buttonText = UiUtils::getThemeColor(themeManager, "ui.foreground");
+    QString buttonText =
+        UiUtils::getThemeColor(themeManager, "ui.accent.foreground");
 
     directorySelectionButton->setStyleSheet(
         QString("QPushButton { background-color: %1; color: %2; border-radius: "

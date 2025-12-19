@@ -152,6 +152,7 @@ mod bridge {
         fn get_font_family(self: &ConfigManager, font_type: FontType) -> String;
         #[cxx_name = "save_config"]
         fn save_config_wrapper(self: &mut ConfigManager) -> bool;
+        fn get_theme(self: &ConfigManager) -> String;
         fn set_font_size(self: &mut ConfigManager, font_size: usize, font_type: FontType);
         fn set_font_family(self: &mut ConfigManager, font_family: &str, font_type: FontType);
         fn set_file_explorer_directory(self: &mut ConfigManager, new_directory: &str);
@@ -162,6 +163,7 @@ mod bridge {
         fn get_file_explorer_width(self: &ConfigManager) -> usize;
         fn get_file_explorer_right(self: &ConfigManager) -> bool;
         fn set_file_explorer_right(self: &ConfigManager, is_right: bool);
+        fn set_theme(self: &mut ConfigManager, theme_name: String);
 
         // ShortcutsManager
         fn new_shortcuts_manager() -> Result<Box<ShortcutsManager>>;
@@ -428,6 +430,14 @@ impl ConfigManager {
 
     fn set_file_explorer_right(self: &ConfigManager, is_right: bool) {
         self.update(|c| c.file_explorer_right = is_right);
+    }
+
+    fn set_theme(self: &ConfigManager, theme_name: String) {
+        self.update(|c| c.current_theme = theme_name);
+    }
+
+    fn get_theme(&self) -> String {
+        self.get_snapshot().current_theme.clone()
     }
 }
 

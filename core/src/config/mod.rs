@@ -3,6 +3,8 @@ pub mod config_manager;
 pub use config_manager::ConfigManager;
 use serde::{Deserialize, Serialize};
 
+use crate::Theme;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub editor_font_size: usize,
@@ -13,6 +15,7 @@ pub struct Config {
     pub file_explorer_shown: bool,
     pub file_explorer_width: usize,
     pub file_explorer_right: bool,
+    pub current_theme: String,
 }
 
 impl Default for Config {
@@ -26,6 +29,7 @@ impl Default for Config {
             file_explorer_shown: true,
             file_explorer_width: 250,
             file_explorer_right: false,
+            current_theme: Theme::default().name,
         }
     }
 }

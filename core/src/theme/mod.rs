@@ -86,8 +86,10 @@ impl Theme {
             "ui.foreground.very_muted".to_string(),
             "#9a9a9a".to_string(),
         );
+        colors.insert("ui.foreground.inverted".to_string(), "#2d2d2d".to_string());
         colors.insert("ui.background".to_string(), "#f5f5f5".to_string());
         colors.insert("ui.background.hover".to_string(), "#ededed".to_string());
+        colors.insert("ui.accent.foreground".to_string(), "#f5f5f5".to_string());
         colors.insert("ui.accent".to_string(), "#a589d1".to_string());
         colors.insert("ui.accent.hover".to_string(), "#bca3e0".to_string());
         colors.insert("ui.accent.pressed".to_string(), "#8e72b8".to_string());
@@ -155,6 +157,7 @@ impl Theme {
 
         colors.insert("sidebar.background".to_string(), "#000000".to_string());
         colors.insert("ui.foreground".to_string(), "#d4d4d4".to_string());
+        colors.insert("ui.foreground.inverted".to_string(), "#".to_string());
         colors.insert("ui.foreground.muted".to_string(), "#a4a4a4".to_string());
         colors.insert(
             "ui.foreground.very_muted".to_string(),
@@ -162,6 +165,7 @@ impl Theme {
         );
         colors.insert("ui.background".to_string(), "#000000".to_string());
         colors.insert("ui.background.hover".to_string(), "#2c2c2c".to_string());
+        colors.insert("ui.accent.foreground".to_string(), "#f5f5f5".to_string());
         colors.insert("ui.accent".to_string(), "#a589d1".to_string());
         colors.insert("ui.accent.hover".to_string(), "#bca3e0".to_string());
         colors.insert("ui.accent.pressed".to_string(), "#8e72b8".to_string());
