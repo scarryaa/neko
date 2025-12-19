@@ -149,6 +149,16 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
   redraw();
 }
 
+void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
+  if (!editor)
+    return;
+
+  RowCol rc = convertMousePositionToRowCol(event->pos().x(), event->pos().y());
+  editorController->selectWord(rc.row, rc.col);
+
+  redraw();
+}
+
 void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
   if (!editor) {
     return;

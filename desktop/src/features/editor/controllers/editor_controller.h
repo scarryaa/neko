@@ -15,6 +15,8 @@ public:
   explicit EditorController(neko::Editor *editor);
   ~EditorController();
 
+  void selectWord(int row, int column);
+
 signals:
   void cursorChanged(int row, int col, int cursorCount, int selectionCount);
   void selectionChanged(int selectionCount);

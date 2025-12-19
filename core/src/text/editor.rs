@@ -396,6 +396,74 @@ impl Editor {
         })
     }
 
+    pub fn select_word(&mut self, row: usize, column: usize) -> ChangeSet {
+        let i = self.cursor_manager.active_cursor_index;
+        self.with_op(false, OpFlags::ViewportOnly, |editor| {
+            editor.move_cursor_at(i, SelectionMode::Clear, CursorMode::Single, |c, b| {
+                c.move_to(b, row, column)
+            });
+
+            let cursor = editor.cursor_manager.cursors[0].cursor.clone();
+            let line_len = editor.buffer.line_len_without_newline(cursor.row);
+
+            if line_len == 0 {
+                editor.selection_manager.clear_selection();
+                return;
+            }
+
+            let line = editor.buffer.get_line(cursor.row);
+            let line_bytes = line.as_bytes();
+            let line_len = line_len.min(line_bytes.len());
+
+            if line_len == 0 {
+                editor.selection_manager.clear_selection();
+                return;
+            }
+
+            let target_col = if cursor.column >= line_len {
+                line_len.saturating_sub(1)
+            } else {
+                cursor.column
+            };
+
+            let classify = |b: u8| {
+                if b.is_ascii_alphanumeric() || b == b'_' {
+                    0u8
+                } else if b.is_ascii_whitespace() {
+                    1u8
+                } else {
+                    2u8
+                }
+            };
+
+            let kind = classify(line_bytes[target_col]);
+
+            let mut start = target_col;
+            while start > 0 && classify(line_bytes[start - 1]) == kind {
+                start -= 1;
+            }
+
+            let mut end = target_col;
+            while end + 1 < line_len && classify(line_bytes[end + 1]) == kind {
+                end += 1;
+            }
+
+            let mut start_cursor = cursor.clone();
+            start_cursor.set_col(start);
+
+            let mut end_cursor = cursor;
+            end_cursor.set_col(end + 1);
+
+            editor.selection_manager.selection.begin(&start_cursor);
+            editor
+                .selection_manager
+                .selection
+                .update(&end_cursor, &editor.buffer);
+
+            editor.cursor_manager.cursors[0].cursor = end_cursor;
+        })
+    }
+
     pub fn select_to(&mut self, row: usize, col: usize) -> ChangeSet {
         let i = self.cursor_manager.active_cursor_index;
         self.with_op(false, OpFlags::ViewportOnly, |editor| {
@@ -581,6 +649,46 @@ mod tests {
     use crate::text::cursor_manager::AddCursorDirection;
 
     use super::*;
+
+    #[test]
+    fn select_word_highlights_word() {
+        let mut editor = Editor::new();
+        editor.load_file("hello world");
+
+        editor.select_word(0, 1);
+
+        let selection = editor.selection_manager.selection.clone();
+        assert!(selection.is_active());
+        assert_eq!((selection.start.row, selection.start.column), (0, 0));
+        assert_eq!((selection.end.row, selection.end.column), (0, 5));
+        assert_eq!(
+            (
+                editor.cursor_manager.cursors[0].cursor.row,
+                editor.cursor_manager.cursors[0].cursor.column
+            ),
+            (0, 5)
+        );
+    }
+
+    #[test]
+    fn select_word_from_line_end_selects_previous_word() {
+        let mut editor = Editor::new();
+        editor.load_file("hello world");
+
+        editor.select_word(0, 11);
+
+        let selection = editor.selection_manager.selection.clone();
+        assert!(selection.is_active());
+        assert_eq!((selection.start.row, selection.start.column), (0, 6));
+        assert_eq!((selection.end.row, selection.end.column), (0, 11));
+        assert_eq!(
+            (
+                editor.cursor_manager.cursors[0].cursor.row,
+                editor.cursor_manager.cursors[0].cursor.column
+            ),
+            (0, 11)
+        );
+    }
 
     #[test]
     fn insert_text_replaces_selection_at_anchor() {

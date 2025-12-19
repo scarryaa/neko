@@ -358,6 +358,8 @@ mod bridge {
         fn line_length(self: &Editor, row: usize) -> usize;
         #[cxx_name = "get_lines"]
         fn lines(self: &Editor) -> Vec<String>;
+        #[cxx_name = "select_word"]
+        fn select_word_wrapper(self: &mut Editor, row: usize, col: usize) -> ChangeSetFfi;
 
         // FileTree
         #[cxx_name = "set_root_dir"]
@@ -673,6 +675,10 @@ impl Editor {
 
     fn select_to_wrapper(&mut self, row: usize, col: usize) -> ChangeSetFfi {
         self.select_to(row, col).into()
+    }
+
+    fn select_word_wrapper(&mut self, row: usize, col: usize) -> ChangeSetFfi {
+        self.select_word(row, col).into()
     }
 
     fn move_left_wrapper(&mut self) -> ChangeSetFfi {

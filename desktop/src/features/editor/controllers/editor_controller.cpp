@@ -61,6 +61,10 @@ void EditorController::moveTo(int row, int column, bool clearSelection) {
   do_op(&neko::Editor::move_to, row, column, clearSelection);
 }
 
+void EditorController::selectWord(int row, int column) {
+  do_op(&neko::Editor::select_word, row, column);
+}
+
 void EditorController::selectTo(int row, int column) {
   do_op(&neko::Editor::select_to, row, column);
 }
