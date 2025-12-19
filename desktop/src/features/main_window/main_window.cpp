@@ -446,6 +446,17 @@ void MainWindow::setupKeyboardShortcuts() {
       Qt::WindowShortcut,
       [this]() { onActiveTabCloseRequested(tabBarWidget->getNumberOfTabs()); });
 
+  // Cmd+Shift+W for force close tab (bypass unsaved confirmation)
+  QAction *forceCloseTabAction = new QAction(this);
+  addShortcut(forceCloseTabAction,
+              seqFor("Tab::ForceClose",
+                     QKeySequence(QKeySequence(Qt::ControlModifier,
+                                               Qt::ShiftModifier, Qt::Key_W))),
+              Qt::WindowShortcut, [this]() {
+                onActiveTabCloseRequested(tabBarWidget->getNumberOfTabs(),
+                                          true);
+              });
+
   // Cmd+Tab for next tab
   QAction *nextTabAction = new QAction(this);
   addShortcut(nextTabAction,
@@ -544,7 +555,8 @@ void MainWindow::onBufferChanged() {
   tabBarWidget->setTabModified(activeIndex, modified);
 }
 
-void MainWindow::onActiveTabCloseRequested(int numberOfTabs) {
+void MainWindow::onActiveTabCloseRequested(int numberOfTabs,
+                                           bool bypassConfirmation) {
   auto closeTab = [this](int activeIndex, int numberOfTabs) {
     // Save current scroll offset before closing
     saveCurrentScrollState();
@@ -560,7 +572,7 @@ void MainWindow::onActiveTabCloseRequested(int numberOfTabs) {
   } else {
     int activeIndex = tabController->getActiveTabIndex();
 
-    if (appState->get_tab_modified(activeIndex)) {
+    if (appState->get_tab_modified(activeIndex) && !bypassConfirmation) {
       const auto titles = tabController->getTabTitles();
       const CloseDecision closeResult =
           showTabCloseConfirmationDialog(activeIndex, titles);
@@ -611,7 +623,8 @@ MainWindow::CloseDecision MainWindow::showTabCloseConfirmationDialog(
   return CloseDecision::Cancel;
 }
 
-void MainWindow::onTabCloseRequested(int index, int numberOfTabs) {
+void MainWindow::onTabCloseRequested(int index, int numberOfTabs,
+                                     bool bypassConfirmation) {
   saveCurrentScrollState();
 
   auto close = [this, index, numberOfTabs]() {
@@ -619,6 +632,11 @@ void MainWindow::onTabCloseRequested(int index, int numberOfTabs) {
       handleTabClosed(index, numberOfTabs);
     }
   };
+
+  if (bypassConfirmation) {
+    close();
+    return;
+  }
 
   if (!appState->get_tab_modified(index)) {
     close();
@@ -638,6 +656,7 @@ void MainWindow::onTabCloseRequested(int index, int numberOfTabs) {
   }
   case CloseDecision::DontSave:
     close();
+
     return;
   case CloseDecision::Cancel:
     return;

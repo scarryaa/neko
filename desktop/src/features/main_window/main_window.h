@@ -64,11 +64,13 @@ private:
   void updateTabBar();
   void removeTabScrollOffset(int closedIndex);
   void handleTabClosed(int closedIndex, int numberOfTabsBeforeClose);
-  void onTabCloseRequested(int index, int numberOfTabs);
+  void onTabCloseRequested(int index, int numberOfTabs,
+                           bool bypassConfirmation = false);
   void onTabChanged(int index);
   void onNewTabRequested();
   void switchToActiveTab(bool shouldFocusEditor = true);
-  void onActiveTabCloseRequested(int numberOfTabs);
+  void onActiveTabCloseRequested(int numberOfTabs,
+                                 bool bypassConfirmation = false);
   void setupKeyboardShortcuts();
   void onBufferChanged();
   void switchToTabWithFile(const std::string &path);

@@ -103,15 +103,20 @@ void TabWidget::paintEvent(QPaintEvent *event) {
 }
 
 void TabWidget::mousePressEvent(QMouseEvent *event) {
+  auto modifiers = event->modifiers();
+  const bool shiftPressed =
+      modifiers.testFlag(Qt::KeyboardModifier::ShiftModifier);
+
   if (event->button() == Qt::LeftButton) {
     QRect closeRect(width() - 24, (height() - 12) / 2, 12, 12);
+
     if (closeRect.adjusted(-3, -3, 3, 3).contains(event->pos())) {
-      emit closeRequested();
+      emit closeRequested(shiftPressed);
     } else {
       emit clicked();
     }
   } else if (event->button() == Qt::MiddleButton) {
-    emit closeRequested();
+    emit closeRequested(shiftPressed);
   }
 }
 

@@ -65,8 +65,8 @@ void TabBarWidget::setTabs(QStringList titles, rust::Vec<bool> modifiedStates) {
       emit currentChanged(i);
     });
     connect(tabWidget, &TabWidget::closeRequested, this,
-            [this, i, numberOfTitles]() {
-              emit tabCloseRequested(i, numberOfTitles);
+            [this, i, numberOfTitles](bool bypassConfirmation) {
+              emit tabCloseRequested(i, numberOfTitles, bypassConfirmation);
             });
     layout->addWidget(tabWidget);
     tabs.append(tabWidget);

@@ -51,6 +51,7 @@ impl Default for Shortcuts {
         let save = Shortcut::new("Tab::Save".into(), "Ctrl+S".into());
         let save_as = Shortcut::new("Tab::SaveAs".into(), "Ctrl+Shift+S".into());
         let close_tab = Shortcut::new("Tab::Close".into(), "Ctrl+W".into());
+        let force_close_tab = Shortcut::new("Tab::ForceClose".into(), "Ctrl+Shift+W".into());
         let new_tab = Shortcut::new("Tab::New".into(), "Ctrl+T".into());
         let next_tab = Shortcut::new("Tab::Next".into(), "Meta+Tab".into());
         let previous_tab = Shortcut::new("Tab::Previous".into(), "Meta+Shift+Tab".into());
@@ -66,6 +67,7 @@ impl Default for Shortcuts {
             save,
             save_as,
             close_tab,
+            force_close_tab,
             new_tab,
             next_tab,
             previous_tab,

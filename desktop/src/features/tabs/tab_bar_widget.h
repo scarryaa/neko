@@ -28,7 +28,8 @@ public:
 
 signals:
   void currentChanged(int index);
-  void tabCloseRequested(int index, int numberOfTabs);
+  void tabCloseRequested(int index, int numberOfTabs,
+                         bool bypassConfirmation = false);
   void newTabRequested();
 
 private:

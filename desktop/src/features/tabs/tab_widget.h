@@ -20,7 +20,7 @@ public:
 
 signals:
   void clicked();
-  void closeRequested();
+  void closeRequested(bool bypassConfirmation);
 
 protected:
   void paintEvent(QPaintEvent *event) override;
