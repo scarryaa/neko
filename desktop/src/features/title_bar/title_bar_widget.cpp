@@ -16,24 +16,8 @@ TitleBarWidget::TitleBarWidget(neko::ConfigManager &configManager,
 
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-  QString btnText = UiUtils::getThemeColor(
-      themeManager, "titlebar.button.foreground", "#a0a0a0");
-  QString btnHover =
-      UiUtils::getThemeColor(themeManager, "titlebar.button.hover", "#131313");
-  QString btnPress = UiUtils::getThemeColor(
-      themeManager, "titlebar.button.pressed", "#222222");
-
   m_directorySelectionButton = new QPushButton("Select a directory");
-  m_directorySelectionButton->setStyleSheet(
-      QString("QPushButton {"
-              "  background-color: transparent;"
-              "  color: %1;"
-              "  border-radius: 6px;"
-              "  padding: 4px 8px;"
-              "}"
-              "QPushButton:hover { background-color: %2; }"
-              "QPushButton:pressed { background-color: %3; }")
-          .arg(btnText, btnHover, btnPress));
+  applyTheme();
 
   connect(m_directorySelectionButton, &QPushButton::clicked, this,
           &TitleBarWidget::onDirectorySelectionButtonPressed);
@@ -48,6 +32,32 @@ TitleBarWidget::TitleBarWidget(neko::ConfigManager &configManager,
 }
 
 TitleBarWidget::~TitleBarWidget() {}
+
+void TitleBarWidget::applyTheme() {
+  if (!m_directorySelectionButton) {
+    return;
+  }
+
+  QString btnText = UiUtils::getThemeColor(
+      themeManager, "titlebar.button.foreground", "#a0a0a0");
+  QString btnHover =
+      UiUtils::getThemeColor(themeManager, "titlebar.button.hover", "#131313");
+  QString btnPress = UiUtils::getThemeColor(
+      themeManager, "titlebar.button.pressed", "#222222");
+
+  m_directorySelectionButton->setStyleSheet(
+      QString("QPushButton {"
+              "  background-color: transparent;"
+              "  color: %1;"
+              "  border-radius: 6px;"
+              "  padding: 4px 8px;"
+              "}"
+              "QPushButton:hover { background-color: %2; }"
+              "QPushButton:pressed { background-color: %3; }")
+          .arg(btnText, btnHover, btnPress));
+
+  update();
+}
 
 void TitleBarWidget::mousePressEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton) {

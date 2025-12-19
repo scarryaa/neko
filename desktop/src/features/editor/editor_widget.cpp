@@ -14,11 +14,7 @@ EditorWidget::EditorWidget(neko::Editor *editor,
   setFrameShape(QFrame::NoFrame);
   setAutoFillBackground(false);
 
-  QString bgHex =
-      UiUtils::getThemeColor(themeManager, "editor.background", "#000000");
-
-  setStyleSheet(
-      UiUtils::getScrollBarStylesheet(themeManager, "EditorWidget", bgHex));
+  applyTheme();
 
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
           &EditorWidget::redraw);
@@ -37,6 +33,15 @@ EditorWidget::EditorWidget(neko::Editor *editor,
 }
 
 EditorWidget::~EditorWidget() {}
+
+void EditorWidget::applyTheme() {
+  QString bgHex =
+      UiUtils::getThemeColor(themeManager, "editor.background", "#000000");
+
+  setStyleSheet(
+      UiUtils::getScrollBarStylesheet(themeManager, "EditorWidget", bgHex));
+  redraw();
+}
 
 void EditorWidget::setEditor(neko::Editor *newEditor) { editor = newEditor; }
 

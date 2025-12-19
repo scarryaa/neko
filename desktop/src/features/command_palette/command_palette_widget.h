@@ -29,6 +29,7 @@ public:
                                 QWidget *parent = nullptr);
   ~CommandPaletteWidget();
 
+  void applyTheme();
   void jumpToRowColumn(int currentRow = 0, int currentCol = 0, int maxCol = 1,
                        int lineCount = 1, int lastLineMaxCol = 1);
   void showPalette();
@@ -144,8 +145,12 @@ private:
       "padding-left: 16px; padding-right: 16px; }"
       "QToolButton:hover { color: %2; }";
 
+  // TODO: Move to rust
+  // TODO: Add autocomplete/correct
   static constexpr char TOGGLE_FILE_EXPLORER_COMMAND[] =
       "file explorer: toggle";
+  static constexpr char SET_THEME_TO_LIGHT[] = "set theme: light";
+  static constexpr char SET_THEME_TO_DARK[] = "set theme: dark";
 
   static constexpr int JUMP_HISTORY_LIMIT = 20;
   static constexpr int COMMAND_HISTORY_LIMIT = 20;

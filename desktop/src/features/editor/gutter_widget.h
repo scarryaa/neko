@@ -26,6 +26,7 @@ public:
                         QWidget *parent = nullptr);
   ~GutterWidget();
 
+  void applyTheme();
   void updateDimensions();
   void setEditor(neko::Editor *editor);
 

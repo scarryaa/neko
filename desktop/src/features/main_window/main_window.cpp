@@ -25,6 +25,8 @@ MainWindow::MainWindow(QWidget *parent)
   setupWidgets(editor, fileTree);
   connectSignals();
   setupLayout();
+  auto currentTheme = themeManager->get_current_theme_name();
+  applyTheme(std::string(currentTheme.c_str()));
   setupKeyboardShortcuts();
   applyInitialState(editor);
 }
@@ -142,38 +144,13 @@ QWidget *MainWindow::buildTabBarSection() {
   tabBarLayout->setContentsMargins(0, 0, 0, 0);
   tabBarLayout->setSpacing(0);
 
-  auto *newTabButton = new QPushButton("+", tabBarContainer);
+  newTabButton = new QPushButton("+", tabBarContainer);
 
   QFont uiFont = UiUtils::loadFont(*configManager, neko::FontType::Interface);
   QFontMetrics fm(uiFont);
   int dynamicHeight = fm.height() + 16;
 
-  QString newTabButtonBackgroundColor =
-      UiUtils::getThemeColor(*themeManager, "ui.background");
-  QString newTabButtonForegroundColor =
-      UiUtils::getThemeColor(*themeManager, "ui.foreground");
-  QString newTabButtonBorderColor =
-      UiUtils::getThemeColor(*themeManager, "ui.border");
-  QString newTabButtonHoverBackgroundColor =
-      UiUtils::getThemeColor(*themeManager, "ui.background.hover");
-
   newTabButton->setFixedSize(dynamicHeight, dynamicHeight);
-  QString newTabButtonStylesheet =
-      QString("QPushButton {"
-              "  background: %1;"
-              "  color: %2;"
-              "  border: none;"
-              "  border-left: 1px solid %3;"
-              "  border-bottom: 1px solid %3;"
-              "  font-size: 20px;"
-              "}"
-              "QPushButton:hover {"
-              "  background: %4;"
-              "}")
-          .arg(newTabButtonBackgroundColor, newTabButtonForegroundColor,
-               newTabButtonBorderColor, newTabButtonHoverBackgroundColor);
-  newTabButton->setStyleSheet(newTabButtonStylesheet);
-
   tabBarLayout->addWidget(tabBarWidget);
   tabBarLayout->addWidget(newTabButton);
 
@@ -223,6 +200,7 @@ QWidget *MainWindow::buildEditorSection(QWidget *emptyState) {
 
 QSplitter *MainWindow::buildSplitter(QWidget *editorSideContainer) {
   auto *splitter = new QSplitter(Qt::Horizontal, this);
+  mainSplitter = splitter;
   auto fileExplorerRight = configManager->get_file_explorer_right();
   int savedSidebarWidth = configManager->get_file_explorer_width();
 
@@ -335,6 +313,10 @@ void MainWindow::onCommandPaletteCommand(const QString &command) {
 
     bool isOpen = !fileExplorerWidget->isHidden();
     emit onFileExplorerToggledViaShortcut(isOpen);
+  } else if (command == "set theme: light") {
+    applyTheme("Default Light");
+  } else if (command == "set theme: dark") {
+    applyTheme("Default Dark");
   }
 }
 
@@ -801,6 +783,82 @@ void MainWindow::openConfig() {
   if (!configPath.empty()) {
     onFileSelected(configPath.c_str());
   }
+}
+
+void MainWindow::applyTheme(const std::string &themeName) {
+  if (!themeName.empty()) {
+    themeManager->set_theme(themeName);
+  }
+
+  if (titleBarWidget)
+    titleBarWidget->applyTheme();
+  if (fileExplorerWidget)
+    fileExplorerWidget->applyTheme();
+  if (editorWidget)
+    editorWidget->applyTheme();
+  if (gutterWidget)
+    gutterWidget->applyTheme();
+  if (statusBarWidget)
+    statusBarWidget->applyTheme();
+  if (tabBarWidget)
+    tabBarWidget->applyTheme();
+  if (commandPaletteWidget)
+    commandPaletteWidget->applyTheme();
+
+  if (newTabButton) {
+    QString newTabButtonBackgroundColor =
+        UiUtils::getThemeColor(*themeManager, "ui.background");
+    QString newTabButtonForegroundColor =
+        UiUtils::getThemeColor(*themeManager, "ui.foreground");
+    QString newTabButtonBorderColor =
+        UiUtils::getThemeColor(*themeManager, "ui.border");
+    QString newTabButtonHoverBackgroundColor =
+        UiUtils::getThemeColor(*themeManager, "ui.background.hover");
+
+    QString newTabButtonStylesheet =
+        QString("QPushButton {"
+                "  background: %1;"
+                "  color: %2;"
+                "  border: none;"
+                "  border-left: 1px solid %3;"
+                "  border-bottom: 1px solid %3;"
+                "  font-size: 20px;"
+                "}"
+                "QPushButton:hover {"
+                "  background: %4;"
+                "}")
+            .arg(newTabButtonBackgroundColor, newTabButtonForegroundColor,
+                 newTabButtonBorderColor, newTabButtonHoverBackgroundColor);
+    newTabButton->setStyleSheet(newTabButtonStylesheet);
+  }
+
+  if (emptyStateWidget) {
+    QString accentMutedColor =
+        UiUtils::getThemeColor(*themeManager, "ui.accent.muted");
+    QString foregroundColor =
+        UiUtils::getThemeColor(*themeManager, "ui.foreground");
+    QString emptyStateBackgroundColor =
+        UiUtils::getThemeColor(*themeManager, "ui.background");
+
+    QString emptyStateStylesheet =
+        QString("QWidget { background-color: %1; }"
+                "QPushButton { background-color: %2; border-radius: 4px; "
+                "color: %3; }")
+            .arg(emptyStateBackgroundColor, accentMutedColor, foregroundColor);
+    emptyStateWidget->setStyleSheet(emptyStateStylesheet);
+  }
+
+  if (mainSplitter) {
+    QString borderColor = UiUtils::getThemeColor(*themeManager, "ui.border");
+    QString splitterStylesheet = QString("QSplitter::handle {"
+                                         "  background-color: %1;"
+                                         "  margin: 0px;"
+                                         "}")
+                                     .arg(borderColor);
+    mainSplitter->setStyleSheet(splitterStylesheet);
+  }
+
+  update();
 }
 
 MainWindow::SaveResult MainWindow::onFileSaved(bool isSaveAs) {

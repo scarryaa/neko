@@ -176,6 +176,9 @@ mod bridge {
         fn new_theme_manager() -> Result<Box<ThemeManager>>;
         #[cxx_name = "get_color"]
         fn get_color_wrapper(self: &mut ThemeManager, key: &str) -> String;
+        fn set_theme(self: &mut ThemeManager, theme_name: &str) -> bool;
+        #[cxx_name = "get_current_theme_name"]
+        fn get_current_theme_name_wrapper(self: &ThemeManager) -> String;
 
         // Editor
         #[cxx_name = "move_to"]
@@ -466,6 +469,10 @@ fn new_theme_manager() -> std::io::Result<Box<ThemeManager>> {
 impl ThemeManager {
     fn get_color_wrapper(&mut self, key: &str) -> String {
         self.get_color(key).to_string()
+    }
+
+    fn get_current_theme_name_wrapper(&self) -> String {
+        self.get_current_theme_name().to_string()
     }
 }
 

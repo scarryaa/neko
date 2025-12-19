@@ -15,6 +15,7 @@
 #include "utils/mac_utils.h"
 #include "utils/scroll_offset.h"
 #include <QMainWindow>
+#include <QPushButton>
 #include <QSplitter>
 #include <QVBoxLayout>
 #include <string>
@@ -44,6 +45,7 @@ private slots:
 
 signals:
   void onFileExplorerToggledViaShortcut(bool isOpen);
+  void onThemeChanged(std::string newTheme);
 
 private:
   void setupWidgets(neko::Editor *editor, neko::FileTree *fileTree);
@@ -76,6 +78,8 @@ private:
   void switchToTabWithFile(const std::string &path);
   void saveCurrentScrollState();
   void openConfig();
+  void applyTheme(const std::string &themeName);
+
   template <typename Slot>
   void addShortcut(QAction *action, const QKeySequence &sequence,
                    Qt::ShortcutContext context, Slot &&slot);
@@ -96,6 +100,8 @@ private:
   QWidget *tabBarContainer;
   TabBarWidget *tabBarWidget;
   StatusBarWidget *statusBarWidget;
+  QPushButton *newTabButton;
+  QSplitter *mainSplitter;
 
   std::unordered_map<int, ScrollOffset> tabScrollOffsets;
 };

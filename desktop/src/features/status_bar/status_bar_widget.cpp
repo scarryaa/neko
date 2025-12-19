@@ -17,6 +17,33 @@ StatusBarWidget::StatusBarWidget(neko::Editor *editor,
 
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
+  bool fileExplorerShown = configManager.get_file_explorer_shown();
+
+  fileExplorerToggleButton = new QPushButton();
+  fileExplorerToggleButton->setCheckable(true);
+  fileExplorerToggleButton->setChecked(fileExplorerShown);
+
+  connect(fileExplorerToggleButton, &QPushButton::clicked, this,
+          &StatusBarWidget::onFileExplorerToggled);
+
+  cursorPosition = new QPushButton(this);
+
+  connect(cursorPosition, &QPushButton::clicked, this,
+          &StatusBarWidget::onCursorPositionClicked);
+
+  QHBoxLayout *layout = new QHBoxLayout(this);
+
+  layout->setContentsMargins(10, 5, 10, 5);
+  layout->addWidget(fileExplorerToggleButton);
+  layout->addWidget(cursorPosition);
+  layout->addStretch();
+
+  applyTheme();
+}
+
+StatusBarWidget::~StatusBarWidget() {}
+
+void StatusBarWidget::applyTheme() {
   QString btnText = UiUtils::getThemeColor(
       themeManager, "titlebar.button.foreground", "#a0a0a0");
   QString btnHover =
@@ -40,14 +67,8 @@ StatusBarWidget::StatusBarWidget(neko::Editor *editor,
       UiUtils::createColorizedIcon(baseIcon, accentColor, iconSize);
   toggleIcon.addPixmap(accentIcon.pixmap(iconSize), QIcon::Normal, QIcon::On);
 
-  bool fileExplorerShown = configManager.get_file_explorer_shown();
-
-  fileExplorerToggleButton = new QPushButton();
   fileExplorerToggleButton->setIcon(toggleIcon);
   fileExplorerToggleButton->setIconSize(iconSize);
-  fileExplorerToggleButton->setCheckable(true);
-  fileExplorerToggleButton->setChecked(fileExplorerShown);
-
   fileExplorerToggleButton->setStyleSheet(
       QString("QPushButton {"
               "  background-color: transparent;"
@@ -58,10 +79,6 @@ StatusBarWidget::StatusBarWidget(neko::Editor *editor,
               "QPushButton:pressed { background-color: %2; }")
           .arg(btnHover, btnPress));
 
-  connect(fileExplorerToggleButton, &QPushButton::clicked, this,
-          &StatusBarWidget::onFileExplorerToggled);
-
-  cursorPosition = new QPushButton(this);
   cursorPosition->setStyleSheet(
       QString("QPushButton {"
               "  background-color: transparent;"
@@ -73,18 +90,8 @@ StatusBarWidget::StatusBarWidget(neko::Editor *editor,
               "QPushButton:pressed { background-color: %3; }")
           .arg(btnText, btnHover, btnPress));
 
-  connect(cursorPosition, &QPushButton::clicked, this,
-          &StatusBarWidget::onCursorPositionClicked);
-
-  QHBoxLayout *layout = new QHBoxLayout(this);
-
-  layout->setContentsMargins(10, 5, 10, 5);
-  layout->addWidget(fileExplorerToggleButton);
-  layout->addWidget(cursorPosition);
-  layout->addStretch();
+  update();
 }
-
-StatusBarWidget::~StatusBarWidget() {}
 
 void StatusBarWidget::setEditor(neko::Editor *newEditor) { editor = newEditor; }
 

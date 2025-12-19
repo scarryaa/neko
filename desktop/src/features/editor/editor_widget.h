@@ -31,6 +31,7 @@ public:
                         QWidget *parent = nullptr);
   ~EditorWidget();
 
+  void applyTheme();
   void setEditor(neko::Editor *editor);
   void redraw();
   void updateDimensions();

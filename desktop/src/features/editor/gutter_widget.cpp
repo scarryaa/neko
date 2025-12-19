@@ -14,9 +14,7 @@ GutterWidget::GutterWidget(neko::Editor *editor,
   setFrameShape(QFrame::NoFrame);
   setAutoFillBackground(false);
 
-  QString bgHex =
-      UiUtils::getThemeColor(themeManager, "editor.gutter.background", "black");
-  setStyleSheet(QString("GutterWidget { background: %1; }").arg(bgHex));
+  applyTheme();
 
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
           &GutterWidget::redraw);
@@ -37,6 +35,14 @@ GutterWidget::GutterWidget(neko::Editor *editor,
 }
 
 GutterWidget::~GutterWidget() {}
+
+void GutterWidget::applyTheme() {
+  QString bgHex =
+      UiUtils::getThemeColor(themeManager, "editor.gutter.background", "black");
+
+  setStyleSheet(QString("GutterWidget { background: %1; }").arg(bgHex));
+  redraw();
+}
 
 void GutterWidget::redraw() { viewport()->update(); }
 

@@ -10,19 +10,6 @@ CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
   setAttribute(Qt::WA_TranslucentBackground);
   setAutoFillBackground(false);
   installEventFilter(this);
-
-  auto backgroundColor =
-      UiUtils::getThemeColor(themeManager, "command_palette.background");
-  auto borderColor =
-      UiUtils::getThemeColor(themeManager, "command_palette.border");
-  auto shadowColor =
-      UiUtils::getThemeColor(themeManager, "command_palette.shadow");
-
-  QString stylesheet =
-      "CommandPaletteWidget { background: transparent; border: none; "
-      "} QFrame{ border-radius: 12px; background: %1; border: 2px "
-      "solid %2; }";
-  setStyleSheet(stylesheet.arg(backgroundColor, borderColor));
   setMinimumWidth(MIN_WIDTH);
   setMaximumWidth(WIDTH);
 
@@ -41,7 +28,7 @@ CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
 
   QGraphicsDropShadowEffect *shadow = new QGraphicsDropShadowEffect(this);
   shadow->setBlurRadius(SHADOW_BLUR_RADIUS);
-  shadow->setColor(shadowColor);
+  shadow->setColor(Qt::black);
   shadow->setOffset(SHADOW_X_OFFSET, SHADOW_Y_OFFSET);
 
   mainFrame->setGraphicsEffect(shadow);
@@ -54,9 +41,40 @@ CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
       shortcutsToggle->toggle();
     }
   });
+
+  applyTheme();
 }
 
 CommandPaletteWidget::~CommandPaletteWidget() {}
+
+void CommandPaletteWidget::applyTheme() {
+  auto backgroundColor =
+      UiUtils::getThemeColor(themeManager, "command_palette.background");
+  auto borderColor =
+      UiUtils::getThemeColor(themeManager, "command_palette.border");
+  auto shadowColor =
+      UiUtils::getThemeColor(themeManager, "command_palette.shadow");
+
+  QString stylesheet =
+      "CommandPaletteWidget { background: transparent; border: none; "
+      "} QFrame{ border-radius: 12px; background: %1; border: 2px "
+      "solid %2; }";
+  setStyleSheet(stylesheet.arg(backgroundColor, borderColor));
+
+  if (auto *shadow = qobject_cast<QGraphicsDropShadowEffect *>(
+          mainFrame->graphicsEffect())) {
+    shadow->setColor(shadowColor);
+  }
+
+  if (isVisible()) {
+    if (currentMode == Mode::GoToPosition) {
+      buildJumpContent(currentRow, currentColumn, maxColumn, maxLineCount,
+                       lastLineMaxColumn);
+    } else {
+      buildCommandPalette();
+    }
+  }
+}
 
 void CommandPaletteWidget::showEvent(QShowEvent *event) {
   if (!parentWidget())
@@ -167,6 +185,12 @@ void CommandPaletteWidget::emitCommandRequestFromInput() {
 
   // TODO: Allow aliases?
   if (text == TOGGLE_FILE_EXPLORER_COMMAND) {
+    storeEntry(text);
+    emit commandRequested(text);
+  } else if (text == SET_THEME_TO_LIGHT) {
+    storeEntry(text);
+    emit commandRequested(text);
+  } else if (text == SET_THEME_TO_DARK) {
     storeEntry(text);
     emit commandRequested(text);
   }

@@ -21,6 +21,7 @@ public:
                         QWidget *parent = nullptr);
   ~TabBarWidget();
 
+  void applyTheme();
   void setTabs(QStringList titles, rust::Vec<bool> modifiedStates);
   void setCurrentIndex(size_t index);
   void setTabModified(int index, bool modified);
@@ -34,7 +35,6 @@ signals:
 
 private:
   void updateTabAppearance();
-  void updateViewport();
 
   neko::ConfigManager &configManager;
   neko::ThemeManager &themeManager;

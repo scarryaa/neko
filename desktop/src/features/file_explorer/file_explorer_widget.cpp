@@ -13,18 +13,9 @@ FileExplorerWidget::FileExplorerWidget(neko::FileTree *tree,
   setFrameShape(QFrame::NoFrame);
   setAutoFillBackground(false);
 
-  auto backgroundColor =
-      UiUtils::getThemeColor(themeManager, "file_explorer.background");
-  setStyleSheet(UiUtils::getScrollBarStylesheet(
-      themeManager, "FileExplorerWidget", backgroundColor));
-
   directorySelectionButton = new QPushButton("Select a directory");
-  directorySelectionButton->setStyleSheet(
-      "QPushButton { background-color: #202020; color: #e0e0e0; border-radius: "
-      "6px; padding: 8px 16px; font-size: 13px; }"
-      "QPushButton:hover { background-color: #444444; border-color: #555555; }"
-      "QPushButton:pressed { background-color: #222222; border-color: #333333; "
-      "}");
+
+  applyTheme();
 
   auto layout = new QVBoxLayout();
   layout->addWidget(directorySelectionButton, 0, Qt::AlignCenter);
@@ -39,6 +30,31 @@ FileExplorerWidget::FileExplorerWidget(neko::FileTree *tree,
 }
 
 FileExplorerWidget::~FileExplorerWidget() {}
+
+void FileExplorerWidget::applyTheme() {
+  auto backgroundColor =
+      UiUtils::getThemeColor(themeManager, "file_explorer.background");
+  setStyleSheet(UiUtils::getScrollBarStylesheet(
+      themeManager, "FileExplorerWidget", backgroundColor));
+
+  if (directorySelectionButton) {
+    QString buttonBg = UiUtils::getThemeColor(themeManager, "ui.accent.muted");
+    QString buttonHover =
+        UiUtils::getThemeColor(themeManager, "ui.accent.hover");
+    QString buttonPressed =
+        UiUtils::getThemeColor(themeManager, "ui.accent.pressed");
+    QString buttonText = UiUtils::getThemeColor(themeManager, "ui.foreground");
+
+    directorySelectionButton->setStyleSheet(
+        QString("QPushButton { background-color: %1; color: %2; border-radius: "
+                "6px; padding: 8px 16px; font-size: 13px; border: none; }"
+                "QPushButton:hover { background-color: %3; }"
+                "QPushButton:pressed { background-color: %4; }")
+            .arg(buttonBg, buttonText, buttonHover, buttonPressed));
+  }
+
+  redraw();
+}
 
 void FileExplorerWidget::focusInEvent(QFocusEvent *event) {
   focusReceivedFromMouse = event->reason() == Qt::MouseFocusReason;

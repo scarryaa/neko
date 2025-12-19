@@ -16,9 +16,11 @@ impl Default for ThemeManager {
 impl ThemeManager {
     pub fn new() -> Self {
         let default_theme = Theme::default();
+        let light_theme = Theme::light_theme();
         let mut themes = HashMap::new();
 
         themes.insert(default_theme.name.clone(), default_theme.clone());
+        themes.insert(light_theme.name.clone(), light_theme);
 
         Self {
             current_theme: default_theme,

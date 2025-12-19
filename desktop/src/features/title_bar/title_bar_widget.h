@@ -21,6 +21,8 @@ public:
                           QWidget *parent = nullptr);
   ~TitleBarWidget();
 
+  void applyTheme();
+
 public slots:
   void onDirChanged(std::string newDir);
 

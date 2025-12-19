@@ -37,6 +37,7 @@ public:
 
   void initialize(std::string path);
   void loadSavedDir();
+  void applyTheme();
 
 protected:
   void keyPressEvent(QKeyEvent *event) override;

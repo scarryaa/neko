@@ -20,13 +20,6 @@ TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
   setAutoFillBackground(false);
   setFrameShape(QFrame::NoFrame);
 
-  auto backgroundColor =
-      UiUtils::getThemeColor(themeManager, "tab_bar.background");
-  viewport()->setStyleSheet(UiUtils::getScrollBarStylesheet(
-      themeManager, "QWidget", backgroundColor,
-      QString("border-bottom: 1px solid %1")
-          .arg(UiUtils::getThemeColor(themeManager, "ui.border"))));
-
   containerWidget = new QWidget(this);
   layout = new QHBoxLayout(containerWidget);
   layout->setContentsMargins(0, 0, 0, 0);
@@ -35,9 +28,27 @@ TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
 
   currentTabIndex = 0;
   viewport()->repaint();
+
+  applyTheme();
 }
 
 TabBarWidget::~TabBarWidget() {}
+
+void TabBarWidget::applyTheme() {
+  auto backgroundColor =
+      UiUtils::getThemeColor(themeManager, "tab_bar.background");
+
+  viewport()->setStyleSheet(UiUtils::getScrollBarStylesheet(
+      themeManager, "QWidget", backgroundColor,
+      QString("border-bottom: 1px solid %1")
+          .arg(UiUtils::getThemeColor(themeManager, "ui.border"))));
+
+  for (auto *tab : tabs) {
+    if (tab) {
+      tab->update();
+    }
+  }
+}
 
 void TabBarWidget::setTabModified(int index, bool modified) {
   tabs[index]->setModified(modified);
