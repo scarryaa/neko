@@ -311,12 +311,14 @@ void CommandPaletteWidget::addSpacer(int height) {
       new QSpacerItem(0, height, QSizePolicy::Minimum, QSizePolicy::Fixed));
 }
 
-void CommandPaletteWidget::addDivider(const QString &borderColor) {
+PaletteDivider *CommandPaletteWidget::addDivider(const QString &borderColor) {
   auto *divider = new PaletteDivider(borderColor, mainFrame);
   divider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   divider->setFixedHeight(1);
   divider->setStyleSheet(QString("background-color: %1;").arg(borderColor));
   frameLayout->addWidget(divider);
+
+  return divider;
 }
 
 void CommandPaletteWidget::addCommandInputRow(
@@ -346,7 +348,7 @@ void CommandPaletteWidget::addCommandInputRow(
   updateHistoryHint(commandInput, HISTORY_HINT);
 
   frameLayout->addWidget(commandInput);
-  addDivider(paletteColors.border);
+  commandPaletteBottomDivider = addDivider(paletteColors.border);
 }
 
 void CommandPaletteWidget::addCommandSuggestionsList(
@@ -602,8 +604,10 @@ void CommandPaletteWidget::adjustShortcutsAfterToggle(bool checked) {
 }
 
 void CommandPaletteWidget::updateCommandSuggestions(const QString &text) {
-  if (!commandSuggestions)
+  if (!commandSuggestions) {
+    commandPaletteBottomDivider->hide();
     return;
+  }
 
   commandSuggestions->clear();
   const QString trimmed = text.trimmed();
@@ -619,9 +623,11 @@ void CommandPaletteWidget::updateCommandSuggestions(const QString &text) {
   if (!hasSuggestions) {
     commandSuggestions->setVisible(false);
     commandSuggestions->setFixedHeight(0);
+    commandPaletteBottomDivider->hide();
     return;
   }
 
+  commandPaletteBottomDivider->show();
   commandSuggestions->setVisible(true);
 
   const int rowHeight = std::max(1, commandSuggestions->sizeHintForRow(0));

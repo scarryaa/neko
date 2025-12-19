@@ -61,6 +61,7 @@ private:
   QStringList commandHistory;
   QString jumpInputDraft;
   QString commandInputDraft;
+  PaletteDivider *commandPaletteBottomDivider;
 
   int maxLineCount = 1;
   int maxColumn = 1;
@@ -106,7 +107,7 @@ private:
   PaletteColors loadPaletteColors() const;
   QFont makeInterfaceFont(qreal pointSize) const;
   void addSpacer(int height);
-  void addDivider(const QString &borderColor);
+  PaletteDivider *addDivider(const QString &borderColor);
   void addJumpInputRow(int clampedRow, int clampedCol,
                        const PaletteColors &paletteColors, QFont &font);
   void addCommandInputRow(const PaletteColors &paletteColors, QFont &font);
