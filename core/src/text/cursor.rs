@@ -160,20 +160,20 @@ impl Cursor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_utils::{create_buffer_from, create_empty_buffer};
 
     #[test]
     fn from_correctly_clamps_row_and_column() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc");
-
+        let b = create_buffer_from("abc");
         let c = Cursor::from(&b, 10, 100);
+
         assert_eq!(c.row, 0);
         assert_eq!(c.column, 3);
     }
 
     #[test]
     fn from_sets_row_column_to_zero_zero_in_empty_buffer() {
-        let b = Buffer::new();
+        let b = create_empty_buffer();
         let c = Cursor::from(&b, 10, 100);
 
         assert_eq!(c.row, 0);
@@ -182,18 +182,16 @@ mod tests {
 
     #[test]
     fn from_respects_desired_cursor_position_when_available() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let c = Cursor::from(&b, 2, 3);
+
         assert_eq!(c.row, 2);
         assert_eq!(c.column, 3);
     }
 
     #[test]
     fn get_idx_calculates_correct_idx_from_row_column() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
+        let b = create_buffer_from("abc\ndef\nghi");
 
         // EOF
         let c = Cursor::from(&b, 2, 3);
@@ -205,8 +203,7 @@ mod tests {
 
     #[test]
     fn get_idx_calculates_correct_idx_from_row_column_without_newlines() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
+        let b = create_buffer_from("abc\ndef\nghi");
 
         // After 'c'
         let c = Cursor::from(&b, 0, 3);
@@ -218,8 +215,7 @@ mod tests {
 
     #[test]
     fn get_idx_calculates_correct_idx_in_empty_buffer() {
-        let b = Buffer::new();
-
+        let b = create_empty_buffer();
         let c = Cursor::new();
 
         // Should be ln1 (0) = 0
@@ -230,9 +226,7 @@ mod tests {
 
     #[test]
     fn get_idx_calculates_correct_idx_with_crlf() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\r\ndef\r\nghi");
-
+        let b = create_buffer_from("abc\r\ndef\r\nghi");
         let c = Cursor::from(&b, 1, 2);
 
         // Should be ln1 (3) + newline (2) + ln2 'de' (2) = 7
@@ -243,9 +237,7 @@ mod tests {
 
     #[test]
     fn get_idx_calculates_correct_idx_with_lf() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let c = Cursor::from(&b, 1, 2);
 
         // Should be ln1 (3) + newline (1) + ln2 'de' (2) = 6
@@ -256,9 +248,7 @@ mod tests {
 
     #[test]
     fn set_row_clamps_row_when_past_eof() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::new();
         c.set_row(&b, 10);
 
@@ -267,9 +257,7 @@ mod tests {
 
     #[test]
     fn set_row_respects_desired_row_when_available() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::new();
         c.set_row(&b, 1);
 
@@ -278,9 +266,7 @@ mod tests {
 
     #[test]
     fn set_row_clamps_column_to_new_row_len() {
-        let mut b = Buffer::new();
-        b.insert(0, "abcdef\nx");
-
+        let b = create_buffer_from("abcdef\nx");
         let mut c = Cursor::from(&b, 0, 6);
         c.set_row(&b, 1);
 
@@ -290,9 +276,7 @@ mod tests {
 
     #[test]
     fn set_column_clamps_column_when_past_eof() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::new();
         c.set_column(&b, 50);
 
@@ -301,9 +285,7 @@ mod tests {
 
     #[test]
     fn set_column_respects_desired_column_when_available() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::new();
         c.set_column(&b, 2);
 
@@ -312,9 +294,7 @@ mod tests {
 
     #[test]
     fn move_to_clamps_row_and_column_when_out_of_bounds() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::new();
         c.move_to(&b, 10, 10);
 
@@ -325,9 +305,7 @@ mod tests {
 
     #[test]
     fn move_to_respects_desired_row_column_when_available() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::new();
         c.move_to(&b, 1, 2);
 
@@ -337,9 +315,7 @@ mod tests {
 
     #[test]
     fn move_to_excludes_newlines() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::new();
         c.move_to(&b, 1, 4);
 
@@ -349,9 +325,7 @@ mod tests {
 
     #[test]
     fn move_right_increases_column_by_one_when_not_at_end_of_line() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::from(&b, 0, 2);
         c.move_right(&b);
 
@@ -361,9 +335,7 @@ mod tests {
 
     #[test]
     fn move_right_moves_to_the_next_line_when_at_end_of_line_and_next_line_exists() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::from(&b, 0, 3);
         c.move_right(&b);
 
@@ -373,9 +345,7 @@ mod tests {
 
     #[test]
     fn move_right_does_nothing_when_at_end_of_file() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::from(&b, 2, 3);
         c.move_right(&b);
 
@@ -385,9 +355,7 @@ mod tests {
 
     #[test]
     fn move_left_decreases_column_by_one_when_not_at_start_of_line() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::from(&b, 2, 3);
         c.move_left(&b);
 
@@ -398,9 +366,7 @@ mod tests {
     #[test]
     fn move_left_moves_to_end_of_previous_line_when_at_start_of_current_line_and_previous_line_exists()
      {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::from(&b, 2, 0);
         c.move_left(&b);
 
@@ -410,9 +376,7 @@ mod tests {
 
     #[test]
     fn move_left_does_nothing_when_at_start_of_file() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::new();
         c.move_left(&b);
 
@@ -422,9 +386,7 @@ mod tests {
 
     #[test]
     fn move_up_decreases_row_by_one_when_not_on_first_line() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::from(&b, 1, 0);
         c.move_up(&b);
 
@@ -434,9 +396,7 @@ mod tests {
 
     #[test]
     fn move_up_moves_to_start_of_file_when_on_first_line() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::from(&b, 0, 3);
         c.move_up(&b);
 
@@ -446,9 +406,7 @@ mod tests {
 
     #[test]
     fn move_up_does_nothing_when_at_start_of_file() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::new();
         c.move_up(&b);
 
@@ -458,9 +416,7 @@ mod tests {
 
     #[test]
     fn move_up_uses_sticky_column_when_possible() {
-        let mut b = Buffer::new();
-        b.insert(0, "abcdef\nghi");
-
+        let b = create_buffer_from("abcdef\nghi");
         let mut c = Cursor::from(&b, 1, 3);
         c.sticky_column = 5;
         c.move_up(&b);
@@ -472,9 +428,7 @@ mod tests {
 
     #[test]
     fn move_down_increases_row_by_one_when_not_on_last_line() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::from(&b, 1, 0);
         c.move_down(&b);
 
@@ -484,9 +438,7 @@ mod tests {
 
     #[test]
     fn move_down_moves_to_end_of_file_when_on_last_line() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::from(&b, 2, 0);
         c.move_down(&b);
 
@@ -496,9 +448,7 @@ mod tests {
 
     #[test]
     fn move_down_does_nothing_when_at_end_of_file() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let mut c = Cursor::from(&b, 2, 3);
         c.move_down(&b);
 
@@ -508,9 +458,7 @@ mod tests {
 
     #[test]
     fn move_down_uses_sticky_column_when_possible() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndefghi");
-
+        let b = create_buffer_from("abc\ndefghi");
         let mut c = Cursor::from(&b, 0, 3);
         c.sticky_column = 5;
         c.move_down(&b);
@@ -522,9 +470,7 @@ mod tests {
 
     #[test]
     fn move_to_end_moves_to_end_of_file() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndefghi");
-
+        let b = create_buffer_from("abc\ndefghi");
         let mut c = Cursor::new();
         c.move_to_end(&b);
 
@@ -534,7 +480,7 @@ mod tests {
 
     #[test]
     fn move_to_end_moves_to_zero_zero_when_buffer_is_empty() {
-        let b = Buffer::new();
+        let b = create_empty_buffer();
         let mut c = Cursor::from(&b, 10, 10);
         c.move_to_end(&b);
 
@@ -544,7 +490,7 @@ mod tests {
 
     #[test]
     fn move_to_start_moves_to_zero_zero() {
-        let b = Buffer::new();
+        let b = create_empty_buffer();
         let mut c = Cursor::from(&b, 10, 10);
         c.move_to_start();
 
@@ -554,9 +500,7 @@ mod tests {
 
     #[test]
     fn clamp_column_clamps_row_when_needed() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let new_column = Cursor::clamp_column(100, 2, &b);
 
         // NOTE: Can't verify that row is clamped directly, so we
@@ -566,9 +510,7 @@ mod tests {
 
     #[test]
     fn clamp_column_clamps_column_when_past_line_length() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let new_column = Cursor::clamp_column(0, 10, &b);
 
         assert_eq!(new_column, 3);
@@ -576,9 +518,7 @@ mod tests {
 
     #[test]
     fn clamp_column_excludes_newlines() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let new_column = Cursor::clamp_column(0, 10, &b);
 
         assert_eq!(new_column, 3);
@@ -586,9 +526,7 @@ mod tests {
 
     #[test]
     fn clamp_row_clamps_row_when_needed() {
-        let mut b = Buffer::new();
-        b.insert(0, "abc\ndef\nghi");
-
+        let b = create_buffer_from("abc\ndef\nghi");
         let new_row = Cursor::clamp_row(100, &b);
 
         assert_eq!(new_row, 2);
@@ -596,7 +534,7 @@ mod tests {
 
     #[test]
     fn clamp_row_clamps_row_to_zero_when_buffer_empty() {
-        let b = Buffer::new();
+        let b = create_empty_buffer();
         let new_row = Cursor::clamp_row(100, &b);
 
         assert_eq!(new_row, 0);
@@ -604,9 +542,7 @@ mod tests {
 
     #[test]
     fn movement_never_leaves_column_past_line_len() {
-        let mut b = Buffer::new();
-        b.insert(0, "ab\nc");
-
+        let b = create_buffer_from("ab\nc");
         let mut c = Cursor::from(&b, 0, 2);
 
         for _ in 0..10 {
@@ -623,8 +559,7 @@ mod tests {
 
     #[test]
     fn get_idx_never_exceeds_buffer_len() {
-        let mut b = Buffer::new();
-        b.insert(0, "ab\ncd\n");
+        let b = create_buffer_from("ab\ncd\n");
 
         for row in 0..=100 {
             for col in 0..=100 {

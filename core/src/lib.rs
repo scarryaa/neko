@@ -4,6 +4,8 @@ pub mod config;
 pub mod ffi;
 pub mod file_system;
 pub mod shortcuts;
+#[cfg(test)]
+pub mod test_utils;
 pub mod text;
 pub mod theme;
 
