@@ -5,7 +5,7 @@ use super::{
     change_set::OpFlags,
     cursor_manager::{AddCursorDirection, CursorEntry, CursorManager},
     selection_manager::SelectionManager,
-    widths::WidthManager,
+    width_manager::WidthManager,
 };
 
 enum SelectionMode {

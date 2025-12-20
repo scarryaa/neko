@@ -7,7 +7,7 @@ pub mod editor;
 pub mod history;
 pub mod selection;
 pub mod selection_manager;
-pub mod widths;
+pub mod width_manager;
 
 pub use buffer::Buffer;
 pub use change_set::{Change, ChangeSet, OpFlags};
