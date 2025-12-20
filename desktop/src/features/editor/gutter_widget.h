@@ -34,7 +34,7 @@ protected:
   void wheelEvent(QWheelEvent *event) override;
 
 public slots:
-  void onEditorFontSizeChanged(qreal newSize);
+  void onEditorFontSizeChanged(const qreal newSize);
   void onEditorLineCountChanged();
   void onEditorCursorPositionChanged();
 
@@ -44,9 +44,10 @@ public slots:
   void onViewportChanged();
 
 private:
-  double measureWidth() const;
-  void redraw();
-  void drawText(QPainter *painter, const ViewportContext &ctx, int lineCount);
+  const double measureWidth() const;
+  void redraw() const;
+  void drawText(QPainter *painter, const ViewportContext &ctx,
+                const int lineCount);
   void drawLineHighlight(QPainter *painter, const ViewportContext &ctx);
 
   void decreaseFontSize();
@@ -60,12 +61,12 @@ private:
   QFont font;
   QFontMetricsF fontMetrics;
 
-  int EXTRA_VERTICAL_LINES = 1;
-  double FONT_STEP = 2.0;
-  double DEFAULT_FONT_SIZE = 15.0;
-  double FONT_UPPER_LIMIT = 96.0;
-  double FONT_LOWER_LIMIT = 6.0;
-  double VIEWPORT_PADDING = 74.0;
+  const int EXTRA_VERTICAL_LINES = 1;
+  const double FONT_STEP = 2.0;
+  const double DEFAULT_FONT_SIZE = 15.0;
+  const double FONT_UPPER_LIMIT = 96.0;
+  const double FONT_LOWER_LIMIT = 6.0;
+  const double VIEWPORT_PADDING = 74.0;
 };
 
 #endif // GUTTER_WIDGET_H

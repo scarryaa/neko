@@ -32,7 +32,7 @@ public:
   ~EditorWidget();
 
   void applyTheme();
-  void redraw();
+  void redraw() const;
   void updateDimensions();
 
 public slots:
@@ -52,20 +52,21 @@ protected:
   bool focusNextPrevChild(bool next) override;
 
 signals:
-  void fontSizeChanged(qreal newSize);
+  void fontSizeChanged(const qreal newSize);
   void newTabRequested();
 
 private:
-  double getTextWidth(const QString &text, double horizontalOffset) const;
-  RowCol convertMousePositionToRowCol(double x, double y);
+  const double getTextWidth(const QString &text,
+                            const double horizontalOffset) const;
+  const RowCol convertMousePositionToRowCol(const double x, const double y);
 
   void increaseFontSize();
   void decreaseFontSize();
   void resetFontSize();
-  void setFontSize(double newFontSize);
+  void setFontSize(const double newFontSize);
 
   void scrollToCursor();
-  double measureWidth();
+  const double measureWidth() const;
 
   neko::ConfigManager &configManager;
   neko::ThemeManager &themeManager;
@@ -87,12 +88,12 @@ private:
   RowCol wordAnchorEnd{0, 0};
   int lineAnchorRow = 0;
 
-  int EXTRA_VERTICAL_LINES = 1;
-  double FONT_STEP = 2.0;
-  double DEFAULT_FONT_SIZE = 15.0;
-  double FONT_UPPER_LIMIT = 96.0;
-  double FONT_LOWER_LIMIT = 6.0;
-  double VIEWPORT_PADDING = 74.0;
+  const int EXTRA_VERTICAL_LINES = 1;
+  const double FONT_STEP = 2.0;
+  const double DEFAULT_FONT_SIZE = 15.0;
+  const double FONT_UPPER_LIMIT = 96.0;
+  const double FONT_LOWER_LIMIT = 6.0;
+  const double VIEWPORT_PADDING = 74.0;
 
   static constexpr int TRIPLE_CLICK_MS = 200;
 };

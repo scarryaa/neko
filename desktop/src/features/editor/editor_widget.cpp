@@ -41,7 +41,7 @@ EditorWidget::EditorWidget(EditorController *editorController,
 EditorWidget::~EditorWidget() {}
 
 void EditorWidget::applyTheme() {
-  QString bgHex =
+  const QString bgHex =
       UiUtils::getThemeColor(themeManager, "editor.background", "#000000");
 
   setStyleSheet(
@@ -49,17 +49,17 @@ void EditorWidget::applyTheme() {
   redraw();
 }
 
-double EditorWidget::measureWidth() {
+const double EditorWidget::measureWidth() const {
   if (!editorController) {
     return 0;
   }
 
-  int lineCount = editorController->getLineCount();
+  const int lineCount = editorController->getLineCount();
 
-  for (size_t i = 0; i < lineCount; i++) {
+  for (int i = 0; i < lineCount; i++) {
     if (editorController->needsWidthMeasurement(i)) {
-      QString line = editorController->getLine(i);
-      double width = fontMetrics.horizontalAdvance(line);
+      const QString line = editorController->getLine(i);
+      const double width = fontMetrics.horizontalAdvance(line);
       editorController->setLineWidth(i, width);
     }
   }
@@ -72,23 +72,23 @@ void EditorWidget::scrollToCursor() {
     return;
   }
 
-  auto cursors = editorController->getCursorPositions();
-  auto cursor = cursors.at(0);
+  const auto cursors = editorController->getCursorPositions();
+  const auto cursor = cursors.at(0);
 
-  int targetRow = cursor.row;
-  double lineHeight = fontMetrics.height();
+  const int targetRow = cursor.row;
+  const double lineHeight = fontMetrics.height();
 
-  QString line = editorController->getLine(cursor.row);
-  QString textBeforeCursor = line.mid(0, cursor.col);
+  const QString line = editorController->getLine(cursor.row);
+  const QString textBeforeCursor = line.mid(0, cursor.col);
 
-  double viewportWidth = viewport()->width();
-  double viewportHeight = viewport()->height();
-  double horizontalScrollOffset = horizontalScrollBar()->value();
-  double verticalScrollOffset = verticalScrollBar()->value();
+  const double viewportWidth = viewport()->width();
+  const double viewportHeight = viewport()->height();
+  const double horizontalScrollOffset = horizontalScrollBar()->value();
+  const double verticalScrollOffset = verticalScrollBar()->value();
 
-  double targetY = targetRow * lineHeight;
-  double targetYBottom = targetY + lineHeight;
-  double targetX = fontMetrics.horizontalAdvance(textBeforeCursor);
+  const double targetY = targetRow * lineHeight;
+  const double targetYBottom = targetY + lineHeight;
+  const double targetX = fontMetrics.horizontalAdvance(textBeforeCursor);
 
   if (targetX > viewportWidth - VIEWPORT_PADDING + horizontalScrollOffset) {
     horizontalScrollBar()->setValue(targetX - viewportWidth + VIEWPORT_PADDING);
@@ -110,15 +110,16 @@ void EditorWidget::updateDimensions() {
     return;
   }
 
-  int lineCount = editorController->getLineCount();
-  auto viewportHeight = (lineCount * fontMetrics.height()) -
-                        viewport()->height() + VIEWPORT_PADDING;
-  auto contentWidth = measureWidth();
-  auto viewportWidth = contentWidth - viewport()->width() + VIEWPORT_PADDING;
+  const int lineCount = editorController->getLineCount();
+  const auto viewportHeight = (lineCount * fontMetrics.height()) -
+                              viewport()->height() + VIEWPORT_PADDING;
+  const auto contentWidth = measureWidth();
+  const auto viewportWidth =
+      contentWidth - viewport()->width() + VIEWPORT_PADDING;
 
-  bool horizontalScrollBarVisible = horizontalScrollBar()->isVisible();
-  double horizontalScrollBarHeight = horizontalScrollBar()->height();
-  double adjustedVerticalRange =
+  const bool horizontalScrollBarVisible = horizontalScrollBar()->isVisible();
+  const double horizontalScrollBarHeight = horizontalScrollBar()->height();
+  const double adjustedVerticalRange =
       viewportHeight -
       (horizontalScrollBarVisible ? horizontalScrollBarHeight : 0.0);
 
@@ -127,13 +128,13 @@ void EditorWidget::updateDimensions() {
   redraw();
 }
 
-void EditorWidget::redraw() { viewport()->update(); }
+void EditorWidget::redraw() const { viewport()->update(); }
 
-static int tripleWindowMs() {
+static const int tripleWindowMs() {
   return std::max(120, QApplication::doubleClickInterval() / 2);
 }
 
-static bool nearPos(const QPoint &a, const QPoint &b, int px = 4) {
+static const bool nearPos(const QPoint &a, const QPoint &b, const int px = 4) {
   return (a - b).manhattanLength() <= px;
 }
 
@@ -141,7 +142,8 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
   if (!editorController)
     return;
 
-  RowCol rc = convertMousePositionToRowCol(event->pos().x(), event->pos().y());
+  const RowCol rc =
+      convertMousePositionToRowCol(event->pos().x(), event->pos().y());
 
   if (event->modifiers().testFlag(Qt::AltModifier)) {
     tripleArmed = false;
@@ -169,7 +171,7 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
 
       editorController->selectLine(tripleRow);
 
-      int lineCount = editorController->getLineCount();
+      const int lineCount = editorController->getLineCount();
 
       if (lineCount > 0) {
         lineSelectMode = true;
@@ -216,7 +218,7 @@ void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
     suppressDblTimer.stop();
     tripleArmTimer.stop();
 
-    RowCol rc =
+    const RowCol rc =
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
 
     editorController->moveTo(rc.row, rc.col, true);
@@ -227,10 +229,11 @@ void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
     return;
   }
 
-  RowCol rc = convertMousePositionToRowCol(event->pos().x(), event->pos().y());
+  const RowCol rc =
+      convertMousePositionToRowCol(event->pos().x(), event->pos().y());
   editorController->selectWord(rc.row, rc.col);
 
-  auto selection = editorController->getSelection();
+  const auto selection = editorController->getSelection();
 
   if (selection.active) {
     wordSelectMode = true;
@@ -263,7 +266,7 @@ void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
       return;
     }
 
-    RowCol rc =
+    const RowCol rc =
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
     editorController->selectWordDrag(wordAnchorStart.row, wordAnchorStart.col,
                                      wordAnchorEnd.row, wordAnchorEnd.col,
@@ -275,14 +278,14 @@ void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
       return;
     }
 
-    RowCol rc =
+    const RowCol rc =
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
     editorController->selectLineDrag(lineAnchorRow, rc.row);
 
     redraw();
   } else {
     if (event->buttons() == Qt::LeftButton) {
-      RowCol rc =
+      const RowCol rc =
           convertMousePositionToRowCol(event->pos().x(), event->pos().y());
       editorController->selectTo(rc.row, rc.col);
 
@@ -300,7 +303,8 @@ void EditorWidget::mouseReleaseEvent(QMouseEvent *event) {
   QWidget::mouseReleaseEvent(event);
 }
 
-static int xToCursorIndex(const QString &line, const QFont &font, qreal x) {
+static const int xToCursorIndex(const QString &line, const QFont &font,
+                                const qreal x) {
   QTextLayout layout(line, font);
   layout.beginLayout();
 
@@ -316,7 +320,8 @@ static int xToCursorIndex(const QString &line, const QFont &font, qreal x) {
   return tl.xToCursor(x);
 }
 
-RowCol EditorWidget::convertMousePositionToRowCol(double x, double y) {
+const RowCol EditorWidget::convertMousePositionToRowCol(const double x,
+                                                        const double y) {
   const double lineHeight = fontMetrics.height();
   const int scrollX = horizontalScrollBar()->value();
   const int scrollY = verticalScrollBar()->value();
@@ -339,15 +344,16 @@ RowCol EditorWidget::convertMousePositionToRowCol(double x, double y) {
 }
 
 void EditorWidget::wheelEvent(QWheelEvent *event) {
-  auto horizontalScrollOffset = horizontalScrollBar()->value();
-  auto verticalScrollOffset = verticalScrollBar()->value();
-  double verticalDelta =
+  const auto horizontalScrollOffset = horizontalScrollBar()->value();
+  const auto verticalScrollOffset = verticalScrollBar()->value();
+  const double verticalDelta =
       (event->isInverted() ? -1 : 1) * event->angleDelta().y() / 4.0;
-  double horizontallDelta =
+  const double horizontallDelta =
       (event->isInverted() ? -1 : 1) * event->angleDelta().x() / 4.0;
 
-  auto newHorizontalScrollOffset = horizontalScrollOffset + horizontallDelta;
-  auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;
+  const auto newHorizontalScrollOffset =
+      horizontalScrollOffset + horizontallDelta;
+  const auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;
 
   horizontalScrollBar()->setValue(newHorizontalScrollOffset);
   verticalScrollBar()->setValue(newVerticalScrollOffset);
@@ -483,8 +489,8 @@ void EditorWidget::setFontSize(double newFontSize) {
   updateDimensions();
 }
 
-double EditorWidget::getTextWidth(const QString &text,
-                                  double horizontalOffset) const {
+const double EditorWidget::getTextWidth(const QString &text,
+                                        const double horizontalOffset) const {
   return fontMetrics.horizontalAdvance(text) - horizontalOffset;
 }
 
@@ -495,45 +501,46 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
 
   QPainter painter(viewport());
 
-  double verticalOffset = verticalScrollBar()->value();
-  double horizontalOffset = horizontalScrollBar()->value();
-  double viewportHeight = viewport()->height();
-  double viewportWidth = viewport()->width();
-  double lineHeight = fontMetrics.height();
+  const double verticalOffset = verticalScrollBar()->value();
+  const double horizontalOffset = horizontalScrollBar()->value();
+  const double viewportHeight = viewport()->height();
+  const double viewportWidth = viewport()->width();
+  const double lineHeight = fontMetrics.height();
 
-  int lineCount = editorController->getLineCount();
-  int firstVisibleLine =
+  const int lineCount = editorController->getLineCount();
+  const int firstVisibleLine =
       qMax(0, qMin((int)(verticalOffset / lineHeight), lineCount - 1));
-  int visibleLineCount = viewportHeight / lineHeight;
-  int lastVisibleLine =
+  const int visibleLineCount = viewportHeight / lineHeight;
+  const int lastVisibleLine =
       qMax(0, qMin(firstVisibleLine + visibleLineCount + EXTRA_VERTICAL_LINES,
                    lineCount - 1));
 
-  ViewportContext ctx = {lineHeight,     firstVisibleLine, lastVisibleLine,
-                         verticalOffset, horizontalOffset, viewportWidth,
-                         viewportHeight};
+  const ViewportContext ctx = {
+      lineHeight,       firstVisibleLine, lastVisibleLine, verticalOffset,
+      horizontalOffset, viewportWidth,    viewportHeight};
 
   const QStringList lines = editorController->getLines();
-  std::vector<neko::CursorPosition> cursors =
+  const std::vector<neko::CursorPosition> cursors =
       editorController->getCursorPositions();
-  neko::Selection selections = editorController->getSelection();
-  bool isEmpty = editorController->isEmpty();
+  const neko::Selection selections = editorController->getSelection();
+  const bool isEmpty = editorController->isEmpty();
 
-  double fontAscent = fontMetrics.ascent();
-  double fontDescent = fontMetrics.descent();
-  bool hasFocus = this->hasFocus();
+  const double fontAscent = fontMetrics.ascent();
+  const double fontDescent = fontMetrics.descent();
+  const bool hasFocus = this->hasFocus();
 
-  QString textColor = UiUtils::getThemeColor(themeManager, "editor.foreground");
-  QString accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
-  QString highlightColor =
+  const QString textColor =
+      UiUtils::getThemeColor(themeManager, "editor.foreground");
+  const QString accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+  const QString highlightColor =
       UiUtils::getThemeColor(themeManager, "editor.highlight");
 
-  RenderTheme theme = {textColor, textColor, accentColor, highlightColor};
+  const RenderTheme theme = {textColor, textColor, accentColor, highlightColor};
 
-  auto measureWidth = [this](const QString &s) {
+  const auto measureWidth = [this](const QString &s) {
     return fontMetrics.horizontalAdvance(s);
   };
-  RenderState state = {
+  const RenderState state = {
       lines,          cursors,          selections, theme,       lineCount,
       verticalOffset, horizontalOffset, lineHeight, fontAscent,  fontDescent,
       font,           hasFocus,         isEmpty,    measureWidth};

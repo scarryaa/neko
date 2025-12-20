@@ -38,14 +38,14 @@ GutterWidget::GutterWidget(EditorController *editorController,
 GutterWidget::~GutterWidget() {}
 
 void GutterWidget::applyTheme() {
-  QString bgHex =
+  const QString bgHex =
       UiUtils::getThemeColor(themeManager, "editor.gutter.background", "black");
 
   setStyleSheet(QString("GutterWidget { background: %1; }").arg(bgHex));
   redraw();
 }
 
-void GutterWidget::redraw() { viewport()->update(); }
+void GutterWidget::redraw() const { viewport()->update(); }
 
 void GutterWidget::onBufferChanged() { redraw(); }
 
@@ -59,21 +59,21 @@ QSize GutterWidget::sizeHint() const {
   return QSize(measureWidth() + VIEWPORT_PADDING, height());
 }
 
-double GutterWidget::measureWidth() const {
+const double GutterWidget::measureWidth() const {
   if (!editorController) {
     return 0;
   }
 
-  int lineCount = editorController->getLineCount();
+  const int lineCount = editorController->getLineCount();
 
   return fontMetrics.horizontalAdvance(QString::number(lineCount));
 }
 
 void GutterWidget::wheelEvent(QWheelEvent *event) {
-  auto verticalScrollOffset = verticalScrollBar()->value();
-  double verticalDelta =
+  const auto verticalScrollOffset = verticalScrollBar()->value();
+  const double verticalDelta =
       (event->isInverted() ? -1 : 1) * event->angleDelta().y() / 4.0;
-  auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;
+  const auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;
 
   verticalScrollBar()->setValue(newVerticalScrollOffset);
   redraw();
@@ -84,11 +84,12 @@ void GutterWidget::updateDimensions() {
     return;
   }
 
-  int lineCount = editorController->getLineCount();
-  auto viewportHeight = (lineCount * fontMetrics.height()) -
-                        viewport()->height() + VIEWPORT_PADDING;
-  auto contentWidth = measureWidth();
-  auto viewportWidth = contentWidth - viewport()->width() + VIEWPORT_PADDING;
+  const int lineCount = editorController->getLineCount();
+  const auto viewportHeight = (lineCount * fontMetrics.height()) -
+                              viewport()->height() + VIEWPORT_PADDING;
+  const auto contentWidth = measureWidth();
+  const auto viewportWidth =
+      contentWidth - viewport()->width() + VIEWPORT_PADDING;
 
   horizontalScrollBar()->setRange(0, viewportWidth);
   verticalScrollBar()->setRange(0, viewportHeight);
@@ -101,7 +102,7 @@ void GutterWidget::onEditorLineCountChanged() { updateDimensions(); }
 
 void GutterWidget::onEditorCursorPositionChanged() { redraw(); }
 
-void GutterWidget::onEditorFontSizeChanged(qreal newSize) {
+void GutterWidget::onEditorFontSizeChanged(const qreal newSize) {
   font.setPointSizeF(newSize);
   fontMetrics = QFontMetricsF(font);
 
@@ -115,48 +116,48 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
 
   QPainter painter(viewport());
 
-  double verticalOffset = verticalScrollBar()->value();
-  double horizontalOffset = horizontalScrollBar()->value();
-  double viewportHeight = viewport()->height();
-  double viewportWidth = viewport()->width();
-  double lineHeight = fontMetrics.height();
+  const double verticalOffset = verticalScrollBar()->value();
+  const double horizontalOffset = horizontalScrollBar()->value();
+  const double viewportHeight = viewport()->height();
+  const double viewportWidth = viewport()->width();
+  const double lineHeight = fontMetrics.height();
 
-  int lineCount = editorController->getLineCount();
-  int firstVisibleLine =
+  const int lineCount = editorController->getLineCount();
+  const int firstVisibleLine =
       qMax(0, qMin((int)(verticalOffset / lineHeight), lineCount - 1));
-  int visibleLineCount = viewportHeight / lineHeight;
-  int lastVisibleLine =
+  const int visibleLineCount = viewportHeight / lineHeight;
+  const int lastVisibleLine =
       qMax(0, qMin(firstVisibleLine + visibleLineCount + EXTRA_VERTICAL_LINES,
                    lineCount - 1));
 
-  ViewportContext ctx = {lineHeight,     firstVisibleLine, lastVisibleLine,
-                         verticalOffset, horizontalOffset, viewportWidth,
-                         viewportHeight};
+  const ViewportContext ctx = {
+      lineHeight,       firstVisibleLine, lastVisibleLine, verticalOffset,
+      horizontalOffset, viewportWidth,    viewportHeight};
 
-  std::vector<neko::CursorPosition> cursors =
+  const std::vector<neko::CursorPosition> cursors =
       editorController->getCursorPositions();
-  neko::Selection selections = editorController->getSelection();
-  bool isEmpty = editorController->bufferIsEmpty();
+  const neko::Selection selections = editorController->getSelection();
+  const bool isEmpty = editorController->bufferIsEmpty();
 
-  double fontAscent = fontMetrics.ascent();
-  double fontDescent = fontMetrics.descent();
-  bool hasFocus = this->hasFocus();
+  const double fontAscent = fontMetrics.ascent();
+  const double fontDescent = fontMetrics.descent();
+  const bool hasFocus = this->hasFocus();
 
-  QString textColor =
+  const QString textColor =
       UiUtils::getThemeColor(themeManager, "editor.gutter.foreground");
-  QString accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
-  QString highlightColor =
+  const QString accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+  const QString highlightColor =
       UiUtils::getThemeColor(themeManager, "editor.highlight");
-  QString activeLineTextColor =
+  const QString activeLineTextColor =
       UiUtils::getThemeColor(themeManager, "editor.gutter.foreground.active");
 
-  RenderTheme theme = {textColor, activeLineTextColor, accentColor,
-                       highlightColor};
+  const RenderTheme theme = {textColor, activeLineTextColor, accentColor,
+                             highlightColor};
 
-  auto measureWidth = [this](const QString &s) {
+  const auto measureWidth = [this](const QString &s) {
     return fontMetrics.horizontalAdvance(s);
   };
-  RenderState state = {
+  const RenderState state = {
       QStringList(),  cursors,          selections, theme,       lineCount,
       verticalOffset, horizontalOffset, lineHeight, fontAscent,  fontDescent,
       font,           hasFocus,         isEmpty,    measureWidth};

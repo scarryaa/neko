@@ -312,8 +312,8 @@ void EditorController::do_op(Fn &&fn, Args &&...args) {
   if (!editor)
     return;
 
-  auto changeSet = std::invoke(std::forward<const Fn>(fn), editor,
-                               std::forward<const Args>(args)...);
+  const auto changeSet = std::invoke(std::forward<const Fn>(fn), editor,
+                                     std::forward<const Args>(args)...);
   applyChangeSet(changeSet);
 }
 
