@@ -209,7 +209,7 @@ impl Buffer {
     pub fn delete_at(&mut self, pos: usize) -> String {
         let deleted = self.get_text_range(pos, pos + 1);
 
-        if pos < self.content.byte_len() && self.content.byte_len() != 1 {
+        if pos < self.content.byte_len() {
             self.content.delete(pos..pos + 1);
             deleted
         } else {
@@ -218,10 +218,18 @@ impl Buffer {
     }
 
     pub fn delete_range(&mut self, start_pos: usize, end_pos: usize) -> String {
-        let deleted = self.get_text_range(start_pos, end_pos);
+        let len = self.content.byte_len();
+        let mut start = start_pos.min(len);
+        let mut end = end_pos.min(len);
 
-        if start_pos < self.content.byte_len() && end_pos <= self.content.byte_len() {
-            self.content.delete(start_pos..end_pos);
+        if start > end {
+            swap(&mut start, &mut end);
+        }
+
+        let deleted = self.content.byte_slice(start..end).to_string();
+
+        if start != end {
+            self.content.delete(start..end);
         }
 
         deleted
@@ -297,6 +305,13 @@ mod tests {
     fn ends_with_newline_returns_false_when_buffer_does_not_end_with_crlf_or_lf() {
         let mut b = Buffer::new();
         b.insert(0, "a\r\nb");
+        assert!(!b.ends_with_newline());
+    }
+
+    #[test]
+    fn ends_with_newline_returns_false_for_trailing_cr_without_lf() {
+        let mut b = Buffer::new();
+        b.insert(0, "hello\r");
         assert!(!b.ends_with_newline());
     }
 
@@ -465,9 +480,184 @@ mod tests {
     }
 
     #[test]
-    fn byte_to_row_col_handles_crlf_and_clamps_col_before_newline() {
+    fn byte_to_row_col_crlf_maps_after_newline_to_next_line_start() {
         let mut b = Buffer::new();
         b.insert(0, "ab\r\ncd");
-        assert_eq!(b.byte_to_row_col(2), (0, 2));
+        assert_eq!(b.byte_to_row_col(4), (1, 0));
+    }
+
+    #[test]
+    fn insert_does_nothing_if_pos_greater_than_byte_len() {
+        let mut b = Buffer::new();
+        b.insert(100, "hello");
+        assert_eq!(b.get_text(), String::new());
+    }
+
+    #[test]
+    fn insert_inserts_text_when_pos_less_than_or_equal_to_byte_len() {
+        let mut b = Buffer::new();
+        b.insert(0, "hello");
+        assert_eq!(b.get_text(), "hello");
+    }
+
+    #[test]
+    fn clear_empties_buffer() {
+        let mut b = Buffer::new();
+        b.insert(0, "abcdefg");
+
+        b.clear();
+        assert_eq!(b.get_text(), String::new());
+    }
+
+    #[test]
+    fn backspace_does_nothing_at_buffer_start() {
+        let mut b = Buffer::new();
+        b.insert(0, "abc");
+        b.backspace(0);
+
+        assert_eq!(b.get_text(), "abc");
+    }
+
+    #[test]
+    fn backspace_deletes_single_char_when_idx_greater_than_zero() {
+        let mut b = Buffer::new();
+        b.insert(0, "abc");
+        b.backspace(3);
+
+        assert_eq!(b.get_text(), "ab");
+    }
+
+    #[test]
+    fn backspace_deletes_single_char_on_empty_line_that_is_not_first_line() {
+        let mut b = Buffer::new();
+        b.insert(0, "abc\n");
+        b.backspace(4);
+
+        assert_eq!(b.get_text(), "abc");
+    }
+
+    #[test]
+    fn delete_at_does_nothing_in_empty_buffer() {
+        let mut b = Buffer::new();
+        b.delete_at(0);
+
+        assert_eq!(b.get_text(), String::new());
+    }
+
+    #[test]
+    fn delete_at_deletes_properly_in_line_middle() {
+        let mut b = Buffer::new();
+        b.insert(0, "abc");
+        b.delete_at(1);
+
+        assert_eq!(b.get_text(), "ac");
+    }
+
+    #[test]
+    fn delete_at_returns_deleted_slice() {
+        let mut b = Buffer::new();
+        b.insert(0, "abc");
+        let result = b.delete_at(0);
+
+        assert_eq!(result, "a");
+    }
+
+    #[test]
+    fn delete_at_returns_empty_string_if_idx_beyond_buffer_length() {
+        let mut b = Buffer::new();
+        b.insert(0, "abcd");
+        let result = b.delete_at(10);
+
+        assert_eq!(result, String::new());
+    }
+
+    #[test]
+    fn delete_range_does_nothing_in_empty_buffer() {
+        let mut b = Buffer::new();
+        b.delete_range(0, 1);
+
+        assert_eq!(b.get_text(), String::new());
+    }
+
+    #[test]
+    fn delete_range_does_nothing_when_idxes_out_of_bounds() {
+        let mut b = Buffer::new();
+        b.insert(0, "abc");
+        b.delete_range(100, 200);
+
+        assert_eq!(b.get_text(), "abc");
+    }
+
+    #[test]
+    fn delete_range_returns_empty_string_if_idxes_out_of_bounds() {
+        let mut b = Buffer::new();
+        b.insert(0, "abc");
+        let result = b.delete_range(100, 200);
+
+        assert_eq!(result, String::new());
+    }
+
+    #[test]
+    fn delete_range_returns_empty_string_if_idxes_are_equal() {
+        let mut b = Buffer::new();
+        b.insert(0, "abc");
+        let result = b.delete_range(1, 1);
+
+        assert_eq!(result, String::new());
+    }
+
+    #[test]
+    fn delete_range_does_nothing_if_idxes_are_equal() {
+        let mut b = Buffer::new();
+        b.insert(0, "abc");
+        b.delete_range(1, 1);
+
+        assert_eq!(b.get_text(), "abc");
+    }
+
+    #[test]
+    fn delete_range_handles_start_idx_greater_than_end_idx() {
+        let mut b = Buffer::new();
+        b.insert(0, "abc");
+        b.delete_range(1, 0);
+
+        assert_eq!(b.get_text(), "bc");
+    }
+
+    #[test]
+    fn delete_range_returns_correct_string_when_start_idx_greater_than_end_idx() {
+        let mut b = Buffer::new();
+        b.insert(0, "abc");
+        let result = b.delete_range(2, 0);
+
+        assert_eq!(result, "ab");
+    }
+
+    #[test]
+    fn delete_range_deletes_clamped_slice_when_start_out_of_bounds_but_end_in_bounds_and_start_at_end()
+     {
+        let mut b = Buffer::new();
+        b.insert(0, "abc");
+        let deleted = b.delete_range(100, 2);
+
+        assert_eq!(deleted, "c");
+        assert_eq!(b.get_text(), "ab");
+    }
+
+    #[test]
+    fn line_to_byte_and_byte_to_line_round_trip_basic() {
+        let mut b = Buffer::new();
+        b.insert(0, "ab\ncd\nef");
+        for line in 0..b.content.line_len() {
+            let start = b.line_to_byte(line);
+            assert_eq!(b.byte_to_line(start), line);
+        }
+    }
+
+    #[test]
+    fn line_to_byte_last_visual_line_points_to_eof_when_ends_with_newline() {
+        let mut b = Buffer::new();
+        b.insert(0, "a\n");
+        assert_eq!(b.line_to_byte(1), b.byte_len());
     }
 }

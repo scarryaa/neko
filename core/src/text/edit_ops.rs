@@ -317,10 +317,6 @@ impl Editor {
 
     fn delete_impl(&mut self, i: usize, idxs: &mut [usize]) -> DeleteResult {
         let start = idxs[i];
-        if start >= self.buffer().byte_len().saturating_sub(1) {
-            return DeleteResult::Text { invalidate: None };
-        }
-
         let mut end = start + 1;
         if self.buffer().get_text_range(start, end) == "\r"
             && start + 2 <= self.buffer().byte_len()
