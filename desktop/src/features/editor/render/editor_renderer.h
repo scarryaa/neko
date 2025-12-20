@@ -9,27 +9,27 @@
 class EditorRenderer {
 public:
   void paint(QPainter &painter, const RenderState &state,
-             const ViewportContext &ctx);
+             const ViewportContext &ctx) const;
 
 private:
   void drawText(QPainter *painter, const RenderState &state,
-                const ViewportContext &ctx);
+                const ViewportContext &ctx) const;
   void drawCursors(QPainter *painter, const RenderState &state,
-                   const ViewportContext &ctx);
+                   const ViewportContext &ctx) const;
   void drawSelections(QPainter *painter, const RenderState &state,
-                      const ViewportContext &ctx);
+                      const ViewportContext &ctx) const;
   void drawSingleLineSelection(QPainter *painter, const RenderState &state,
-                               const ViewportContext &ctx, size_t startRow,
-                               size_t startCol, size_t endCol);
+                               const ViewportContext &ctx, const int startRow,
+                               const int startCol, const int endCol) const;
   void drawFirstLineSelection(QPainter *painter, const RenderState &state,
-                              const ViewportContext &ctx, size_t startRow,
-                              size_t startCol);
+                              const ViewportContext &ctx, const int startRow,
+                              const int startCol) const;
   void drawMiddleLinesSelection(QPainter *painter, const RenderState &state,
-                                const ViewportContext &ctx, size_t startRow,
-                                size_t endRow);
+                                const ViewportContext &ctx, const int startRow,
+                                const int endRow) const;
   void drawLastLineSelection(QPainter *painter, const RenderState &state,
-                             const ViewportContext &ctx, size_t endRow,
-                             size_t endCol);
+                             const ViewportContext &ctx, const int endRow,
+                             const int endCol) const;
 };
 
 #endif

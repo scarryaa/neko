@@ -8,20 +8,20 @@
 
 struct RenderState {
   const QStringList lines;
-  std::vector<neko::CursorPosition> cursors;
-  neko::Selection selections;
-  RenderTheme theme;
-  int lineCount;
-  double verticalOffset;
-  double horizontalOffset;
-  double lineHeight;
-  double fontAscent;
-  double fontDescent;
-  QFont font;
-  bool hasFocus;
-  bool isEmpty;
+  const std::vector<neko::CursorPosition> cursors;
+  const neko::Selection selections;
+  const RenderTheme theme;
+  const int lineCount;
+  const double verticalOffset;
+  const double horizontalOffset;
+  const double lineHeight;
+  const double fontAscent;
+  const double fontDescent;
+  const QFont font;
+  const bool hasFocus;
+  const bool isEmpty;
 
-  std::function<double(QString str)> measureWidth;
+  const std::function<const double(const QString &str)> measureWidth;
 };
 
 #endif // RENDER_STATE_H

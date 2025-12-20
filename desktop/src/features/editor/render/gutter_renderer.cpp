@@ -1,28 +1,30 @@
 #include "gutter_renderer.h"
 
 void GutterRenderer::paint(QPainter &painter, const RenderState &state,
-                           const ViewportContext &ctx) {
+                           const ViewportContext &ctx) const {
   drawText(&painter, state, ctx);
   drawLineHighlight(&painter, state, ctx);
 }
 
 void GutterRenderer::drawText(QPainter *painter, const RenderState &state,
-                              const ViewportContext &ctx) {
+                              const ViewportContext &ctx) const {
   auto drawLine = [painter, state,
                    ctx](auto rowsWithCursor, auto line, double maxLineWidth,
                         double numWidth, bool selectionActive,
                         int selectionStartRow, int selectionEndRow) {
-    bool cursorIsOnLine =
-        state.isEmpty ? true : rowsWithCursor[static_cast<size_t>(line)] != 0;
+    const bool cursorIsOnLine =
+        state.isEmpty ? true
+                      : rowsWithCursor[static_cast<const int>(line)] != 0;
 
-    auto y = (line * state.lineHeight) +
-             (state.lineHeight + state.fontAscent - state.fontDescent) / 2.0 -
-             state.verticalOffset;
+    const double y =
+        (line * state.lineHeight) +
+        (state.lineHeight + state.fontAscent - state.fontDescent) / 2.0 -
+        state.verticalOffset;
 
-    QString lineNum = QString::number(line + 1);
-    int lineNumWidth = state.measureWidth(lineNum);
-    double x = (ctx.width - maxLineWidth - numWidth) / 2.0 +
-               (maxLineWidth - lineNumWidth) - state.horizontalOffset;
+    const QString lineNum = QString::number(line + 1);
+    const int lineNumWidth = state.measureWidth(lineNum);
+    const double x = (ctx.width - maxLineWidth - numWidth) / 2.0 +
+                     (maxLineWidth - lineNumWidth) - state.horizontalOffset;
 
     if (cursorIsOnLine || (selectionActive && line >= selectionStartRow &&
                            line <= selectionEndRow)) {
@@ -37,21 +39,21 @@ void GutterRenderer::drawText(QPainter *painter, const RenderState &state,
   painter->setPen(state.theme.textColor);
   painter->setFont(state.font);
 
-  int maxLineNumber = state.lineCount;
-  int maxLineWidth = state.measureWidth(QString::number(maxLineNumber));
-  double numWidth = state.measureWidth(QString::number(9));
+  const int maxLineNumber = state.lineCount;
+  const int maxLineWidth = state.measureWidth(QString::number(maxLineNumber));
+  const double numWidth = state.measureWidth(QString::number(9));
 
-  neko::Selection selection = state.selections;
-  int selectionStartRow = selection.start.row;
-  int selectionEndRow = selection.end.row;
-  int selectionStartCol = selection.start.col;
-  int selectionEndCol = selection.end.col;
-  bool selectionActive = selection.active;
+  const neko::Selection selection = state.selections;
+  const int selectionStartRow = selection.start.row;
+  const int selectionEndRow = selection.end.row;
+  const int selectionStartCol = selection.start.col;
+  const int selectionEndCol = selection.end.col;
+  const bool selectionActive = selection.active;
 
   std::vector<uint8_t> rowsWithCursor(state.lineCount, 0);
   for (const auto &c : state.cursors) {
-    if (c.row >= 0 && static_cast<size_t>(c.row) < rowsWithCursor.size()) {
-      rowsWithCursor[static_cast<size_t>(c.row)] = 1;
+    if (c.row >= 0 && static_cast<const int>(c.row) < rowsWithCursor.size()) {
+      rowsWithCursor[static_cast<const int>(c.row)] = 1;
     }
   }
 
@@ -69,13 +71,13 @@ void GutterRenderer::drawText(QPainter *painter, const RenderState &state,
 
 void GutterRenderer::drawLineHighlight(QPainter *painter,
                                        const RenderState &state,
-                                       const ViewportContext &ctx) {
-  auto cursors = state.cursors;
+                                       const ViewportContext &ctx) const {
+  const auto cursors = state.cursors;
 
   std::vector<int> highlightedLines = std::vector<int>();
-  for (auto cursor : cursors) {
-    int cursorRow = cursor.row;
-    int cursorCol = cursor.col;
+  for (const auto cursor : cursors) {
+    const int cursorRow = cursor.row;
+    const int cursorCol = cursor.col;
 
     if (cursorRow < ctx.firstVisibleLine || cursorRow > ctx.lastVisibleLine) {
       return;
@@ -89,7 +91,7 @@ void GutterRenderer::drawLineHighlight(QPainter *painter,
     highlightedLines.push_back(cursorRow);
 
     // Draw line highlight
-    auto lineHighlightColor = state.theme.highlightColor;
+    const auto lineHighlightColor = state.theme.highlightColor;
     painter->setPen(Qt::NoPen);
     painter->setBrush(lineHighlightColor);
     painter->drawRect(getLineRect(cursorRow, 0, ctx.width, ctx));

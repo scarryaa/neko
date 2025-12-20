@@ -14,43 +14,34 @@ public:
   explicit EditorController(neko::Editor *editor);
   ~EditorController();
 
-  void selectWord(int row, int column);
-  void selectLine(int row);
-  void selectWordDrag(int anchorStartRow, int anchorStartCol, int anchorEndRow,
-                      int anchorEndCol, int row, int col);
-  void selectLineDrag(int anchorRow, int row);
-  bool isEmpty();
-
-  const QString getLine(int index) const;
+  // Getters
+  const bool isEmpty() const;
+  const QString getLine(const int index) const;
   const QStringList getLines() const;
   const int getLineCount() const;
   const neko::Selection getSelection() const;
   const std::vector<neko::CursorPosition> getCursorPositions() const;
-  const bool needsWidthMeasurement(int index) const;
+  const bool needsWidthMeasurement(const int index) const;
   const double getMaxWidth() const;
-  void setLineWidth(int index, double width);
-  const bool cursorExistsAt(int row, int column) const;
+  void setLineWidth(const int index, const double width);
+  const bool cursorExistsAt(const int row, const int column) const;
   const bool bufferIsEmpty() const;
 
-signals:
-  void cursorChanged(int row, int col, int cursorCount, int selectionCount);
-  void selectionChanged(int selectionCount);
-  void lineCountChanged(int lineCount);
-  void bufferChanged();
-  void viewportChanged();
+  // Setters
+  void selectWord(const int row, const int column);
+  void selectLine(const int row);
+  void selectWordDrag(const int anchorStartRow, const int anchorStartCol,
+                      const int anchorEndRow, const int anchorEndCol,
+                      const int row, const int col);
+  void selectLineDrag(const int anchorRow, const int row);
+  void moveTo(const int row, const int column, const bool clearSelection);
+  void moveOrSelectLeft(const bool shouldSelect);
+  void moveOrSelectRight(const bool shouldSelect);
+  void moveOrSelectUp(const bool shouldSelect);
+  void moveOrSelectDown(const bool shouldSelect);
+  void selectTo(const int row, const int column);
 
-public slots:
-  void setEditor(neko::Editor *editor);
-  void applyChangeSet(const neko::ChangeSetFfi &changeSet);
-
-  void moveTo(int row, int column, bool clearSelection);
-  void moveOrSelectLeft(bool shouldSelect);
-  void moveOrSelectRight(bool shouldSelect);
-  void moveOrSelectUp(bool shouldSelect);
-  void moveOrSelectDown(bool shouldSelect);
-  void selectTo(int row, int column);
-
-  void insertText(std::string text);
+  void insertText(const std::string &text);
   void insertNewline();
   void insertTab();
   void backspace();
@@ -59,23 +50,34 @@ public slots:
   void copy();
   void paste();
   void cut();
-
   void undo();
   void redo();
-
   void clearSelectionOrCursors();
-  void addCursor(neko::AddCursorDirectionKind dirKind, int row = 0,
-                 int col = 0);
-  void removeCursor(int row, int col);
-
+  void addCursor(const neko::AddCursorDirectionKind dirKind, const int row = 0,
+                 const int col = 0);
+  void removeCursor(const int row, const int col);
   void refresh();
+  void applyChangeSet(const neko::ChangeSetFfi &changeSet);
+
+signals:
+  void cursorChanged(const int row, const int col, const int cursorCount,
+                     const int selectionCount);
+  void selectionChanged(const int selectionCount);
+  void lineCountChanged(const int lineCount);
+  void bufferChanged();
+  void viewportChanged();
+
+public slots:
+  void setEditor(neko::Editor *editor);
 
 private:
   void nav(neko::ChangeSetFfi (neko::Editor::*moveFn)(),
-           neko::ChangeSetFfi (neko::Editor::*selectFn)(), bool shouldSelect);
+           neko::ChangeSetFfi (neko::Editor::*selectFn)(),
+           const bool shouldSelect);
   template <typename Fn, typename... Args> void do_op(Fn &&fn, Args &&...args);
-  void do_op(std::function<neko::ChangeSetFfi()> f);
-  std::pair<int, int> normalizeCursorPosition(int row, int col) const;
+  void do_op(const std::function<neko::ChangeSetFfi()> f);
+  std::pair<const int, const int> normalizeCursorPosition(const int row,
+                                                          const int col) const;
 
   neko::Editor *editor;
 };
