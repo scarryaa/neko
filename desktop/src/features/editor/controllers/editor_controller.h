@@ -19,6 +19,7 @@ public:
   void selectWordDrag(int anchorStartRow, int anchorStartCol, int anchorEndRow,
                       int anchorEndCol, int row, int col);
   void selectLineDrag(int anchorRow, int row);
+  bool isEmpty();
 
 signals:
   void cursorChanged(int row, int col, int cursorCount, int selectionCount);

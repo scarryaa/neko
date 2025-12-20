@@ -746,6 +746,10 @@ impl Editor {
 
         Some((row, start, end + 1))
     }
+
+    pub fn buffer_is_empty(&self) -> bool {
+        self.buffer.is_empty()
+    }
 }
 
 #[cfg(test)]

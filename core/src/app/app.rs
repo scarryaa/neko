@@ -36,10 +36,11 @@ impl AppState {
     pub fn new_tab(&mut self) -> usize {
         let tab = Tab {
             editor: Editor::new(),
-            original_content: Some("\n".to_owned()),
+            original_content: Some(String::new()),
             file_path: None,
             title: "Untitled".to_string(),
         };
+
         self.tabs.push(tab);
         self.active_tab_index = self.tabs.len() - 1;
         self.active_tab_index
@@ -48,9 +49,11 @@ impl AppState {
     pub fn close_tab(&mut self, index: usize) -> Result<(), Error> {
         if index < self.tabs.len() {
             self.tabs.remove(index);
+
             if self.active_tab_index >= self.tabs.len() && !self.tabs.is_empty() {
                 self.active_tab_index = self.tabs.len() - 1;
             }
+
             Ok(())
         } else {
             Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))

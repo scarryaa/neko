@@ -241,7 +241,48 @@ impl Editor {
 
     fn backspace_impl(&mut self, i: usize, idxs: &mut [usize]) -> DeleteResult {
         let pos = idxs[i];
+
         if pos == 0 {
+            let len = self.buffer().byte_len();
+
+            // "\n"
+            if len == 1 && self.buffer().get_text_range(0, 1) == "\n" {
+                let deleted = self.buffer_mut().delete_range(0, 1);
+                self.record_edit(Edit::Delete {
+                    start: 0,
+                    end: 1,
+                    deleted: deleted.clone(),
+                });
+
+                (0..idxs.len()).for_each(|j| {
+                    idxs[j] = 0;
+                });
+
+                return DeleteResult::Newline {
+                    row: 0,
+                    invalidate: Some(0),
+                };
+            }
+
+            // "\r\n"
+            if len == 2 && self.buffer().get_text_range(0, 2) == "\r\n" {
+                let deleted = self.buffer_mut().delete_range(0, 2);
+                self.record_edit(Edit::Delete {
+                    start: 0,
+                    end: 2,
+                    deleted: deleted.clone(),
+                });
+
+                (0..idxs.len()).for_each(|j| {
+                    idxs[j] = 0;
+                });
+
+                return DeleteResult::Newline {
+                    row: 0,
+                    invalidate: Some(0),
+                };
+            }
+
             return DeleteResult::Text { invalidate: None };
         }
 
@@ -261,14 +302,13 @@ impl Editor {
 
         self.apply_delete_to_idxs(start, end, idxs, i);
 
+        let row = self.buffer().byte_to_line(start);
         if deleted.contains('\n') {
-            let row = self.buffer().byte_to_line(start);
             DeleteResult::Newline {
                 row,
                 invalidate: Some(row),
             }
         } else {
-            let row = self.buffer().byte_to_line(start);
             DeleteResult::Text {
                 invalidate: Some(row),
             }

@@ -508,11 +508,12 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
   double lineHeight = fontMetrics.height();
 
   int lineCount = editor->get_line_count();
-  int firstVisibleLine = verticalOffset / lineHeight;
+  int firstVisibleLine =
+      qMax(0, qMin((int)(verticalOffset / lineHeight), lineCount - 1));
   int visibleLineCount = viewportHeight / lineHeight;
   int lastVisibleLine =
-      qMin(firstVisibleLine + visibleLineCount + EXTRA_VERTICAL_LINES,
-           lineCount - 1);
+      qMax(0, qMin(firstVisibleLine + visibleLineCount + EXTRA_VERTICAL_LINES,
+                   lineCount - 1));
 
   ViewportContext ctx = {lineHeight,     firstVisibleLine, lastVisibleLine,
                          verticalOffset, horizontalOffset, viewportWidth,
@@ -521,6 +522,7 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
   rust::Vec<rust::String> rawLines = editor->get_lines();
   rust::Vec<neko::CursorPosition> cursors = editor->get_cursor_positions();
   neko::Selection selections = editor->get_selection();
+  bool isEmpty = editorController->isEmpty();
 
   double fontAscent = fontMetrics.ascent();
   double fontDescent = fontMetrics.descent();
@@ -537,9 +539,9 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
     return fontMetrics.horizontalAdvance(s);
   };
   RenderState state = {
-      rawLines,       cursors,          selections,  theme,      lineCount,
-      verticalOffset, horizontalOffset, lineHeight,  fontAscent, fontDescent,
-      font,           hasFocus,         measureWidth};
+      rawLines,       cursors,          selections, theme,       lineCount,
+      verticalOffset, horizontalOffset, lineHeight, fontAscent,  fontDescent,
+      font,           hasFocus,         isEmpty,    measureWidth};
 
   renderer->paint(painter, state, ctx);
 }

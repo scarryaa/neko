@@ -11,17 +11,9 @@ void EditorRenderer::paint(QPainter &painter, const RenderState &state,
 
 void EditorRenderer::drawText(QPainter *painter, const RenderState &state,
                               const ViewportContext &ctx) {
-  painter->setPen(state.theme.textColor);
-  painter->setFont(state.font);
-
-  const int maxLine = std::min(ctx.lastVisibleLine,
-                               static_cast<int>(state.rawLines.size()) - 1);
-  if (maxLine < ctx.firstVisibleLine) {
-    return;
-  }
-
-  for (int line = ctx.firstVisibleLine; line <= maxLine; line++) {
-    QString lineText = QString::fromUtf8(state.rawLines.at(line));
+  auto drawLine = [painter, state, ctx](auto line) {
+    QString lineText =
+        state.isEmpty ? "" : QString::fromUtf8(state.rawLines.at(line));
 
     auto actualY =
         (line * ctx.lineHeight) +
@@ -29,6 +21,24 @@ void EditorRenderer::drawText(QPainter *painter, const RenderState &state,
         ctx.verticalOffset;
 
     painter->drawText(QPointF(-ctx.horizontalOffset, actualY), lineText);
+  };
+
+  painter->setPen(state.theme.textColor);
+  painter->setFont(state.font);
+
+  const int maxLine = std::min(ctx.lastVisibleLine,
+                               static_cast<int>(state.rawLines.size()) - 1);
+  if (ctx.firstVisibleLine <= 0 && ctx.lastVisibleLine <= 0) {
+    drawLine(0);
+    return;
+  }
+
+  if (maxLine < ctx.firstVisibleLine) {
+    return;
+  }
+
+  for (int line = ctx.firstVisibleLine; line <= maxLine; line++) {
+    drawLine(line);
   }
 }
 
@@ -158,40 +168,31 @@ void EditorRenderer::drawLastLineSelection(QPainter *painter,
 
 void EditorRenderer::drawCursors(QPainter *painter, const RenderState &state,
                                  const ViewportContext &ctx) {
-  auto cursors = state.cursors;
+  std::vector<int> highlightedLines;
 
-  auto highlightedLines = std::vector<int>();
-  for (auto cursor : cursors) {
-    int cursorRow = cursor.row;
-    int cursorCol = cursor.col;
-
-    if (cursorRow >= static_cast<int>(state.rawLines.size()) ||
-        cursorRow < ctx.firstVisibleLine || cursorRow > ctx.lastVisibleLine) {
-      continue;
-    }
-
-    // Draw line highlight
+  auto drawCursor = [&](int cursorRow, int cursorCol) {
     if (std::find(highlightedLines.begin(), highlightedLines.end(),
                   cursorRow) == highlightedLines.end()) {
       painter->setPen(Qt::NoPen);
       painter->setBrush(state.theme.highlightColor);
       painter->drawRect(
           getLineRect(cursorRow, 0, ctx.width + ctx.horizontalOffset, ctx));
-
       highlightedLines.push_back(cursorRow);
     }
 
-    if (!state.hasFocus) {
-      continue;
-    }
+    if (!state.hasFocus)
+      return;
+    if (!state.isEmpty &&
+        (cursorRow < 0 || cursorRow >= static_cast<int>(state.rawLines.size())))
+      return;
 
-    QString text = QString::fromUtf8(state.rawLines.at(cursorRow));
-    QString textBeforeCursor = text.left(cursorCol);
-    qreal cursorX = state.measureWidth(textBeforeCursor);
+    QString text =
+        state.isEmpty ? "" : QString::fromUtf8(state.rawLines.at(cursorRow));
+    int clampedCol = std::clamp(cursorCol, 0, (int)text.size());
 
-    if (cursorX < 0 || cursorX > ctx.width + ctx.horizontalOffset) {
-      continue;
-    }
+    qreal cursorX = state.measureWidth(text.left(clampedCol));
+    if (cursorX < 0 || cursorX > ctx.width + ctx.horizontalOffset)
+      return;
 
     painter->setPen(state.theme.accentColor);
     painter->setBrush(Qt::NoBrush);
@@ -199,5 +200,19 @@ void EditorRenderer::drawCursors(QPainter *painter, const RenderState &state,
     double x = cursorX - ctx.horizontalOffset;
     painter->drawLine(QLineF(QPointF(x, getLineTopY(cursorRow, ctx)),
                              QPointF(x, getLineBottomY(cursorRow, ctx))));
+  };
+
+  if (state.isEmpty) {
+    drawCursor(0, 0);
+    return;
+  }
+
+  for (const auto &cursor : state.cursors) {
+    if (cursor.row < ctx.firstVisibleLine || cursor.row > ctx.lastVisibleLine)
+      continue;
+    if (cursor.row < 0 || cursor.row >= static_cast<int>(state.rawLines.size()))
+      continue;
+
+    drawCursor(cursor.row, cursor.col);
   }
 }

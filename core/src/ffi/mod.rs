@@ -376,6 +376,7 @@ mod bridge {
             anchor_row: usize,
             row: usize,
         ) -> ChangeSetFfi;
+        fn buffer_is_empty(self: &Editor) -> bool;
 
         // FileTree
         #[cxx_name = "set_root_dir"]

@@ -243,6 +243,8 @@ void EditorController::refresh() {
   // TODO: Emit current state after change (e.g. opening a file)
 }
 
+bool EditorController::isEmpty() { return editor->buffer_is_empty(); }
+
 template <typename Fn, typename... Args>
 void EditorController::do_op(Fn &&fn, Args &&...args) {
   if (!editor)

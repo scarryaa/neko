@@ -123,11 +123,12 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
   double lineHeight = fontMetrics.height();
 
   int lineCount = editor->get_line_count();
-  int firstVisibleLine = verticalOffset / lineHeight;
+  int firstVisibleLine =
+      qMax(0, qMin((int)(verticalOffset / lineHeight), lineCount - 1));
   int visibleLineCount = viewportHeight / lineHeight;
   int lastVisibleLine =
-      qMin(firstVisibleLine + visibleLineCount + EXTRA_VERTICAL_LINES,
-           lineCount - 1);
+      qMax(0, qMin(firstVisibleLine + visibleLineCount + EXTRA_VERTICAL_LINES,
+                   lineCount - 1));
 
   ViewportContext ctx = {lineHeight,     firstVisibleLine, lastVisibleLine,
                          verticalOffset, horizontalOffset, viewportWidth,
@@ -135,6 +136,7 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
 
   rust::Vec<neko::CursorPosition> cursors = editor->get_cursor_positions();
   neko::Selection selections = editor->get_selection();
+  bool isEmpty = editor->buffer_is_empty();
 
   double fontAscent = fontMetrics.ascent();
   double fontDescent = fontMetrics.descent();
@@ -166,6 +168,7 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
                        fontDescent,
                        font,
                        hasFocus,
+                       isEmpty,
                        measureWidth};
 
   renderer->paint(painter, state, ctx);

@@ -8,6 +8,32 @@ void GutterRenderer::paint(QPainter &painter, const RenderState &state,
 
 void GutterRenderer::drawText(QPainter *painter, const RenderState &state,
                               const ViewportContext &ctx) {
+  auto drawLine = [painter, state,
+                   ctx](auto rowsWithCursor, auto line, double maxLineWidth,
+                        double numWidth, bool selectionActive,
+                        int selectionStartRow, int selectionEndRow) {
+    bool cursorIsOnLine =
+        state.isEmpty ? true : rowsWithCursor[static_cast<size_t>(line)] != 0;
+
+    auto y = (line * state.lineHeight) +
+             (state.lineHeight + state.fontAscent - state.fontDescent) / 2.0 -
+             state.verticalOffset;
+
+    QString lineNum = QString::number(line + 1);
+    int lineNumWidth = state.measureWidth(lineNum);
+    double x = (ctx.width - maxLineWidth - numWidth) / 2.0 +
+               (maxLineWidth - lineNumWidth) - state.horizontalOffset;
+
+    if (cursorIsOnLine || (selectionActive && line >= selectionStartRow &&
+                           line <= selectionEndRow)) {
+      painter->setPen(state.theme.activeLineTextColor);
+    } else {
+      painter->setPen(state.theme.textColor);
+    }
+
+    painter->drawText(QPointF(x, y), lineNum);
+  };
+
   painter->setPen(state.theme.textColor);
   painter->setFont(state.font);
 
@@ -29,26 +55,15 @@ void GutterRenderer::drawText(QPainter *painter, const RenderState &state,
     }
   }
 
+  if (ctx.firstVisibleLine <= 0 && ctx.lastVisibleLine <= 0) {
+    drawLine(rowsWithCursor, 0, maxLineWidth, numWidth, selectionActive,
+             selectionStartRow, selectionEndRow);
+    return;
+  }
+
   for (int line = ctx.firstVisibleLine; line <= ctx.lastVisibleLine; ++line) {
-    bool cursorIsOnLine = rowsWithCursor[static_cast<size_t>(line)] != 0;
-
-    auto y = (line * state.lineHeight) +
-             (state.lineHeight + state.fontAscent - state.fontDescent) / 2.0 -
-             state.verticalOffset;
-
-    QString lineNum = QString::number(line + 1);
-    int lineNumWidth = state.measureWidth(lineNum);
-    double x = (ctx.width - maxLineWidth - numWidth) / 2.0 +
-               (maxLineWidth - lineNumWidth) - state.horizontalOffset;
-
-    if (cursorIsOnLine || (selectionActive && line >= selectionStartRow &&
-                           line <= selectionEndRow)) {
-      painter->setPen(state.theme.activeLineTextColor);
-    } else {
-      painter->setPen(state.theme.textColor);
-    }
-
-    painter->drawText(QPointF(x, y), lineNum);
+    drawLine(rowsWithCursor, line, maxLineWidth, numWidth, selectionActive,
+             selectionStartRow, selectionEndRow);
   }
 }
 

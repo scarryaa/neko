@@ -18,6 +18,7 @@ struct RenderState {
   double fontDescent;
   QFont font;
   bool hasFocus;
+  bool isEmpty;
 
   std::function<double(QString str)> measureWidth;
 };
