@@ -1,23 +1,15 @@
+use super::Tab;
+use crate::{Editor, FileTree};
 use std::{
     io::{Error, ErrorKind},
     path::{Path, PathBuf},
 };
-
-use crate::{Editor, FileTree};
 
 #[derive(Debug)]
 pub struct AppState {
     tabs: Vec<Tab>,
     active_tab_index: usize,
     file_tree: FileTree,
-}
-
-#[derive(Debug)]
-pub struct Tab {
-    editor: Editor,
-    original_content: Option<String>,
-    file_path: Option<PathBuf>,
-    title: String,
 }
 
 impl AppState {
@@ -34,12 +26,7 @@ impl AppState {
     }
 
     pub fn new_tab(&mut self) -> usize {
-        let tab = Tab {
-            editor: Editor::new(),
-            original_content: Some(String::new()),
-            file_path: None,
-            title: "Untitled".to_string(),
-        };
+        let tab = Tab::new();
 
         self.tabs.push(tab);
         self.active_tab_index = self.tabs.len() - 1;
@@ -65,19 +52,19 @@ impl AppState {
     }
 
     pub fn get_active_editor(&self) -> Option<&Editor> {
-        self.tabs.get(self.active_tab_index).map(|t| &t.editor)
+        self.tabs.get(self.active_tab_index).map(|t| t.get_editor())
     }
 
     pub fn get_active_editor_mut(&mut self) -> Option<&mut Editor> {
         self.tabs
             .get_mut(self.active_tab_index)
-            .map(|t| &mut t.editor)
+            .map(|t| t.get_editor_mut())
     }
 
     pub fn get_active_tab_path(&self) -> Option<&str> {
         self.tabs
             .get(self.active_tab_index)
-            .and_then(|t| t.file_path.as_ref())
+            .and_then(|t| t.get_file_path())
             .and_then(|p| p.to_str())
     }
 
@@ -86,14 +73,15 @@ impl AppState {
     }
 
     pub fn get_tab_titles(&self) -> Vec<String> {
-        self.tabs.iter().map(|t| t.title.clone()).collect()
+        self.tabs.iter().map(|t| t.get_title().clone()).collect()
     }
 
     pub fn get_tab_modified_states(&self) -> Vec<bool> {
         self.tabs
             .iter()
             .map(|t| {
-                t.original_content.clone().unwrap_or("".to_string()) != t.editor.buffer().get_text()
+                let original_content = t.get_original_content();
+                original_content != t.get_editor().buffer().get_text()
             })
             .collect()
     }
@@ -101,23 +89,20 @@ impl AppState {
     pub fn get_tab_modified(&self, index: usize) -> bool {
         self.tabs
             .get(index)
-            .map(|t| {
-                let original = t.original_content.as_deref().unwrap_or("");
-                original != t.editor.buffer().get_text()
-            })
+            .map(|t| t.get_modified())
             .unwrap_or(false)
     }
 
     pub fn tab_with_path_exists(&self, path: &str) -> bool {
         self.tabs
             .iter()
-            .any(|t| t.file_path.as_ref().and_then(|p| p.to_str()) == Some(path))
+            .any(|t| t.get_file_path().as_ref().and_then(|p| p.to_str()) == Some(path))
     }
 
     pub fn get_tab_index_by_path(&self, path: &str) -> Option<usize> {
         self.tabs
             .iter()
-            .position(|t| t.file_path.as_ref().and_then(|p| p.to_str()) == Some(path))
+            .position(|t| t.get_file_path().as_ref().and_then(|p| p.to_str()) == Some(path))
     }
 
     pub fn open_file(&mut self, path: &str) -> Result<(), std::io::Error> {
@@ -125,7 +110,7 @@ impl AppState {
         if self
             .tabs
             .iter()
-            .any(|t| t.file_path.as_ref().and_then(|p| p.to_str()) == Some(path))
+            .any(|t| t.get_file_path().as_ref().and_then(|p| p.to_str()) == Some(path))
         {
             return Err(Error::new(
                 ErrorKind::AlreadyExists,
@@ -136,15 +121,15 @@ impl AppState {
         let content = std::fs::read_to_string(path)?;
 
         if let Some(t) = self.tabs.get_mut(self.active_tab_index) {
-            t.editor.load_file(&content);
-            t.original_content = Some(content);
-            t.file_path = Some(path.into());
-
-            t.title = Path::new(path)
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or(path)
-                .to_string();
+            t.get_editor_mut().load_file(&content);
+            t.set_original_content(content);
+            t.set_file_path(Some(path.into()));
+            t.set_title(
+                Path::new(path)
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or(path),
+            );
         }
 
         Ok(())
@@ -156,14 +141,16 @@ impl AppState {
             .get_mut(self.active_tab_index)
             .ok_or_else(|| Error::new(ErrorKind::NotFound, "No active tab"))?;
 
-        let path = tab
-            .file_path
+        let maybe_file_path = tab.get_file_path();
+        let path = maybe_file_path
             .as_ref()
             .ok_or_else(|| Error::new(ErrorKind::NotFound, "No current file"))?;
 
-        let content = tab.editor.buffer().get_text();
-        tab.original_content = Some(content.clone());
-        std::fs::write(path, content)?;
+        let content = tab.get_editor().buffer().get_text();
+        std::fs::write(path, &content)?;
+
+        tab.set_original_content(content.clone());
+
         Ok(())
     }
 
@@ -177,13 +164,13 @@ impl AppState {
             .get_mut(self.active_tab_index)
             .ok_or_else(|| Error::new(ErrorKind::NotFound, "No active tab"))?;
 
-        let content = tab.editor.buffer().get_text();
-        tab.original_content = Some(content.clone());
+        let content = tab.get_editor().buffer().get_text();
+        tab.set_original_content(content.clone());
         std::fs::write(path, content)?;
-        tab.file_path = Some(PathBuf::from(path));
+        tab.set_file_path(Some(path.to_string()));
 
         if let Some(filename) = PathBuf::from(path).file_name() {
-            tab.title = filename.to_string_lossy().to_string();
+            tab.set_title(&filename.to_string_lossy());
         }
 
         Ok(())

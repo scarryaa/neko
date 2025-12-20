@@ -44,6 +44,18 @@ impl Cursor {
         line_start + clamped_column
     }
 
+    pub fn get_row(&self) -> usize {
+        self.row
+    }
+
+    pub fn get_column(&self) -> usize {
+        self.column
+    }
+
+    pub fn get_sticky_column(&self) -> usize {
+        self.sticky_column
+    }
+
     // Setters
     pub fn set_row(&mut self, buffer: &Buffer, row: usize) {
         self.row = Self::clamp_row(row, buffer);
