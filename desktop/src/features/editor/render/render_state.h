@@ -3,11 +3,12 @@
 
 #include "render_theme.h"
 #include <QFont>
+#include <QStringList>
 #include <neko-core/src/ffi/mod.rs.h>
 
 struct RenderState {
-  rust::Vec<rust::String> rawLines;
-  rust::Vec<neko::CursorPosition> cursors;
+  const QStringList lines;
+  std::vector<neko::CursorPosition> cursors;
   neko::Selection selections;
   RenderTheme theme;
   int lineCount;

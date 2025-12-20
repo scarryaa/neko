@@ -1,11 +1,12 @@
 #include "gutter_widget.h"
+#include "features/editor/controllers/editor_controller.h"
 
-GutterWidget::GutterWidget(neko::Editor *editor,
-                           EditorController *editorController,
+GutterWidget::GutterWidget(EditorController *editorController,
                            neko::ConfigManager &configManager,
                            neko::ThemeManager &themeManager, QWidget *parent)
-    : QScrollArea(parent), editor(editor), configManager(configManager),
-      renderer(new GutterRenderer()), themeManager(themeManager),
+    : QScrollArea(parent), editorController(editorController),
+      configManager(configManager), renderer(new GutterRenderer()),
+      themeManager(themeManager),
       font(UiUtils::loadFont(configManager, neko::FontType::Editor)),
       fontMetrics(font) {
   setFocusPolicy(Qt::NoFocus);
@@ -54,18 +55,16 @@ void GutterWidget::onSelectionChanged() { redraw(); }
 
 void GutterWidget::onViewportChanged() { updateDimensions(); }
 
-void GutterWidget::setEditor(neko::Editor *newEditor) { editor = newEditor; }
-
 QSize GutterWidget::sizeHint() const {
   return QSize(measureWidth() + VIEWPORT_PADDING, height());
 }
 
 double GutterWidget::measureWidth() const {
-  if (!editor) {
+  if (!editorController) {
     return 0;
   }
 
-  int lineCount = editor->get_line_count();
+  int lineCount = editorController->getLineCount();
 
   return fontMetrics.horizontalAdvance(QString::number(lineCount));
 }
@@ -81,11 +80,11 @@ void GutterWidget::wheelEvent(QWheelEvent *event) {
 }
 
 void GutterWidget::updateDimensions() {
-  if (!editor) {
+  if (!editorController) {
     return;
   }
 
-  int lineCount = editor->get_line_count();
+  int lineCount = editorController->getLineCount();
   auto viewportHeight = (lineCount * fontMetrics.height()) -
                         viewport()->height() + VIEWPORT_PADDING;
   auto contentWidth = measureWidth();
@@ -110,7 +109,7 @@ void GutterWidget::onEditorFontSizeChanged(qreal newSize) {
 }
 
 void GutterWidget::paintEvent(QPaintEvent *event) {
-  if (!editor) {
+  if (!editorController) {
     return;
   }
 
@@ -122,7 +121,7 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
   double viewportWidth = viewport()->width();
   double lineHeight = fontMetrics.height();
 
-  int lineCount = editor->get_line_count();
+  int lineCount = editorController->getLineCount();
   int firstVisibleLine =
       qMax(0, qMin((int)(verticalOffset / lineHeight), lineCount - 1));
   int visibleLineCount = viewportHeight / lineHeight;
@@ -134,9 +133,10 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
                          verticalOffset, horizontalOffset, viewportWidth,
                          viewportHeight};
 
-  rust::Vec<neko::CursorPosition> cursors = editor->get_cursor_positions();
-  neko::Selection selections = editor->get_selection();
-  bool isEmpty = editor->buffer_is_empty();
+  std::vector<neko::CursorPosition> cursors =
+      editorController->getCursorPositions();
+  neko::Selection selections = editorController->getSelection();
+  bool isEmpty = editorController->bufferIsEmpty();
 
   double fontAscent = fontMetrics.ascent();
   double fontDescent = fontMetrics.descent();
@@ -156,20 +156,10 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
   auto measureWidth = [this](const QString &s) {
     return fontMetrics.horizontalAdvance(s);
   };
-  RenderState state = {rust::Vec<rust::String>(),
-                       cursors,
-                       selections,
-                       theme,
-                       lineCount,
-                       verticalOffset,
-                       horizontalOffset,
-                       lineHeight,
-                       fontAscent,
-                       fontDescent,
-                       font,
-                       hasFocus,
-                       isEmpty,
-                       measureWidth};
+  RenderState state = {
+      QStringList(),  cursors,          selections, theme,       lineCount,
+      verticalOffset, horizontalOffset, lineHeight, fontAscent,  fontDescent,
+      font,           hasFocus,         isEmpty,    measureWidth};
 
   renderer->paint(painter, state, ctx);
 }

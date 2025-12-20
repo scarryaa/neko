@@ -1,4 +1,5 @@
 #include "editor_controller.h"
+#include <neko-core/src/ffi/mod.rs.h>
 
 EditorController::EditorController(neko::Editor *editor) {}
 
@@ -55,6 +56,61 @@ void EditorController::nav(neko::ChangeSetFfi (neko::Editor::*moveFn)(),
   } else {
     do_op(moveFn);
   }
+}
+
+const QString EditorController::getLine(int index) const {
+  return QString::fromUtf8(editor->get_line(index));
+}
+
+const QStringList EditorController::getLines() const {
+  const auto rawLines = editor->get_lines();
+  QStringList lines = QStringList();
+
+  for (auto line : rawLines) {
+    lines.append(QString::fromUtf8(line));
+  }
+
+  return lines;
+}
+
+const int EditorController::getLineCount() const {
+  return editor->get_line_count();
+}
+
+const neko::Selection EditorController::getSelection() const {
+  return editor->get_selection();
+}
+
+const std::vector<neko::CursorPosition>
+EditorController::getCursorPositions() const {
+  std::vector<neko::CursorPosition> cursors;
+  auto rawCursors = editor->get_cursor_positions();
+
+  for (auto cursor : rawCursors) {
+    cursors.push_back(cursor);
+  }
+
+  return cursors;
+}
+
+const bool EditorController::needsWidthMeasurement(int index) const {
+  return editor->needs_width_measurement(index);
+}
+
+const double EditorController::getMaxWidth() const {
+  return editor->get_max_width();
+}
+
+void EditorController::setLineWidth(int index, double width) {
+  editor->set_line_width(index, width);
+}
+
+const bool EditorController::cursorExistsAt(int row, int column) const {
+  return editor->cursor_exists_at(row, column);
+}
+
+const bool EditorController::bufferIsEmpty() const {
+  return editor->buffer_is_empty();
 }
 
 void EditorController::moveTo(int row, int column, bool clearSelection) {

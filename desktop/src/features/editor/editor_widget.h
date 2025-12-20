@@ -25,15 +25,13 @@ class EditorWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit EditorWidget(neko::Editor *editor,
-                        EditorController *editorController,
+  explicit EditorWidget(EditorController *editorController,
                         neko::ConfigManager &configManager,
                         neko::ThemeManager &themeManager,
                         QWidget *parent = nullptr);
   ~EditorWidget();
 
   void applyTheme();
-  void setEditor(neko::Editor *editor);
   void redraw();
   void updateDimensions();
 
@@ -71,7 +69,6 @@ private:
 
   neko::ConfigManager &configManager;
   neko::ThemeManager &themeManager;
-  neko::Editor *editor;
   EditorController *editorController;
   EditorRenderer *renderer;
   QFont font;

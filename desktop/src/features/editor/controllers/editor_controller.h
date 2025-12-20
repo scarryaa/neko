@@ -21,6 +21,17 @@ public:
   void selectLineDrag(int anchorRow, int row);
   bool isEmpty();
 
+  const QString getLine(int index) const;
+  const QStringList getLines() const;
+  const int getLineCount() const;
+  const neko::Selection getSelection() const;
+  const std::vector<neko::CursorPosition> getCursorPositions() const;
+  const bool needsWidthMeasurement(int index) const;
+  const double getMaxWidth() const;
+  void setLineWidth(int index, double width);
+  const bool cursorExistsAt(int row, int column) const;
+  const bool bufferIsEmpty() const;
+
 signals:
   void cursorChanged(int row, int col, int cursorCount, int selectionCount);
   void selectionChanged(int selectionCount);

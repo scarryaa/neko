@@ -1,10 +1,9 @@
 #include "editor_widget.h"
 
-EditorWidget::EditorWidget(neko::Editor *editor,
-                           EditorController *editorController,
+EditorWidget::EditorWidget(EditorController *editorController,
                            neko::ConfigManager &configManager,
                            neko::ThemeManager &themeManager, QWidget *parent)
-    : QScrollArea(parent), editor(editor), editorController(editorController),
+    : QScrollArea(parent), editorController(editorController),
       renderer(new EditorRenderer()), configManager(configManager),
       themeManager(themeManager),
       font(UiUtils::loadFont(configManager, neko::FontType::Editor)),
@@ -50,40 +49,36 @@ void EditorWidget::applyTheme() {
   redraw();
 }
 
-void EditorWidget::setEditor(neko::Editor *newEditor) { editor = newEditor; }
-
 double EditorWidget::measureWidth() {
-  if (!editor) {
+  if (!editorController) {
     return 0;
   }
 
-  size_t lineCount = editor->get_line_count();
+  int lineCount = editorController->getLineCount();
 
   for (size_t i = 0; i < lineCount; i++) {
-    if (editor->needs_width_measurement(i)) {
-      auto rawLine = editor->get_line(i);
-      QString line = QString::fromUtf8(rawLine);
+    if (editorController->needsWidthMeasurement(i)) {
+      QString line = editorController->getLine(i);
       double width = fontMetrics.horizontalAdvance(line);
-      editor->set_line_width(i, width);
+      editorController->setLineWidth(i, width);
     }
   }
 
-  return editor->get_max_width();
+  return editorController->getMaxWidth();
 }
 
 void EditorWidget::scrollToCursor() {
-  if (!editor) {
+  if (!editorController) {
     return;
   }
 
-  auto cursors = editor->get_cursor_positions();
+  auto cursors = editorController->getCursorPositions();
   auto cursor = cursors.at(0);
 
   int targetRow = cursor.row;
   double lineHeight = fontMetrics.height();
 
-  auto rawLine = editor->get_line(cursor.row);
-  QString line = QString::fromUtf8(rawLine);
+  QString line = editorController->getLine(cursor.row);
   QString textBeforeCursor = line.mid(0, cursor.col);
 
   double viewportWidth = viewport()->width();
@@ -111,12 +106,11 @@ void EditorWidget::scrollToCursor() {
 }
 
 void EditorWidget::updateDimensions() {
-  if (!editor) {
+  if (!editorController) {
     return;
   }
 
-  int lineCount = editor->get_line_count();
-
+  int lineCount = editorController->getLineCount();
   auto viewportHeight = (lineCount * fontMetrics.height()) -
                         viewport()->height() + VIEWPORT_PADDING;
   auto contentWidth = measureWidth();
@@ -144,7 +138,7 @@ static bool nearPos(const QPoint &a, const QPoint &b, int px = 4) {
 }
 
 void EditorWidget::mousePressEvent(QMouseEvent *event) {
-  if (!editor)
+  if (!editorController)
     return;
 
   RowCol rc = convertMousePositionToRowCol(event->pos().x(), event->pos().y());
@@ -153,7 +147,7 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
     tripleArmed = false;
     tripleArmTimer.stop();
 
-    if (editor->cursor_exists_at(rc.row, rc.col)) {
+    if (editorController->cursorExistsAt(rc.row, rc.col)) {
       editorController->removeCursor(rc.row, rc.col);
     } else {
       editorController->addCursor(neko::AddCursorDirectionKind::At, rc.row,
@@ -175,7 +169,7 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
 
       editorController->selectLine(tripleRow);
 
-      int lineCount = static_cast<int>(editor->get_line_count());
+      int lineCount = editorController->getLineCount();
 
       if (lineCount > 0) {
         lineSelectMode = true;
@@ -213,7 +207,7 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
 }
 
 void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
-  if (!editor)
+  if (!editorController)
     return;
 
   if (suppressNextDouble && suppressDblTimer.isActive() &&
@@ -236,7 +230,7 @@ void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
   RowCol rc = convertMousePositionToRowCol(event->pos().x(), event->pos().y());
   editorController->selectWord(rc.row, rc.col);
 
-  auto selection = editor->get_selection();
+  auto selection = editorController->getSelection();
 
   if (selection.active) {
     wordSelectMode = true;
@@ -260,7 +254,7 @@ void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
 }
 
 void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
-  if (!editor) {
+  if (!editorController) {
     return;
   }
 
@@ -327,7 +321,7 @@ RowCol EditorWidget::convertMousePositionToRowCol(double x, double y) {
   const int scrollX = horizontalScrollBar()->value();
   const int scrollY = verticalScrollBar()->value();
 
-  const int lineCount = editor->get_line_count();
+  const int lineCount = editorController->getLineCount();
   if (lineCount <= 0)
     return {0, 0};
 
@@ -335,7 +329,7 @@ RowCol EditorWidget::convertMousePositionToRowCol(double x, double y) {
   const size_t lastRow = size_t(lineCount - 1);
   const size_t row = std::min(targetRow, lastRow);
 
-  const QString line = QString::fromUtf8(editor->get_line(row));
+  const QString line = editorController->getLine(row);
   const qreal targetX = qreal(x + scrollX);
 
   int col = xToCursorIndex(line, font, targetX);
@@ -363,7 +357,7 @@ void EditorWidget::wheelEvent(QWheelEvent *event) {
 bool EditorWidget::focusNextPrevChild(bool next) { return false; }
 
 void EditorWidget::keyPressEvent(QKeyEvent *event) {
-  if (!editor) {
+  if (!editorController) {
     return;
   }
 
@@ -495,7 +489,7 @@ double EditorWidget::getTextWidth(const QString &text,
 }
 
 void EditorWidget::paintEvent(QPaintEvent *event) {
-  if (!editor) {
+  if (!editorController) {
     return;
   }
 
@@ -507,7 +501,7 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
   double viewportWidth = viewport()->width();
   double lineHeight = fontMetrics.height();
 
-  int lineCount = editor->get_line_count();
+  int lineCount = editorController->getLineCount();
   int firstVisibleLine =
       qMax(0, qMin((int)(verticalOffset / lineHeight), lineCount - 1));
   int visibleLineCount = viewportHeight / lineHeight;
@@ -519,9 +513,10 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
                          verticalOffset, horizontalOffset, viewportWidth,
                          viewportHeight};
 
-  rust::Vec<rust::String> rawLines = editor->get_lines();
-  rust::Vec<neko::CursorPosition> cursors = editor->get_cursor_positions();
-  neko::Selection selections = editor->get_selection();
+  const QStringList lines = editorController->getLines();
+  std::vector<neko::CursorPosition> cursors =
+      editorController->getCursorPositions();
+  neko::Selection selections = editorController->getSelection();
   bool isEmpty = editorController->isEmpty();
 
   double fontAscent = fontMetrics.ascent();
@@ -539,7 +534,7 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
     return fontMetrics.horizontalAdvance(s);
   };
   RenderState state = {
-      rawLines,       cursors,          selections, theme,       lineCount,
+      lines,          cursors,          selections, theme,       lineCount,
       verticalOffset, horizontalOffset, lineHeight, fontAscent,  fontDescent,
       font,           hasFocus,         isEmpty,    measureWidth};
 

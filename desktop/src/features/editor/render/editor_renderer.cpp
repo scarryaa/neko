@@ -12,8 +12,7 @@ void EditorRenderer::paint(QPainter &painter, const RenderState &state,
 void EditorRenderer::drawText(QPainter *painter, const RenderState &state,
                               const ViewportContext &ctx) {
   auto drawLine = [painter, state, ctx](auto line) {
-    QString lineText =
-        state.isEmpty ? "" : QString::fromUtf8(state.rawLines.at(line));
+    QString lineText = state.isEmpty ? "" : state.lines.at(line);
 
     auto actualY =
         (line * ctx.lineHeight) +
@@ -26,8 +25,8 @@ void EditorRenderer::drawText(QPainter *painter, const RenderState &state,
   painter->setPen(state.theme.textColor);
   painter->setFont(state.font);
 
-  const int maxLine = std::min(ctx.lastVisibleLine,
-                               static_cast<int>(state.rawLines.size()) - 1);
+  const int maxLine =
+      std::min(ctx.lastVisibleLine, static_cast<int>(state.lines.size()) - 1);
   if (ctx.firstVisibleLine <= 0 && ctx.lastVisibleLine <= 0) {
     drawLine(0);
     return;
@@ -74,11 +73,11 @@ void EditorRenderer::drawSingleLineSelection(QPainter *painter,
                                              const ViewportContext &ctx,
                                              size_t startRow, size_t startCol,
                                              size_t endCol) {
-  if (startRow >= state.rawLines.size()) {
+  if (startRow >= state.lines.size()) {
     return;
   }
 
-  QString text = QString::fromUtf8(state.rawLines.at(startRow));
+  QString text = state.lines.at(startRow);
 
   QString selection_text = text.mid(startCol, endCol - startCol);
   QString selection_before_text = text.mid(0, startCol);
@@ -100,11 +99,11 @@ void EditorRenderer::drawFirstLineSelection(QPainter *painter,
     return;
   }
 
-  if (startRow >= state.rawLines.size()) {
+  if (startRow >= state.lines.size()) {
     return;
   }
 
-  QString text = QString::fromUtf8(state.rawLines.at(startRow));
+  QString text = state.lines.at(startRow);
 
   if (text.isEmpty())
     text = " ";
@@ -126,14 +125,14 @@ void EditorRenderer::drawMiddleLinesSelection(QPainter *painter,
                                               const ViewportContext &ctx,
                                               size_t startRow, size_t endRow) {
   for (size_t i = startRow + 1; i < endRow; i++) {
-    if (i >= state.rawLines.size()) {
+    if (i >= state.lines.size()) {
       continue;
     }
     if (i > ctx.lastVisibleLine || i < ctx.firstVisibleLine) {
       continue;
     }
 
-    QString text = QString::fromUtf8(state.rawLines.at(i));
+    QString text = state.lines.at(i);
 
     if (text.isEmpty())
       text = " ";
@@ -153,11 +152,11 @@ void EditorRenderer::drawLastLineSelection(QPainter *painter,
     return;
   }
 
-  if (endRow >= state.rawLines.size()) {
+  if (endRow >= state.lines.size()) {
     return;
   }
 
-  QString text = QString::fromUtf8(state.rawLines.at(endRow));
+  QString text = state.lines.at(endRow);
   QString selectionText = text.mid(0, endCol);
 
   double width = state.measureWidth(selectionText);
@@ -183,11 +182,10 @@ void EditorRenderer::drawCursors(QPainter *painter, const RenderState &state,
     if (!state.hasFocus)
       return;
     if (!state.isEmpty &&
-        (cursorRow < 0 || cursorRow >= static_cast<int>(state.rawLines.size())))
+        (cursorRow < 0 || cursorRow >= static_cast<int>(state.lines.size())))
       return;
 
-    QString text =
-        state.isEmpty ? "" : QString::fromUtf8(state.rawLines.at(cursorRow));
+    QString text = state.isEmpty ? "" : state.lines.at(cursorRow);
     int clampedCol = std::clamp(cursorCol, 0, (int)text.size());
 
     qreal cursorX = state.measureWidth(text.left(clampedCol));
@@ -210,7 +208,7 @@ void EditorRenderer::drawCursors(QPainter *painter, const RenderState &state,
   for (const auto &cursor : state.cursors) {
     if (cursor.row < ctx.firstVisibleLine || cursor.row > ctx.lastVisibleLine)
       continue;
-    if (cursor.row < 0 || cursor.row >= static_cast<int>(state.rawLines.size()))
+    if (cursor.row < 0 || cursor.row >= static_cast<int>(state.lines.size()))
       continue;
 
     drawCursor(cursor.row, cursor.col);
