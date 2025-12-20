@@ -1,4 +1,6 @@
+pub mod file_node;
+pub mod file_tree;
 pub mod operations;
-pub mod tree;
 
-pub use tree::{FileNode, FileTree};
+pub use file_node::FileNode;
+pub use file_tree::FileTree;

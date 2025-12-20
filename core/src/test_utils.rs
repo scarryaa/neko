@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 use crate::text::Buffer;
 
 pub fn create_buffer_from(content: &str) -> Buffer {
