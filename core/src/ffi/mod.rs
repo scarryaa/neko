@@ -244,7 +244,7 @@ mod bridge {
         fn get_active_tab_index(self: &AppState) -> usize;
         #[cxx_name = "close_tab"]
         fn close_tab_wrapper(self: &mut AppState, index: usize) -> bool;
-        fn set_active_tab_index(self: &mut AppState, index: usize);
+        fn set_active_tab_index(self: &mut AppState, index: usize) -> Result<()>;
         fn new_tab(self: &mut AppState) -> usize;
         fn get_file_tree_mut(self: &mut AppState) -> &mut FileTree;
 

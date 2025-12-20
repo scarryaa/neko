@@ -21,32 +21,10 @@ impl AppState {
         };
 
         state.new_tab();
-
         Ok(state)
     }
 
-    pub fn new_tab(&mut self) -> usize {
-        let tab = Tab::new();
-
-        self.tabs.push(tab);
-        self.active_tab_index = self.tabs.len() - 1;
-        self.active_tab_index
-    }
-
-    pub fn close_tab(&mut self, index: usize) -> Result<(), Error> {
-        if index < self.tabs.len() {
-            self.tabs.remove(index);
-
-            if self.active_tab_index >= self.tabs.len() && !self.tabs.is_empty() {
-                self.active_tab_index = self.tabs.len() - 1;
-            }
-
-            Ok(())
-        } else {
-            Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))
-        }
-    }
-
+    // Getters
     pub fn get_tab_count(&self) -> usize {
         self.tabs.len()
     }
@@ -93,16 +71,56 @@ impl AppState {
             .unwrap_or(false)
     }
 
+    pub fn get_tab_index_by_path(&self, path: &str) -> Option<usize> {
+        self.tabs
+            .iter()
+            .position(|t| t.get_file_path().as_ref().and_then(|p| p.to_str()) == Some(path))
+    }
+
     pub fn tab_with_path_exists(&self, path: &str) -> bool {
         self.tabs
             .iter()
             .any(|t| t.get_file_path().as_ref().and_then(|p| p.to_str()) == Some(path))
     }
 
-    pub fn get_tab_index_by_path(&self, path: &str) -> Option<usize> {
-        self.tabs
-            .iter()
-            .position(|t| t.get_file_path().as_ref().and_then(|p| p.to_str()) == Some(path))
+    pub fn get_file_tree(&self) -> &FileTree {
+        &self.file_tree
+    }
+
+    pub fn get_file_tree_mut(&mut self) -> &mut FileTree {
+        &mut self.file_tree
+    }
+
+    // Setters
+    pub fn new_tab(&mut self) -> usize {
+        let tab = Tab::new();
+
+        self.tabs.push(tab);
+        self.active_tab_index = self.tabs.len() - 1;
+        self.active_tab_index
+    }
+
+    pub fn close_tab(&mut self, index: usize) -> Result<(), Error> {
+        if index < self.tabs.len() {
+            self.tabs.remove(index);
+
+            if self.active_tab_index >= self.tabs.len() && !self.tabs.is_empty() {
+                self.active_tab_index = self.tabs.len() - 1;
+            }
+
+            Ok(())
+        } else {
+            Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))
+        }
+    }
+
+    pub fn set_active_tab_index(&mut self, index: usize) -> Result<(), Error> {
+        if self.tabs.is_empty() || index >= self.tabs.len() {
+            Err(Error::other("Provided tab index is out of range"))
+        } else {
+            self.active_tab_index = index;
+            Ok(())
+        }
     }
 
     pub fn open_file(&mut self, path: &str) -> Result<(), std::io::Error> {
@@ -175,16 +193,87 @@ impl AppState {
 
         Ok(())
     }
+}
 
-    pub fn get_file_tree(&self) -> &FileTree {
-        &self.file_tree
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn close_tab_returns_error_when_tabs_are_empty() {
+        let mut a = AppState::new(None).unwrap();
+        let result = a.close_tab(1);
+
+        assert!(result.is_err())
     }
 
-    pub fn get_file_tree_mut(&mut self) -> &mut FileTree {
-        &mut self.file_tree
+    #[test]
+    fn close_tab_returns_error_when_index_greater_than_number_of_tabs() {
+        let mut a = AppState::new(None).unwrap();
+        let result = a.close_tab(1);
+
+        assert!(result.is_err())
     }
 
-    pub fn set_active_tab_index(&mut self, index: usize) {
-        self.active_tab_index = index;
+    #[test]
+    fn set_active_tab_index_returns_error_when_tabs_are_empty() {
+        let mut a = AppState::new(None).unwrap();
+        let _ = a.close_tab(0);
+        let result = a.set_active_tab_index(0);
+
+        assert!(result.is_err())
+    }
+
+    #[test]
+    fn set_active_tab_index_returns_error_when_index_greater_than_number_of_tabs() {
+        let mut a = AppState::new(None).unwrap();
+        let result = a.set_active_tab_index(1);
+
+        assert!(result.is_err())
+    }
+
+    #[test]
+    fn open_file_returns_error_when_file_is_already_open() {
+        let mut a = AppState::new(None).unwrap();
+        a.new_tab();
+        a.tabs[1].set_file_path(Some("test".to_string()));
+
+        let result = a.open_file("test");
+
+        assert!(result.is_err())
+    }
+
+    #[test]
+    fn save_file_returns_error_when_tabs_are_empty() {
+        let mut a = AppState::new(None).unwrap();
+        let _ = a.close_tab(0);
+        let result = a.save_file();
+
+        assert!(result.is_err())
+    }
+
+    #[test]
+    fn save_file_returns_error_when_there_is_no_current_file() {
+        let mut a = AppState::new(None).unwrap();
+        let result = a.save_file();
+
+        assert!(result.is_err())
+    }
+
+    #[test]
+    fn save_and_set_path_returns_error_when_provided_path_is_empty() {
+        let mut a = AppState::new(None).unwrap();
+        let result = a.save_and_set_path("");
+
+        assert!(result.is_err())
+    }
+
+    #[test]
+    fn save_and_set_path_returns_error_when_tabs_are_empty() {
+        let mut a = AppState::new(None).unwrap();
+        let _ = a.close_tab(0);
+        let result = a.save_and_set_path("");
+
+        assert!(result.is_err())
     }
 }
