@@ -29,6 +29,10 @@ impl AppState {
         self.tabs.len()
     }
 
+    pub fn get_tabs_empty(&self) -> bool {
+        self.tabs.is_empty()
+    }
+
     pub fn get_active_editor(&self) -> Option<&Editor> {
         self.tabs.get(self.active_tab_index).map(|t| t.get_editor())
     }
@@ -153,7 +157,7 @@ impl AppState {
         Ok(())
     }
 
-    pub fn save_file(&mut self) -> Result<(), std::io::Error> {
+    pub fn save_active_tab(&mut self) -> Result<(), std::io::Error> {
         let tab = self
             .tabs
             .get_mut(self.active_tab_index)
@@ -172,7 +176,7 @@ impl AppState {
         Ok(())
     }
 
-    pub fn save_and_set_path(&mut self, path: &str) -> Result<(), std::io::Error> {
+    pub fn save_active_tab_and_set_path(&mut self, path: &str) -> Result<(), std::io::Error> {
         if path.is_empty() {
             return Err(Error::new(ErrorKind::InvalidInput, "Path cannot be empty"));
         }
@@ -244,35 +248,35 @@ mod test {
     }
 
     #[test]
-    fn save_file_returns_error_when_tabs_are_empty() {
+    fn save_active_tab_returns_error_when_tabs_are_empty() {
         let mut a = AppState::new(None).unwrap();
         let _ = a.close_tab(0);
-        let result = a.save_file();
+        let result = a.save_active_tab();
 
         assert!(result.is_err())
     }
 
     #[test]
-    fn save_file_returns_error_when_there_is_no_current_file() {
+    fn save_active_tab_returns_error_when_there_is_no_current_file() {
         let mut a = AppState::new(None).unwrap();
-        let result = a.save_file();
+        let result = a.save_active_tab();
 
         assert!(result.is_err())
     }
 
     #[test]
-    fn save_and_set_path_returns_error_when_provided_path_is_empty() {
+    fn save_active_tab_and_set_path_returns_error_when_provided_path_is_empty() {
         let mut a = AppState::new(None).unwrap();
-        let result = a.save_and_set_path("");
+        let result = a.save_active_tab_and_set_path("");
 
         assert!(result.is_err())
     }
 
     #[test]
-    fn save_and_set_path_returns_error_when_tabs_are_empty() {
+    fn save_active_tab_and_set_path_returns_error_when_tabs_are_empty() {
         let mut a = AppState::new(None).unwrap();
         let _ = a.close_tab(0);
-        let result = a.save_and_set_path("");
+        let result = a.save_active_tab_and_set_path("");
 
         assert!(result.is_err())
     }

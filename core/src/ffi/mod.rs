@@ -1,10 +1,9 @@
-use std::path::PathBuf;
-
 use bridge::{
     AddCursorDirectionFfi, AddCursorDirectionKind, ChangeSetFfi, CommandFfi, CommandKindFfi,
     CommandResultFfi, CursorPosition, FileNode, FontType, Selection, Shortcut, UiIntentFfi,
     UiIntentKindFfi,
 };
+use std::path::PathBuf;
 
 use crate::app::AppState;
 use crate::commands::execute_command;
@@ -228,25 +227,34 @@ mod bridge {
 
         // AppState
         fn new_app_state(root_path: &str) -> Result<Box<AppState>>;
-        fn is_file_open(self: &AppState, path: &str) -> bool;
-        #[cxx_name = "get_tab_index_by_path"]
-        fn get_tab_index_by_path_wrapper(self: &AppState, path: &str) -> i64;
-        #[cxx_name = "open_file"]
-        fn open_file_wrapper(self: &mut AppState, path: &str) -> bool;
-        fn save_active_file(self: &mut AppState) -> bool;
-        #[cxx_name = "save_and_set_path"]
-        fn save_and_set_path_wrapper(self: &mut AppState, path: &str) -> bool;
-        fn get_editor_mut(self: &mut AppState) -> &mut Editor;
+        fn get_tab_count(self: &AppState) -> usize;
+        fn get_tabs_empty(self: &AppState) -> bool;
+        #[cxx_name = "get_active_editor"]
+        fn get_active_editor_wrapper(self: &AppState) -> &Editor;
+        #[cxx_name = "get_active_editor_mut"]
+        fn get_active_editor_mut_wrapper(self: &mut AppState) -> &mut Editor;
+        #[cxx_name = "get_active_tab_path"]
+        fn get_active_tab_path_wrapper(self: &AppState) -> String;
+        fn get_active_tab_index(self: &AppState) -> usize;
         fn get_tab_titles(self: &AppState) -> Vec<String>;
         fn get_tab_modified_states(self: &AppState) -> Vec<bool>;
         fn get_tab_modified(self: &AppState, index: usize) -> bool;
-        fn get_tab_count(self: &AppState) -> usize;
-        fn get_active_tab_index(self: &AppState) -> usize;
+        #[cxx_name = "get_tab_index_by_path"]
+        fn get_tab_index_by_path_wrapper(self: &AppState, path: &str) -> i64;
+        fn tab_with_path_exists(self: &AppState, path: &str) -> bool;
+        fn get_file_tree(self: &AppState) -> &FileTree;
+        fn get_file_tree_mut(self: &mut AppState) -> &mut FileTree;
+
+        fn new_tab(self: &mut AppState) -> usize;
         #[cxx_name = "close_tab"]
         fn close_tab_wrapper(self: &mut AppState, index: usize) -> bool;
         fn set_active_tab_index(self: &mut AppState, index: usize) -> Result<()>;
-        fn new_tab(self: &mut AppState) -> usize;
-        fn get_file_tree_mut(self: &mut AppState) -> &mut FileTree;
+        #[cxx_name = "open_file"]
+        fn open_file_wrapper(self: &mut AppState, path: &str) -> bool;
+        #[cxx_name = "save_active_tab"]
+        fn save_active_tab_wrapper(self: &mut AppState) -> bool;
+        #[cxx_name = "save_active_tab_and_set_path"]
+        fn save_active_tab_and_set_path_wrapper(self: &mut AppState, path: &str) -> bool;
 
         // ConfigManager
         fn new_config_manager() -> Result<Box<ConfigManager>>;
@@ -438,13 +446,20 @@ fn new_app_state(root_path: &str) -> std::io::Result<Box<AppState>> {
 }
 
 impl AppState {
-    fn get_editor_mut(&mut self) -> &mut Editor {
-        self.get_active_editor_mut()
+    fn get_active_editor_wrapper(&self) -> &Editor {
+        self.get_active_editor()
             .expect("Attempted to access editor but failed")
     }
 
-    fn is_file_open(&self, path: &str) -> bool {
-        self.tab_with_path_exists(path)
+    fn get_active_editor_mut_wrapper(&mut self) -> &mut Editor {
+        self.get_active_editor_mut()
+            .expect("Attempted to access mutable editor but failed")
+    }
+
+    fn get_active_tab_path_wrapper(&self) -> String {
+        self.get_active_tab_path()
+            .expect("Tried to access active tab path but failed")
+            .to_string()
     }
 
     fn get_tab_index_by_path_wrapper(&self, path: &str) -> i64 {
@@ -457,12 +472,12 @@ impl AppState {
         self.open_file(path).is_ok()
     }
 
-    fn save_active_file(&mut self) -> bool {
-        self.save_file().is_ok()
+    fn save_active_tab_wrapper(&mut self) -> bool {
+        self.save_active_tab().is_ok()
     }
 
-    fn save_and_set_path_wrapper(&mut self, path: &str) -> bool {
-        self.save_and_set_path(path).is_ok()
+    fn save_active_tab_and_set_path_wrapper(&mut self, path: &str) -> bool {
+        self.save_active_tab_and_set_path(path).is_ok()
     }
 
     fn close_tab_wrapper(&mut self, index: usize) -> bool {

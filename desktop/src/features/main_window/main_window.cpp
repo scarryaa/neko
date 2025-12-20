@@ -15,7 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
   setAttribute(Qt::WA_NativeWindow);
   setAttribute(Qt::WA_LayoutOnEntireRect);
 
-  neko::Editor *editor = &appState->get_editor_mut();
+  neko::Editor *editor = &appState->get_active_editor_mut();
   neko::FileTree *fileTree = &appState->get_file_tree_mut();
   editorController = new EditorController(editor);
   tabController = new TabController(&*appState);
@@ -288,17 +288,17 @@ void MainWindow::onCursorPositionClicked() {
     return;
   }
 
-  auto cursor = appState->get_editor_mut().get_last_added_cursor();
-  auto lineCount = appState->get_editor_mut().get_line_count();
+  auto cursor = appState->get_active_editor().get_last_added_cursor();
+  auto lineCount = appState->get_active_editor().get_line_count();
 
   if (lineCount == 0) {
     return;
   }
 
   auto maxCol = std::max<size_t>(
-      1, appState->get_editor_mut().get_line_length(cursor.row));
+      1, appState->get_active_editor().get_line_length(cursor.row));
   auto lastLineMaxCol = std::max<size_t>(
-      1, appState->get_editor_mut().get_line_length(lineCount - 1));
+      1, appState->get_active_editor().get_line_length(lineCount - 1));
 
   commandPaletteWidget->jumpToRowColumn(cursor.row, cursor.col, maxCol,
                                         lineCount, lastLineMaxCol);
@@ -673,7 +673,7 @@ void MainWindow::onTabChanged(int index) {
 void MainWindow::onNewTabRequested() {
   saveCurrentScrollState();
   tabController->addTab();
-  setActiveEditor(&appState->get_editor_mut());
+  setActiveEditor(&appState->get_active_editor_mut());
 
   updateTabBar();
   switchToActiveTab();
@@ -696,7 +696,7 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
     gutterWidget->show();
     statusBarWidget->showCursorPositionInfo();
 
-    neko::Editor &editor = appState->get_editor_mut();
+    neko::Editor &editor = appState->get_active_editor_mut();
     setActiveEditor(&editor);
     editorWidget->redraw();
     editorWidget->updateDimensions();
@@ -738,7 +738,7 @@ void MainWindow::updateTabBar() {
 void MainWindow::onFileSelected(const std::string &filePath,
                                 bool shouldFocusEditor) {
   // Check if file is already open
-  if (appState->is_file_open(filePath)) {
+  if (appState->tab_with_path_exists(filePath)) {
     // Save current scroll offset before switching
     saveCurrentScrollState();
 
@@ -888,7 +888,7 @@ MainWindow::SaveResult MainWindow::onFileSaved(bool isSaveAs) {
     return result;
   }
 
-  if (appState->save_active_file()) {
+  if (appState->save_active_tab()) {
     int activeIndex = appState->get_active_tab_index();
     tabBarWidget->setTabModified(activeIndex, false);
 
@@ -907,7 +907,7 @@ MainWindow::SaveResult MainWindow::saveAs() {
   if (filePath.isEmpty())
     return SaveResult::Canceled;
 
-  if (appState->save_and_set_path(filePath.toStdString())) {
+  if (appState->save_active_tab_and_set_path(filePath.toStdString())) {
     int activeIndex = appState->get_active_tab_index();
     tabBarWidget->setTabModified(activeIndex, false);
 
