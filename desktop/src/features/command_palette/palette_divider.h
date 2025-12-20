@@ -14,7 +14,7 @@ protected:
   void paintEvent(QPaintEvent *event) override;
 
 private:
-  QColor color;
+  const QColor color;
 };
 
 #endif // PALETTE_DIVIDER_H

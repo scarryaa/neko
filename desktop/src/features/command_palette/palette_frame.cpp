@@ -12,15 +12,15 @@ void PaletteFrame::paintEvent(QPaintEvent *) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing, true);
 
-  QColor fill =
+  const QColor fill =
       UiUtils::getThemeColor(themeManager, "command_palette.background");
-  QColor stroke =
+  const QColor stroke =
       UiUtils::getThemeColor(themeManager, "command_palette.border");
   QPainterPath path;
-  constexpr qreal r = 12.0;
+  const constexpr qreal r = 12.0;
   path.addRoundedRect(rect().adjusted(1, 1, -1, -1), r, r);
   p.fillPath(path, fill);
-  QPen pen(stroke, 1.5);
+  const QPen pen(stroke, 1.5);
   p.setPen(pen);
   p.drawPath(path);
 }

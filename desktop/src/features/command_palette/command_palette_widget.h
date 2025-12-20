@@ -31,12 +31,13 @@ public:
   ~CommandPaletteWidget();
 
   void applyTheme();
-  void jumpToRowColumn(int currentRow = 0, int currentCol = 0, int maxCol = 1,
-                       int lineCount = 1, int lastLineMaxCol = 1);
+  void jumpToRowColumn(const int currentRow = 0, const int currentCol = 0,
+                       const int maxCol = 1, const int lineCount = 1,
+                       const int lastLineMaxCol = 1);
   void showPalette();
 
 signals:
-  void goToPositionRequested(int row, int col);
+  void goToPositionRequested(const int row, const int col);
   void commandRequested(const QString &command);
 
 protected:
@@ -79,10 +80,12 @@ private:
 
   void clearContent();
   void adjustPosition();
-  void prepareJumpState(int currentRow, int currentCol, int maxCol,
-                        int lineCount, int lastLineMaxCol);
-  void buildJumpContent(int currentRow, int currentCol, int maxCol,
-                        int lineCount, int lastLineMaxCol);
+  void prepareJumpState(const int currentRow, const int currentCol,
+                        const int maxCol, const int lineCount,
+                        const int lastLineMaxCol);
+  void buildJumpContent(const int currentRow, const int currentCol,
+                        const int maxCol, const int lineCount,
+                        const int lastLineMaxCol);
   void buildCommandPalette();
   void emitCommandRequestFromInput();
   void emitJumpRequestFromInput();
@@ -95,7 +98,7 @@ private:
   void jumpToDocumentQuarter();
   void jumpToDocumentThreeQuarters();
   void jumpToLastTarget();
-  void adjustShortcutsAfterToggle(bool checked);
+  void adjustShortcutsAfterToggle(const bool checked);
 
   struct PaletteColors {
     QString foreground;
@@ -105,29 +108,30 @@ private:
     QString accentForeground;
   };
 
-  PaletteColors loadPaletteColors() const;
-  QFont makeInterfaceFont(qreal pointSize) const;
-  void addSpacer(int height);
+  const PaletteColors loadPaletteColors() const;
+  const QFont makeInterfaceFont(const qreal pointSize) const;
+  void addSpacer(const int height);
   PaletteDivider *addDivider(const QString &borderColor);
-  void addJumpInputRow(int clampedRow, int clampedCol,
+  void addJumpInputRow(const int clampedRow, const int clampedCol,
                        const PaletteColors &paletteColors, QFont &font);
   void addCommandInputRow(const PaletteColors &paletteColors, QFont &font);
   void addCommandSuggestionsList(const PaletteColors &paletteColors,
                                  const QFont &font);
-  void addCurrentLineLabel(int clampedRow, int clampedCol,
-                           const PaletteColors &paletteColors, QFont font);
+  void addCurrentLineLabel(const int clampedRow, const int clampedCol,
+                           const PaletteColors &paletteColors,
+                           const QFont font);
   void addShortcutsSection(const PaletteColors &paletteColors,
                            const QFont &font);
   void updateHistoryHint(QWidget *targetInput, const QString &placeholder);
   void createHistoryHint(QWidget *targetInput,
-                         const PaletteColors &paletteColors, QFont &font);
+                         const PaletteColors &paletteColors, const QFont &font);
   void saveCommandHistoryEntry(const QString &entry);
   void saveJumpHistoryEntry(const QString &entry);
   void resetJumpHistoryNavigation();
-  bool handleJumpHistoryNavigation(QKeyEvent *event);
+  const bool handleJumpHistoryNavigation(const QKeyEvent *event);
   void resetCommandHistoryNavigation();
-  bool handleCommandHistoryNavigation(QKeyEvent *event);
-  bool handleCommandSuggestionNavigation(QKeyEvent *event);
+  const bool handleCommandHistoryNavigation(const QKeyEvent *event);
+  const bool handleCommandSuggestionNavigation(const QKeyEvent *event);
   void updateCommandSuggestions(const QString &text);
 
   static constexpr double TOP_OFFSET = 300.0;
