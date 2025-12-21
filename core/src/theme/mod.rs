@@ -79,6 +79,28 @@ impl Theme {
             "#cccccc".to_string(),
         );
 
+        colors.insert("context_menu.foreground".to_string(), "#2d2d2d".to_string());
+        colors.insert(
+            "context_menu.foreground.disabled".to_string(),
+            "#9a9a9a".to_string(),
+        );
+        colors.insert("context_menu.label".to_string(), "#2d2d2d".to_string());
+        colors.insert(
+            "context_menu.label.disabled".to_string(),
+            "#9a9a9a".to_string(),
+        );
+        colors.insert("context_menu.shortcut".to_string(), "#5a5a5a".to_string());
+        colors.insert(
+            "context_menu.shortcut.disabled".to_string(),
+            "#b0b0b0".to_string(),
+        );
+        colors.insert(
+            "context_menu.button.hover".to_string(),
+            "#dadada".to_string(),
+        );
+        colors.insert("context_menu.background".to_string(), "#f5f5f5".to_string());
+        colors.insert("context_menu.border".to_string(), "#d3d3d3".to_string());
+
         colors.insert("sidebar.background".to_string(), "#f5f5f5".to_string());
         colors.insert("ui.foreground".to_string(), "#2d2d2d".to_string());
         colors.insert("ui.foreground.muted".to_string(), "#828282".to_string());
@@ -148,6 +170,28 @@ impl Theme {
             "command_palette.shadow".to_string(),
             "#66000000".to_string(),
         );
+
+        colors.insert("context_menu.foreground".to_string(), "#d4d4d4".to_string());
+        colors.insert(
+            "context_menu.foreground.disabled".to_string(),
+            "#676767".to_string(),
+        );
+        colors.insert("context_menu.label".to_string(), "#d4d4d4".to_string());
+        colors.insert(
+            "context_menu.label.disabled".to_string(),
+            "#676767".to_string(),
+        );
+        colors.insert("context_menu.shortcut".to_string(), "#a4a4a4".to_string());
+        colors.insert(
+            "context_menu.shortcut.disabled".to_string(),
+            "#4f4f4f".to_string(),
+        );
+        colors.insert(
+            "context_menu.button.hover".to_string(),
+            "#2c2c2c".to_string(),
+        );
+        colors.insert("context_menu.background".to_string(), "#000000".to_string());
+        colors.insert("context_menu.border".to_string(), "#3c3c3c".to_string());
 
         colors.insert("ui.scrollbar.thumb".to_string(), "#555555".to_string());
         colors.insert(

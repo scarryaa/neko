@@ -13,8 +13,10 @@ void ContextMenuFrame::paintEvent(QPaintEvent *) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing, true);
 
-  const QColor fill = UiUtils::getThemeColor(themeManager, "ui.background");
-  const QColor stroke = UiUtils::getThemeColor(themeManager, "ui.border");
+  const QColor fill =
+      UiUtils::getThemeColor(themeManager, "context_menu.background");
+  const QColor stroke =
+      UiUtils::getThemeColor(themeManager, "context_menu.border");
 
   QPainterPath path;
   const constexpr qreal r = 12.0;

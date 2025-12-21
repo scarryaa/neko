@@ -7,6 +7,7 @@
 #include <QApplication>
 #include <QFrame>
 #include <QGraphicsDropShadowEffect>
+#include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QToolButton>
@@ -31,6 +32,7 @@ signals:
 
 protected:
   bool eventFilter(QObject *watched, QEvent *event) override;
+  void keyPressEvent(QKeyEvent *event) override;
 
 private:
   void clearRows();

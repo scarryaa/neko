@@ -11,14 +11,17 @@ ContextMenuWidget::ContextMenuWidget(neko::ThemeManager *themeManager,
   setAttribute(Qt::WA_ShowWithoutActivating);
   setAttribute(Qt::WA_StyledBackground, true);
   setAttribute(Qt::WA_TranslucentBackground);
+  setFocusPolicy(Qt::StrongFocus);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
   setMinimumWidth(200);
   setMouseTracking(true);
   setAutoFillBackground(false);
 
+  const auto shadowColor =
+      UiUtils::getThemeColor(*themeManager, "command_palette.shadow");
   QGraphicsDropShadowEffect *shadow = new QGraphicsDropShadowEffect(this);
   shadow->setBlurRadius(SHADOW_BLUR_RADIUS);
-  shadow->setColor(Qt::black);
+  shadow->setColor(shadowColor);
   shadow->setOffset(SHADOW_X_OFFSET, SHADOW_Y_OFFSET);
 
   mainFrame = new ContextMenuFrame(*themeManager, this);
@@ -34,43 +37,43 @@ ContextMenuWidget::ContextMenuWidget(neko::ThemeManager *themeManager,
   layout->setContentsMargins(6, 6, 6, 6);
   layout->setSpacing(4);
 
-  const auto backgroundColor =
-      UiUtils::getThemeColor(*themeManager, "ui.background");
-  const auto borderColor = UiUtils::getThemeColor(*themeManager, "ui.border");
-  const auto foregroundColor =
-      UiUtils::getThemeColor(*themeManager, "ui.foreground");
-  const auto mutedForegroundColor =
-      UiUtils::getThemeColor(*themeManager, "ui.foreground.muted");
+  const auto borderColor =
+      UiUtils::getThemeColor(*themeManager, "context_menu.border");
+  const auto labelColor =
+      UiUtils::getThemeColor(*themeManager, "context_menu.label");
+  const auto labelDisabledColor =
+      UiUtils::getThemeColor(*themeManager, "context_menu.label.disabled");
+  const auto shortcutColor =
+      UiUtils::getThemeColor(*themeManager, "context_menu.shortcut");
+  const auto shortcutDisabledColor =
+      UiUtils::getThemeColor(*themeManager, "context_menu.shortcut.disabled");
   const auto hoverColor =
-      UiUtils::getThemeColor(*themeManager, "ui.background.hover");
+      UiUtils::getThemeColor(*themeManager, "context_menu.button.hover");
   const auto accentMutedColor =
       UiUtils::getThemeColor(*themeManager, "ui.accent.muted");
   const auto accentForegroundColor =
       UiUtils::getThemeColor(*themeManager, "ui.accent.foreground");
 
   QString styleSheet = QString(
-      "ContextMenuWidget { background: %1; border: 1px solid %2;"
-      "border-radius: 12px; }"
-      "QToolButton#ContextMenuItem { color: %3; background: transparent;"
+      "QToolButton#ContextMenuItem { color: %2; background: transparent;"
       "border: none; padding: 8px 14px; text-align: left; border-radius: 6px; "
       "}"
-      "QToolButton#ContextMenuItem:hover { background: %4;}"
-      "QToolButton#ContextMenuItem:pressed { background: %4;}"
-      "QToolButton#ContextMenuItem:checked { background: %5; color: %6;}"
-      "QToolButton#ContextMenuItem:disabled { color: %7; }"
-      "QFrame#ContextMenuSeparator { background: %2; border: none; margin:"
+      "QToolButton#ContextMenuItem:hover { background: %3;}"
+      "QToolButton#ContextMenuItem:pressed { background: %3;}"
+      "QToolButton#ContextMenuItem:checked { background: %4; color: %5;}"
+      "QToolButton#ContextMenuItem:disabled { color: %6; }"
+      "QFrame#ContextMenuSeparator { background: %1; border: none; margin:"
       "0px; }"
-      "QLabel#ContextMenuLabel { color: %8; padding: 0px 6px; }"
-      "QLabel#ContextMenuLabel:disabled { color: %9; padding: 0px 6px; }"
-      "QLabel#ContextMenuShortcutLabel { color: %10; padding: 0px 6px; }"
-      "QLabel#ContextMenuShortcutLabel:disabled { color: %11; padding: 0px "
+      "QLabel#ContextMenuLabel { color: %7; padding: 0px 6px; }"
+      "QLabel#ContextMenuLabel:disabled { color: %8; padding: 0px 6px; }"
+      "QLabel#ContextMenuShortcutLabel { color: %9; padding: 0px 6px; }"
+      "QLabel#ContextMenuShortcutLabel:disabled { color: %10; padding: 0px "
       "6px; }");
 
-  setStyleSheet(styleSheet.arg(backgroundColor, borderColor, foregroundColor,
-                               hoverColor, accentMutedColor,
-                               accentForegroundColor, mutedForegroundColor,
-                               foregroundColor, mutedForegroundColor,
-                               mutedForegroundColor, mutedForegroundColor));
+  setStyleSheet(
+      styleSheet.arg(borderColor, labelColor, hoverColor, accentMutedColor,
+                     accentForegroundColor, labelDisabledColor, labelColor,
+                     labelDisabledColor, shortcutColor, shortcutDisabledColor));
 }
 
 ContextMenuWidget::~ContextMenuWidget() {}
@@ -79,6 +82,7 @@ void ContextMenuWidget::showMenu(const QPoint &position) {
   const int margin = static_cast<int>(CONTENT_MARGIN);
   move(position - QPoint(margin / 2, margin / 2));
   show();
+  setFocus(Qt::PopupFocusReason);
 
   qApp->installEventFilter(this);
 }
@@ -100,6 +104,15 @@ bool ContextMenuWidget::eventFilter(QObject *watched, QEvent *event) {
   }
 
   return QWidget::eventFilter(watched, event);
+}
+
+void ContextMenuWidget::keyPressEvent(QKeyEvent *event) {
+  if (event->key() == Qt::Key_Escape) {
+    close();
+    return;
+  }
+
+  QWidget::keyPressEvent(event);
 }
 
 void ContextMenuWidget::setItems(const QVector<ContextMenuItem> &items) {
