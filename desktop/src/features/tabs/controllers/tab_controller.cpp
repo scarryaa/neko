@@ -4,6 +4,53 @@ TabController::TabController(neko::AppState *appState) : appState(appState) {}
 
 TabController::~TabController() {}
 
+const int TabController::getTabCount() const {
+  return !appState ? 0 : appState->get_tab_count();
+}
+
+const int TabController::getActiveTabIndex() const {
+  return !appState ? -1 : appState->get_active_tab_index();
+}
+
+const rust::Vec<rust::String> TabController::getTabTitles() const {
+  if (!appState) {
+    return {};
+  }
+  return appState->get_tab_titles();
+}
+
+const rust::Vec<bool> TabController::getTabModifiedStates() const {
+  if (!appState) {
+    return {};
+  }
+
+  return appState->get_tab_modified_states();
+}
+
+const rust::Vec<bool> TabController::getTabPinnedStates() const {
+  if (!appState) {
+    return {};
+  }
+
+  return appState->get_tab_pinned_states();
+}
+
+const bool TabController::getTabModified(int index) const {
+  return appState->get_tab_modified(index);
+}
+
+const bool TabController::getTabWithPathExists(const std::string &path) const {
+  return appState->tab_with_path_exists(path);
+}
+
+const int TabController::getTabIndexByPath(const std::string &path) const {
+  return appState->get_tab_index_by_path(path);
+}
+
+const bool TabController::getTabsEmpty() const {
+  return appState->get_tabs_empty();
+}
+
 int TabController::addTab() {
   if (!appState) {
     return -1;
@@ -151,14 +198,6 @@ bool TabController::moveTab(int from, int to) {
   return true;
 }
 
-const int TabController::getTabCount() const {
-  return !appState ? 0 : appState->get_tab_count();
-}
-
-const int TabController::getActiveTabIndex() const {
-  return !appState ? -1 : appState->get_active_tab_index();
-}
-
 void TabController::setActiveTabIndex(int index) {
   if (!appState) {
     return;
@@ -173,52 +212,6 @@ void TabController::setActiveTabIndex(int index) {
   emit activeTabChanged(index);
 }
 
-const rust::Vec<rust::String> TabController::getTabTitles() const {
-  if (!appState) {
-    return {};
-  }
-  return appState->get_tab_titles();
-}
-
-const rust::Vec<bool> TabController::getTabModifiedStates() const {
-  if (!appState) {
-    return {};
-  }
-
-  return appState->get_tab_modified_states();
-}
-
-const rust::Vec<bool> TabController::getTabPinnedStates() const {
-  if (!appState) {
-    return {};
-  }
-
-  return appState->get_tab_pinned_states();
-}
-
-const bool TabController::getTabModified(int index) const {
-  return appState->get_tab_modified(index);
-}
-
-const bool TabController::getTabWithPathExists(const std::string &path) const {
-  return appState->tab_with_path_exists(path);
-}
-
-const int TabController::getTabIndexByPath(const std::string &path) const {
-  return appState->get_tab_index_by_path(path);
-}
-
-const bool TabController::getTabsEmpty() const {
-  return appState->get_tabs_empty();
-}
-
-const QString TabController::getTabPath(int index) const {
-  const auto rawPath = appState->get_tab_path(index);
-  const QString path = QString::fromUtf8(rawPath);
-
-  return path;
-}
-
 const bool TabController::saveActiveTab() const {
   return appState->save_active_tab();
 }
@@ -226,4 +219,11 @@ const bool TabController::saveActiveTab() const {
 const bool
 TabController::saveActiveTabAndSetPath(const std::string &path) const {
   return appState->save_active_tab_and_set_path(path);
+}
+
+const QString TabController::getTabPath(int index) const {
+  const auto rawPath = appState->get_tab_path(index);
+  const QString path = QString::fromUtf8(rawPath);
+
+  return path;
 }

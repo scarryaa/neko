@@ -85,34 +85,6 @@ void ContextMenuWidget::showMenu(const QPoint &position) {
   qApp->installEventFilter(this);
 }
 
-bool ContextMenuWidget::eventFilter(QObject *watched, QEvent *event) {
-  if (event->type() == QEvent::MouseButtonPress) {
-    const QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
-    const QPoint globalPos = mouseEvent->globalPosition().toPoint();
-
-    if (!geometry().contains(globalPos)) {
-      close();
-      return true;
-    }
-  } else if (event->type() == QEvent::ApplicationDeactivate) {
-    close();
-    return false;
-  } else if (event->type() == QEvent::Close) {
-    qApp->removeEventFilter(this);
-  }
-
-  return QWidget::eventFilter(watched, event);
-}
-
-void ContextMenuWidget::keyPressEvent(QKeyEvent *event) {
-  if (event->key() == Qt::Key_Escape) {
-    close();
-    return;
-  }
-
-  QWidget::keyPressEvent(event);
-}
-
 void ContextMenuWidget::setItems(const QVector<ContextMenuItem> &items) {
   clearRows();
 
@@ -177,6 +149,34 @@ void ContextMenuWidget::setItems(const QVector<ContextMenuItem> &items) {
 
   layout->addStretch(0);
   adjustSize();
+}
+
+bool ContextMenuWidget::eventFilter(QObject *watched, QEvent *event) {
+  if (event->type() == QEvent::MouseButtonPress) {
+    const QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+    const QPoint globalPos = mouseEvent->globalPosition().toPoint();
+
+    if (!geometry().contains(globalPos)) {
+      close();
+      return true;
+    }
+  } else if (event->type() == QEvent::ApplicationDeactivate) {
+    close();
+    return false;
+  } else if (event->type() == QEvent::Close) {
+    qApp->removeEventFilter(this);
+  }
+
+  return QWidget::eventFilter(watched, event);
+}
+
+void ContextMenuWidget::keyPressEvent(QKeyEvent *event) {
+  if (event->key() == Qt::Key_Escape) {
+    close();
+    return;
+  }
+
+  QWidget::keyPressEvent(event);
 }
 
 void ContextMenuWidget::clearRows() {

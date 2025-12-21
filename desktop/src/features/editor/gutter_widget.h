@@ -7,13 +7,18 @@
 #include "render/gutter_renderer.h"
 #include "utils/editor_utils.h"
 #include "utils/gui_utils.h"
-#include <QApplication>
-#include <QFontDatabase>
+#include <QFont>
+#include <QFontMetricsF>
 #include <QPainter>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QSize>
 #include <QString>
+#include <QStringList>
 #include <QWheelEvent>
+
+class QPaintEvent;
+class QWheelEvent;
 
 class GutterWidget : public QScrollArea {
   Q_OBJECT
@@ -25,6 +30,7 @@ public:
                         QWidget *parent = nullptr);
   ~GutterWidget();
 
+  void redraw() const;
   void applyTheme();
   void updateDimensions();
   void setEditorController(EditorController *newEditorController);
@@ -46,7 +52,6 @@ public slots:
 
 private:
   const double measureWidth() const;
-  void redraw() const;
   void drawText(QPainter *painter, const ViewportContext &ctx,
                 const int lineCount);
   void drawLineHighlight(QPainter *painter, const ViewportContext &ctx);

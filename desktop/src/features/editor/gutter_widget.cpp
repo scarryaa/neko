@@ -1,5 +1,4 @@
 #include "gutter_widget.h"
-#include "features/editor/controllers/editor_controller.h"
 
 GutterWidget::GutterWidget(EditorController *editorController,
                            neko::ConfigManager &configManager,
@@ -37,49 +36,13 @@ GutterWidget::GutterWidget(EditorController *editorController,
 
 GutterWidget::~GutterWidget() {}
 
+void GutterWidget::redraw() const { viewport()->update(); }
+
 void GutterWidget::applyTheme() {
   const QString bgHex =
       UiUtils::getThemeColor(themeManager, "editor.gutter.background", "black");
 
   setStyleSheet(QString("GutterWidget { background: %1; }").arg(bgHex));
-  redraw();
-}
-
-void GutterWidget::redraw() const { viewport()->update(); }
-
-void GutterWidget::onBufferChanged() { redraw(); }
-
-void GutterWidget::onCursorChanged() { redraw(); }
-
-void GutterWidget::onSelectionChanged() { redraw(); }
-
-void GutterWidget::onViewportChanged() { updateDimensions(); }
-
-QSize GutterWidget::sizeHint() const {
-  return QSize(measureWidth() + VIEWPORT_PADDING, height());
-}
-
-void GutterWidget::setEditorController(EditorController *newEditorController) {
-  editorController = newEditorController;
-}
-
-const double GutterWidget::measureWidth() const {
-  if (!editorController) {
-    return 0;
-  }
-
-  const int lineCount = editorController->getLineCount();
-
-  return fontMetrics.horizontalAdvance(QString::number(lineCount));
-}
-
-void GutterWidget::wheelEvent(QWheelEvent *event) {
-  const auto verticalScrollOffset = verticalScrollBar()->value();
-  const double verticalDelta =
-      (event->isInverted() ? -1 : 1) * event->angleDelta().y() / 4.0;
-  const auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;
-
-  verticalScrollBar()->setValue(newVerticalScrollOffset);
   redraw();
 }
 
@@ -102,15 +65,12 @@ void GutterWidget::updateDimensions() {
   redraw();
 }
 
-void GutterWidget::onEditorLineCountChanged() { updateDimensions(); }
+void GutterWidget::setEditorController(EditorController *newEditorController) {
+  editorController = newEditorController;
+}
 
-void GutterWidget::onEditorCursorPositionChanged() { redraw(); }
-
-void GutterWidget::onEditorFontSizeChanged(const qreal newSize) {
-  font.setPointSizeF(newSize);
-  fontMetrics = QFontMetricsF(font);
-
-  updateDimensions();
+QSize GutterWidget::sizeHint() const {
+  return QSize(measureWidth() + VIEWPORT_PADDING, height());
 }
 
 void GutterWidget::paintEvent(QPaintEvent *event) {
@@ -167,4 +127,43 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
       font,           hasFocus,         isEmpty,    measureWidth};
 
   renderer->paint(painter, state, ctx);
+}
+
+void GutterWidget::wheelEvent(QWheelEvent *event) {
+  const auto verticalScrollOffset = verticalScrollBar()->value();
+  const double verticalDelta =
+      (event->isInverted() ? -1 : 1) * event->angleDelta().y() / 4.0;
+  const auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;
+
+  verticalScrollBar()->setValue(newVerticalScrollOffset);
+  redraw();
+}
+
+void GutterWidget::onEditorFontSizeChanged(const qreal newSize) {
+  font.setPointSizeF(newSize);
+  fontMetrics = QFontMetricsF(font);
+
+  updateDimensions();
+}
+
+void GutterWidget::onEditorLineCountChanged() { updateDimensions(); }
+
+void GutterWidget::onEditorCursorPositionChanged() { redraw(); }
+
+void GutterWidget::onBufferChanged() { redraw(); }
+
+void GutterWidget::onCursorChanged() { redraw(); }
+
+void GutterWidget::onSelectionChanged() { redraw(); }
+
+void GutterWidget::onViewportChanged() { updateDimensions(); }
+
+const double GutterWidget::measureWidth() const {
+  if (!editorController) {
+    return 0;
+  }
+
+  const int lineCount = editorController->getLineCount();
+
+  return fontMetrics.horizontalAdvance(QString::number(lineCount));
 }

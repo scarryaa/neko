@@ -65,10 +65,6 @@ void TabBarWidget::applyTheme() {
   }
 }
 
-void TabBarWidget::setTabModified(int index, bool modified) {
-  tabs[index]->setModified(modified);
-}
-
 void TabBarWidget::setTabs(QStringList titles, QStringList paths,
                            rust::Vec<bool> modifiedStates,
                            rust::Vec<bool> pinnedStates) {
@@ -109,17 +105,18 @@ void TabBarWidget::setTabs(QStringList titles, QStringList paths,
   updateTabAppearance();
 }
 
-int TabBarWidget::dropIndexForPosition(const QPoint &pos) const {
-  for (int i = 0; i < tabs.size(); i++) {
-    const QRect tabRect = tabs[i]->geometry();
-
-    if (pos.x() < tabRect.center().x()) {
-      return i;
-    }
+void TabBarWidget::setCurrentIndex(size_t index) {
+  if (index < tabs.size()) {
+    currentTabIndex = index;
+    updateTabAppearance();
   }
-
-  return tabs.size();
 }
+
+void TabBarWidget::setTabModified(int index, bool modified) {
+  tabs[index]->setModified(modified);
+}
+
+int TabBarWidget::getNumberOfTabs() { return tabs.size(); }
 
 void TabBarWidget::dragEnterEvent(QDragEnterEvent *event) {
   if (event->mimeData()->hasFormat("application/x-neko-tab-index")) {
@@ -224,27 +221,6 @@ void TabBarWidget::dropEvent(QDropEvent *event) {
   event->accept();
 }
 
-void TabBarWidget::updateDropIndicator(int index) {
-  if (tabs.isEmpty()) {
-    dropIndicator->setVisible(false);
-    return;
-  }
-
-  int x = 0;
-  int height = containerWidget->height();
-  if (index <= 0) {
-    x = tabs.first()->geometry().left();
-  } else if (index >= tabs.size()) {
-    x = tabs.last()->geometry().right() + 1;
-  } else {
-    x = tabs[index]->geometry().left();
-  }
-
-  dropIndicator->setGeometry(x - 1, 0, 2, height);
-  dropIndicator->setVisible(true);
-  dropIndicator->raise();
-}
-
 bool TabBarWidget::eventFilter(QObject *watched, QEvent *event) {
   if (watched == viewport()) {
     if (event->type() == QEvent::DragEnter) {
@@ -268,6 +244,45 @@ bool TabBarWidget::eventFilter(QObject *watched, QEvent *event) {
   return QScrollArea::eventFilter(watched, event);
 }
 
+int TabBarWidget::dropIndexForPosition(const QPoint &pos) const {
+  for (int i = 0; i < tabs.size(); i++) {
+    const QRect tabRect = tabs[i]->geometry();
+
+    if (pos.x() < tabRect.center().x()) {
+      return i;
+    }
+  }
+
+  return tabs.size();
+}
+
+void TabBarWidget::updateDropIndicator(int index) {
+  if (tabs.isEmpty()) {
+    dropIndicator->setVisible(false);
+    return;
+  }
+
+  int x = 0;
+  int height = containerWidget->height();
+  if (index <= 0) {
+    x = tabs.first()->geometry().left();
+  } else if (index >= tabs.size()) {
+    x = tabs.last()->geometry().right() + 1;
+  } else {
+    x = tabs[index]->geometry().left();
+  }
+
+  dropIndicator->setGeometry(x - 1, 0, 2, height);
+  dropIndicator->setVisible(true);
+  dropIndicator->raise();
+}
+
+void TabBarWidget::updateTabAppearance() {
+  for (int i = 0; i < tabs.size(); i++) {
+    tabs[i]->setActive(i == currentTabIndex);
+  }
+}
+
 void TabBarWidget::registerCommands() {
   // TODO: Centralize these
   commandRegistry.registerCommand("tab.copyPath", [this](const QVariant &v) {
@@ -286,19 +301,4 @@ void TabBarWidget::registerCommands() {
 
     emit tabPinnedChanged(tabController->getActiveTabIndex());
   });
-}
-
-int TabBarWidget::getNumberOfTabs() { return tabs.size(); }
-
-void TabBarWidget::setCurrentIndex(size_t index) {
-  if (index < tabs.size()) {
-    currentTabIndex = index;
-    updateTabAppearance();
-  }
-}
-
-void TabBarWidget::updateTabAppearance() {
-  for (int i = 0; i < tabs.size(); i++) {
-    tabs[i]->setActive(i == currentTabIndex);
-  }
 }

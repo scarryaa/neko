@@ -5,6 +5,8 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QObject>
+#include <QString>
+#include <QStringList>
 #include <neko-core/src/ffi/mod.rs.h>
 
 class EditorController : public QObject {
@@ -23,7 +25,6 @@ public:
   const std::vector<neko::CursorPosition> getCursorPositions() const;
   const bool needsWidthMeasurement(const int index) const;
   const double getMaxWidth() const;
-  void setLineWidth(const int index, const double width);
   const bool cursorExistsAt(const int row, const int column) const;
   const bool bufferIsEmpty() const;
   const int getNumberOfSelections() const;
@@ -31,6 +32,8 @@ public:
   const int getLineLength(int index) const;
 
   // Setters
+  void setLineWidth(const int index, const double width);
+  void setEditor(neko::Editor *editor);
   void selectWord(const int row, const int column);
   void selectLine(const int row);
   void selectWordDrag(const int anchorStartRow, const int anchorStartCol,
@@ -69,9 +72,6 @@ signals:
   void lineCountChanged(const int lineCount);
   void bufferChanged();
   void viewportChanged();
-
-public slots:
-  void setEditor(neko::Editor *editor);
 
 private:
   void nav(neko::ChangeSetFfi (neko::Editor::*moveFn)(),

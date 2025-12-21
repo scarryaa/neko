@@ -28,6 +28,8 @@ public:
                      ContextMenuRegistry &contextMenuRegistry,
                      CommandRegistry &commandRegistry,
                      GetTabCountFn getTabCount, QWidget *parent = nullptr);
+  ~TabWidget();
+
   void setActive(bool active);
   void setModified(bool modified);
   void setIsPinned(bool isPinned);

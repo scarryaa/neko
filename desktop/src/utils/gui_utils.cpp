@@ -20,11 +20,6 @@ QString UiUtils::getThemeColor(neko::ThemeManager &manager, const char *key,
   return result;
 }
 
-void UiUtils::setFontSize(neko::ConfigManager &manager, neko::FontType type,
-                          double newFontSize) {
-  manager.set_font_size(newFontSize, type);
-}
-
 QFont UiUtils::loadFont(neko::ConfigManager &manager, neko::FontType type) {
   bool forceMonospace = false;
 
@@ -35,6 +30,11 @@ QFont UiUtils::loadFont(neko::ConfigManager &manager, neko::FontType type) {
   QFont font(family, rawSize);
 
   return font;
+}
+
+void UiUtils::setFontSize(neko::ConfigManager &manager, neko::FontType type,
+                          double newFontSize) {
+  manager.set_font_size(newFontSize, type);
 }
 
 QString UiUtils::getScrollBarStylesheet(neko::ThemeManager &themeManager,
@@ -72,6 +72,14 @@ QString UiUtils::getScrollBarStylesheet(neko::ThemeManager &themeManager,
   return stylesheet;
 }
 
+double UiUtils::getTitleBarContentMargin() {
+#if defined(Q_OS_MACOS)
+  return 84; // Spacing for traffic lights
+#else
+  return 10;
+#endif
+}
+
 QIcon UiUtils::createColorizedIcon(const QIcon &originalIcon,
                                    const QColor &color, const QSize &size) {
   QPixmap pixmap = originalIcon.pixmap(size);
@@ -96,12 +104,4 @@ QLabel *UiUtils::createLabel(QString text, QString styleSheet, QFont font,
   label->setFont(font);
 
   return label;
-}
-
-double UiUtils::getTitleBarContentMargin() {
-#if defined(Q_OS_MACOS)
-  return 84; // Spacing for traffic lights
-#else
-  return 10;
-#endif
 }

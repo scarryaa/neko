@@ -1,61 +1,11 @@
 #include "editor_controller.h"
-#include <neko-core/src/ffi/mod.rs.h>
 
-EditorController::EditorController(neko::Editor *editor) {}
+EditorController::EditorController(neko::Editor *editor) : editor(editor) {}
 
 EditorController::~EditorController() {}
 
-void EditorController::setEditor(neko::Editor *editor) {
-  this->editor = editor;
-}
-
-void EditorController::applyChangeSet(const neko::ChangeSetFfi &changeSet) {
-  if (!editor) {
-    return;
-  }
-
-  const uint32_t m = changeSet.mask;
-
-  if (m & ChangeMask::Selection) {
-    const auto selectionCount = editor->get_number_of_selections();
-    emit selectionChanged(selectionCount);
-  }
-
-  if (m & (ChangeMask::Viewport | ChangeMask::LineCount | ChangeMask::Widths)) {
-    emit viewportChanged();
-  }
-
-  if (m & ChangeMask::LineCount) {
-    const int lineCount = editor->get_line_count();
-    emit lineCountChanged(lineCount);
-  }
-
-  if (m & ChangeMask::Cursor) {
-    const auto lastAddedCursor = editor->get_last_added_cursor();
-    const auto [clampedRow, clampedColumn] =
-        normalizeCursorPosition(lastAddedCursor.row, lastAddedCursor.col);
-    const auto cursorCount = editor->get_cursor_positions().size();
-    const auto selectionCount = editor->get_number_of_selections();
-
-    emit cursorChanged(clampedRow, clampedColumn, cursorCount, selectionCount);
-  }
-
-  if (m & ChangeMask::Buffer) {
-    emit bufferChanged();
-  }
-}
-
-void EditorController::nav(neko::ChangeSetFfi (neko::Editor::*moveFn)(),
-                           neko::ChangeSetFfi (neko::Editor::*selectFn)(),
-                           const bool shouldSelect) {
-  if (!editor)
-    return;
-
-  if (shouldSelect) {
-    do_op(selectFn);
-  } else {
-    do_op(moveFn);
-  }
+const bool EditorController::isEmpty() const {
+  return editor->buffer_is_empty();
 }
 
 const QString EditorController::getLine(const int index) const {
@@ -101,10 +51,6 @@ const double EditorController::getMaxWidth() const {
   return editor->get_max_width();
 }
 
-void EditorController::setLineWidth(const int index, const double width) {
-  editor->set_line_width(index, width);
-}
-
 const bool EditorController::cursorExistsAt(const int row,
                                             const int column) const {
   return editor->cursor_exists_at(row, column);
@@ -126,9 +72,12 @@ const int EditorController::getLineLength(int index) const {
   return editor->get_line_length(index);
 }
 
-void EditorController::moveTo(const int row, const int column,
-                              const bool clearSelection) {
-  do_op(&neko::Editor::move_to, row, column, clearSelection);
+void EditorController::setLineWidth(const int index, const double width) {
+  editor->set_line_width(index, width);
+}
+
+void EditorController::setEditor(neko::Editor *editor) {
+  this->editor = editor;
 }
 
 void EditorController::selectWord(const int row, const int column) {
@@ -171,8 +120,9 @@ void EditorController::selectLineDrag(int anchorRow, int row) {
   do_op(&neko::Editor::select_line_drag, anchorRow, row);
 }
 
-void EditorController::selectTo(const int row, const int column) {
-  do_op(&neko::Editor::select_to, row, column);
+void EditorController::moveTo(const int row, const int column,
+                              const bool clearSelection) {
+  do_op(&neko::Editor::move_to, row, column, clearSelection);
 }
 
 void EditorController::moveOrSelectLeft(const bool shouldSelect) {
@@ -189,6 +139,10 @@ void EditorController::moveOrSelectUp(const bool shouldSelect) {
 
 void EditorController::moveOrSelectDown(const bool shouldSelect) {
   nav(&neko::Editor::move_down, &neko::Editor::select_down, shouldSelect);
+}
+
+void EditorController::selectTo(const int row, const int column) {
+  do_op(&neko::Editor::select_to, row, column);
 }
 
 void EditorController::insertText(const std::string &text) {
@@ -315,8 +269,53 @@ void EditorController::refresh() {
   // TODO: Emit current state after change (e.g. opening a file)
 }
 
-const bool EditorController::isEmpty() const {
-  return editor->buffer_is_empty();
+void EditorController::applyChangeSet(const neko::ChangeSetFfi &changeSet) {
+  if (!editor) {
+    return;
+  }
+
+  const uint32_t m = changeSet.mask;
+
+  if (m & ChangeMask::Selection) {
+    const auto selectionCount = editor->get_number_of_selections();
+    emit selectionChanged(selectionCount);
+  }
+
+  if (m & (ChangeMask::Viewport | ChangeMask::LineCount | ChangeMask::Widths)) {
+    emit viewportChanged();
+  }
+
+  if (m & ChangeMask::LineCount) {
+    const int lineCount = editor->get_line_count();
+    emit lineCountChanged(lineCount);
+  }
+
+  if (m & ChangeMask::Cursor) {
+    const auto lastAddedCursor = editor->get_last_added_cursor();
+    const auto [clampedRow, clampedColumn] =
+        normalizeCursorPosition(lastAddedCursor.row, lastAddedCursor.col);
+    const auto cursorCount = editor->get_cursor_positions().size();
+    const auto selectionCount = editor->get_number_of_selections();
+
+    emit cursorChanged(clampedRow, clampedColumn, cursorCount, selectionCount);
+  }
+
+  if (m & ChangeMask::Buffer) {
+    emit bufferChanged();
+  }
+}
+
+void EditorController::nav(neko::ChangeSetFfi (neko::Editor::*moveFn)(),
+                           neko::ChangeSetFfi (neko::Editor::*selectFn)(),
+                           const bool shouldSelect) {
+  if (!editor)
+    return;
+
+  if (shouldSelect) {
+    do_op(selectFn);
+  } else {
+    do_op(moveFn);
+  }
 }
 
 template <typename Fn, typename... Args>

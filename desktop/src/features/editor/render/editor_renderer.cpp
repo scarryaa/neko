@@ -1,7 +1,5 @@
 #include "editor_renderer.h"
 
-#include <algorithm>
-
 void EditorRenderer::paint(QPainter &painter, const RenderState &state,
                            const ViewportContext &ctx) const {
   drawText(&painter, state, ctx);

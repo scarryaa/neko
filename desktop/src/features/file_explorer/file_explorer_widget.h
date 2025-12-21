@@ -5,25 +5,44 @@
 #include "utils/gui_utils.h"
 #include <QApplication>
 #include <QClipboard>
+#include <QColor>
+#include <QDir>
+#include <QFile>
 #include <QFileDialog>
+#include <QFileInfo>
 #include <QFocusEvent>
 #include <QFont>
 #include <QFontMetricsF>
 #include <QIcon>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QMimeData>
+#include <QMouseEvent>
 #include <QPainter>
-#include <QPoint>
+#include <QPixmap>
+#include <QPointF>
 #include <QPushButton>
+#include <QRectF>
+#include <QResizeEvent>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QSize>
+#include <QString>
+#include <QStringList>
 #include <QStyle>
+#include <QUrl>
 #include <QVBoxLayout>
 #include <QWheelEvent>
-#include <algorithm>
-#include <string>
+#include <QtDebug>
 
 struct FileTree;
+class QFocusEvent;
+class QKeyEvent;
+class QMouseEvent;
+class QPaintEvent;
+class QPushButton;
+class QResizeEvent;
+class QWheelEvent;
 
 class FileExplorerWidget : public QScrollArea {
   Q_OBJECT

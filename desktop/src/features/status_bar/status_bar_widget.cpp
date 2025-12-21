@@ -93,21 +93,6 @@ void StatusBarWidget::applyTheme() {
   update();
 }
 
-void StatusBarWidget::onCursorPositionClicked() {
-  // Toggle disabled to force clear hover effect
-  cursorPosition->setDisabled(true);
-  cursorPosition->setDisabled(false);
-  emit cursorPositionClicked();
-}
-
-void StatusBarWidget::onFileExplorerToggled() { emit fileExplorerToggled(); }
-
-void StatusBarWidget::onFileExplorerToggledExternally(bool isOpen) {
-  fileExplorerToggleButton->setChecked(isOpen);
-}
-
-void StatusBarWidget::showCursorPositionInfo() { cursorPosition->show(); }
-
 void StatusBarWidget::updateCursorPosition(int row, int col,
                                            int numberOfCursors) {
   if (!editorController) {
@@ -125,11 +110,7 @@ void StatusBarWidget::updateCursorPosition(int row, int col,
   cursorPosition->setText(newPosition);
 }
 
-void StatusBarWidget::onTabClosed(int numberOfTabs) {
-  if (numberOfTabs == 0) {
-    cursorPosition->hide();
-  }
-}
+void StatusBarWidget::showCursorPositionInfo() { cursorPosition->show(); }
 
 void StatusBarWidget::onCursorPositionChanged(int row, int col,
                                               int numberOfCursors) {
@@ -150,6 +131,16 @@ void StatusBarWidget::onCursorPositionChanged(int row, int col,
   cursorPosition->setText(newPosition);
 }
 
+void StatusBarWidget::onTabClosed(int numberOfTabs) {
+  if (numberOfTabs == 0) {
+    cursorPosition->hide();
+  }
+}
+
+void StatusBarWidget::onFileExplorerToggledExternally(bool isOpen) {
+  fileExplorerToggleButton->setChecked(isOpen);
+}
+
 void StatusBarWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
 
@@ -160,4 +151,13 @@ void StatusBarWidget::paintEvent(QPaintEvent *event) {
 
   painter.setPen(UiUtils::getThemeColor(themeManager, "ui.border"));
   painter.drawLine(QPointF(0, 0), QPointF(width(), 0));
+}
+
+void StatusBarWidget::onFileExplorerToggled() { emit fileExplorerToggled(); }
+
+void StatusBarWidget::onCursorPositionClicked() {
+  // Toggle disabled to force clear hover effect
+  cursorPosition->setDisabled(true);
+  cursorPosition->setDisabled(false);
+  emit cursorPositionClicked();
 }

@@ -26,6 +26,8 @@ TabWidget::TabWidget(const QString &title, const QString &path, int index,
   setMinimumWidth(12 + titleWidth + 44);
 }
 
+TabWidget::~TabWidget() {}
+
 void TabWidget::setActive(bool active) {
   isActive = active;
   update();
@@ -42,10 +44,6 @@ void TabWidget::setIsPinned(bool isPinned) {
 }
 
 bool TabWidget::getIsPinned() const { return isPinned; }
-
-double TabWidget::measureText(QString text) {
-  return fontMetrics().horizontalAdvance(text);
-}
 
 void TabWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
@@ -178,11 +176,6 @@ void TabWidget::mousePressEvent(QMouseEvent *event) {
   }
 }
 
-void TabWidget::enterEvent(QEnterEvent *event) {
-  isHovered = true;
-  update();
-}
-
 void TabWidget::mouseMoveEvent(QMouseEvent *event) {
   if ((event->buttons() & Qt::LeftButton) && dragEligible) {
     const int dragDistance =
@@ -227,10 +220,19 @@ void TabWidget::mouseReleaseEvent(QMouseEvent *event) {
   dragInProgress = false;
 }
 
+void TabWidget::enterEvent(QEnterEvent *event) {
+  isHovered = true;
+  update();
+}
+
 void TabWidget::leaveEvent(QEvent *event) {
   isHovered = false;
   isCloseHovered = false;
   update();
+}
+
+double TabWidget::measureText(QString text) {
+  return fontMetrics().horizontalAdvance(text);
 }
 
 void TabWidget::contextMenuEvent(QContextMenuEvent *event) {

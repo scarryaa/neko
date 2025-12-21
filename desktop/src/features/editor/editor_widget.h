@@ -4,22 +4,28 @@
 #include "controllers/editor_controller.h"
 #include "features/editor/render/editor_renderer.h"
 #include "neko-core/src/ffi/mod.rs.h"
-#include "utils/change_mask.h"
 #include "utils/editor_utils.h"
 #include "utils/gui_utils.h"
 #include "utils/row_col.h"
 #include <QApplication>
-#include <QClipboard>
-#include <QFontDatabase>
+#include <QFont>
+#include <QFontMetricsF>
 #include <QKeyEvent>
-#include <QLabel>
+#include <QMouseEvent>
 #include <QPainter>
+#include <QPoint>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QString>
+#include <QStringList>
 #include <QTextLayout>
 #include <QTimer>
-#include <QVBoxLayout>
-#include <QtDebug>
+#include <QWheelEvent>
+
+class QKeyEvent;
+class QMouseEvent;
+class QPaintEvent;
+class QWheelEvent;
 
 class EditorWidget : public QScrollArea {
   Q_OBJECT
