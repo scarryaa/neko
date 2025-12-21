@@ -1,9 +1,18 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 pub mod theme_manager;
 pub use theme_manager::ThemeManager;
+
+macro_rules! colors {
+    ($($key:literal => $value:literal),* $(,)?) => {{
+        let mut map = HashMap::new();
+        $(
+            map.insert($key.to_string(), $value.to_string());
+        )*
+        map
+    }};
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Theme {
@@ -36,196 +45,144 @@ impl Theme {
     }
 
     pub fn light_theme() -> Theme {
-        let mut colors = HashMap::new();
+        let colors = colors! {
+            // Editor
+            "editor.background" => "#f5f5f5",
+            "editor.foreground" => "#2d2d2d",
+            "editor.highlight"  => "#19000000",
 
-        colors.insert("editor.background".to_string(), "#f5f5f5".to_string());
-        colors.insert(
-            "editor.gutter.background".to_string(),
-            "#f5f5f5".to_string(),
-        );
-        colors.insert(
-            "editor.gutter.foreground".to_string(),
-            "#9c9c9c".to_string(),
-        );
-        colors.insert(
-            "editor.gutter.foreground.active".to_string(),
-            "#555555".to_string(),
-        );
-        colors.insert("editor.foreground".to_string(), "#2d2d2d".to_string());
-        colors.insert("editor.highlight".to_string(), "#19000000".to_string());
+            // Gutter
+            "editor.gutter.background"         => "#f5f5f5",
+            "editor.gutter.foreground"         => "#9c9c9c",
+            "editor.gutter.foreground.active"  => "#555555",
 
-        colors.insert("tab_bar.background".to_string(), "#f7f7f7".to_string());
+            // Tab Bar
+            "tab_bar.background" => "#f7f7f7",
 
-        colors.insert(
-            "file_explorer.background".to_string(),
-            "#f5f5f5".to_string(),
-        );
-        colors.insert(
-            "command_palette.background".to_string(),
-            "#f5f5f5".to_string(),
-        );
-        colors.insert(
-            "command_palette.border".to_string(),
-            "#26000000".to_string(),
-        );
-        colors.insert(
-            "command_palette.shadow".to_string(),
-            "#33000000".to_string(),
-        );
+            // Tabs
+            "tab.active"   => "#f5f5f5",
+            "tab.inactive" => "#e1e1e1",
+            "tab.hover"    => "#e7e7e7",
 
-        colors.insert("ui.scrollbar.thumb".to_string(), "#aaaaaa".to_string());
-        colors.insert(
-            "ui.scrollbar.thumb.hover".to_string(),
-            "#cccccc".to_string(),
-        );
+            // Sidebar / File Explorer
+            "sidebar.background"        => "#f5f5f5",
+            "file_explorer.background"  => "#f5f5f5",
 
-        colors.insert("context_menu.foreground".to_string(), "#2d2d2d".to_string());
-        colors.insert(
-            "context_menu.foreground.disabled".to_string(),
-            "#9a9a9a".to_string(),
-        );
-        colors.insert("context_menu.label".to_string(), "#2d2d2d".to_string());
-        colors.insert(
-            "context_menu.label.disabled".to_string(),
-            "#9a9a9a".to_string(),
-        );
-        colors.insert("context_menu.shortcut".to_string(), "#5a5a5a".to_string());
-        colors.insert(
-            "context_menu.shortcut.disabled".to_string(),
-            "#b0b0b0".to_string(),
-        );
-        colors.insert(
-            "context_menu.button.hover".to_string(),
-            "#dadada".to_string(),
-        );
-        colors.insert("context_menu.background".to_string(), "#f5f5f5".to_string());
-        colors.insert("context_menu.border".to_string(), "#d3d3d3".to_string());
+            // Command Palette
+            "command_palette.background" => "#f5f5f5",
+            "command_palette.border"     => "#26000000",
+            "command_palette.shadow"     => "#33000000",
 
-        colors.insert("sidebar.background".to_string(), "#f5f5f5".to_string());
-        colors.insert("ui.foreground".to_string(), "#2d2d2d".to_string());
-        colors.insert("ui.foreground.muted".to_string(), "#828282".to_string());
-        colors.insert(
-            "ui.foreground.very_muted".to_string(),
-            "#9a9a9a".to_string(),
-        );
-        colors.insert("ui.foreground.inverted".to_string(), "#2d2d2d".to_string());
-        colors.insert("ui.background".to_string(), "#f5f5f5".to_string());
-        colors.insert("ui.background.hover".to_string(), "#ededed".to_string());
-        colors.insert("ui.accent.foreground".to_string(), "#f5f5f5".to_string());
-        colors.insert("ui.accent".to_string(), "#a589d1".to_string());
-        colors.insert("ui.accent.hover".to_string(), "#bca3e0".to_string());
-        colors.insert("ui.accent.pressed".to_string(), "#8e72b8".to_string());
-        colors.insert("ui.accent.muted".to_string(), "#4d3e66".to_string());
-        colors.insert("ui.border".to_string(), "#d3d3d3".to_string());
-        colors.insert(
-            "titlebar.button.foreground".to_string(),
-            "#5a5a5a".to_string(),
-        );
-        colors.insert("titlebar.button.hover".to_string(), "#e6e6e6".to_string());
-        colors.insert("titlebar.button.pressed".to_string(), "#dcdcdc".to_string());
-        colors.insert("tab.active".to_string(), "#f5f5f5".to_string());
-        colors.insert("tab.inactive".to_string(), "#e1e1e1".to_string());
-        colors.insert("tab.hover".to_string(), "#e7e7e7".to_string());
+            // Context Menu
+            "context_menu.background"          => "#f5f5f5",
+            "context_menu.border"              => "#d3d3d3",
+            "context_menu.foreground"          => "#2d2d2d",
+            "context_menu.foreground.disabled" => "#9a9a9a",
+            "context_menu.label"               => "#2d2d2d",
+            "context_menu.label.disabled"      => "#9a9a9a",
+            "context_menu.shortcut"            => "#5a5a5a",
+            "context_menu.shortcut.disabled"   => "#b0b0b0",
+            "context_menu.button.hover"        => "#dadada",
 
-        Self {
+            // UI
+            "ui.background"          => "#f5f5f5",
+            "ui.background.hover"    => "#ededed",
+            "ui.border"              => "#d3d3d3",
+            "ui.foreground"          => "#2d2d2d",
+            "ui.foreground.muted"    => "#828282",
+            "ui.foreground.very_muted" => "#9a9a9a",
+            "ui.foreground.inverted" => "#2d2d2d",
+
+            // Accent
+            "ui.accent"              => "#a589d1",
+            "ui.accent.hover"        => "#bca3e0",
+            "ui.accent.pressed"      => "#8e72b8",
+            "ui.accent.muted"        => "#4d3e66",
+            "ui.accent.foreground"  => "#f5f5f5",
+
+            // Scrollbar
+            "ui.scrollbar.thumb"       => "#aaaaaa",
+            "ui.scrollbar.thumb.hover" => "#cccccc",
+
+            // Titlebar
+            "titlebar.button.foreground" => "#5a5a5a",
+            "titlebar.button.hover"      => "#e6e6e6",
+            "titlebar.button.pressed"    => "#dcdcdc",
+        };
+
+        Theme {
             name: "Default Light".to_string(),
             colors,
         }
     }
 
     pub fn dark_theme() -> Theme {
-        let mut colors = HashMap::new();
+        let colors = colors! {
+            // Editor
+            "editor.background" => "#000000",
+            "editor.foreground" => "#d4d4d4",
+            "editor.highlight"  => "#19ffffff",
 
-        colors.insert("editor.background".to_string(), "#000000".to_string());
-        colors.insert(
-            "editor.gutter.background".to_string(),
-            "#000000".to_string(),
-        );
-        colors.insert(
-            "editor.gutter.foreground".to_string(),
-            "#505050".to_string(),
-        );
-        colors.insert(
-            "editor.gutter.foreground.active".to_string(),
-            "#C8C8C8".to_string(),
-        );
-        colors.insert("editor.foreground".to_string(), "#d4d4d4".to_string());
-        colors.insert("editor.highlight".to_string(), "#19ffffff".to_string());
+            // Gutter
+            "editor.gutter.background"        => "#000000",
+            "editor.gutter.foreground"        => "#505050",
+            "editor.gutter.foreground.active" => "#c8c8c8",
 
-        colors.insert("tab_bar.background".to_string(), "#000000".to_string());
+            // Tab Bar
+            "tab_bar.background" => "#000000",
 
-        colors.insert(
-            "file_explorer.background".to_string(),
-            "#000000".to_string(),
-        );
-        colors.insert(
-            "command_palette.background".to_string(),
-            "#000000".to_string(),
-        );
-        colors.insert(
-            "command_palette.border".to_string(),
-            "#40ffffff".to_string(),
-        );
-        colors.insert(
-            "command_palette.shadow".to_string(),
-            "#66000000".to_string(),
-        );
+            // Tabs
+            "tab.active"   => "#000000",
+            "tab.inactive" => "#202020",
+            "tab.hover"    => "#101010",
 
-        colors.insert("context_menu.foreground".to_string(), "#d4d4d4".to_string());
-        colors.insert(
-            "context_menu.foreground.disabled".to_string(),
-            "#676767".to_string(),
-        );
-        colors.insert("context_menu.label".to_string(), "#d4d4d4".to_string());
-        colors.insert(
-            "context_menu.label.disabled".to_string(),
-            "#676767".to_string(),
-        );
-        colors.insert("context_menu.shortcut".to_string(), "#a4a4a4".to_string());
-        colors.insert(
-            "context_menu.shortcut.disabled".to_string(),
-            "#4f4f4f".to_string(),
-        );
-        colors.insert(
-            "context_menu.button.hover".to_string(),
-            "#2c2c2c".to_string(),
-        );
-        colors.insert("context_menu.background".to_string(), "#000000".to_string());
-        colors.insert("context_menu.border".to_string(), "#3c3c3c".to_string());
+            // Sidebar / File Explorer
+            "sidebar.background"       => "#000000",
+            "file_explorer.background" => "#000000",
 
-        colors.insert("ui.scrollbar.thumb".to_string(), "#555555".to_string());
-        colors.insert(
-            "ui.scrollbar.thumb.hover".to_string(),
-            "#666666".to_string(),
-        );
+            // Command Palette
+            "command_palette.background" => "#000000",
+            "command_palette.border"     => "#40ffffff",
+            "command_palette.shadow"     => "#66000000",
 
-        colors.insert("sidebar.background".to_string(), "#000000".to_string());
-        colors.insert("ui.foreground".to_string(), "#d4d4d4".to_string());
-        colors.insert("ui.foreground.inverted".to_string(), "#".to_string());
-        colors.insert("ui.foreground.muted".to_string(), "#a4a4a4".to_string());
-        colors.insert(
-            "ui.foreground.very_muted".to_string(),
-            "#676767".to_string(),
-        );
-        colors.insert("ui.background".to_string(), "#000000".to_string());
-        colors.insert("ui.background.hover".to_string(), "#2c2c2c".to_string());
-        colors.insert("ui.accent.foreground".to_string(), "#f5f5f5".to_string());
-        colors.insert("ui.accent".to_string(), "#a589d1".to_string());
-        colors.insert("ui.accent.hover".to_string(), "#bca3e0".to_string());
-        colors.insert("ui.accent.pressed".to_string(), "#8e72b8".to_string());
-        colors.insert("ui.accent.muted".to_string(), "#4d3e66".to_string());
-        colors.insert("ui.border".to_string(), "#3c3c3c".to_string());
-        colors.insert(
-            "titlebar.button.foreground".to_string(),
-            "#a0a0a0".to_string(),
-        );
-        colors.insert("titlebar.button.hover".to_string(), "#131313".to_string());
-        colors.insert("titlebar.button.pressed".to_string(), "#222222".to_string());
-        colors.insert("tab.active".to_string(), "#000000".to_string());
-        colors.insert("tab.inactive".to_string(), "#202020".to_string());
-        colors.insert("tab.hover".to_string(), "#101010".to_string());
+            // Context Menu
+            "context_menu.background"          => "#000000",
+            "context_menu.border"              => "#3c3c3c",
+            "context_menu.foreground"          => "#d4d4d4",
+            "context_menu.foreground.disabled" => "#676767",
+            "context_menu.label"               => "#d4d4d4",
+            "context_menu.label.disabled"      => "#676767",
+            "context_menu.shortcut"            => "#a4a4a4",
+            "context_menu.shortcut.disabled"   => "#4f4f4f",
+            "context_menu.button.hover"        => "#2c2c2c",
 
-        Self {
+            // UI
+            "ui.background"           => "#000000",
+            "ui.background.hover"     => "#2c2c2c",
+            "ui.border"               => "#3c3c3c",
+            "ui.foreground"           => "#d4d4d4",
+            "ui.foreground.muted"     => "#a4a4a4",
+            "ui.foreground.very_muted"=> "#676767",
+            "ui.foreground.inverted"  => "#2d2d2d",
+
+            // Accent
+            "ui.accent"               => "#a589d1",
+            "ui.accent.hover"         => "#bca3e0",
+            "ui.accent.pressed"       => "#8e72b8",
+            "ui.accent.muted"         => "#4d3e66",
+            "ui.accent.foreground"   => "#f5f5f5",
+
+            // Scrollbar
+            "ui.scrollbar.thumb"       => "#555555",
+            "ui.scrollbar.thumb.hover" => "#666666",
+
+            // Titlebar
+            "titlebar.button.foreground" => "#a0a0a0",
+            "titlebar.button.hover"      => "#131313",
+            "titlebar.button.pressed"    => "#222222",
+        };
+
+        Theme {
             name: "Default Dark".to_string(),
             colors,
         }
