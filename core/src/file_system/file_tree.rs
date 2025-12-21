@@ -216,10 +216,44 @@ impl FileTree {
     }
 
     pub fn set_expanded(&mut self, path: &str) {
-        let path_buf = PathBuf::from(path);
+        let mut path_buf = PathBuf::from(path);
 
-        if path_buf.is_dir() && !self.is_expanded(path) {
-            self.get_children(path);
+        if !path_buf.is_dir() {
+            if let Some(parent) = path_buf.parent() {
+                path_buf = parent.to_path_buf();
+            } else {
+                return;
+            }
+        }
+
+        if !self.root_path.as_os_str().is_empty() && !path_buf.starts_with(&self.root_path) {
+            return;
+        }
+
+        let mut ancestors = Vec::new();
+        let mut current = path_buf;
+
+        loop {
+            ancestors.push(current.clone());
+
+            if !self.root_path.as_os_str().is_empty() && current == self.root_path {
+                break;
+            }
+
+            let Some(parent) = current.parent() else {
+                break;
+            };
+
+            current = parent.to_path_buf();
+        }
+
+        ancestors.reverse();
+
+        for ancestor in ancestors {
+            if ancestor.is_dir() && !self.expanded.contains_key(&ancestor) {
+                let ancestor_str = ancestor.to_string_lossy();
+                self.get_children(ancestor_str.as_ref());
+            }
         }
     }
 

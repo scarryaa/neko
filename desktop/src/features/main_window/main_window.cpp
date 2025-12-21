@@ -836,7 +836,12 @@ void MainWindow::onTabCopyPath(int index, int numberOfTabs) {
 }
 
 void MainWindow::onTabReveal(int index, int numberOfTabs) {
-  // TODO
+  const QString path = tabController->getTabPath(index);
+
+  if (path.isEmpty())
+    return;
+
+  fileExplorerWidget->showItem(path);
 }
 
 void MainWindow::onTabChanged(int index) {

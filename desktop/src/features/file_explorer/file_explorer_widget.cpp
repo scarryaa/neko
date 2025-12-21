@@ -57,6 +57,21 @@ void FileExplorerWidget::applyTheme() {
   redraw();
 }
 
+void FileExplorerWidget::showItem(const QString &path) {
+  QFileInfo info(path);
+
+  QString parentDir = info.absolutePath();
+
+  std::string itemPath = path.toStdString();
+  std::string parentPath = parentDir.toStdString();
+
+  tree->set_expanded(parentPath);
+  tree->set_current(itemPath);
+  refreshVisibleNodes();
+
+  setFocus();
+}
+
 void FileExplorerWidget::focusInEvent(QFocusEvent *event) {
   focusReceivedFromMouse = event->reason() == Qt::MouseFocusReason;
   QScrollArea::focusInEvent(event);
