@@ -85,9 +85,9 @@ private:
   bool closeTabsWithChecks(const QVector<int> &indicesToClose,
                            int numberOfTabsBeforeClose,
                            bool bypassConfirmation);
-  void onTabCloseOthers(int index, int numberOfTabs);
-  void onTabCloseLeft(int index, int numberOfTabs);
-  void onTabCloseRight(int index, int numberOfTabs);
+  void onTabCloseOthers(int index, int numberOfTabs, bool bypassConfirmation);
+  void onTabCloseLeft(int index, int numberOfTabs, bool bypassConfirmation);
+  void onTabCloseRight(int index, int numberOfTabs, bool bypassConfirmation);
   void onTabCopyPath(int index, int numberOfTabs);
   void onTabReveal(int index, int numberOfTabs);
 

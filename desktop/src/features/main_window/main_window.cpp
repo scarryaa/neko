@@ -711,7 +711,8 @@ bool MainWindow::closeTabsWithChecks(const QVector<int> &indicesToClose,
   return allClosed;
 }
 
-void MainWindow::onTabCloseOthers(int index, int numberOfTabs) {
+void MainWindow::onTabCloseOthers(int index, int numberOfTabs,
+                                  bool bypassConfirmation) {
   saveCurrentScrollState();
 
   QVector<int> toClose;
@@ -725,10 +726,11 @@ void MainWindow::onTabCloseOthers(int index, int numberOfTabs) {
   }
 
   // TODO: Enable holding shift to force close
-  closeTabsWithChecks(toClose, numberOfTabs, false);
+  closeTabsWithChecks(toClose, numberOfTabs, bypassConfirmation);
 }
 
-void MainWindow::onTabCloseLeft(int index, int numberOfTabs) {
+void MainWindow::onTabCloseLeft(int index, int numberOfTabs,
+                                bool bypassConfirmation) {
   saveCurrentScrollState();
 
   QVector<int> toClose;
@@ -742,10 +744,11 @@ void MainWindow::onTabCloseLeft(int index, int numberOfTabs) {
     toClose.push_back(i);
   }
 
-  closeTabsWithChecks(toClose, numberOfTabs, false);
+  closeTabsWithChecks(toClose, numberOfTabs, bypassConfirmation);
 }
 
-void MainWindow::onTabCloseRight(int index, int numberOfTabs) {
+void MainWindow::onTabCloseRight(int index, int numberOfTabs,
+                                 bool bypassConfirmation) {
   saveCurrentScrollState();
 
   QVector<int> toClose;
@@ -759,7 +762,7 @@ void MainWindow::onTabCloseRight(int index, int numberOfTabs) {
     toClose.push_back(i);
   }
 
-  closeTabsWithChecks(toClose, numberOfTabs, false);
+  closeTabsWithChecks(toClose, numberOfTabs, bypassConfirmation);
 }
 
 void MainWindow::onTabCopyPath(int index, int numberOfTabs) {
@@ -1103,19 +1106,32 @@ void MainWindow::registerProviders() {
 void MainWindow::registerCommands() {
   commandRegistry.registerCommand("tab.close", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
-    onTabCloseRequested(ctx.tabIndex, tabController->getTabCount());
+    auto shiftPressed = QApplication::keyboardModifiers().testFlag(
+        Qt::KeyboardModifier::ShiftModifier);
+
+    onTabCloseRequested(ctx.tabIndex, tabController->getTabCount(),
+                        shiftPressed);
   });
   commandRegistry.registerCommand("tab.closeOthers", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
-    onTabCloseOthers(ctx.tabIndex, tabController->getTabCount());
+    auto shiftPressed = QApplication::keyboardModifiers().testFlag(
+        Qt::KeyboardModifier::ShiftModifier);
+
+    onTabCloseOthers(ctx.tabIndex, tabController->getTabCount(), shiftPressed);
   });
   commandRegistry.registerCommand("tab.closeLeft", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
-    onTabCloseLeft(ctx.tabIndex, tabController->getTabCount());
+    auto shiftPressed = QApplication::keyboardModifiers().testFlag(
+        Qt::KeyboardModifier::ShiftModifier);
+
+    onTabCloseLeft(ctx.tabIndex, tabController->getTabCount(), shiftPressed);
   });
   commandRegistry.registerCommand("tab.closeRight", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
-    onTabCloseRight(ctx.tabIndex, tabController->getTabCount());
+    auto shiftPressed = QApplication::keyboardModifiers().testFlag(
+        Qt::KeyboardModifier::ShiftModifier);
+
+    onTabCloseRight(ctx.tabIndex, tabController->getTabCount(), shiftPressed);
   });
   commandRegistry.registerCommand("tab.copyPath", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
