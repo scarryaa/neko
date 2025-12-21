@@ -153,11 +153,19 @@ void TabWidget::mousePressEvent(QMouseEvent *event) {
     QRect closeRect(width() - 24, (height() - 12) / 2, 12, 12);
 
     if (closeRect.adjusted(-3, -3, 3, 3).contains(event->pos())) {
+      if (isPinned) {
+        emit unpinRequested();
+        return;
+      }
+
       emit closeRequested(shiftPressed);
     } else {
       emit clicked();
     }
   } else if (event->button() == Qt::MiddleButton) {
+    if (isPinned)
+      return;
+
     emit closeRequested(shiftPressed);
   }
 }

@@ -190,6 +190,8 @@ void MainWindow::connectSignals() {
           &MainWindow::onTabChanged);
   connect(tabBarWidget, &TabBarWidget::tabPinnedChanged, this,
           &MainWindow::onTabChanged);
+  connect(tabBarWidget, &TabBarWidget::tabUnpinRequested, this,
+          &MainWindow::onTabUnpinRequested);
   connect(tabBarWidget, &TabBarWidget::newTabRequested, this,
           &MainWindow::onNewTabRequested);
 }
@@ -842,6 +844,12 @@ void MainWindow::onTabChanged(int index) {
   tabController->setActiveTabIndex(index);
 
   switchToActiveTab();
+  updateTabBar();
+}
+
+void MainWindow::onTabUnpinRequested(int index) {
+  tabController->unpinTab(index);
+
   updateTabBar();
 }
 

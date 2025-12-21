@@ -30,6 +30,7 @@ public:
 signals:
   void clicked();
   void closeRequested(bool bypassConfirmation);
+  void unpinRequested();
 
 protected:
   void paintEvent(QPaintEvent *event) override;

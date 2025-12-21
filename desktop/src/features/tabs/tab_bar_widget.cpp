@@ -88,6 +88,8 @@ void TabBarWidget::setTabs(QStringList titles, QStringList paths,
             [this, i, numberOfTitles](bool bypassConfirmation) {
               emit tabCloseRequested(i, numberOfTitles, bypassConfirmation);
             });
+    connect(tabWidget, &TabWidget::unpinRequested, this,
+            [this, i]() { emit tabUnpinRequested(i); });
     layout->addWidget(tabWidget);
     tabs.append(tabWidget);
   }
@@ -105,13 +107,14 @@ void TabBarWidget::registerCommands() {
   commandRegistry.registerCommand("tab.pin", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
 
+    tabController->setActiveTabIndex(ctx.tabIndex);
     if (ctx.isPinned) {
       tabController->unpinTab(ctx.tabIndex);
     } else {
       tabController->pinTab(ctx.tabIndex);
     }
 
-    emit tabPinnedChanged(ctx.tabIndex);
+    emit tabPinnedChanged(tabController->getActiveTabIndex());
   });
 }
 

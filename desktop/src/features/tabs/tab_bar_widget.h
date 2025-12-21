@@ -41,6 +41,7 @@ signals:
                          bool bypassConfirmation = false);
   void newTabRequested();
   void tabPinnedChanged(int index);
+  void tabUnpinRequested(int index);
 
 private:
   void updateTabAppearance();

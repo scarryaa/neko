@@ -93,9 +93,43 @@ bool TabController::closeRightTabs(int index) {
   return true;
 }
 
-bool TabController::pinTab(int index) { return appState->pin_tab(index); }
+bool TabController::pinTab(int index) {
+  if (!appState) {
+    return false;
+  }
 
-bool TabController::unpinTab(int index) { return appState->unpin_tab(index); }
+  int count = appState->get_tab_count();
+  if (index < 0 || index >= count) {
+    return false;
+  }
+
+  if (!appState->pin_tab(index)) {
+    return false;
+  }
+
+  emit tabListChanged();
+  emit activeTabChanged(appState->get_active_tab_index());
+  return true;
+}
+
+bool TabController::unpinTab(int index) {
+  if (!appState) {
+    return false;
+  }
+
+  int count = appState->get_tab_count();
+  if (index < 0 || index >= count) {
+    return false;
+  }
+
+  if (!appState->unpin_tab(index)) {
+    return false;
+  }
+
+  emit tabListChanged();
+  emit activeTabChanged(appState->get_active_tab_index());
+  return true;
+}
 
 const int TabController::getTabCount() const {
   return !appState ? 0 : appState->get_tab_count();

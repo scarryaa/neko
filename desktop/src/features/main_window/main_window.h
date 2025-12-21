@@ -74,6 +74,7 @@ private:
   void onTabCloseRequested(int index, int numberOfTabs,
                            bool bypassConfirmation = false);
   void onTabChanged(int index);
+  void onTabUnpinRequested(int index);
   void onNewTabRequested();
   void switchToActiveTab(bool shouldFocusEditor = true);
   void onActiveTabCloseRequested(int numberOfTabs,

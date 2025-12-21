@@ -192,6 +192,7 @@ impl AppState {
                 }
             }
 
+            self.reorder_tabs_by_pin();
             Ok(())
         } else {
             Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))
@@ -206,6 +207,7 @@ impl AppState {
                 }
             }
 
+            self.reorder_tabs_by_pin();
             Ok(())
         } else {
             Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))
@@ -291,6 +293,41 @@ impl AppState {
 
         Ok(())
     }
+
+    fn reorder_tabs_by_pin(&mut self) {
+        if self.tabs.is_empty() {
+            self.active_tab_index = 0;
+            return;
+        }
+
+        let active_index = self.active_tab_index;
+        let mut pinned: Vec<(usize, Tab)> = Vec::new();
+        let mut unpinned: Vec<(usize, Tab)> = Vec::new();
+
+        for (i, tab) in self.tabs.drain(..).enumerate() {
+            if tab.get_is_pinned() {
+                pinned.push((i, tab));
+            } else {
+                unpinned.push((i, tab));
+            }
+        }
+
+        let mut new_tabs: Vec<Tab> = Vec::with_capacity(pinned.len() + unpinned.len());
+        let mut new_active_index = 0;
+
+        for (new_index, (old_index, tab)) in
+            pinned.into_iter().chain(unpinned.into_iter()).enumerate()
+        {
+            if old_index == active_index {
+                new_active_index = new_index;
+            }
+
+            new_tabs.push(tab);
+        }
+
+        self.tabs = new_tabs;
+        self.active_tab_index = new_active_index;
+    }
 }
 
 #[cfg(test)]
@@ -373,5 +410,22 @@ mod test {
         let result = a.save_active_tab_and_set_path("");
 
         assert!(result.is_err())
+    }
+
+    #[test]
+    fn pin_tab_reorders_tabs_and_updates_active_index() {
+        let mut a = AppState::new(None).unwrap();
+        a.new_tab();
+        a.new_tab();
+
+        a.tabs[0].set_title("A");
+        a.tabs[1].set_title("B");
+        a.tabs[2].set_title("C");
+
+        let _ = a.set_active_tab_index(2);
+        a.pin_tab(2).unwrap();
+
+        assert_eq!(a.get_tab_titles(), vec!["C", "A", "B"]);
+        assert_eq!(a.get_active_tab_index(), 0);
     }
 }
