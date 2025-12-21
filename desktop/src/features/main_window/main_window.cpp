@@ -255,6 +255,14 @@ void MainWindow::applyInitialState() {
 
 void MainWindow::setActiveEditor(neko::Editor *newEditor) {
   editorController->setEditor(newEditor);
+
+  if (!newEditor) {
+    editorWidget->setEditorController(nullptr);
+    gutterWidget->setEditorController(nullptr);
+  } else {
+    editorWidget->setEditorController(editorController);
+    gutterWidget->setEditorController(editorController);
+  }
 }
 
 void MainWindow::refreshStatusBarCursor() {
@@ -281,21 +289,21 @@ void MainWindow::onFileExplorerToggled() {
 }
 
 void MainWindow::onCursorPositionClicked() {
-  if (appState->get_tab_count() == 0) {
+  if (tabController->getTabsEmpty()) {
     return;
   }
 
-  auto cursor = appState->get_active_editor().get_last_added_cursor();
-  auto lineCount = appState->get_active_editor().get_line_count();
+  neko::CursorPosition cursor = editorController->getLastAddedCursor();
+  int lineCount = editorController->getLineCount();
 
   if (lineCount == 0) {
     return;
   }
 
-  auto maxCol = std::max<size_t>(
-      1, appState->get_active_editor().get_line_length(cursor.row));
-  auto lastLineMaxCol = std::max<size_t>(
-      1, appState->get_active_editor().get_line_length(lineCount - 1));
+  auto maxCol =
+      std::max<size_t>(1, editorController->getLineLength(cursor.row));
+  auto lastLineMaxCol =
+      std::max<size_t>(1, editorController->getLineLength(lineCount - 1));
 
   commandPaletteWidget->jumpToRowColumn(cursor.row, cursor.col, maxCol,
                                         lineCount, lastLineMaxCol);
@@ -335,7 +343,7 @@ void MainWindow::onCommandPaletteCommand(const QString &command) {
 }
 
 void MainWindow::onCommandPaletteGoToPosition(int row, int col) {
-  if (appState->get_tab_count() == 0) {
+  if (tabController->getTabsEmpty()) {
     return;
   }
 
@@ -344,13 +352,15 @@ void MainWindow::onCommandPaletteGoToPosition(int row, int col) {
 }
 
 void MainWindow::saveCurrentScrollState() {
-  if (appState->get_tab_count() > 0) {
-    int currentIndex = appState->get_active_tab_index();
-
-    tabScrollOffsets[currentIndex] =
-        ScrollOffset{editorWidget->horizontalScrollBar()->value(),
-                     editorWidget->verticalScrollBar()->value()};
+  if (tabController->getTabsEmpty()) {
+    return;
   }
+
+  int currentIndex = tabController->getActiveTabIndex();
+
+  tabScrollOffsets[currentIndex] =
+      ScrollOffset{editorWidget->horizontalScrollBar()->value(),
+                   editorWidget->verticalScrollBar()->value()};
 }
 
 void MainWindow::removeTabScrollOffset(int closedIndex) {
@@ -458,10 +468,10 @@ void MainWindow::setupKeyboardShortcuts() {
   addShortcut(nextTabAction,
               seqFor("Tab::Next", QKeySequence(Qt::MetaModifier | Qt::Key_Tab)),
               Qt::WindowShortcut, [this]() {
-                int tabCount = appState->get_tab_count();
+                int tabCount = tabController->getTabCount();
 
                 if (tabCount > 0) {
-                  int currentIndex = appState->get_active_tab_index();
+                  int currentIndex = tabController->getActiveTabIndex();
                   size_t nextIndex = (currentIndex + 1) % tabCount;
                   onTabChanged(nextIndex);
                 }
@@ -474,10 +484,10 @@ void MainWindow::setupKeyboardShortcuts() {
       seqFor("Tab::Previous",
              QKeySequence(Qt::MetaModifier | Qt::ShiftModifier | Qt::Key_Tab)),
       Qt::WindowShortcut, [this]() {
-        int tabCount = appState->get_tab_count();
+        int tabCount = tabController->getTabCount();
 
         if (tabCount > 0) {
-          int currentIndex = appState->get_active_tab_index();
+          int currentIndex = tabController->getActiveTabIndex();
           size_t prevIndex =
               (currentIndex == 0) ? tabCount - 1 : currentIndex - 1;
           onTabChanged(prevIndex);
@@ -545,8 +555,8 @@ void MainWindow::addShortcut(QAction *action, const QKeySequence &sequence,
 }
 
 void MainWindow::onBufferChanged() {
-  int activeIndex = appState->get_active_tab_index();
-  bool modified = appState->get_tab_modified(activeIndex);
+  int activeIndex = tabController->getActiveTabIndex();
+  bool modified = tabController->getTabModified(activeIndex);
 
   tabBarWidget->setTabModified(activeIndex, modified);
 }
@@ -568,7 +578,7 @@ void MainWindow::onActiveTabCloseRequested(int numberOfTabs,
   } else {
     int activeIndex = tabController->getActiveTabIndex();
 
-    if (appState->get_tab_modified(activeIndex) && !bypassConfirmation) {
+    if (tabController->getTabModified(activeIndex) && !bypassConfirmation) {
       const auto titles = tabController->getTabTitles();
       const CloseDecision closeResult =
           showTabCloseConfirmationDialog(activeIndex, titles);
@@ -634,7 +644,7 @@ void MainWindow::onTabCloseRequested(int index, int numberOfTabs,
     return;
   }
 
-  if (!appState->get_tab_modified(index)) {
+  if (!tabController->getTabModified(index)) {
     close();
     return;
   }
@@ -677,7 +687,7 @@ void MainWindow::onNewTabRequested() {
 }
 
 void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
-  if (appState->get_tab_count() == 0) {
+  if (tabController->getTabsEmpty()) {
     // All tabs closed
     tabBarContainer->hide();
     editorWidget->hide();
@@ -699,7 +709,7 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
     editorWidget->updateDimensions();
     gutterWidget->updateDimensions();
 
-    int currentIndex = appState->get_active_tab_index();
+    int currentIndex = tabController->getActiveTabIndex();
     auto it = tabScrollOffsets.find(currentIndex);
     if (it != tabScrollOffsets.end()) {
       editorWidget->horizontalScrollBar()->setValue(it->second.x);
@@ -735,7 +745,7 @@ void MainWindow::updateTabBar() {
 void MainWindow::onFileSelected(const std::string &filePath,
                                 bool shouldFocusEditor) {
   // Check if file is already open
-  if (appState->tab_with_path_exists(filePath)) {
+  if (tabController->getTabWithPathExists(filePath)) {
     // Save current scroll offset before switching
     saveCurrentScrollState();
 
@@ -769,8 +779,8 @@ void MainWindow::onFileSelected(const std::string &filePath,
       editorWidget->setFocus();
     }
   } else {
-    int newTabIndex = appState->get_active_tab_index();
-    appState->close_tab(newTabIndex);
+    int newTabIndex = tabController->getActiveTabIndex();
+    tabController->closeTab(newTabIndex);
 
     removeTabScrollOffset(newTabIndex);
 
@@ -779,13 +789,13 @@ void MainWindow::onFileSelected(const std::string &filePath,
 }
 
 void MainWindow::switchToTabWithFile(const std::string &path) {
-  int index = appState->get_tab_index_by_path(path);
+  int index = tabController->getTabIndexByPath(path);
 
   if (index != -1) {
     // Save current scroll offset
     saveCurrentScrollState();
 
-    appState->set_active_tab_index(index);
+    tabController->setActiveTabIndex(index);
     switchToActiveTab();
     updateTabBar();
   }
@@ -885,8 +895,8 @@ MainWindow::SaveResult MainWindow::onFileSaved(bool isSaveAs) {
     return result;
   }
 
-  if (appState->save_active_tab()) {
-    int activeIndex = appState->get_active_tab_index();
+  if (tabController->saveActiveTab()) {
+    int activeIndex = tabController->getActiveTabIndex();
     tabBarWidget->setTabModified(activeIndex, false);
 
     return SaveResult::Saved;
@@ -904,8 +914,8 @@ MainWindow::SaveResult MainWindow::saveAs() {
   if (filePath.isEmpty())
     return SaveResult::Canceled;
 
-  if (appState->save_active_tab_and_set_path(filePath.toStdString())) {
-    int activeIndex = appState->get_active_tab_index();
+  if (tabController->saveActiveTabAndSetPath(filePath.toStdString())) {
+    int activeIndex = tabController->getActiveTabIndex();
     tabBarWidget->setTabModified(activeIndex, false);
 
     updateTabBar();

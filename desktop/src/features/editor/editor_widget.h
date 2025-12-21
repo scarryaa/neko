@@ -34,6 +34,7 @@ public:
   void applyTheme();
   void redraw() const;
   void updateDimensions();
+  void setEditorController(EditorController *newEditorController);
 
 public slots:
   void onBufferChanged();

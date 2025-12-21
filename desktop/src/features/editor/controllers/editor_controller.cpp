@@ -122,6 +122,10 @@ const neko::CursorPosition EditorController::getLastAddedCursor() const {
   return editor->get_last_added_cursor();
 }
 
+const int EditorController::getLineLength(int index) const {
+  return editor->get_line_length(index);
+}
+
 void EditorController::moveTo(const int row, const int column,
                               const bool clearSelection) {
   do_op(&neko::Editor::move_to, row, column, clearSelection);

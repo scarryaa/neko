@@ -59,6 +59,10 @@ QSize GutterWidget::sizeHint() const {
   return QSize(measureWidth() + VIEWPORT_PADDING, height());
 }
 
+void GutterWidget::setEditorController(EditorController *newEditorController) {
+  editorController = newEditorController;
+}
+
 const double GutterWidget::measureWidth() const {
   if (!editorController) {
     return 0;

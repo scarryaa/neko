@@ -27,6 +27,7 @@ public:
 
   void applyTheme();
   void updateDimensions();
+  void setEditorController(EditorController *newEditorController);
 
 protected:
   QSize sizeHint() const override;

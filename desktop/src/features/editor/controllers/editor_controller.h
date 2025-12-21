@@ -28,6 +28,7 @@ public:
   const bool bufferIsEmpty() const;
   const int getNumberOfSelections() const;
   const neko::CursorPosition getLastAddedCursor() const;
+  const int getLineLength(int index) const;
 
   // Setters
   void selectWord(const int row, const int column);

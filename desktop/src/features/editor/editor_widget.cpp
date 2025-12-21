@@ -454,6 +454,10 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
   }
 }
 
+void EditorWidget::setEditorController(EditorController *newEditorController) {
+  editorController = newEditorController;
+}
+
 void EditorWidget::onBufferChanged() { redraw(); }
 
 void EditorWidget::onCursorChanged() {
