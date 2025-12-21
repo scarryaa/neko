@@ -223,6 +223,40 @@ impl AppState {
         }
     }
 
+    pub fn move_tab(&mut self, from: usize, to: usize) -> Result<(), Error> {
+        let tab_count = self.tabs.len();
+        if from >= tab_count || to > tab_count {
+            return Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"));
+        }
+
+        if from == to || tab_count <= 1 {
+            return Ok(());
+        }
+
+        let tab = self.tabs.remove(from);
+        let mut insert_index = to;
+
+        if from < insert_index {
+            insert_index = insert_index.saturating_sub(1);
+        }
+
+        if insert_index > self.tabs.len() {
+            insert_index = self.tabs.len();
+        }
+
+        self.tabs.insert(insert_index, tab);
+
+        if self.active_tab_index == from {
+            self.active_tab_index = insert_index;
+        } else if from < self.active_tab_index && insert_index >= self.active_tab_index {
+            self.active_tab_index = self.active_tab_index.saturating_sub(1);
+        } else if from > self.active_tab_index && insert_index <= self.active_tab_index {
+            self.active_tab_index = (self.active_tab_index + 1).min(self.tabs.len() - 1);
+        }
+
+        Ok(())
+    }
+
     pub fn open_file(&mut self, path: &str) -> Result<(), std::io::Error> {
         // Check if file is already open
         if self

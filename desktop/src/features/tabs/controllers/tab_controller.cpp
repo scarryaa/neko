@@ -131,6 +131,26 @@ bool TabController::unpinTab(int index) {
   return true;
 }
 
+bool TabController::moveTab(int from, int to) {
+  if (!appState) {
+    return false;
+  }
+
+  int count = appState->get_tab_count();
+  if (from < 0 || from >= count || to < 0 || to > count) {
+    return false;
+  }
+
+  if (!appState->move_tab(from, to)) {
+    return false;
+  }
+
+  emit tabListChanged();
+  emit activeTabChanged(appState->get_active_tab_index());
+
+  return true;
+}
+
 const int TabController::getTabCount() const {
   return !appState ? 0 : appState->get_tab_count();
 }

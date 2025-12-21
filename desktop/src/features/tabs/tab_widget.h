@@ -7,8 +7,13 @@
 #include "features/context_menu/providers/tab_context.h"
 #include "neko-core/src/ffi/mod.rs.h"
 #include "utils/gui_utils.h"
+#include <QApplication>
+#include <QDrag>
+#include <QIcon>
+#include <QMimeData>
 #include <QPaintEvent>
 #include <QPainter>
+#include <QPoint>
 #include <QWidget>
 
 class TabWidget : public QWidget {
@@ -26,6 +31,7 @@ public:
   void setActive(bool active);
   void setModified(bool modified);
   void setIsPinned(bool isPinned);
+  bool getIsPinned() const;
 
 signals:
   void clicked();
@@ -36,6 +42,7 @@ protected:
   void paintEvent(QPaintEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *event) override;
+  void mouseReleaseEvent(QMouseEvent *event) override;
   void enterEvent(QEnterEvent *event) override;
   void leaveEvent(QEvent *event) override;
   void contextMenuEvent(QContextMenuEvent *event) override;
@@ -57,6 +64,9 @@ private:
   bool isActive;
   bool isHovered = false;
   bool isCloseHovered = false;
+  bool dragEligible = false;
+  bool dragInProgress = false;
+  QPoint dragStartPosition;
 };
 
 #endif // TAB_WIDGET_H

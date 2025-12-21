@@ -30,6 +30,7 @@ public:
   bool closeRightTabs(int index);
   bool pinTab(int index);
   bool unpinTab(int index);
+  bool moveTab(int from, int to);
   void setActiveTabIndex(int index);
   const bool saveActiveTab() const;
   const bool saveActiveTabAndSetPath(const std::string &path) const;

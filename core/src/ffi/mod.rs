@@ -258,6 +258,8 @@ mod bridge {
         #[cxx_name = "close_right_tabs"]
         fn close_right_tabs_wrapper(self: &mut AppState, index: usize) -> bool;
         fn set_active_tab_index(self: &mut AppState, index: usize) -> Result<()>;
+        #[cxx_name = "move_tab"]
+        fn move_tab_wrapper(self: &mut AppState, from: usize, to: usize) -> bool;
         #[cxx_name = "open_file"]
         fn open_file_wrapper(self: &mut AppState, path: &str) -> bool;
         #[cxx_name = "save_active_tab"]
@@ -513,6 +515,10 @@ impl AppState {
 
     fn close_right_tabs_wrapper(self: &mut AppState, index: usize) -> bool {
         self.close_right_tabs(index).is_ok()
+    }
+
+    fn move_tab_wrapper(self: &mut AppState, from: usize, to: usize) -> bool {
+        self.move_tab(from, to).is_ok()
     }
 
     fn pin_tab_wrapper(self: &mut AppState, index: usize) -> bool {

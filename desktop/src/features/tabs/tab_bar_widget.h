@@ -8,9 +8,16 @@
 #include "neko-core/src/ffi/mod.rs.h"
 #include "utils/gui_utils.h"
 #include <QClipboard>
+#include <QDragEnterEvent>
+#include <QDragLeaveEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
+#include <QEvent>
 #include <QHBoxLayout>
+#include <QMimeData>
 #include <QPaintEvent>
 #include <QPainter>
+#include <QPoint>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QScrollBar>
@@ -43,7 +50,16 @@ signals:
   void tabPinnedChanged(int index);
   void tabUnpinRequested(int index);
 
+protected:
+  void dragEnterEvent(QDragEnterEvent *event) override;
+  void dragMoveEvent(QDragMoveEvent *event) override;
+  void dragLeaveEvent(QDragLeaveEvent *event) override;
+  void dropEvent(QDropEvent *event) override;
+  bool eventFilter(QObject *watched, QEvent *event) override;
+
 private:
+  int dropIndexForPosition(const QPoint &pos) const;
+  void updateDropIndicator(int index);
   void updateTabAppearance();
   void registerCommands();
 
@@ -54,6 +70,7 @@ private:
   neko::ThemeManager &themeManager;
   QPushButton *newTabButton;
   QWidget *containerWidget;
+  QWidget *dropIndicator;
   QHBoxLayout *layout;
   QList<TabWidget *> tabs;
   size_t currentTabIndex;

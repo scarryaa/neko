@@ -1,7 +1,5 @@
 #include "tab_widget.h"
 
-#include <QIcon>
-
 TabWidget::TabWidget(const QString &title, const QString &path, int index,
                      bool isPinned, neko::ConfigManager &configManager,
                      neko::ThemeManager &themeManager,
@@ -42,6 +40,8 @@ void TabWidget::setIsPinned(bool isPinned) {
   this->isPinned = isPinned;
   update();
 }
+
+bool TabWidget::getIsPinned() const { return isPinned; }
 
 double TabWidget::measureText(QString text) {
   return fontMetrics().horizontalAdvance(text);
@@ -153,6 +153,9 @@ void TabWidget::mousePressEvent(QMouseEvent *event) {
     QRect closeRect(width() - 24, (height() - 12) / 2, 12, 12);
 
     if (closeRect.adjusted(-3, -3, 3, 3).contains(event->pos())) {
+      dragEligible = false;
+      dragInProgress = false;
+
       if (isPinned) {
         emit unpinRequested();
         return;
@@ -160,9 +163,14 @@ void TabWidget::mousePressEvent(QMouseEvent *event) {
 
       emit closeRequested(shiftPressed);
     } else {
-      emit clicked();
+      dragStartPosition = event->pos();
+      dragEligible = true;
+      dragInProgress = false;
     }
   } else if (event->button() == Qt::MiddleButton) {
+    dragEligible = false;
+    dragInProgress = false;
+
     if (isPinned)
       return;
 
@@ -176,6 +184,29 @@ void TabWidget::enterEvent(QEnterEvent *event) {
 }
 
 void TabWidget::mouseMoveEvent(QMouseEvent *event) {
+  if ((event->buttons() & Qt::LeftButton) && dragEligible) {
+    const int dragDistance =
+        (event->pos() - dragStartPosition).manhattanLength();
+
+    if (dragDistance >= QApplication::startDragDistance()) {
+      dragEligible = false;
+      dragInProgress = true;
+
+      auto *drag = new QDrag(this);
+      auto *mimeData = new QMimeData();
+      mimeData->setData("application/x-neko-tab-index",
+                        QByteArray::number(index));
+      drag->setMimeData(mimeData);
+
+      QPixmap dragPixmap = grab();
+      drag->setPixmap(dragPixmap);
+      drag->setHotSpot(dragStartPosition);
+      drag->exec(Qt::MoveAction);
+
+      return;
+    }
+  }
+
   QRect closeRect(width() - 24, (height() - 12) / 2, 12, 12);
 
   if (closeRect.adjusted(-3, -3, 3, 3).contains(event->pos())) {
@@ -185,6 +216,15 @@ void TabWidget::mouseMoveEvent(QMouseEvent *event) {
   }
 
   update();
+}
+
+void TabWidget::mouseReleaseEvent(QMouseEvent *event) {
+  if (event->button() == Qt::LeftButton && dragEligible && !dragInProgress) {
+    emit clicked();
+  }
+
+  dragEligible = false;
+  dragInProgress = false;
 }
 
 void TabWidget::leaveEvent(QEvent *event) {
