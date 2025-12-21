@@ -1,10 +1,15 @@
 #include "tab_widget.h"
 
-TabWidget::TabWidget(const QString &title, int index,
+TabWidget::TabWidget(const QString &title, const QString &path, int index,
                      neko::ConfigManager &configManager,
-                     neko::ThemeManager &themeManager, QWidget *parent)
+                     neko::ThemeManager &themeManager,
+                     ContextMenuRegistry &contextMenuRegistry,
+                     CommandRegistry &commandRegistry,
+                     GetTabCountFn getTabCount, QWidget *parent)
     : QWidget(parent), configManager(configManager), themeManager(themeManager),
-      title(title), index(index), isActive(false) {
+      contextMenuRegistry(contextMenuRegistry),
+      commandRegistry(commandRegistry), title(title), path(path), index(index),
+      isActive(false), getTabCount_(std::move(getTabCount)) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 
@@ -141,4 +146,27 @@ void TabWidget::leaveEvent(QEvent *event) {
   isHovered = false;
   isCloseHovered = false;
   update();
+}
+
+void TabWidget::contextMenuEvent(QContextMenuEvent *event) {
+  const int tabIndex = index;
+
+  TabContext ctx{};
+  ctx.tabIndex = tabIndex;
+  ctx.isPinned = false;
+  ctx.isModified = isModified;
+  ctx.filePath = path;
+  ctx.canCloseOthers = getTabCount_() > 1;
+
+  const QVariant v = QVariant::fromValue(ctx);
+  const auto items = contextMenuRegistry.build("tab", v);
+
+  auto *menu = new ContextMenuWidget(&themeManager);
+  menu->setItems(items);
+
+  connect(menu, &ContextMenuWidget::actionTriggered, this,
+          [this, v](const QString &id) { commandRegistry.run(id, v); });
+
+  menu->showMenu(event->globalPos());
+  event->accept();
 }

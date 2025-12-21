@@ -24,9 +24,13 @@ public:
   // Setters
   int addTab();
   bool closeTab(int index);
+  bool closeOtherTabs(int index);
+  bool closeLeftTabs(int index);
+  bool closeRightTabs(int index);
   void setActiveTabIndex(int index);
   const bool saveActiveTab() const;
   const bool saveActiveTabAndSetPath(const std::string &path) const;
+  const QString getTabPath(int index) const;
 
 signals:
   void tabListChanged();

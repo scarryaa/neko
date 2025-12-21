@@ -1,10 +1,13 @@
 #include "tab_bar_widget.h"
-#include "utils/gui_utils.h"
 
 TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
-                           neko::ThemeManager &themeManager, QWidget *parent)
+                           neko::ThemeManager &themeManager,
+                           ContextMenuRegistry &contextMenuRegistry,
+                           CommandRegistry &commandRegistry,
+                           TabController *tabController, QWidget *parent)
     : QScrollArea(parent), configManager(configManager),
-      themeManager(themeManager) {
+      themeManager(themeManager), contextMenuRegistry(contextMenuRegistry),
+      commandRegistry(commandRegistry), tabController(tabController) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 
@@ -27,6 +30,7 @@ TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
   setWidget(containerWidget);
 
   currentTabIndex = 0;
+  registerCommands();
   viewport()->repaint();
 
   applyTheme();
@@ -54,7 +58,8 @@ void TabBarWidget::setTabModified(int index, bool modified) {
   tabs[index]->setModified(modified);
 }
 
-void TabBarWidget::setTabs(QStringList titles, rust::Vec<bool> modifiedStates) {
+void TabBarWidget::setTabs(QStringList titles, QStringList paths,
+                           rust::Vec<bool> modifiedStates) {
   QLayoutItem *item;
   while ((item = layout->takeAt(0)) != nullptr) {
     if (item->widget() && item->widget() != newTabButton) {
@@ -67,8 +72,10 @@ void TabBarWidget::setTabs(QStringList titles, rust::Vec<bool> modifiedStates) {
   // Create new tabs
   int numberOfTitles = titles.size();
   for (int i = 0; i < numberOfTitles; i++) {
-    auto *tabWidget =
-        new TabWidget(titles[i], i, configManager, themeManager, this);
+    auto *tabWidget = new TabWidget(
+        titles[i], paths[i], i, configManager, themeManager,
+        contextMenuRegistry, commandRegistry,
+        [this]() -> int { return tabController->getTabCount(); }, this);
     tabWidget->setModified(modifiedStates[i]);
 
     connect(tabWidget, &TabWidget::clicked, this, [this, i]() {
@@ -85,6 +92,14 @@ void TabBarWidget::setTabs(QStringList titles, rust::Vec<bool> modifiedStates) {
 
   layout->addStretch();
   updateTabAppearance();
+}
+
+void TabBarWidget::registerCommands() {
+  // TODO: Centralize these
+  commandRegistry.registerCommand("tab.copyPath", [this](const QVariant &v) {
+    auto ctx = v.value<TabContext>();
+    QGuiApplication::clipboard()->setText(ctx.filePath);
+  });
 }
 
 int TabBarWidget::getNumberOfTabs() { return tabs.size(); }

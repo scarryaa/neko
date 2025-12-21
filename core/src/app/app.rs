@@ -95,6 +95,16 @@ impl AppState {
         &mut self.file_tree
     }
 
+    pub fn get_tab_path(&self, index: usize) -> Option<&str> {
+        self.tabs.get(index).and_then(|t| {
+            if let Some(path) = t.get_file_path() {
+                path.to_str()
+            } else {
+                Some("")
+            }
+        })
+    }
+
     // Setters
     pub fn new_tab(&mut self) -> usize {
         let tab = Tab::new();
@@ -110,6 +120,58 @@ impl AppState {
 
             if self.active_tab_index >= self.tabs.len() && !self.tabs.is_empty() {
                 self.active_tab_index = self.tabs.len() - 1;
+            }
+
+            Ok(())
+        } else {
+            Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))
+        }
+    }
+
+    pub fn close_other_tabs(&mut self, index: usize) -> Result<(), Error> {
+        if index < self.tabs.len() {
+            for i in (0..self.tabs.len()).rev() {
+                if i == index {
+                    continue;
+                }
+
+                self.tabs.remove(i);
+            }
+
+            if !self.tabs.is_empty() {
+                self.active_tab_index -= self.tabs.len().saturating_sub(1);
+            }
+
+            Ok(())
+        } else {
+            Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))
+        }
+    }
+
+    pub fn close_left_tabs(&mut self, index: usize) -> Result<(), Error> {
+        if index < self.tabs.len() {
+            for i in (0..index).rev() {
+                self.tabs.remove(i);
+            }
+
+            if !self.tabs.is_empty() {
+                self.active_tab_index -= index;
+            }
+
+            Ok(())
+        } else {
+            Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))
+        }
+    }
+
+    pub fn close_right_tabs(&mut self, index: usize) -> Result<(), Error> {
+        if index < self.tabs.len() {
+            for i in (index..self.tabs.len()).rev() {
+                self.tabs.remove(i);
+            }
+
+            if !self.tabs.is_empty() {
+                self.active_tab_index -= self.tabs.len().saturating_sub(1) - index;
             }
 
             Ok(())

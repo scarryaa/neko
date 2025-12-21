@@ -1,5 +1,6 @@
 #include "main_window.h"
-#include "features/main_window/controllers/app_state_controller.h"
+
+Q_DECLARE_METATYPE(TabContext);
 
 // TODO: StatusBar signals/tab inform and MainWindow editor ref
 // are messy and need to be cleaned up. Also consider "rearchitecting"
@@ -12,10 +13,14 @@ MainWindow::MainWindow(QWidget *parent)
       themeManager(neko::new_theme_manager()),
       configManager(neko::new_config_manager()),
       shortcutsManager(neko::new_shortcuts_manager()) {
+  qRegisterMetaType<TabContext>("TabContext");
+
   setupMacOSTitleBar(this);
   setAttribute(Qt::WA_NativeWindow);
   setAttribute(Qt::WA_LayoutOnEntireRect);
 
+  commandRegistry = CommandRegistry();
+  contextMenuRegistry = ContextMenuRegistry();
   appStateController = new AppStateController(&*appState);
   tabController = new TabController(&*appState);
 
@@ -23,6 +28,8 @@ MainWindow::MainWindow(QWidget *parent)
   neko::FileTree *fileTree = &appStateController->getFileTreeMut();
   editorController = new EditorController(editor);
 
+  registerProviders();
+  registerCommands();
   setupWidgets(editor, fileTree);
   connectSignals();
   setupLayout();
@@ -33,6 +40,71 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 MainWindow::~MainWindow() {}
+
+void MainWindow::registerProviders() {
+  // TODO: Centralize this
+  contextMenuRegistry.registerProvider("tab", [](const QVariant &v) {
+    const auto ctx = v.value<TabContext>();
+
+    QVector<ContextMenuItem> items;
+
+    items.push_back({ContextMenuItemKind::Action, "tab.close", "Close",
+                     "Ctrl+W", "", true});
+    items.push_back({ContextMenuItemKind::Action, "tab.closeOthers",
+                     "Close Others", "", "", ctx.canCloseOthers});
+    items.push_back({ContextMenuItemKind::Action, "tab.closeLeft",
+                     "Close Tabs to the Left", "", "", true});
+    items.push_back({ContextMenuItemKind::Action, "tab.closeRight",
+                     "Close Tabs to the Right", "", "", true});
+
+    items.push_back({ContextMenuItemKind::Separator});
+
+    ContextMenuItem pin;
+    pin.kind = ContextMenuItemKind::Action;
+    pin.id = "tab.pin";
+    pin.label = ctx.isPinned ? "Unpin" : "Pin";
+    pin.enabled = true;
+    pin.checked = ctx.isPinned;
+    items.push_back(pin);
+
+    items.push_back({ContextMenuItemKind::Separator});
+
+    items.push_back({ContextMenuItemKind::Action, "tab.copyPath", "Copy Path",
+                     "", "", !ctx.filePath.isEmpty()});
+    items.push_back({ContextMenuItemKind::Action, "tab.reveal",
+                     "Reveal in File Manager", "", "",
+                     !ctx.filePath.isEmpty()});
+
+    return items;
+  });
+}
+
+void MainWindow::registerCommands() {
+  commandRegistry.registerCommand("tab.close", [this](const QVariant &v) {
+    auto ctx = v.value<TabContext>();
+    onTabCloseRequested(ctx.tabIndex, tabController->getTabCount());
+  });
+  commandRegistry.registerCommand("tab.closeOthers", [this](const QVariant &v) {
+    auto ctx = v.value<TabContext>();
+    onTabCloseOthers(ctx.tabIndex, tabController->getTabCount());
+  });
+  commandRegistry.registerCommand("tab.closeLeft", [this](const QVariant &v) {
+    auto ctx = v.value<TabContext>();
+    onTabCloseLeft(ctx.tabIndex, tabController->getTabCount());
+  });
+  commandRegistry.registerCommand("tab.closeRight", [this](const QVariant &v) {
+    auto ctx = v.value<TabContext>();
+    onTabCloseRight(ctx.tabIndex, tabController->getTabCount());
+  });
+  commandRegistry.registerCommand("tab.copyPath", [this](const QVariant &v) {
+    auto ctx = v.value<TabContext>();
+    onTabCopyPath(ctx.tabIndex, tabController->getTabCount());
+  });
+  commandRegistry.registerCommand("tab.reveal", [this](const QVariant &v) {
+    auto ctx = v.value<TabContext>();
+    onTabReveal(ctx.tabIndex, tabController->getTabCount());
+  });
+}
 
 void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
   emptyStateWidget = new QWidget(this);
@@ -49,7 +121,8 @@ void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
                                         *themeManager, this);
   tabBarContainer = new QWidget(this);
   tabBarWidget =
-      new TabBarWidget(*configManager, *themeManager, tabBarContainer);
+      new TabBarWidget(*configManager, *themeManager, contextMenuRegistry,
+                       commandRegistry, tabController, tabBarContainer);
 
   setActiveEditor(editor);
 }
@@ -632,24 +705,22 @@ MainWindow::CloseDecision MainWindow::showTabCloseConfirmationDialog(
   return CloseDecision::Cancel;
 }
 
-void MainWindow::onTabCloseRequested(int index, int numberOfTabs,
-                                     bool bypassConfirmation) {
-  saveCurrentScrollState();
-
-  auto close = [this, index, numberOfTabs]() {
+bool MainWindow::closeTabWithChecks(int index, int numberOfTabsBeforeClose,
+                                    bool bypassConfirmation) {
+  auto close = [this, index, numberOfTabsBeforeClose]() -> bool {
     if (tabController->closeTab(index)) {
-      handleTabClosed(index, numberOfTabs);
+      handleTabClosed(index, numberOfTabsBeforeClose);
+      return true;
     }
+    return false;
   };
 
   if (bypassConfirmation) {
-    close();
-    return;
+    return close();
   }
 
   if (!tabController->getTabModified(index)) {
-    close();
-    return;
+    return close();
   }
 
   auto titles = tabController->getTabTitles();
@@ -657,19 +728,108 @@ void MainWindow::onTabCloseRequested(int index, int numberOfTabs,
   switch (showTabCloseConfirmationDialog(index, titles)) {
   case CloseDecision::Save: {
     SaveResult result = onFileSaved(false);
-
-    if (result == SaveResult::Saved)
-      close();
-
-    return;
+    if (result == SaveResult::Saved) {
+      return close();
+    }
+    return false;
   }
   case CloseDecision::DontSave:
-    close();
-
-    return;
+    return close();
   case CloseDecision::Cancel:
-    return;
+    return false;
   }
+
+  return false;
+}
+
+bool MainWindow::closeTabsWithChecks(const QVector<int> &indicesToClose,
+                                     int numberOfTabsBeforeClose,
+                                     bool bypassConfirmation) {
+  QVector<int> indices = indicesToClose;
+  std::sort(indices.begin(), indices.end(), std::greater<int>());
+
+  bool allClosed = true;
+  int tabsBefore = numberOfTabsBeforeClose;
+
+  for (int idx : indices) {
+    if (idx < 0 || idx >= tabController->getTabCount()) {
+      continue;
+    }
+
+    bool closed = closeTabWithChecks(idx, tabsBefore, bypassConfirmation);
+    if (closed) {
+      tabsBefore -= 1;
+    } else {
+      allClosed = false;
+
+      if (!bypassConfirmation) {
+        break;
+      }
+    }
+  }
+
+  return allClosed;
+}
+
+void MainWindow::onTabCloseRequested(int index, int numberOfTabs,
+                                     bool bypassConfirmation) {
+  saveCurrentScrollState();
+  closeTabWithChecks(index, numberOfTabs, bypassConfirmation);
+}
+
+void MainWindow::onTabCloseOthers(int index, int numberOfTabs) {
+  saveCurrentScrollState();
+
+  QVector<int> toClose;
+  toClose.reserve(numberOfTabs - 1);
+
+  for (int i = 0; i < numberOfTabs; ++i) {
+    if (i == index)
+      continue;
+    toClose.push_back(i);
+  }
+
+  // TODO: Enable holding shift to force close
+  closeTabsWithChecks(toClose, numberOfTabs, false);
+}
+
+void MainWindow::onTabCloseLeft(int index, int numberOfTabs) {
+  saveCurrentScrollState();
+
+  QVector<int> toClose;
+  toClose.reserve(index);
+
+  for (int i = 0; i < index; ++i) {
+    toClose.push_back(i);
+  }
+
+  closeTabsWithChecks(toClose, numberOfTabs, false);
+}
+
+void MainWindow::onTabCloseRight(int index, int numberOfTabs) {
+  saveCurrentScrollState();
+
+  QVector<int> toClose;
+  toClose.reserve(numberOfTabs - index - 1);
+
+  for (int i = index + 1; i < numberOfTabs; ++i) {
+    toClose.push_back(i);
+  }
+
+  closeTabsWithChecks(toClose, numberOfTabs, false);
+}
+
+void MainWindow::onTabCopyPath(int index, int numberOfTabs) {
+  const QString path = tabController->getTabPath(index);
+
+  if (path.isEmpty())
+    return;
+
+  QApplication::clipboard()->setText(path);
+}
+
+void MainWindow::onTabReveal(int index, int numberOfTabs) {
+  // TODO
 }
 
 void MainWindow::onTabChanged(int index) {
@@ -735,13 +895,17 @@ void MainWindow::updateTabBar() {
   int count = rawTitles.size();
 
   QStringList tabTitles;
+  QStringList tabPaths;
   for (int i = 0; i < rawTitles.size(); i++) {
     tabTitles.append(QString::fromUtf8(rawTitles[i]));
+
+    auto path = tabController->getTabPath(i);
+    tabPaths.append(path);
   }
 
   rust::Vec<bool> modifieds = tabController->getTabModifiedStates();
 
-  tabBarWidget->setTabs(tabTitles, modifieds);
+  tabBarWidget->setTabs(tabTitles, tabPaths, modifieds);
   tabBarWidget->setCurrentIndex(tabController->getActiveTabIndex());
 }
 

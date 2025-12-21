@@ -2,6 +2,10 @@
 #define MAIN_WINDOW_H
 
 #include "features/command_palette/command_palette_widget.h"
+#include "features/context_menu/command_registry.h"
+#include "features/context_menu/context_menu_item.h"
+#include "features/context_menu/context_menu_item_kind.h"
+#include "features/context_menu/context_menu_registry.h"
 #include "features/editor/controllers/editor_controller.h"
 #include "features/editor/editor_widget.h"
 #include "features/editor/gutter_widget.h"
@@ -74,12 +78,26 @@ private:
   void switchToActiveTab(bool shouldFocusEditor = true);
   void onActiveTabCloseRequested(int numberOfTabs,
                                  bool bypassConfirmation = false);
+
+  bool closeTabWithChecks(int index, int numberOfTabsBeforeClose,
+                          bool bypassConfirmation);
+  bool closeTabsWithChecks(const QVector<int> &indicesToClose,
+                           int numberOfTabsBeforeClose,
+                           bool bypassConfirmation);
+  void onTabCloseOthers(int index, int numberOfTabs);
+  void onTabCloseLeft(int index, int numberOfTabs);
+  void onTabCloseRight(int index, int numberOfTabs);
+  void onTabCopyPath(int index, int numberOfTabs);
+  void onTabReveal(int index, int numberOfTabs);
+
   void setupKeyboardShortcuts();
   void onBufferChanged();
   void switchToTabWithFile(const std::string &path);
   void saveCurrentScrollState();
   void openConfig();
   void applyTheme(const std::string &themeName);
+  void registerProviders();
+  void registerCommands();
 
   template <typename Slot>
   void addShortcut(QAction *action, const QKeySequence &sequence,
@@ -92,6 +110,8 @@ private:
   EditorController *editorController;
   TabController *tabController;
   AppStateController *appStateController;
+  CommandRegistry commandRegistry;
+  ContextMenuRegistry contextMenuRegistry;
 
   QWidget *emptyStateWidget;
   FileExplorerWidget *fileExplorerWidget;

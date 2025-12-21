@@ -36,6 +36,63 @@ bool TabController::closeTab(int index) {
   return true;
 }
 
+bool TabController::closeOtherTabs(int index) {
+  if (!appState) {
+    return false;
+  }
+
+  int count = appState->get_tab_count();
+  if (index < 0 || index >= count) {
+    return false;
+  }
+
+  if (!appState->close_other_tabs(index)) {
+    return false;
+  }
+
+  emit tabListChanged();
+
+  return true;
+}
+
+bool TabController::closeLeftTabs(int index) {
+  if (!appState) {
+    return false;
+  }
+
+  int count = appState->get_tab_count();
+  if (index < 0 || index >= count || index == 0) {
+    return false;
+  }
+
+  if (!appState->close_left_tabs(index)) {
+    return false;
+  }
+
+  emit tabListChanged();
+
+  return true;
+}
+
+bool TabController::closeRightTabs(int index) {
+  if (!appState) {
+    return false;
+  }
+
+  int count = appState->get_tab_count();
+  if (index < 0 || index >= count || index == count - 1) {
+    return false;
+  }
+
+  if (!appState->close_right_tabs(index)) {
+    return false;
+  }
+
+  emit tabListChanged();
+
+  return true;
+}
+
 const int TabController::getTabCount() const {
   return !appState ? 0 : appState->get_tab_count();
 }
@@ -86,6 +143,13 @@ const int TabController::getTabIndexByPath(const std::string &path) const {
 
 const bool TabController::getTabsEmpty() const {
   return appState->get_tabs_empty();
+}
+
+const QString TabController::getTabPath(int index) const {
+  const auto rawPath = appState->get_tab_path(index);
+  const QString path = QString::fromUtf8(rawPath);
+
+  return path;
 }
 
 const bool TabController::saveActiveTab() const {

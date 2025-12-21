@@ -244,10 +244,18 @@ mod bridge {
         fn tab_with_path_exists(self: &AppState, path: &str) -> bool;
         fn get_file_tree(self: &AppState) -> &FileTree;
         fn get_file_tree_mut(self: &mut AppState) -> &mut FileTree;
+        #[cxx_name = "get_tab_path"]
+        fn get_tab_path_wrapper(self: &AppState, index: usize) -> String;
 
         fn new_tab(self: &mut AppState) -> usize;
         #[cxx_name = "close_tab"]
         fn close_tab_wrapper(self: &mut AppState, index: usize) -> bool;
+        #[cxx_name = "close_other_tabs"]
+        fn close_other_tabs_wrapper(self: &mut AppState, index: usize) -> bool;
+        #[cxx_name = "close_left_tabs"]
+        fn close_left_tabs_wrapper(self: &mut AppState, index: usize) -> bool;
+        #[cxx_name = "close_right_tabs"]
+        fn close_right_tabs_wrapper(self: &mut AppState, index: usize) -> bool;
         fn set_active_tab_index(self: &mut AppState, index: usize) -> Result<()>;
         #[cxx_name = "open_file"]
         fn open_file_wrapper(self: &mut AppState, path: &str) -> bool;
@@ -462,6 +470,12 @@ impl AppState {
             .to_string()
     }
 
+    fn get_tab_path_wrapper(&self, index: usize) -> String {
+        self.get_tab_path(index)
+            .expect("Tried to access tab path but failed")
+            .to_string()
+    }
+
     fn get_tab_index_by_path_wrapper(&self, path: &str) -> i64 {
         self.get_tab_index_by_path(path)
             .map(|i| i as i64)
@@ -482,6 +496,18 @@ impl AppState {
 
     fn close_tab_wrapper(&mut self, index: usize) -> bool {
         self.close_tab(index).is_ok()
+    }
+
+    fn close_other_tabs_wrapper(self: &mut AppState, index: usize) -> bool {
+        self.close_other_tabs(index).is_ok()
+    }
+
+    fn close_left_tabs_wrapper(self: &mut AppState, index: usize) -> bool {
+        self.close_left_tabs(index).is_ok()
+    }
+
+    fn close_right_tabs_wrapper(self: &mut AppState, index: usize) -> bool {
+        self.close_right_tabs(index).is_ok()
     }
 }
 
