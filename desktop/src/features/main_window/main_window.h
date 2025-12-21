@@ -6,6 +6,7 @@
 #include "features/editor/editor_widget.h"
 #include "features/editor/gutter_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
+#include "features/main_window/controllers/app_state_controller.h"
 #include "features/status_bar/status_bar_widget.h"
 #include "features/tabs/controllers/tab_controller.h"
 #include "features/tabs/tab_bar_widget.h"
@@ -90,6 +91,7 @@ private:
   rust::Box<neko::ShortcutsManager> shortcutsManager;
   EditorController *editorController;
   TabController *tabController;
+  AppStateController *appStateController;
 
   QWidget *emptyStateWidget;
   FileExplorerWidget *fileExplorerWidget;

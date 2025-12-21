@@ -1,4 +1,5 @@
 #include "main_window.h"
+#include "features/main_window/controllers/app_state_controller.h"
 
 // TODO: StatusBar signals/tab inform and MainWindow editor ref
 // are messy and need to be cleaned up. Also consider "rearchitecting"
@@ -15,10 +16,12 @@ MainWindow::MainWindow(QWidget *parent)
   setAttribute(Qt::WA_NativeWindow);
   setAttribute(Qt::WA_LayoutOnEntireRect);
 
-  neko::Editor *editor = &appState->get_active_editor_mut();
-  neko::FileTree *fileTree = &appState->get_file_tree_mut();
-  editorController = new EditorController(editor);
+  appStateController = new AppStateController(&*appState);
   tabController = new TabController(&*appState);
+
+  neko::Editor *editor = &appStateController->getActiveEditorMut();
+  neko::FileTree *fileTree = &appStateController->getFileTreeMut();
+  editorController = new EditorController(editor);
 
   setupWidgets(editor, fileTree);
   connectSignals();
@@ -680,7 +683,7 @@ void MainWindow::onTabChanged(int index) {
 void MainWindow::onNewTabRequested() {
   saveCurrentScrollState();
   tabController->addTab();
-  setActiveEditor(&appState->get_active_editor_mut());
+  setActiveEditor(&appStateController->getActiveEditorMut());
 
   updateTabBar();
   switchToActiveTab();
@@ -703,7 +706,7 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
     gutterWidget->show();
     statusBarWidget->showCursorPositionInfo();
 
-    neko::Editor &editor = appState->get_active_editor_mut();
+    neko::Editor &editor = appStateController->getActiveEditorMut();
     setActiveEditor(&editor);
     editorWidget->redraw();
     editorWidget->updateDimensions();
@@ -768,7 +771,7 @@ void MainWindow::onFileSelected(const std::string &filePath,
 
   tabController->addTab();
 
-  if (appState->open_file(filePath)) {
+  if (appStateController->openFile(filePath)) {
     updateTabBar();
     switchToActiveTab(false);
 
