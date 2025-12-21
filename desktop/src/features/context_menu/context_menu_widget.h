@@ -17,6 +17,7 @@ class ContextMenuWidget : public QWidget {
 
 public:
   explicit ContextMenuWidget(neko::ThemeManager *themeManager,
+                             neko::ConfigManager *configManager,
                              QWidget *parent = nullptr);
   ~ContextMenuWidget() override;
 
@@ -32,6 +33,7 @@ protected:
 private:
   void clearRows();
 
+  neko::ConfigManager *configManager;
   neko::ThemeManager *themeManager;
   QVBoxLayout *layout;
 };
