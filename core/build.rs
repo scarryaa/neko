@@ -1,10 +1,9 @@
 fn main() {
-    let bridge_file = "src/ffi/mod.rs";
-
-    cxx_build::bridge(bridge_file)
+    cxx_build::bridge("src/ffi/bridge.rs")
         .flag_if_supported("-std=c++17")
-        .compile("neko_core_cxx");
+        .compile("neko-core_cxx");
 
-    println!("cargo:rerun-if-changed=src/lib.rs");
-    println!("cargo:rerun-if-changed={bridge_file}");
+    println!("cargo:rerun-if-changed=src/ffi/bridge.rs");
+    println!("cargo:rerun-if-changed=src/ffi/conversions.rs");
+    println!("cargo:rerun-if-changed=src/ffi/wrappers.rs");
 }

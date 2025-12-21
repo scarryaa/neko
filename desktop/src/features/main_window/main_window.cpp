@@ -33,6 +33,7 @@ MainWindow::MainWindow(QWidget *parent)
   setupWidgets(editor, fileTree);
   connectSignals();
   setupLayout();
+
   auto currentTheme = configManager->get_theme();
   applyTheme(std::string(currentTheme.c_str()));
   setupKeyboardShortcuts();
