@@ -41,11 +41,17 @@ impl ConfigManager {
     }
 
     fn load_from_disk(path: &PathBuf) -> Option<Config> {
-        if path.exists() {
-            let content = fs::read_to_string(path).ok()?;
-            serde_json::from_str(&content).ok()
-        } else {
-            None
+        if !path.exists() {
+            return None;
+        }
+
+        let content = fs::read_to_string(path).ok()?;
+        match serde_json::from_str::<Config>(&content) {
+            Ok(cfg) => Some(cfg),
+            Err(e) => {
+                eprintln!("Failed to parse config {}: {e}", path.display());
+                None
+            }
         }
     }
 
