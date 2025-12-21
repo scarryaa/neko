@@ -118,6 +118,10 @@ const int EditorController::getNumberOfSelections() const {
   return editor->get_number_of_selections();
 }
 
+const neko::CursorPosition EditorController::getLastAddedCursor() const {
+  return editor->get_last_added_cursor();
+}
+
 void EditorController::moveTo(const int row, const int column,
                               const bool clearSelection) {
   do_op(&neko::Editor::move_to, row, column, clearSelection);

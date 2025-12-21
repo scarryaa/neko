@@ -26,7 +26,7 @@ MainWindow::MainWindow(QWidget *parent)
   auto currentTheme = configManager->get_theme();
   applyTheme(std::string(currentTheme.c_str()));
   setupKeyboardShortcuts();
-  applyInitialState(editor);
+  applyInitialState();
 }
 
 MainWindow::~MainWindow() {}
@@ -240,9 +240,9 @@ QSplitter *MainWindow::buildSplitter(QWidget *editorSideContainer) {
   return splitter;
 }
 
-void MainWindow::applyInitialState(neko::Editor *editor) {
+void MainWindow::applyInitialState() {
   updateTabBar();
-  refreshStatusBarCursor(editor);
+  refreshStatusBarCursor();
 
   if (!configManager->get_file_explorer_shown()) {
     fileExplorerWidget->hide();
@@ -257,13 +257,13 @@ void MainWindow::setActiveEditor(neko::Editor *newEditor) {
   editorController->setEditor(newEditor);
 }
 
-void MainWindow::refreshStatusBarCursor(neko::Editor *editor) {
-  if (!editor) {
+void MainWindow::refreshStatusBarCursor() {
+  if (!editorController) {
     return;
   }
 
-  auto cursorPosition = editor->get_last_added_cursor();
-  int numberOfCursors = editor->get_cursor_positions().size();
+  auto cursorPosition = editorController->getLastAddedCursor();
+  int numberOfCursors = editorController->getCursorPositions().size();
   statusBarWidget->updateCursorPosition(cursorPosition.row, cursorPosition.col,
                                         numberOfCursors);
 }
@@ -709,7 +709,7 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
       editorWidget->verticalScrollBar()->setValue(0);
     }
 
-    refreshStatusBarCursor(&editor);
+    refreshStatusBarCursor();
 
     if (shouldFocusEditor) {
       editorWidget->setFocus();

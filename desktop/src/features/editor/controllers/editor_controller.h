@@ -27,6 +27,7 @@ public:
   const bool cursorExistsAt(const int row, const int column) const;
   const bool bufferIsEmpty() const;
   const int getNumberOfSelections() const;
+  const neko::CursorPosition getLastAddedCursor() const;
 
   // Setters
   void selectWord(const int row, const int column);

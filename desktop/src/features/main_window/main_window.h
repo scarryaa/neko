@@ -55,13 +55,13 @@ private:
   QWidget *buildEditorSection(QWidget *emptyState);
   QSplitter *buildSplitter(QWidget *editorSideContainer);
   void connectSignals();
-  void applyInitialState(neko::Editor *editor);
+  void applyInitialState();
   CloseDecision
   showTabCloseConfirmationDialog(int index,
                                  const rust::Vec<rust::String> &titles);
 
   void setActiveEditor(neko::Editor *newEditor);
-  void refreshStatusBarCursor(neko::Editor *editor);
+  void refreshStatusBarCursor();
   SaveResult saveAs();
   void updateTabBar();
   void removeTabScrollOffset(int closedIndex);
