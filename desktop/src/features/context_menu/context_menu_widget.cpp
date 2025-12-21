@@ -76,7 +76,8 @@ ContextMenuWidget::ContextMenuWidget(neko::ThemeManager *themeManager,
 ContextMenuWidget::~ContextMenuWidget() {}
 
 void ContextMenuWidget::showMenu(const QPoint &position) {
-  move(position);
+  const int margin = static_cast<int>(CONTENT_MARGIN);
+  move(position - QPoint(margin / 2, margin / 2));
   show();
 
   qApp->installEventFilter(this);
