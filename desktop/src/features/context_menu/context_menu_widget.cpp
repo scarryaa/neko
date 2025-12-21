@@ -10,12 +10,27 @@ ContextMenuWidget::ContextMenuWidget(neko::ThemeManager *themeManager,
   setAttribute(Qt::WA_DeleteOnClose);
   setAttribute(Qt::WA_ShowWithoutActivating);
   setAttribute(Qt::WA_StyledBackground, true);
-  setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
+  setAttribute(Qt::WA_TranslucentBackground);
+  setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
   setMinimumWidth(200);
   setMouseTracking(true);
   setAutoFillBackground(false);
 
-  layout = new QVBoxLayout(this);
+  QGraphicsDropShadowEffect *shadow = new QGraphicsDropShadowEffect(this);
+  shadow->setBlurRadius(SHADOW_BLUR_RADIUS);
+  shadow->setColor(Qt::black);
+  shadow->setOffset(SHADOW_X_OFFSET, SHADOW_Y_OFFSET);
+
+  mainFrame = new ContextMenuFrame(*themeManager, this);
+  mainFrame->setGraphicsEffect(shadow);
+
+  auto *rootLayout = new QVBoxLayout(this);
+  rootLayout->setContentsMargins(CONTENT_MARGIN, CONTENT_MARGIN, CONTENT_MARGIN,
+                                 CONTENT_MARGIN);
+  rootLayout->setSizeConstraint(QLayout::SetMinimumSize);
+  rootLayout->addWidget(mainFrame);
+
+  layout = new QVBoxLayout(mainFrame);
   layout->setContentsMargins(6, 6, 6, 6);
   layout->setSpacing(4);
 
@@ -45,12 +60,17 @@ ContextMenuWidget::ContextMenuWidget(neko::ThemeManager *themeManager,
       "QToolButton#ContextMenuItem:disabled { color: %7; }"
       "QFrame#ContextMenuSeparator { background: %2; border: none; margin:"
       "0px; }"
-      "QLabel#ContextMenuLabel { padding: 0px 6px; }"
-      "QLabel#ContextMenuShortcutLabel { padding: 0px 6px; }");
+      "QLabel#ContextMenuLabel { color: %8; padding: 0px 6px; }"
+      "QLabel#ContextMenuLabel:disabled { color: %9; padding: 0px 6px; }"
+      "QLabel#ContextMenuShortcutLabel { color: %10; padding: 0px 6px; }"
+      "QLabel#ContextMenuShortcutLabel:disabled { color: %11; padding: 0px "
+      "6px; }");
 
   setStyleSheet(styleSheet.arg(backgroundColor, borderColor, foregroundColor,
                                hoverColor, accentMutedColor,
-                               accentForegroundColor, mutedForegroundColor));
+                               accentForegroundColor, mutedForegroundColor,
+                               foregroundColor, mutedForegroundColor,
+                               mutedForegroundColor, mutedForegroundColor));
 }
 
 ContextMenuWidget::~ContextMenuWidget() {}
@@ -92,7 +112,7 @@ void ContextMenuWidget::setItems(const QVector<ContextMenuItem> &items) {
       continue;
 
     if (it.kind == ContextMenuItemKind::Separator) {
-      auto *sep = new QFrame(this);
+      auto *sep = new QFrame(mainFrame);
       sep->setFrameShape(QFrame::NoFrame);
       sep->setFrameShadow(QFrame::Plain);
       sep->setFixedHeight(1);
@@ -102,7 +122,7 @@ void ContextMenuWidget::setItems(const QVector<ContextMenuItem> &items) {
       continue;
     }
 
-    auto *btn = new QToolButton(this);
+    auto *btn = new QToolButton(mainFrame);
     btn->setObjectName("ContextMenuItem");
     btn->setAutoRaise(false);
     btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -133,6 +153,7 @@ void ContextMenuWidget::setItems(const QVector<ContextMenuItem> &items) {
     btnLayout->addWidget(label);
     btnLayout->addWidget(shortcutLabel);
     btnLayout->setStretch(0, 1);
+    btn->setMinimumSize(btnLayout->sizeHint());
 
     connect(btn, &QToolButton::clicked, this, [this, id = it.id] {
       emit actionTriggered(id);
