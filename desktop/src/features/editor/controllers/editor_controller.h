@@ -26,6 +26,7 @@ public:
   void setLineWidth(const int index, const double width);
   const bool cursorExistsAt(const int row, const int column) const;
   const bool bufferIsEmpty() const;
+  const int getNumberOfSelections() const;
 
   // Setters
   void selectWord(const int row, const int column);

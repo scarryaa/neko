@@ -1,6 +1,7 @@
 #ifndef STATUS_BAR_WIDGET_H
 #define STATUS_BAR_WIDGET_H
 
+#include "features/editor/controllers/editor_controller.h"
 #include "neko-core/src/ffi/mod.rs.h"
 #include "utils/gui_utils.h"
 #include <QApplication>
@@ -16,14 +17,13 @@ class StatusBarWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit StatusBarWidget(neko::Editor *editor,
+  explicit StatusBarWidget(EditorController *editorController,
                            neko::ConfigManager &configManager,
                            neko::ThemeManager &themeManager,
                            QWidget *parent = nullptr);
   ~StatusBarWidget();
 
   void applyTheme();
-  void setEditor(neko::Editor *newEditor);
   void updateCursorPosition(int row, int col, int numberOfCursors);
   void showCursorPositionInfo();
 
@@ -43,9 +43,9 @@ private:
   void onFileExplorerToggled();
   void onCursorPositionClicked();
 
+  EditorController *editorController;
   neko::ThemeManager &themeManager;
   neko::ConfigManager &configManager;
-  neko::Editor *editor;
   double m_height;
   QPushButton *fileExplorerToggleButton;
   QPushButton *cursorPosition;

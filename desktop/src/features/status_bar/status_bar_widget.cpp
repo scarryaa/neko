@@ -1,11 +1,11 @@
 #include "status_bar_widget.h"
 
-StatusBarWidget::StatusBarWidget(neko::Editor *editor,
+StatusBarWidget::StatusBarWidget(EditorController *editorController,
                                  neko::ConfigManager &configManager,
                                  neko::ThemeManager &themeManager,
                                  QWidget *parent)
-    : QWidget(parent), configManager(configManager), themeManager(themeManager),
-      editor(editor) {
+    : QWidget(parent), configManager(configManager),
+      editorController(editorController), themeManager(themeManager) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 
@@ -93,8 +93,6 @@ void StatusBarWidget::applyTheme() {
   update();
 }
 
-void StatusBarWidget::setEditor(neko::Editor *newEditor) { editor = newEditor; }
-
 void StatusBarWidget::onCursorPositionClicked() {
   // Toggle disabled to force clear hover effect
   cursorPosition->setDisabled(true);
@@ -112,14 +110,14 @@ void StatusBarWidget::showCursorPositionInfo() { cursorPosition->show(); }
 
 void StatusBarWidget::updateCursorPosition(int row, int col,
                                            int numberOfCursors) {
-  if (!editor) {
+  if (!editorController) {
     return;
   }
 
   QString newPosition = QString("%1:%2").arg(row + 1).arg(col + 1);
 
   // TODO: Show selection lines, chars
-  int numberOfSelections = editor->get_number_of_selections();
+  int numberOfSelections = editorController->getNumberOfSelections();
   if (numberOfCursors > 1 || numberOfSelections > 1) {
     newPosition = newPosition.append(" (%1 selections)")
                       .arg(std::max(numberOfCursors, numberOfSelections));
@@ -135,7 +133,7 @@ void StatusBarWidget::onTabClosed(int numberOfTabs) {
 
 void StatusBarWidget::onCursorPositionChanged(int row, int col,
                                               int numberOfCursors) {
-  if (!editor) {
+  if (!editorController) {
     return;
   }
 
@@ -144,7 +142,7 @@ void StatusBarWidget::onCursorPositionChanged(int row, int col,
   QString newPosition = QString("%1:%2").arg(row + 1).arg(col + 1);
 
   // TODO: Show selection lines, chars
-  int numberOfSelections = editor->get_number_of_selections();
+  int numberOfSelections = editorController->getNumberOfSelections();
   if (numberOfCursors > 1 || numberOfSelections > 1) {
     newPosition = newPosition.append(" (%1 selections)")
                       .arg(std::max(numberOfCursors, numberOfSelections));

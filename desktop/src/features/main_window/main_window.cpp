@@ -42,8 +42,8 @@ void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
       new EditorWidget(editorController, *configManager, *themeManager, this);
   gutterWidget =
       new GutterWidget(editorController, *configManager, *themeManager, this);
-  statusBarWidget =
-      new StatusBarWidget(editor, *configManager, *themeManager, this);
+  statusBarWidget = new StatusBarWidget(editorController, *configManager,
+                                        *themeManager, this);
   tabBarContainer = new QWidget(this);
   tabBarWidget =
       new TabBarWidget(*configManager, *themeManager, tabBarContainer);
@@ -255,7 +255,6 @@ void MainWindow::applyInitialState(neko::Editor *editor) {
 
 void MainWindow::setActiveEditor(neko::Editor *newEditor) {
   editorController->setEditor(newEditor);
-  statusBarWidget->setEditor(newEditor);
 }
 
 void MainWindow::refreshStatusBarCursor(neko::Editor *editor) {
