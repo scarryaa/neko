@@ -21,6 +21,7 @@ public:
   const bool getTabWithPathExists(const std::string &path) const;
   const int getTabIndexByPath(const std::string &path) const;
   const bool getTabsEmpty() const;
+  const bool getIsPinned(int index) const;
 
   // Setters
   int addTab();

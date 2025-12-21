@@ -51,6 +51,10 @@ const bool TabController::getTabsEmpty() const {
   return appState->get_tabs_empty();
 }
 
+const bool TabController::getIsPinned(int index) const {
+  return appState->get_tab_pinned(index);
+}
+
 int TabController::addTab() {
   if (!appState) {
     return -1;

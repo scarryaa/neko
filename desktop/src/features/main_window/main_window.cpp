@@ -528,6 +528,10 @@ void MainWindow::handleTabClosed(int closedIndex, int numberOfTabsBeforeClose) {
 
 void MainWindow::onTabCloseRequested(int index, int numberOfTabs,
                                      bool bypassConfirmation) {
+  if (tabController->getIsPinned(index)) {
+    return;
+  }
+
   saveCurrentScrollState();
   closeTabWithChecks(index, numberOfTabs, bypassConfirmation);
 }
@@ -714,8 +718,9 @@ void MainWindow::onTabCloseOthers(int index, int numberOfTabs) {
   toClose.reserve(numberOfTabs - 1);
 
   for (int i = 0; i < numberOfTabs; ++i) {
-    if (i == index)
+    if (i == index || tabController->getIsPinned(i))
       continue;
+
     toClose.push_back(i);
   }
 
@@ -730,6 +735,10 @@ void MainWindow::onTabCloseLeft(int index, int numberOfTabs) {
   toClose.reserve(index);
 
   for (int i = 0; i < index; ++i) {
+    if (tabController->getIsPinned(i)) {
+      continue;
+    }
+
     toClose.push_back(i);
   }
 
@@ -743,6 +752,10 @@ void MainWindow::onTabCloseRight(int index, int numberOfTabs) {
   toClose.reserve(numberOfTabs - index - 1);
 
   for (int i = index + 1; i < numberOfTabs; ++i) {
+    if (tabController->getIsPinned(i)) {
+      continue;
+    }
+
     toClose.push_back(i);
   }
 
@@ -1081,8 +1094,7 @@ void MainWindow::registerProviders() {
     items.push_back({ContextMenuItemKind::Action, "tab.copyPath", "Copy Path",
                      "", "", !ctx.filePath.isEmpty()});
     items.push_back({ContextMenuItemKind::Action, "tab.reveal",
-                     "Reveal in File Manager", "", "",
-                     !ctx.filePath.isEmpty()});
+                     "Reveal in Explorer", "", "", !ctx.filePath.isEmpty()});
 
     return items;
   });

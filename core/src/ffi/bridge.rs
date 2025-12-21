@@ -136,6 +136,7 @@ pub mod ffi {
         pub(crate) fn get_file_tree_mut(self: &mut AppState) -> &mut FileTree;
         #[cxx_name = "get_tab_path"]
         pub(crate) fn get_tab_path_wrapper(self: &AppState, index: usize) -> String;
+        pub(crate) fn get_tab_pinned(self: &AppState, index: usize) -> bool;
 
         pub(crate) fn new_tab(self: &mut AppState) -> usize;
         #[cxx_name = "close_tab"]

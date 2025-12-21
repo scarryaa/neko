@@ -75,6 +75,14 @@ impl AppState {
             .unwrap_or(false)
     }
 
+    pub fn get_tab_pinned(&self, index: usize) -> bool {
+        if let Some(tab) = self.tabs.get(index) {
+            tab.get_is_pinned()
+        } else {
+            false
+        }
+    }
+
     pub fn get_tab_pinned_states(&self) -> Vec<bool> {
         self.tabs.iter().map(|t| t.get_is_pinned()).collect()
     }
