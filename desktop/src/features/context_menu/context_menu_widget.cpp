@@ -60,7 +60,6 @@ ContextMenuWidget::ContextMenuWidget(neko::ThemeManager *themeManager,
       "}"
       "QToolButton#ContextMenuItem:hover { background: %3;}"
       "QToolButton#ContextMenuItem:pressed { background: %3;}"
-      "QToolButton#ContextMenuItem:checked { background: %4; color: %5;}"
       "QToolButton#ContextMenuItem:disabled { color: %6; }"
       "QFrame#ContextMenuSeparator { background: %1; border: none; margin:"
       "0px; }"
@@ -70,10 +69,9 @@ ContextMenuWidget::ContextMenuWidget(neko::ThemeManager *themeManager,
       "QLabel#ContextMenuShortcutLabel:disabled { color: %10; padding: 0px "
       "6px; }");
 
-  setStyleSheet(
-      styleSheet.arg(borderColor, labelColor, hoverColor, accentMutedColor,
-                     accentForegroundColor, labelDisabledColor, labelColor,
-                     labelDisabledColor, shortcutColor, shortcutDisabledColor));
+  setStyleSheet(styleSheet.arg(
+      borderColor, labelColor, hoverColor, labelDisabledColor, labelColor,
+      labelDisabledColor, shortcutColor, shortcutDisabledColor));
 }
 
 ContextMenuWidget::~ContextMenuWidget() {}

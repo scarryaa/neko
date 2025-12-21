@@ -7,6 +7,7 @@ pub struct Tab {
     original_content: String,
     file_path: Option<PathBuf>,
     title: String,
+    is_pinned: bool,
 }
 
 impl Tab {
@@ -16,6 +17,7 @@ impl Tab {
             original_content: String::new(),
             file_path: None,
             title: "Untitled".to_string(),
+            is_pinned: false,
         }
     }
 
@@ -25,12 +27,17 @@ impl Tab {
             original_content: String::new(),
             file_path: None,
             title: title.to_string(),
+            is_pinned: false,
         }
     }
 
     // Getters
     pub fn get_title(&self) -> String {
         self.title.clone()
+    }
+
+    pub fn get_is_pinned(&self) -> bool {
+        self.is_pinned
     }
 
     pub fn get_file_path(&self) -> Option<&Path> {
@@ -72,6 +79,10 @@ impl Tab {
 
     pub fn set_original_content(&mut self, new_content: String) {
         self.original_content = new_content;
+    }
+
+    pub fn set_is_pinned(&mut self, new_is_pinned: bool) {
+        self.is_pinned = new_is_pinned;
     }
 }
 

@@ -16,6 +16,7 @@ public:
   const int getActiveTabIndex() const;
   const rust::Vec<rust::String> getTabTitles() const;
   const rust::Vec<bool> getTabModifiedStates() const;
+  const rust::Vec<bool> getTabPinnedStates() const;
   const bool getTabModified(int index) const;
   const bool getTabWithPathExists(const std::string &path) const;
   const int getTabIndexByPath(const std::string &path) const;
@@ -27,6 +28,8 @@ public:
   bool closeOtherTabs(int index);
   bool closeLeftTabs(int index);
   bool closeRightTabs(int index);
+  bool pinTab(int index);
+  bool unpinTab(int index);
   void setActiveTabIndex(int index);
   const bool saveActiveTab() const;
   const bool saveActiveTabAndSetPath(const std::string &path) const;

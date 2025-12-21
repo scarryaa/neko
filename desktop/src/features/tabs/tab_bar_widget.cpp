@@ -31,7 +31,7 @@ TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
 
   currentTabIndex = 0;
   registerCommands();
-  viewport()->repaint();
+  viewport()->update();
 
   applyTheme();
 }
@@ -59,7 +59,8 @@ void TabBarWidget::setTabModified(int index, bool modified) {
 }
 
 void TabBarWidget::setTabs(QStringList titles, QStringList paths,
-                           rust::Vec<bool> modifiedStates) {
+                           rust::Vec<bool> modifiedStates,
+                           rust::Vec<bool> pinnedStates) {
   QLayoutItem *item;
   while ((item = layout->takeAt(0)) != nullptr) {
     if (item->widget() && item->widget() != newTabButton) {
@@ -73,10 +74,11 @@ void TabBarWidget::setTabs(QStringList titles, QStringList paths,
   int numberOfTitles = titles.size();
   for (int i = 0; i < numberOfTitles; i++) {
     auto *tabWidget = new TabWidget(
-        titles[i], paths[i], i, configManager, themeManager,
+        titles[i], paths[i], i, pinnedStates[i], configManager, themeManager,
         contextMenuRegistry, commandRegistry,
         [this]() -> int { return tabController->getTabCount(); }, this);
     tabWidget->setModified(modifiedStates[i]);
+    tabWidget->setIsPinned(pinnedStates[i]);
 
     connect(tabWidget, &TabWidget::clicked, this, [this, i]() {
       setCurrentIndex(i);
@@ -99,6 +101,17 @@ void TabBarWidget::registerCommands() {
   commandRegistry.registerCommand("tab.copyPath", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
     QGuiApplication::clipboard()->setText(ctx.filePath);
+  });
+  commandRegistry.registerCommand("tab.pin", [this](const QVariant &v) {
+    auto ctx = v.value<TabContext>();
+
+    if (ctx.isPinned) {
+      tabController->unpinTab(ctx.tabIndex);
+    } else {
+      tabController->pinTab(ctx.tabIndex);
+    }
+
+    emit tabPinnedChanged(ctx.tabIndex);
   });
 }
 

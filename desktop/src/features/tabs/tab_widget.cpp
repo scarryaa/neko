@@ -1,15 +1,18 @@
 #include "tab_widget.h"
 
+#include <QIcon>
+
 TabWidget::TabWidget(const QString &title, const QString &path, int index,
-                     neko::ConfigManager &configManager,
+                     bool isPinned, neko::ConfigManager &configManager,
                      neko::ThemeManager &themeManager,
                      ContextMenuRegistry &contextMenuRegistry,
                      CommandRegistry &commandRegistry,
                      GetTabCountFn getTabCount, QWidget *parent)
     : QWidget(parent), configManager(configManager), themeManager(themeManager),
       contextMenuRegistry(contextMenuRegistry),
-      commandRegistry(commandRegistry), title(title), path(path), index(index),
-      isActive(false), getTabCount_(std::move(getTabCount)) {
+      commandRegistry(commandRegistry), title(title), path(path),
+      isPinned(isPinned), index(index), isActive(false),
+      getTabCount_(std::move(getTabCount)) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 
@@ -32,6 +35,11 @@ void TabWidget::setActive(bool active) {
 
 void TabWidget::setModified(bool modified) {
   isModified = modified;
+  update();
+}
+
+void TabWidget::setIsPinned(bool isPinned) {
+  this->isPinned = isPinned;
   update();
 }
 
@@ -99,16 +107,45 @@ void TabWidget::paintEvent(QPaintEvent *event) {
   // Close button
   QPen closePen = QPen(isCloseHovered ? foregroundColor : foregroundMutedColor);
   closePen.setWidthF(1.5);
+  closePen.setCapStyle(Qt::RoundCap);
 
-  painter.setPen(closePen);
-  painter.drawLine(closeRect.topLeft() + QPoint(2, 2),
-                   closeRect.bottomRight() - QPoint(2, 2));
-  painter.drawLine(closeRect.topRight() + QPoint(-2, 2),
-                   closeRect.bottomLeft() - QPoint(-2, 2));
+  if (isPinned) {
+    QIcon pinIcon = QIcon::fromTheme("pin");
+
+    if (!pinIcon.isNull()) {
+      const QSize iconSize(12, 12);
+      const QColor iconColor(isCloseHovered ? foregroundColor
+                                            : foregroundMutedColor);
+      QIcon colorizedIcon =
+          UiUtils::createColorizedIcon(pinIcon, iconColor, iconSize);
+
+      const QPixmap basePixmap = colorizedIcon.pixmap(iconSize);
+      QPixmap boldPixmap(iconSize);
+      boldPixmap.fill(Qt::transparent);
+
+      QPainter iconPainter(&boldPixmap);
+      iconPainter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+      iconPainter.drawPixmap(0, 0, basePixmap);
+      iconPainter.drawPixmap(-1, 0, basePixmap);
+      iconPainter.drawPixmap(1, 0, basePixmap);
+      iconPainter.drawPixmap(0, -1, basePixmap);
+      iconPainter.drawPixmap(0, 1, basePixmap);
+      iconPainter.end();
+
+      painter.drawPixmap(closeRect.adjusted(0, 1, 0, 1).topLeft(), boldPixmap);
+    }
+  } else {
+    painter.setPen(closePen);
+    painter.drawLine(closeRect.topLeft() + QPoint(2, 2),
+                     closeRect.bottomRight() - QPoint(2, 2));
+    painter.drawLine(closeRect.topRight() + QPoint(-2, 2),
+                     closeRect.bottomLeft() - QPoint(-2, 2));
+  }
 }
 
 void TabWidget::mousePressEvent(QMouseEvent *event) {
   auto modifiers = event->modifiers();
+
   const bool shiftPressed =
       modifiers.testFlag(Qt::KeyboardModifier::ShiftModifier);
 
@@ -153,7 +190,7 @@ void TabWidget::contextMenuEvent(QContextMenuEvent *event) {
 
   TabContext ctx{};
   ctx.tabIndex = tabIndex;
-  ctx.isPinned = false;
+  ctx.isPinned = isPinned;
   ctx.isModified = isModified;
   ctx.filePath = path;
   ctx.canCloseOthers = getTabCount_() > 1;

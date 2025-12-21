@@ -30,7 +30,7 @@ public:
 
   void applyTheme();
   void setTabs(QStringList titles, QStringList paths,
-               rust::Vec<bool> modifiedStates);
+               rust::Vec<bool> modifiedStates, rust::Vec<bool> pinnedStates);
   void setCurrentIndex(size_t index);
   void setTabModified(int index, bool modified);
   int getNumberOfTabs();
@@ -40,6 +40,7 @@ signals:
   void tabCloseRequested(int index, int numberOfTabs,
                          bool bypassConfirmation = false);
   void newTabRequested();
+  void tabPinnedChanged(int index);
 
 private:
   void updateTabAppearance();

@@ -180,10 +180,15 @@ void MainWindow::connectSignals() {
   connect(tabController, &TabController::activeTabChanged, this,
           &MainWindow::switchToActiveTab);
 
+  // TODO: Rework the tab update system to not rely on mass setting
+  // all the tabs and have the TabBarWidget be in charge of mgmt/updates,
+  // with each TabWidget in control of its repaints?
   // TabBarWidget -> MainWindow connections
   connect(tabBarWidget, &TabBarWidget::tabCloseRequested, this,
           &MainWindow::onTabCloseRequested);
   connect(tabBarWidget, &TabBarWidget::currentChanged, this,
+          &MainWindow::onTabChanged);
+  connect(tabBarWidget, &TabBarWidget::tabPinnedChanged, this,
           &MainWindow::onTabChanged);
   connect(tabBarWidget, &TabBarWidget::newTabRequested, this,
           &MainWindow::onNewTabRequested);
@@ -904,8 +909,9 @@ void MainWindow::updateTabBar() {
   }
 
   rust::Vec<bool> modifieds = tabController->getTabModifiedStates();
+  rust::Vec<bool> pinnedStates = tabController->getTabPinnedStates();
 
-  tabBarWidget->setTabs(tabTitles, tabPaths, modifieds);
+  tabBarWidget->setTabs(tabTitles, tabPaths, modifieds, pinnedStates);
   tabBarWidget->setCurrentIndex(tabController->getActiveTabIndex());
 }
 

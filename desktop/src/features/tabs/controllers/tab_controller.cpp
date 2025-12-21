@@ -93,6 +93,10 @@ bool TabController::closeRightTabs(int index) {
   return true;
 }
 
+bool TabController::pinTab(int index) { return appState->pin_tab(index); }
+
+bool TabController::unpinTab(int index) { return appState->unpin_tab(index); }
+
 const int TabController::getTabCount() const {
   return !appState ? 0 : appState->get_tab_count();
 }
@@ -126,7 +130,16 @@ const rust::Vec<bool> TabController::getTabModifiedStates() const {
   if (!appState) {
     return {};
   }
+
   return appState->get_tab_modified_states();
+}
+
+const rust::Vec<bool> TabController::getTabPinnedStates() const {
+  if (!appState) {
+    return {};
+  }
+
+  return appState->get_tab_pinned_states();
 }
 
 const bool TabController::getTabModified(int index) const {

@@ -75,6 +75,10 @@ impl AppState {
             .unwrap_or(false)
     }
 
+    pub fn get_tab_pinned_states(&self) -> Vec<bool> {
+        self.tabs.iter().map(|t| t.get_is_pinned()).collect()
+    }
+
     pub fn get_tab_index_by_path(&self, path: &str) -> Option<usize> {
         self.tabs
             .iter()
@@ -172,6 +176,34 @@ impl AppState {
 
             if !self.tabs.is_empty() {
                 self.active_tab_index -= self.tabs.len().saturating_sub(1) - index;
+            }
+
+            Ok(())
+        } else {
+            Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))
+        }
+    }
+
+    pub fn pin_tab(&mut self, index: usize) -> Result<(), Error> {
+        if index < self.tabs.len() {
+            if !self.tabs.is_empty() {
+                if let Some(t) = self.tabs.get_mut(index) {
+                    t.set_is_pinned(true)
+                }
+            }
+
+            Ok(())
+        } else {
+            Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))
+        }
+    }
+
+    pub fn unpin_tab(&mut self, index: usize) -> Result<(), Error> {
+        if index < self.tabs.len() {
+            if !self.tabs.is_empty() {
+                if let Some(t) = self.tabs.get_mut(index) {
+                    t.set_is_pinned(false)
+                }
             }
 
             Ok(())

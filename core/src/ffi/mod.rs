@@ -239,6 +239,7 @@ mod bridge {
         fn get_tab_titles(self: &AppState) -> Vec<String>;
         fn get_tab_modified_states(self: &AppState) -> Vec<bool>;
         fn get_tab_modified(self: &AppState, index: usize) -> bool;
+        fn get_tab_pinned_states(self: &AppState) -> Vec<bool>;
         #[cxx_name = "get_tab_index_by_path"]
         fn get_tab_index_by_path_wrapper(self: &AppState, path: &str) -> i64;
         fn tab_with_path_exists(self: &AppState, path: &str) -> bool;
@@ -263,6 +264,10 @@ mod bridge {
         fn save_active_tab_wrapper(self: &mut AppState) -> bool;
         #[cxx_name = "save_active_tab_and_set_path"]
         fn save_active_tab_and_set_path_wrapper(self: &mut AppState, path: &str) -> bool;
+        #[cxx_name = "pin_tab"]
+        fn pin_tab_wrapper(self: &mut AppState, index: usize) -> bool;
+        #[cxx_name = "unpin_tab"]
+        fn unpin_tab_wrapper(self: &mut AppState, index: usize) -> bool;
 
         // ConfigManager
         fn new_config_manager() -> Result<Box<ConfigManager>>;
@@ -508,6 +513,14 @@ impl AppState {
 
     fn close_right_tabs_wrapper(self: &mut AppState, index: usize) -> bool {
         self.close_right_tabs(index).is_ok()
+    }
+
+    fn pin_tab_wrapper(self: &mut AppState, index: usize) -> bool {
+        self.pin_tab(index).is_ok()
+    }
+
+    fn unpin_tab_wrapper(self: &mut AppState, index: usize) -> bool {
+        self.unpin_tab(index).is_ok()
     }
 }
 
