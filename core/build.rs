@@ -3,6 +3,7 @@ fn main() {
         .flag_if_supported("-std=c++17")
         .compile("neko-core_cxx");
 
+    println!("cargo:rerun-if-changed=src/lib.rs");
     println!("cargo:rerun-if-changed=src/ffi/bridge.rs");
     println!("cargo:rerun-if-changed=src/ffi/conversions.rs");
     println!("cargo:rerun-if-changed=src/ffi/wrappers.rs");

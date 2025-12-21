@@ -7,7 +7,7 @@
 #include <QObject>
 #include <QString>
 #include <QStringList>
-#include <neko-core/src/ffi/mod.rs.h>
+#include <neko-core/src/ffi/bridge.rs.h>
 
 class EditorController : public QObject {
   Q_OBJECT

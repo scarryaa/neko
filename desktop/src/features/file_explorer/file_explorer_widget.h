@@ -1,7 +1,7 @@
 #ifndef FILE_EXPLORER_WIDGET_H
 #define FILE_EXPLORER_WIDGET_H
 
-#include "neko-core/src/ffi/mod.rs.h"
+#include "neko-core/src/ffi/bridge.rs.h"
 #include "utils/gui_utils.h"
 #include <QApplication>
 #include <QClipboard>

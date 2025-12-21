@@ -17,7 +17,8 @@ StatusBarWidget::StatusBarWidget(EditorController *editorController,
 
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-  bool fileExplorerShown = configManager.get_file_explorer_shown();
+  auto snapshot = configManager.get_config_snapshot();
+  bool fileExplorerShown = snapshot.file_explorer_shown;
 
   fileExplorerToggleButton = new QPushButton();
   fileExplorerToggleButton->setCheckable(true);

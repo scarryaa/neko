@@ -1,7 +1,7 @@
 #ifndef UI_UTILS_H
 #define UI_UTILS_H
 
-#include "neko-core/src/ffi/mod.rs.h"
+#include "neko-core/src/ffi/bridge.rs.h"
 #include <QApplication>
 #include <QColor>
 #include <QFont>

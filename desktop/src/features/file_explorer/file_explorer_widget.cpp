@@ -37,10 +37,12 @@ void FileExplorerWidget::initialize(std::string path) {
 }
 
 void FileExplorerWidget::loadSavedDir() {
-  auto rawPath = configManager.get_file_explorer_directory();
+  auto snapshot = configManager.get_config_snapshot();
+  auto rawPath = snapshot.file_explorer_directory;
+  bool maybeRoot = snapshot.file_explorer_directory_present;
   QString savedDir = QString::fromUtf8(rawPath);
 
-  if (!savedDir.isEmpty()) {
+  if (!savedDir.isEmpty() && maybeRoot) {
     initialize(savedDir.toStdString());
     rootPath = savedDir.toStdString();
     directorySelectionButton->hide();
@@ -231,7 +233,11 @@ void FileExplorerWidget::directorySelectionRequested() {
     initialize(dir.toStdString());
     rootPath = dir.toStdString();
     directorySelectionButton->hide();
-    configManager.set_file_explorer_directory(dir.toStdString());
+
+    auto snapshot = configManager.get_config_snapshot();
+    snapshot.file_explorer_directory_present = true;
+    snapshot.file_explorer_directory = dir.toStdString();
+    configManager.apply_config_snapshot(snapshot);
   }
 }
 

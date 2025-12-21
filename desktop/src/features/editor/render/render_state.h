@@ -4,7 +4,7 @@
 #include "render_theme.h"
 #include <QFont>
 #include <QStringList>
-#include <neko-core/src/ffi/mod.rs.h>
+#include <neko-core/src/ffi/bridge.rs.h>
 
 struct RenderState {
   const QStringList lines;

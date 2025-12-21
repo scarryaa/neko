@@ -2,7 +2,7 @@
 #define APP_STATE_CONTROLLER_H
 
 #include <QObject>
-#include <neko-core/src/ffi/mod.rs.h>
+#include <neko-core/src/ffi/bridge.rs.h>
 
 class AppStateController : public QObject {
   Q_OBJECT

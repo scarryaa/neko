@@ -13,7 +13,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <neko-core/src/ffi/mod.rs.h>
+#include <neko-core/src/ffi/bridge.rs.h>
 
 class ContextMenuWidget : public QWidget {
   Q_OBJECT

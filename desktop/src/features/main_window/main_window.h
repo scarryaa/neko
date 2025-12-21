@@ -15,7 +15,7 @@
 #include "features/tabs/controllers/tab_controller.h"
 #include "features/tabs/tab_bar_widget.h"
 #include "features/title_bar/title_bar_widget.h"
-#include "neko-core/src/ffi/mod.rs.h"
+#include "neko-core/src/ffi/bridge.rs.h"
 #include "utils/gui_utils.h"
 #include "utils/mac_utils.h"
 #include "utils/scroll_offset.h"

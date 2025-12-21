@@ -23,18 +23,57 @@ QString UiUtils::getThemeColor(neko::ThemeManager &manager, const char *key,
 QFont UiUtils::loadFont(neko::ConfigManager &manager, neko::FontType type) {
   bool forceMonospace = false;
 
-  auto rawFamily = manager.get_font_family(type);
-  auto rawSize = manager.get_font_size(type);
+  auto snapshot = manager.get_config_snapshot();
+  rust::String rawFamily;
+  double size;
+
+  switch (type) {
+  case neko::FontType::Interface:
+    rawFamily = snapshot.interface_font_family;
+    size = snapshot.interface_font_size;
+    break;
+  case neko::FontType::Editor:
+    rawFamily = snapshot.editor_font_family;
+    size = snapshot.editor_font_size;
+    break;
+  case neko::FontType::FileExplorer:
+    rawFamily = snapshot.file_explorer_font_family;
+    size = snapshot.file_explorer_font_size;
+    break;
+  case neko::FontType::Terminal:
+    rawFamily = snapshot.terminal_font_family;
+    size = snapshot.interface_font_size;
+    break;
+  }
+
+  if (rawFamily.empty() || !size)
+    return QFont();
 
   QString family = QString::fromUtf8(rawFamily);
-  QFont font(family, rawSize);
-
+  QFont font(family, size);
   return font;
 }
 
 void UiUtils::setFontSize(neko::ConfigManager &manager, neko::FontType type,
                           double newFontSize) {
-  manager.set_font_size(newFontSize, type);
+  auto snapshot = manager.get_config_snapshot();
+
+  switch (type) {
+  case neko::FontType::Editor:
+    snapshot.editor_font_size = newFontSize;
+    break;
+  case neko::FontType::FileExplorer:
+    snapshot.file_explorer_font_size = newFontSize;
+    break;
+  case neko::FontType::Interface:
+    snapshot.interface_font_size = newFontSize;
+    break;
+  case neko::FontType::Terminal:
+    snapshot.terminal_font_size = newFontSize;
+    break;
+  }
+
+  manager.apply_config_snapshot(snapshot);
 }
 
 QString UiUtils::getScrollBarStylesheet(neko::ThemeManager &themeManager,

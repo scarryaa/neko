@@ -34,7 +34,8 @@ MainWindow::MainWindow(QWidget *parent)
   connectSignals();
   setupLayout();
 
-  auto currentTheme = configManager->get_theme();
+  auto snapshot = configManager->get_config_snapshot();
+  auto currentTheme = snapshot.current_theme;
   applyTheme(std::string(currentTheme.c_str()));
   setupKeyboardShortcuts();
   applyInitialState();
@@ -51,7 +52,9 @@ void MainWindow::onFileExplorerToggled() {
     fileExplorerWidget->hide();
   }
 
-  configManager->set_file_explorer_shown(isOpen);
+  auto snapshot = configManager->get_config_snapshot();
+  snapshot.file_explorer_shown = isOpen;
+  configManager->apply_config_snapshot(snapshot);
 }
 
 void MainWindow::onCursorPositionClicked() {
@@ -290,8 +293,9 @@ QWidget *MainWindow::buildEditorSection(QWidget *emptyState) {
 QSplitter *MainWindow::buildSplitter(QWidget *editorSideContainer) {
   auto *splitter = new QSplitter(Qt::Horizontal, this);
   mainSplitter = splitter;
-  auto fileExplorerRight = configManager->get_file_explorer_right();
-  int savedSidebarWidth = configManager->get_file_explorer_width();
+  auto snapshot = configManager->get_config_snapshot();
+  auto fileExplorerRight = snapshot.file_explorer_right;
+  int savedSidebarWidth = snapshot.file_explorer_width;
 
   if (fileExplorerRight) {
     splitter->addWidget(editorSideContainer);
@@ -324,7 +328,9 @@ QSplitter *MainWindow::buildSplitter(QWidget *editorSideContainer) {
                      if (!sizes.isEmpty()) {
                        int newWidth = sizes.first();
 
-                       configManager->set_file_explorer_width(newWidth);
+                       auto snapshot = configManager->get_config_snapshot();
+                       snapshot.file_explorer_width = newWidth;
+                       configManager->apply_config_snapshot(snapshot);
                      }
                    });
 
@@ -404,7 +410,8 @@ void MainWindow::applyInitialState() {
   updateTabBar();
   refreshStatusBarCursor();
 
-  if (!configManager->get_file_explorer_shown()) {
+  auto snapshot = configManager->get_config_snapshot();
+  if (!snapshot.file_explorer_shown) {
     fileExplorerWidget->hide();
   }
 

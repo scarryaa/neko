@@ -3,7 +3,7 @@
 
 #include "controllers/editor_controller.h"
 #include "features/editor/render/editor_renderer.h"
-#include "neko-core/src/ffi/mod.rs.h"
+#include "neko-core/src/ffi/bridge.rs.h"
 #include "utils/editor_utils.h"
 #include "utils/gui_utils.h"
 #include "utils/row_col.h"

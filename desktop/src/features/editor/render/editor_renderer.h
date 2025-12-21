@@ -4,7 +4,7 @@
 #include "render_state.h"
 #include "utils/editor_utils.h"
 #include <QPainter>
-#include <neko-core/src/ffi/mod.rs.h>
+#include <neko-core/src/ffi/bridge.rs.h>
 
 class EditorRenderer {
 public:

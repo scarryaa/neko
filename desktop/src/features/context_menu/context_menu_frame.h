@@ -5,7 +5,7 @@
 #include <QFrame>
 #include <QPainter>
 #include <QPainterPath>
-#include <neko-core/src/ffi/mod.rs.h>
+#include <neko-core/src/ffi/bridge.rs.h>
 
 class ContextMenuFrame : public QFrame {
   Q_OBJECT

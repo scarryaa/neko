@@ -19,7 +19,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <neko-core/src/ffi/mod.rs.h>
+#include <neko-core/src/ffi/bridge.rs.h>
 
 class CommandPaletteWidget : public QWidget {
   Q_OBJECT

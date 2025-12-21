@@ -86,6 +86,26 @@ pub mod ffi {
         pub intents: Vec<UiIntentFfi>,
     }
 
+    struct ConfigSnapshotFfi {
+        editor_font_size: u32,
+        editor_font_family: String,
+
+        file_explorer_font_size: u32,
+        file_explorer_font_family: String,
+        file_explorer_directory_present: bool,
+        file_explorer_directory: String,
+        file_explorer_shown: bool,
+        file_explorer_width: u32,
+        file_explorer_right: bool,
+
+        interface_font_family: String,
+        interface_font_size: u32,
+        terminal_font_family: String,
+        terminal_font_size: u32,
+
+        current_theme: String,
+    }
+
     extern "Rust" {
         type AppState;
         type ConfigManager;
@@ -143,32 +163,14 @@ pub mod ffi {
 
         // ConfigManager
         pub(crate) fn new_config_manager() -> Result<Box<ConfigManager>>;
-        #[cxx_name = "get_config_path"]
-        pub(crate) fn get_config_path_wrapper(self: &ConfigManager) -> String;
-        pub(crate) fn get_font_size(self: &ConfigManager, font_type: FontType) -> usize;
-        pub(crate) fn get_font_family(self: &ConfigManager, font_type: FontType) -> String;
+        #[cxx_name = "get_config_snapshot"]
+        pub(crate) fn get_snapshot_wrapper(self: &ConfigManager) -> ConfigSnapshotFfi;
+        #[cxx_name = "apply_config_snapshot"]
+        pub(crate) fn apply_snapshot_wrapper(self: &ConfigManager, snap: ConfigSnapshotFfi);
         #[cxx_name = "save_config"]
         pub(crate) fn save_config_wrapper(self: &mut ConfigManager) -> bool;
-        pub(crate) fn get_theme(self: &ConfigManager) -> String;
-        pub(crate) fn set_font_size(
-            self: &mut ConfigManager,
-            font_size: usize,
-            font_type: FontType,
-        );
-        pub(crate) fn set_font_family(
-            self: &mut ConfigManager,
-            font_family: &str,
-            font_type: FontType,
-        );
-        pub(crate) fn set_file_explorer_directory(self: &mut ConfigManager, new_directory: &str);
-        pub(crate) fn get_file_explorer_directory(self: &ConfigManager) -> String;
-        pub(crate) fn set_file_explorer_shown(self: &mut ConfigManager, shown: bool);
-        pub(crate) fn get_file_explorer_shown(self: &ConfigManager) -> bool;
-        pub(crate) fn set_file_explorer_width(self: &mut ConfigManager, width: usize);
-        pub(crate) fn get_file_explorer_width(self: &ConfigManager) -> usize;
-        pub(crate) fn get_file_explorer_right(self: &ConfigManager) -> bool;
-        pub(crate) fn set_file_explorer_right(self: &ConfigManager, is_right: bool);
-        pub(crate) fn set_theme(self: &mut ConfigManager, theme_name: String);
+        #[cxx_name = "get_config_path"]
+        pub(crate) fn get_config_path_wrapper(self: &ConfigManager) -> String;
 
         // ShortcutsManager
         pub(crate) fn new_shortcuts_manager() -> Result<Box<ShortcutsManager>>;

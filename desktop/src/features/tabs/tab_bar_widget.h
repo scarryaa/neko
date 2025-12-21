@@ -5,7 +5,7 @@
 #include "features/context_menu/context_menu_registry.h"
 #include "features/tabs/controllers/tab_controller.h"
 #include "features/tabs/tab_widget.h"
-#include "neko-core/src/ffi/mod.rs.h"
+#include "neko-core/src/ffi/bridge.rs.h"
 #include "utils/gui_utils.h"
 #include <QClipboard>
 #include <QDragEnterEvent>

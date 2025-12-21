@@ -9,7 +9,7 @@
 #include <QPushButton>
 #include <QString>
 #include <QWidget>
-#include <neko-core/src/ffi/mod.rs.h>
+#include <neko-core/src/ffi/bridge.rs.h>
 #include <string>
 
 class TitleBarWidget : public QWidget {

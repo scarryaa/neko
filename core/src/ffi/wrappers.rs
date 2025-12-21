@@ -95,14 +95,30 @@ pub(crate) fn new_config_manager() -> std::io::Result<Box<ConfigManager>> {
 }
 
 impl ConfigManager {
-    pub(crate) fn get_font_size(&self, font_type: FontType) -> usize {
-        match font_type {
-            FontType::Editor => self.get_snapshot().editor_font_size,
-            FontType::FileExplorer => self.get_snapshot().file_explorer_font_size,
-            FontType::Interface => 15,
-            FontType::Terminal => 15,
-            _ => 15,
-        }
+    pub(crate) fn get_snapshot_wrapper(&self) -> ConfigSnapshotFfi {
+        self.get_snapshot().into()
+    }
+
+    pub(crate) fn apply_snapshot_wrapper(&self, snap: ConfigSnapshotFfi) {
+        self.update(|c| {
+            c.editor_font_size = snap.editor_font_size as usize;
+            c.editor_font_family = snap.editor_font_family;
+
+            c.file_explorer_font_size = snap.file_explorer_font_size as usize;
+            c.file_explorer_font_family = snap.file_explorer_font_family;
+
+            c.file_explorer_directory = if snap.file_explorer_directory_present {
+                Some(snap.file_explorer_directory)
+            } else {
+                None
+            };
+
+            c.file_explorer_shown = snap.file_explorer_shown;
+            c.file_explorer_width = snap.file_explorer_width as usize;
+            c.file_explorer_right = snap.file_explorer_right;
+
+            c.current_theme = snap.current_theme;
+        });
     }
 
     pub(crate) fn get_config_path_wrapper(&self) -> String {
@@ -113,81 +129,8 @@ impl ConfigManager {
         }
     }
 
-    pub(crate) fn get_font_family(&self, font_type: FontType) -> String {
-        match font_type {
-            FontType::Editor => self.get_snapshot().editor_font_family,
-            FontType::FileExplorer => self.get_snapshot().file_explorer_font_family,
-            FontType::Interface => "IBM Plex Sans".to_string(),
-            FontType::Terminal => "IBM Plex Mono".to_string(),
-            _ => "IBM Plex Sans".to_string(),
-        }
-    }
-
-    pub(crate) fn get_file_explorer_directory(&self) -> String {
-        self.get_snapshot()
-            .file_explorer_directory
-            .unwrap_or("".to_string())
-            .to_string()
-    }
-
     pub(crate) fn save_config_wrapper(&mut self) -> bool {
         self.save().is_ok()
-    }
-
-    pub(crate) fn set_font_size(&mut self, font_size: usize, font_type: FontType) {
-        self.update(|c| match font_type {
-            FontType::Editor => c.editor_font_size = font_size,
-            FontType::FileExplorer => c.file_explorer_font_size = font_size,
-            FontType::Interface => todo!(),
-            FontType::Terminal => todo!(),
-            _ => todo!(),
-        });
-    }
-
-    pub(crate) fn set_font_family(&mut self, font_family: &str, font_type: FontType) {
-        self.update(|c| match font_type {
-            FontType::Editor => c.editor_font_family = font_family.to_string(),
-            FontType::FileExplorer => c.file_explorer_font_family = font_family.to_string(),
-            FontType::Interface => todo!(),
-            FontType::Terminal => todo!(),
-            _ => todo!(),
-        });
-    }
-
-    pub(crate) fn set_file_explorer_directory(&mut self, new_directory: &str) {
-        self.update(|c| c.file_explorer_directory = Some(new_directory.to_string()));
-    }
-
-    pub(crate) fn set_file_explorer_shown(self: &mut ConfigManager, shown: bool) {
-        self.update(|c| c.file_explorer_shown = shown);
-    }
-
-    pub(crate) fn get_file_explorer_shown(self: &ConfigManager) -> bool {
-        self.get_snapshot().file_explorer_shown
-    }
-
-    pub(crate) fn set_file_explorer_width(&mut self, width: usize) {
-        self.update(|c| c.file_explorer_width = width);
-    }
-
-    pub(crate) fn get_file_explorer_width(&self) -> usize {
-        self.get_snapshot().file_explorer_width
-    }
-
-    pub(crate) fn get_file_explorer_right(self: &ConfigManager) -> bool {
-        self.get_snapshot().file_explorer_right
-    }
-
-    pub(crate) fn set_file_explorer_right(self: &ConfigManager, is_right: bool) {
-        self.update(|c| c.file_explorer_right = is_right);
-    }
-
-    pub(crate) fn set_theme(self: &ConfigManager, theme_name: String) {
-        self.update(|c| c.current_theme = theme_name);
-    }
-
-    pub(crate) fn get_theme(&self) -> String {
-        self.get_snapshot().current_theme.clone()
     }
 }
 
