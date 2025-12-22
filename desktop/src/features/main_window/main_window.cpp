@@ -421,11 +421,24 @@ void MainWindow::applyInitialState() {
   editorWidget->setFocus();
 }
 
-MainWindow::CloseDecision MainWindow::showTabCloseConfirmationDialog(int id) {
-  const QString tabTitle = tabController->getTabTitle(id);
+MainWindow::CloseDecision
+MainWindow::showTabCloseConfirmationDialog(const QList<int> &ids) {
+  int modifiedCount = 0;
 
-  QMessageBox box(QMessageBox::Warning, tr("Close Tab"),
-                  tr("%1 has unsaved edits.").arg(tabTitle),
+  for (int i = 0; i < ids.size(); i++) {
+    if (tabController->getTabModified(ids[i])) {
+      modifiedCount++;
+    }
+  }
+
+  if (modifiedCount == 0) {
+    return CloseDecision::DontSave;
+  }
+
+  QMessageBox box(QMessageBox::Warning, tr("Close Tabs"),
+                  tr("%1 tab%2 unsaved edits.")
+                      .arg(modifiedCount)
+                      .arg(modifiedCount > 1 ? "s have" : " has"),
                   QMessageBox::NoButton, this->window());
 
   auto *saveBtn = box.addButton(tr("Save"), QMessageBox::AcceptRole);
@@ -470,6 +483,7 @@ void MainWindow::refreshStatusBarCursor() {
 }
 
 MainWindow::SaveResult MainWindow::saveAs() {
+  // TODO: Fill in file name/path if available
   QString filePath =
       QFileDialog::getSaveFileName(this, tr("Save As"), QDir::homePath());
 
@@ -619,8 +633,11 @@ void MainWindow::onActiveTabCloseRequested(int numberOfTabs,
     int activeId = tabController->getActiveTabId();
 
     if (tabController->getTabModified(activeId) && !bypassConfirmation) {
+      QList<int> tabsIdsToSave = QList<int>();
+      tabsIdsToSave.push_back(activeId);
+
       const CloseDecision closeResult =
-          showTabCloseConfirmationDialog(activeId);
+          showTabCloseConfirmationDialog(tabsIdsToSave);
 
       switch (closeResult) {
       case CloseDecision::Save: {
@@ -645,18 +662,86 @@ void MainWindow::onActiveTabCloseRequested(int numberOfTabs,
 }
 
 void MainWindow::onTabCloseOthers(int id, bool forceClose) {
+  // TODO: Focus remaining tabs after close process
   saveCurrentScrollState();
-  tabController->closeOtherTabs(id);
+  auto ids = tabController->getCloseOtherTabIds(id);
+
+  closeManyTabsWithConfirm(ids, forceClose,
+                           [this, id]() { tabController->closeOtherTabs(id); });
 }
 
 void MainWindow::onTabCloseLeft(int id, bool forceClose) {
+  // TODO: Focus remaining tabs after close process
   saveCurrentScrollState();
-  tabController->closeLeftTabs(id);
+  auto ids = tabController->getCloseLeftTabIds(id);
+
+  closeManyTabsWithConfirm(ids, forceClose,
+                           [this, id]() { tabController->closeLeftTabs(id); });
 }
 
 void MainWindow::onTabCloseRight(int id, bool forceClose) {
+  // TODO: Focus remaining tabs after close process
   saveCurrentScrollState();
-  tabController->closeRightTabs(id);
+  auto ids = tabController->getCloseRightTabIds(id);
+
+  closeManyTabsWithConfirm(ids, forceClose,
+                           [this, id]() { tabController->closeRightTabs(id); });
+}
+
+MainWindow::CloseDecision MainWindow::confirmCloseTabs(const QList<int> &ids) {
+  return showTabCloseConfirmationDialog(ids);
+}
+
+void MainWindow::closeManyTabsWithConfirm(const QList<int> &ids,
+                                          bool forceClose,
+                                          std::function<void()> closeAction) {
+  if (ids.isEmpty())
+    return;
+
+  bool anyModified = false;
+  for (int id : ids) {
+    if (tabController->getTabModified(id)) {
+      anyModified = true;
+      break;
+    }
+  }
+
+  if (!forceClose && anyModified) {
+    switch (confirmCloseTabs(ids)) {
+    case CloseDecision::Save:
+      for (int id : ids) {
+        if (tabController->getTabModified(id)) {
+          if (!saveTabWithPromptIfNeeded(id))
+            return;
+        }
+      }
+      break;
+    case CloseDecision::DontSave:
+      break;
+    case CloseDecision::Cancel:
+      return;
+    }
+  }
+
+  closeAction();
+}
+
+bool MainWindow::saveTabWithPromptIfNeeded(int id) {
+  const QString path = tabController->getTabPath(id);
+
+  if (!path.isEmpty()) {
+    return tabController->saveTabWithId(id);
+  }
+
+  // TODO: Fill in file name/path if available
+  // TODO: Switch to relevant tab
+  QString filePath =
+      QFileDialog::getSaveFileName(this, tr("Save As"), QDir::homePath());
+
+  if (filePath.isEmpty())
+    return false;
+
+  return tabController->saveTabWithIdAndSetPath(id, filePath.toStdString());
 }
 
 void MainWindow::onTabCopyPath(int id) {
@@ -1024,12 +1109,37 @@ void MainWindow::registerProviders() {
 }
 
 void MainWindow::registerCommands() {
+  // TODO: Clean this up
   commandRegistry.registerCommand("tab.close", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
-    auto shiftPressed = QApplication::keyboardModifiers().testFlag(
+    auto forceClose = QApplication::keyboardModifiers().testFlag(
         Qt::KeyboardModifier::ShiftModifier);
+    const bool isModified = tabController->getTabModified(ctx.tabId);
 
-    onTabCloseRequested(ctx.tabId, shiftPressed);
+    if (!forceClose && isModified) {
+      QList<int> tabsIdsToClose = QList<int>();
+      tabsIdsToClose.push_back(ctx.tabId);
+
+      switch (confirmCloseTabs(tabsIdsToClose)) {
+      case CloseDecision::Save:
+        if (isModified) {
+          if (!saveTabWithPromptIfNeeded(ctx.tabId))
+            return;
+
+          tabController->closeTab(ctx.tabId);
+        } else {
+          tabController->closeTab(ctx.tabId);
+        }
+        break;
+      case CloseDecision::DontSave:
+        tabController->closeTab(ctx.tabId);
+        break;
+      case CloseDecision::Cancel:
+        return;
+      }
+    } else {
+      tabController->closeTab(ctx.tabId);
+    }
   });
   commandRegistry.registerCommand("tab.closeOthers", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();

@@ -141,6 +141,12 @@ pub mod ffi {
         pub(crate) fn get_tab_id_wrapper(self: &AppState, index: usize) -> usize;
         #[cxx_name = "get_tab_title"]
         pub(crate) fn get_tab_title_wrapper(self: &AppState, id: usize) -> String;
+        #[cxx_name = "get_close_other_tab_ids"]
+        pub(crate) fn get_close_other_tab_ids_wrapper(self: &AppState, id: usize) -> Vec<usize>;
+        #[cxx_name = "get_close_left_tab_ids"]
+        pub(crate) fn get_close_left_tab_ids_wrapper(self: &AppState, id: usize) -> Vec<usize>;
+        #[cxx_name = "get_close_right_tab_ids"]
+        pub(crate) fn get_close_right_tab_ids_wrapper(self: &AppState, id: usize) -> Vec<usize>;
 
         pub(crate) fn new_tab(self: &mut AppState) -> usize;
         #[cxx_name = "close_tab"]
@@ -165,6 +171,14 @@ pub mod ffi {
         pub(crate) fn pin_tab_wrapper(self: &mut AppState, id: usize) -> bool;
         #[cxx_name = "unpin_tab"]
         pub(crate) fn unpin_tab_wrapper(self: &mut AppState, id: usize) -> bool;
+        #[cxx_name = "save_tab_with_id"]
+        pub(crate) fn save_tab_with_id_wrapper(self: &mut AppState, id: usize) -> bool;
+        #[cxx_name = "save_tab_with_id_and_set_path"]
+        pub(crate) fn save_tab_with_id_and_set_path_wrapper(
+            self: &mut AppState,
+            id: usize,
+            path: &str,
+        ) -> bool;
 
         // ConfigManager
         pub(crate) fn new_config_manager() -> Result<Box<ConfigManager>>;

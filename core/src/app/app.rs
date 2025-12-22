@@ -153,6 +153,50 @@ impl AppState {
         })
     }
 
+    pub fn get_close_other_tab_ids(&self, id: usize) -> Result<Vec<usize>, Error> {
+        if !self.tabs.iter().any(|t| t.get_id() == id) {
+            return Err(Error::new(
+                ErrorKind::NotFound,
+                "Tab with given id not found",
+            ));
+        }
+
+        Ok(self
+            .tabs
+            .iter()
+            .filter(|t| t.get_id() != id && !t.get_is_pinned())
+            .map(|t| t.get_id())
+            .collect())
+    }
+
+    pub fn get_close_left_tab_ids(&self, id: usize) -> Result<Vec<usize>, Error> {
+        let index = self
+            .tabs
+            .iter()
+            .position(|t| t.get_id() == id)
+            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
+
+        Ok(self.tabs[..index]
+            .iter()
+            .filter(|t| !t.get_is_pinned())
+            .map(|t| t.get_id())
+            .collect())
+    }
+
+    pub fn get_close_right_tab_ids(&self, id: usize) -> Result<Vec<usize>, Error> {
+        let index = self
+            .tabs
+            .iter()
+            .position(|t| t.get_id() == id)
+            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
+
+        Ok(self.tabs[index + 1..]
+            .iter()
+            .filter(|t| !t.get_is_pinned())
+            .map(|t| t.get_id())
+            .collect())
+    }
+
     // Setters
     pub fn new_tab(&mut self) -> usize {
         let id = self.get_next_tab_id();
@@ -389,6 +433,50 @@ impl AppState {
             .iter_mut()
             .find(|t| t.get_id() == self.active_tab_id)
             .ok_or_else(|| Error::new(ErrorKind::NotFound, "No active tab"))?;
+
+        let content = tab.get_editor().buffer().get_text();
+        tab.set_original_content(content.clone());
+        std::fs::write(path, content)?;
+        tab.set_file_path(Some(path.to_string()));
+
+        if let Some(filename) = PathBuf::from(path).file_name() {
+            tab.set_title(&filename.to_string_lossy());
+        }
+
+        Ok(())
+    }
+
+    pub fn save_tab_with_id(&mut self, id: usize) -> Result<(), Error> {
+        let tab = self
+            .tabs
+            .iter_mut()
+            .find(|t| t.get_id() == id)
+            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
+
+        let path: PathBuf = tab
+            .get_file_path()
+            .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "Tab path is missing"))?
+            .to_path_buf();
+
+        let content = tab.get_editor().buffer().get_text();
+
+        std::fs::write(&path, &content)?;
+
+        tab.set_original_content(content);
+
+        if let Some(filename) = path.file_name() {
+            tab.set_title(&filename.to_string_lossy());
+        }
+
+        Ok(())
+    }
+
+    pub fn save_tab_with_id_and_set_path(&mut self, id: usize, path: &str) -> Result<(), Error> {
+        let tab = self
+            .tabs
+            .iter_mut()
+            .find(|t| t.get_id() == id)
+            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
 
         let content = tab.get_editor().buffer().get_text();
         tab.set_original_content(content.clone());

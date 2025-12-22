@@ -67,6 +67,45 @@ const QString TabController::getTabTitle(int id) const {
   return title;
 }
 
+const QList<int> TabController::getCloseOtherTabIds(int id) const {
+  auto rawIds = appState->get_close_other_tab_ids(id);
+
+  QList<int> ids = QList<int>();
+  ids.reserve(rawIds.size());
+
+  for (int i = 0; i < rawIds.size(); i++) {
+    ids.append(rawIds[i]);
+  }
+
+  return ids;
+}
+
+const QList<int> TabController::getCloseLeftTabIds(int id) const {
+  auto rawIds = appState->get_close_left_tab_ids(id);
+
+  QList<int> ids = QList<int>();
+  ids.reserve(rawIds.size());
+
+  for (int i = 0; i < rawIds.size(); i++) {
+    ids.append(rawIds[i]);
+  }
+
+  return ids;
+}
+
+const QList<int> TabController::getCloseRightTabIds(int id) const {
+  auto rawIds = appState->get_close_right_tab_ids(id);
+
+  QList<int> ids = QList<int>();
+  ids.reserve(rawIds.size());
+
+  for (int i = 0; i < rawIds.size(); i++) {
+    ids.append(rawIds[i]);
+  }
+
+  return ids;
+}
+
 int TabController::addTab() {
   if (!appState) {
     return -1;
@@ -200,6 +239,15 @@ const bool TabController::saveActiveTab() const {
 const bool
 TabController::saveActiveTabAndSetPath(const std::string &path) const {
   return appState->save_active_tab_and_set_path(path);
+}
+
+const bool TabController::saveTabWithId(int id) const {
+  return appState->save_tab_with_id(id);
+}
+
+const bool
+TabController::saveTabWithIdAndSetPath(int id, const std::string &path) const {
+  return appState->save_tab_with_id_and_set_path(id, path);
 }
 
 const QString TabController::getTabPath(int id) const {

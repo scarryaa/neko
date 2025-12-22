@@ -24,6 +24,9 @@ public:
   const bool getIsPinned(int id) const;
   const int getTabId(int index) const;
   const QString getTabTitle(int id) const;
+  const QList<int> getCloseOtherTabIds(int id) const;
+  const QList<int> getCloseLeftTabIds(int id) const;
+  const QList<int> getCloseRightTabIds(int id) const;
 
   // Setters
   int addTab();
@@ -37,6 +40,8 @@ public:
   void setActiveTab(int id);
   const bool saveActiveTab() const;
   const bool saveActiveTabAndSetPath(const std::string &path) const;
+  const bool saveTabWithId(int id) const;
+  const bool saveTabWithIdAndSetPath(int id, const std::string &path) const;
   const QString getTabPath(int id) const;
 
 signals:

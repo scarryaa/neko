@@ -61,7 +61,11 @@ private:
   QSplitter *buildSplitter(QWidget *editorSideContainer);
   void connectSignals();
   void applyInitialState();
-  CloseDecision showTabCloseConfirmationDialog(int id);
+  CloseDecision showTabCloseConfirmationDialog(const QList<int> &ids);
+  void closeManyTabsWithConfirm(const QList<int> &ids, bool forceClose,
+                                std::function<void()> closeAction);
+  bool saveTabWithPromptIfNeeded(int id);
+  CloseDecision confirmCloseTabs(const QList<int> &ids);
 
   void setActiveEditor(neko::Editor *newEditor);
   void refreshStatusBarCursor();

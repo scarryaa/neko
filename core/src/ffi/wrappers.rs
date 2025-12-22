@@ -56,6 +56,21 @@ impl AppState {
             .unwrap_or(-1)
     }
 
+    pub fn get_close_other_tab_ids_wrapper(&self, id: usize) -> Vec<usize> {
+        self.get_close_other_tab_ids(id)
+            .expect("Unable to get 'close other' tab ids")
+    }
+
+    pub fn get_close_left_tab_ids_wrapper(&self, id: usize) -> Vec<usize> {
+        self.get_close_left_tab_ids(id)
+            .expect("Unable to get 'close left' tab ids")
+    }
+
+    pub fn get_close_right_tab_ids_wrapper(&self, id: usize) -> Vec<usize> {
+        self.get_close_right_tab_ids(id)
+            .expect("Unable to get 'close right' tab ids")
+    }
+
     pub(crate) fn open_file_wrapper(&mut self, path: &str) -> bool {
         self.open_file(path).is_ok()
     }
@@ -72,28 +87,36 @@ impl AppState {
         self.close_tab(id).is_ok()
     }
 
-    pub(crate) fn close_other_tabs_wrapper(self: &mut AppState, id: usize) -> bool {
+    pub(crate) fn close_other_tabs_wrapper(&mut self, id: usize) -> bool {
         self.close_other_tabs(id).is_ok()
     }
 
-    pub(crate) fn close_left_tabs_wrapper(self: &mut AppState, id: usize) -> bool {
+    pub(crate) fn close_left_tabs_wrapper(&mut self, id: usize) -> bool {
         self.close_left_tabs(id).is_ok()
     }
 
-    pub(crate) fn close_right_tabs_wrapper(self: &mut AppState, id: usize) -> bool {
+    pub(crate) fn close_right_tabs_wrapper(&mut self, id: usize) -> bool {
         self.close_right_tabs(id).is_ok()
     }
 
-    pub(crate) fn move_tab_wrapper(self: &mut AppState, from: usize, to: usize) -> bool {
+    pub(crate) fn move_tab_wrapper(&mut self, from: usize, to: usize) -> bool {
         self.move_tab(from, to).is_ok()
     }
 
-    pub(crate) fn pin_tab_wrapper(self: &mut AppState, id: usize) -> bool {
+    pub(crate) fn pin_tab_wrapper(&mut self, id: usize) -> bool {
         self.pin_tab(id).is_ok()
     }
 
-    pub(crate) fn unpin_tab_wrapper(self: &mut AppState, id: usize) -> bool {
+    pub(crate) fn unpin_tab_wrapper(&mut self, id: usize) -> bool {
         self.unpin_tab(id).is_ok()
+    }
+
+    pub(crate) fn save_tab_with_id_wrapper(&mut self, id: usize) -> bool {
+        self.save_tab_with_id(id).is_ok()
+    }
+
+    pub(crate) fn save_tab_with_id_and_set_path_wrapper(&mut self, id: usize, path: &str) -> bool {
+        self.save_tab_with_id_and_set_path(id, path).is_ok()
     }
 }
 
