@@ -553,7 +553,6 @@ void MainWindow::onNewTabRequested() {
   saveCurrentScrollState();
 
   tabController->addTab();
-  setActiveEditor(&appStateController->getActiveEditorMut());
 
   updateTabBar();
   switchToActiveTab();

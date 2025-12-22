@@ -185,17 +185,23 @@ impl AppState {
     }
 
     pub fn close_other_tabs(&mut self, id: usize) -> Result<(), Error> {
-        let index = self
-            .tabs
-            .iter()
-            .position(|t| t.get_id() == id)
-            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
+        let exists = self.tabs.iter().any(|t| t.get_id() == id);
+        if !exists {
+            return Err(Error::new(
+                ErrorKind::NotFound,
+                "Tab with given id not found",
+            ));
+        }
 
-        let kept = self.tabs.remove(index);
-        self.tabs.clear();
-        self.tabs.push(kept);
+        self.tabs.retain(|t| t.get_is_pinned() || t.get_id() == id);
 
-        self.active_tab_id = id;
+        if self.tabs.is_empty() {
+            self.active_tab_id = 0;
+        } else {
+            self.active_tab_id = id;
+        }
+
+        self.tabs.sort_by_key(|t| !t.get_is_pinned());
 
         Ok(())
     }
@@ -207,11 +213,17 @@ impl AppState {
             .position(|t| t.get_id() == id)
             .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
 
-        self.tabs.drain(0..index);
+        let mut i = 0usize;
+        self.tabs.retain(|t| {
+            let keep = i >= index || t.get_is_pinned();
+            i += 1;
+            keep
+        });
 
-        if self.tabs.iter().all(|t| t.get_id() != self.active_tab_id) {
-            self.active_tab_id = id;
+        if !self.tabs.iter().any(|t| t.get_id() == self.active_tab_id) {
+            self.active_tab_id = if self.tabs.is_empty() { 0 } else { id };
         }
+        self.tabs.sort_by_key(|t| !t.get_is_pinned());
 
         Ok(())
     }
@@ -223,14 +235,18 @@ impl AppState {
             .position(|t| t.get_id() == id)
             .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
 
-        let start = index + 1;
-        if start < self.tabs.len() {
-            self.tabs.drain(start..);
+        let mut i = 0usize;
+        self.tabs.retain(|t| {
+            let keep = i <= index || t.get_is_pinned();
+            i += 1;
+            keep
+        });
+
+        if !self.tabs.iter().any(|t| t.get_id() == self.active_tab_id) {
+            self.active_tab_id = if self.tabs.is_empty() { 0 } else { id };
         }
 
-        if self.tabs.iter().all(|t| t.get_id() != self.active_tab_id) {
-            self.active_tab_id = id;
-        }
+        self.tabs.sort_by_key(|t| !t.get_is_pinned());
 
         Ok(())
     }
