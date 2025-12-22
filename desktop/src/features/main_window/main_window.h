@@ -13,6 +13,7 @@
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/controllers/app_state_controller.h"
 #include "features/main_window/controllers/workspace_controller.h"
+#include "features/main_window/save_result.h"
 #include "features/status_bar/status_bar_widget.h"
 #include "features/tabs/controllers/tab_controller.h"
 #include "features/tabs/tab_bar_widget.h"
@@ -31,9 +32,6 @@
 class MainWindow : public QMainWindow {
   Q_OBJECT
 
-private:
-  enum class SaveResult { Saved, Canceled, Failed };
-
 public:
   explicit MainWindow(QWidget *parent = nullptr);
   ~MainWindow();
@@ -47,7 +45,7 @@ public slots:
 private slots:
   void onFileSelected(const std::string &filePath,
                       bool shouldFocusEditor = true);
-  MainWindow::SaveResult onFileSaved(bool isSaveAs);
+  void onFileSaved(bool isSaveAs);
 
 signals:
   void onFileExplorerToggledViaShortcut(bool isOpen);
@@ -66,21 +64,19 @@ private:
 
   void setActiveEditor(neko::Editor *newEditor);
   void refreshStatusBarCursor();
-  SaveResult saveAs();
+  SaveResult saveTab(int id, bool isSaveAs);
   void updateTabBar();
   void removeTabScrollOffset(int closedId);
-  void handleTabClosed(int closedId, int numberOfTabsBeforeClose);
-  void onTabCloseRequested(int id, bool forceClose = false);
+  void handleTabsClosed(QList<int> &closedIds);
   void onTabChanged(int id);
   void onTabUnpinRequested(int id);
   void onNewTabRequested();
   void switchToActiveTab(bool shouldFocusEditor = true);
-  void onActiveTabCloseRequested(int numberOfTabs, bool forceClose = false);
 
-  void onTabClose(int id, bool forceClose);
-  void onTabCloseOthers(int id, bool forceClose);
-  void onTabCloseLeft(int id, bool forceClose);
-  void onTabCloseRight(int id, bool forceClose);
+  void closeTab(int id, bool forceClose);
+  void closeOtherTabs(int id, bool forceClose);
+  void closeLeftTabs(int id, bool forceClose);
+  void closeRightTabs(int id, bool forceClose);
   void onTabCopyPath(int id);
   void onTabReveal(int id);
 
