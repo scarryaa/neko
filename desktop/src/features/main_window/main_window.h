@@ -1,6 +1,7 @@
 #ifndef MAIN_WINDOW_H
 #define MAIN_WINDOW_H
 
+#include "close_decision.h"
 #include "features/command_palette/command_palette_widget.h"
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_item.h"
@@ -11,6 +12,7 @@
 #include "features/editor/gutter_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/controllers/app_state_controller.h"
+#include "features/main_window/controllers/workspace_controller.h"
 #include "features/status_bar/status_bar_widget.h"
 #include "features/tabs/controllers/tab_controller.h"
 #include "features/tabs/tab_bar_widget.h"
@@ -31,7 +33,6 @@ class MainWindow : public QMainWindow {
 
 private:
   enum class SaveResult { Saved, Canceled, Failed };
-  enum class CloseDecision { Save, DontSave, Cancel };
 
 public:
   explicit MainWindow(QWidget *parent = nullptr);
@@ -80,6 +81,7 @@ private:
   void switchToActiveTab(bool shouldFocusEditor = true);
   void onActiveTabCloseRequested(int numberOfTabs, bool forceClose = false);
 
+  void onTabClose(int id, bool forceClose);
   void onTabCloseOthers(int id, bool forceClose);
   void onTabCloseLeft(int id, bool forceClose);
   void onTabCloseRight(int id, bool forceClose);
@@ -105,6 +107,7 @@ private:
   rust::Box<neko::ShortcutsManager> shortcutsManager;
   EditorController *editorController;
   TabController *tabController;
+  WorkspaceController *workspaceController;
   AppStateController *appStateController;
   CommandRegistry commandRegistry;
   ContextMenuRegistry contextMenuRegistry;

@@ -27,6 +27,17 @@ MainWindow::MainWindow(QWidget *parent)
   neko::Editor *editor = &appStateController->getActiveEditorMut();
   neko::FileTree *fileTree = &appStateController->getFileTreeMut();
   editorController = new EditorController(editor);
+  workspaceController = new WorkspaceController(
+      tabController,
+      WorkspaceUi{.promptSaveAsPath =
+                      [this](int tabId) {
+                        return QFileDialog::getSaveFileName(this, tr("Save As"),
+                                                            QDir::homePath());
+                      },
+                  .confirmCloseTabs =
+                      [this](const QList<int> &ids) {
+                        return showTabCloseConfirmationDialog(ids);
+                      }});
 
   registerProviders();
   registerCommands();
@@ -421,7 +432,7 @@ void MainWindow::applyInitialState() {
   editorWidget->setFocus();
 }
 
-MainWindow::CloseDecision
+CloseDecision
 MainWindow::showTabCloseConfirmationDialog(const QList<int> &ids) {
   int modifiedCount = 0;
 
@@ -661,13 +672,24 @@ void MainWindow::onActiveTabCloseRequested(int numberOfTabs,
   }
 }
 
+void MainWindow::onTabClose(int id, bool forceClose) {
+  // TODO: Focus remaining tabs after close process
+  saveCurrentScrollState();
+
+  auto ids = QList<int>();
+  ids.push_back(id);
+
+  workspaceController->closeMany(ids, forceClose,
+                                 [this, id]() { tabController->closeTab(id); });
+}
+
 void MainWindow::onTabCloseOthers(int id, bool forceClose) {
   // TODO: Focus remaining tabs after close process
   saveCurrentScrollState();
-  auto ids = tabController->getCloseOtherTabIds(id);
+  auto ids = tabController->getCloseLeftTabIds(id);
 
-  closeManyTabsWithConfirm(ids, forceClose,
-                           [this, id]() { tabController->closeOtherTabs(id); });
+  workspaceController->closeMany(
+      ids, forceClose, [this, id]() { tabController->closeOtherTabs(id); });
 }
 
 void MainWindow::onTabCloseLeft(int id, bool forceClose) {
@@ -675,20 +697,20 @@ void MainWindow::onTabCloseLeft(int id, bool forceClose) {
   saveCurrentScrollState();
   auto ids = tabController->getCloseLeftTabIds(id);
 
-  closeManyTabsWithConfirm(ids, forceClose,
-                           [this, id]() { tabController->closeLeftTabs(id); });
+  workspaceController->closeMany(
+      ids, forceClose, [this, id]() { tabController->closeLeftTabs(id); });
 }
 
 void MainWindow::onTabCloseRight(int id, bool forceClose) {
   // TODO: Focus remaining tabs after close process
   saveCurrentScrollState();
-  auto ids = tabController->getCloseRightTabIds(id);
+  auto ids = tabController->getCloseLeftTabIds(id);
 
-  closeManyTabsWithConfirm(ids, forceClose,
-                           [this, id]() { tabController->closeRightTabs(id); });
+  workspaceController->closeMany(
+      ids, forceClose, [this, id]() { tabController->closeRightTabs(id); });
 }
 
-MainWindow::CloseDecision MainWindow::confirmCloseTabs(const QList<int> &ids) {
+CloseDecision MainWindow::confirmCloseTabs(const QList<int> &ids) {
   return showTabCloseConfirmationDialog(ids);
 }
 
@@ -1112,34 +1134,10 @@ void MainWindow::registerCommands() {
   // TODO: Clean this up
   commandRegistry.registerCommand("tab.close", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
-    auto forceClose = QApplication::keyboardModifiers().testFlag(
+    auto shiftPressed = QApplication::keyboardModifiers().testFlag(
         Qt::KeyboardModifier::ShiftModifier);
-    const bool isModified = tabController->getTabModified(ctx.tabId);
 
-    if (!forceClose && isModified) {
-      QList<int> tabsIdsToClose = QList<int>();
-      tabsIdsToClose.push_back(ctx.tabId);
-
-      switch (confirmCloseTabs(tabsIdsToClose)) {
-      case CloseDecision::Save:
-        if (isModified) {
-          if (!saveTabWithPromptIfNeeded(ctx.tabId))
-            return;
-
-          tabController->closeTab(ctx.tabId);
-        } else {
-          tabController->closeTab(ctx.tabId);
-        }
-        break;
-      case CloseDecision::DontSave:
-        tabController->closeTab(ctx.tabId);
-        break;
-      case CloseDecision::Cancel:
-        return;
-      }
-    } else {
-      tabController->closeTab(ctx.tabId);
-    }
+    onTabClose(ctx.tabId, shiftPressed);
   });
   commandRegistry.registerCommand("tab.closeOthers", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();

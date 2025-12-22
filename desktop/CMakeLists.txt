@@ -18,8 +18,12 @@ qt_add_executable(neko
 
     src/features/main_window/main_window.cpp
     src/features/main_window/main_window.h
+    src/features/main_window/close_decision.h
+    src/features/main_window/hooks/workspace_ui.h
     src/features/main_window/controllers/app_state_controller.cpp
     src/features/main_window/controllers/app_state_controller.h
+    src/features/main_window/controllers/workspace_controller.cpp
+    src/features/main_window/controllers/workspace_controller.h
 
     src/features/title_bar/title_bar_widget.cpp
     src/features/title_bar/title_bar_widget.h
