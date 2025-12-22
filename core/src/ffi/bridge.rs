@@ -124,10 +124,10 @@ pub mod ffi {
         pub(crate) fn get_active_editor_mut_wrapper(self: &mut AppState) -> &mut Editor;
         #[cxx_name = "get_active_tab_path"]
         pub(crate) fn get_active_tab_path_wrapper(self: &AppState) -> String;
-        pub(crate) fn get_active_tab_index(self: &AppState) -> usize;
+        pub(crate) fn get_active_tab_id(self: &AppState) -> usize;
         pub(crate) fn get_tab_titles(self: &AppState) -> Vec<String>;
         pub(crate) fn get_tab_modified_states(self: &AppState) -> Vec<bool>;
-        pub(crate) fn get_tab_modified(self: &AppState, index: usize) -> bool;
+        pub(crate) fn get_tab_modified(self: &AppState, id: usize) -> bool;
         pub(crate) fn get_tab_pinned_states(self: &AppState) -> Vec<bool>;
         #[cxx_name = "get_tab_index_by_path"]
         pub(crate) fn get_tab_index_by_path_wrapper(self: &AppState, path: &str) -> i64;
@@ -135,19 +135,23 @@ pub mod ffi {
         pub(crate) fn get_file_tree(self: &AppState) -> &FileTree;
         pub(crate) fn get_file_tree_mut(self: &mut AppState) -> &mut FileTree;
         #[cxx_name = "get_tab_path"]
-        pub(crate) fn get_tab_path_wrapper(self: &AppState, index: usize) -> String;
-        pub(crate) fn get_tab_pinned(self: &AppState, index: usize) -> bool;
+        pub(crate) fn get_tab_path_wrapper(self: &AppState, id: usize) -> String;
+        pub(crate) fn get_tab_pinned(self: &AppState, id: usize) -> bool;
+        #[cxx_name = "get_tab_id"]
+        pub(crate) fn get_tab_id_wrapper(self: &AppState, index: usize) -> usize;
+        #[cxx_name = "get_tab_title"]
+        pub(crate) fn get_tab_title_wrapper(self: &AppState, id: usize) -> String;
 
         pub(crate) fn new_tab(self: &mut AppState) -> usize;
         #[cxx_name = "close_tab"]
-        pub(crate) fn close_tab_wrapper(self: &mut AppState, index: usize) -> bool;
+        pub(crate) fn close_tab_wrapper(self: &mut AppState, id: usize) -> bool;
         #[cxx_name = "close_other_tabs"]
-        pub(crate) fn close_other_tabs_wrapper(self: &mut AppState, index: usize) -> bool;
+        pub(crate) fn close_other_tabs_wrapper(self: &mut AppState, id: usize) -> bool;
         #[cxx_name = "close_left_tabs"]
-        pub(crate) fn close_left_tabs_wrapper(self: &mut AppState, index: usize) -> bool;
+        pub(crate) fn close_left_tabs_wrapper(self: &mut AppState, id: usize) -> bool;
         #[cxx_name = "close_right_tabs"]
-        pub(crate) fn close_right_tabs_wrapper(self: &mut AppState, index: usize) -> bool;
-        pub(crate) fn set_active_tab_index(self: &mut AppState, index: usize) -> Result<()>;
+        pub(crate) fn close_right_tabs_wrapper(self: &mut AppState, id: usize) -> bool;
+        pub(crate) fn set_active_tab(self: &mut AppState, id: usize) -> Result<()>;
         #[cxx_name = "move_tab"]
         pub(crate) fn move_tab_wrapper(self: &mut AppState, from: usize, to: usize) -> bool;
         #[cxx_name = "open_file"]
@@ -158,9 +162,9 @@ pub mod ffi {
         pub(crate) fn save_active_tab_and_set_path_wrapper(self: &mut AppState, path: &str)
         -> bool;
         #[cxx_name = "pin_tab"]
-        pub(crate) fn pin_tab_wrapper(self: &mut AppState, index: usize) -> bool;
+        pub(crate) fn pin_tab_wrapper(self: &mut AppState, id: usize) -> bool;
         #[cxx_name = "unpin_tab"]
-        pub(crate) fn unpin_tab_wrapper(self: &mut AppState, index: usize) -> bool;
+        pub(crate) fn unpin_tab_wrapper(self: &mut AppState, id: usize) -> bool;
 
         // ConfigManager
         pub(crate) fn new_config_manager() -> Result<Box<ConfigManager>>;

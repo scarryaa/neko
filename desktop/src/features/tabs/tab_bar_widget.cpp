@@ -36,7 +36,7 @@ TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
   dropIndicator->setFixedWidth(2);
   dropIndicator->setVisible(false);
 
-  currentTabIndex = 0;
+  currentTabId = 0;
   registerCommands();
   viewport()->update();
 
@@ -78,25 +78,28 @@ void TabBarWidget::setTabs(QStringList titles, QStringList paths,
   tabs.clear();
 
   // Create new tabs
-  int numberOfTitles = titles.size();
-  for (int i = 0; i < numberOfTitles; i++) {
+  int numberOfTabs = tabController->getTabCount();
+  for (int i = 0; i < numberOfTabs; i++) {
+    const int id = tabController->getTabId(i);
+
     auto *tabWidget = new TabWidget(
-        titles[i], paths[i], i, pinnedStates[i], configManager, themeManager,
-        contextMenuRegistry, commandRegistry,
+        titles[i], paths[i], i, id, pinnedStates[i], configManager,
+        themeManager, contextMenuRegistry, commandRegistry,
         [this]() -> int { return tabController->getTabCount(); }, this);
     tabWidget->setModified(modifiedStates[i]);
     tabWidget->setIsPinned(pinnedStates[i]);
 
-    connect(tabWidget, &TabWidget::clicked, this, [this, i]() {
-      setCurrentIndex(i);
-      emit currentChanged(i);
+    connect(tabWidget, &TabWidget::clicked, this, [this, id]() {
+      setCurrentId(id);
+      emit currentChanged(id);
     });
     connect(tabWidget, &TabWidget::closeRequested, this,
-            [this, i, numberOfTitles](bool bypassConfirmation) {
-              emit tabCloseRequested(i, numberOfTitles, bypassConfirmation);
+            [this, id](bool bypassConfirmation) {
+              emit tabCloseRequested(id, bypassConfirmation);
             });
     connect(tabWidget, &TabWidget::unpinRequested, this,
-            [this, i]() { emit tabUnpinRequested(i); });
+            [this, id]() { emit tabUnpinRequested(id); });
+
     layout->addWidget(tabWidget);
     tabs.append(tabWidget);
   }
@@ -105,15 +108,18 @@ void TabBarWidget::setTabs(QStringList titles, QStringList paths,
   updateTabAppearance();
 }
 
-void TabBarWidget::setCurrentIndex(size_t index) {
-  if (index < tabs.size()) {
-    currentTabIndex = index;
-    updateTabAppearance();
-  }
+void TabBarWidget::setCurrentId(int id) {
+  currentTabId = id;
+  updateTabAppearance();
 }
 
-void TabBarWidget::setTabModified(int index, bool modified) {
-  tabs[index]->setModified(modified);
+void TabBarWidget::setTabModified(int id, bool modified) {
+  auto it = std::find_if(tabs.begin(), tabs.end(),
+                         [&](TabWidget *t) { return t && t->getId() == id; });
+
+  if (it != tabs.end() && *it) {
+    (*it)->setModified(modified);
+  }
 }
 
 int TabBarWidget::getNumberOfTabs() { return tabs.size(); }
@@ -279,7 +285,8 @@ void TabBarWidget::updateDropIndicator(int index) {
 
 void TabBarWidget::updateTabAppearance() {
   for (int i = 0; i < tabs.size(); i++) {
-    tabs[i]->setActive(i == currentTabIndex);
+    const int id = tabController->getTabId(i);
+    tabs[i]->setActive(id == currentTabId);
   }
 }
 
@@ -292,13 +299,14 @@ void TabBarWidget::registerCommands() {
   commandRegistry.registerCommand("tab.pin", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
 
-    tabController->setActiveTabIndex(ctx.tabIndex);
+    tabController->setActiveTab(ctx.tabId);
     if (ctx.isPinned) {
-      tabController->unpinTab(ctx.tabIndex);
+      tabController->unpinTab(ctx.tabId);
     } else {
-      tabController->pinTab(ctx.tabIndex);
+      tabController->pinTab(ctx.tabId);
     }
 
-    emit tabPinnedChanged(tabController->getActiveTabIndex());
+    const int activeId = tabController->getActiveTabId();
+    emit tabPinnedChanged(activeId);
   });
 }

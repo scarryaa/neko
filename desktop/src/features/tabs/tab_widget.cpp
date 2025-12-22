@@ -1,7 +1,7 @@
 #include "tab_widget.h"
 
 TabWidget::TabWidget(const QString &title, const QString &path, int index,
-                     bool isPinned, neko::ConfigManager &configManager,
+                     int id, bool isPinned, neko::ConfigManager &configManager,
                      neko::ThemeManager &themeManager,
                      ContextMenuRegistry &contextMenuRegistry,
                      CommandRegistry &commandRegistry,
@@ -9,7 +9,7 @@ TabWidget::TabWidget(const QString &title, const QString &path, int index,
     : QWidget(parent), configManager(configManager), themeManager(themeManager),
       contextMenuRegistry(contextMenuRegistry),
       commandRegistry(commandRegistry), title(title), path(path),
-      isPinned(isPinned), index(index), isActive(false),
+      isPinned(isPinned), index(index), id(id), isActive(false),
       getTabCount_(std::move(getTabCount)) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
@@ -44,6 +44,8 @@ void TabWidget::setIsPinned(bool isPinned) {
 }
 
 bool TabWidget::getIsPinned() const { return isPinned; }
+
+int TabWidget::getId() const { return id; }
 
 void TabWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
@@ -236,10 +238,8 @@ double TabWidget::measureText(QString text) {
 }
 
 void TabWidget::contextMenuEvent(QContextMenuEvent *event) {
-  const int tabIndex = index;
-
   TabContext ctx{};
-  ctx.tabIndex = tabIndex;
+  ctx.tabId = id;
   ctx.isPinned = isPinned;
   ctx.isModified = isModified;
   ctx.filePath = path;

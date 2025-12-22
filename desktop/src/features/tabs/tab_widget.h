@@ -23,7 +23,7 @@ public:
   using GetTabCountFn = std::function<int()>;
 
   explicit TabWidget(const QString &title, const QString &path, int index,
-                     bool isPinned, neko::ConfigManager &configManager,
+                     int id, bool isPinned, neko::ConfigManager &configManager,
                      neko::ThemeManager &themeManager,
                      ContextMenuRegistry &contextMenuRegistry,
                      CommandRegistry &commandRegistry,
@@ -34,6 +34,7 @@ public:
   void setModified(bool modified);
   void setIsPinned(bool isPinned);
   bool getIsPinned() const;
+  int getId() const;
 
 signals:
   void clicked();
@@ -62,6 +63,7 @@ private:
   QString path;
   bool isModified = false;
   int index;
+  int id;
   bool isPinned = false;
   bool isActive;
   bool isHovered = false;

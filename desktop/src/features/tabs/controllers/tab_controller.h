@@ -13,33 +13,35 @@ public:
 
   // Getters
   const int getTabCount() const;
-  const int getActiveTabIndex() const;
+  const int getActiveTabId() const;
   const rust::Vec<rust::String> getTabTitles() const;
   const rust::Vec<bool> getTabModifiedStates() const;
   const rust::Vec<bool> getTabPinnedStates() const;
-  const bool getTabModified(int index) const;
+  const bool getTabModified(int id) const;
   const bool getTabWithPathExists(const std::string &path) const;
   const int getTabIndexByPath(const std::string &path) const;
   const bool getTabsEmpty() const;
-  const bool getIsPinned(int index) const;
+  const bool getIsPinned(int id) const;
+  const int getTabId(int index) const;
+  const QString getTabTitle(int id) const;
 
   // Setters
   int addTab();
-  bool closeTab(int index);
-  bool closeOtherTabs(int index);
-  bool closeLeftTabs(int index);
-  bool closeRightTabs(int index);
-  bool pinTab(int index);
-  bool unpinTab(int index);
+  bool closeTab(int id);
+  bool closeOtherTabs(int id);
+  bool closeLeftTabs(int id);
+  bool closeRightTabs(int id);
+  bool pinTab(int id);
+  bool unpinTab(int id);
   bool moveTab(int from, int to);
-  void setActiveTabIndex(int index);
+  void setActiveTab(int id);
   const bool saveActiveTab() const;
   const bool saveActiveTabAndSetPath(const std::string &path) const;
-  const QString getTabPath(int index) const;
+  const QString getTabPath(int id) const;
 
 signals:
   void tabListChanged();
-  void activeTabChanged(int index);
+  void activeTabChanged(int id);
 
 private:
   neko::AppState *appState;

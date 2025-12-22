@@ -61,35 +61,26 @@ private:
   QSplitter *buildSplitter(QWidget *editorSideContainer);
   void connectSignals();
   void applyInitialState();
-  CloseDecision
-  showTabCloseConfirmationDialog(int index,
-                                 const rust::Vec<rust::String> &titles);
+  CloseDecision showTabCloseConfirmationDialog(int id);
 
   void setActiveEditor(neko::Editor *newEditor);
   void refreshStatusBarCursor();
   SaveResult saveAs();
   void updateTabBar();
-  void removeTabScrollOffset(int closedIndex);
-  void handleTabClosed(int closedIndex, int numberOfTabsBeforeClose);
-  void onTabCloseRequested(int index, int numberOfTabs,
-                           bool bypassConfirmation = false);
-  void onTabChanged(int index);
-  void onTabUnpinRequested(int index);
+  void removeTabScrollOffset(int closedId);
+  void handleTabClosed(int closedId, int numberOfTabsBeforeClose);
+  void onTabCloseRequested(int id, bool forceClose = false);
+  void onTabChanged(int id);
+  void onTabUnpinRequested(int id);
   void onNewTabRequested();
   void switchToActiveTab(bool shouldFocusEditor = true);
-  void onActiveTabCloseRequested(int numberOfTabs,
-                                 bool bypassConfirmation = false);
+  void onActiveTabCloseRequested(int numberOfTabs, bool forceClose = false);
 
-  bool closeTabWithChecks(int index, int numberOfTabsBeforeClose,
-                          bool bypassConfirmation);
-  bool closeTabsWithChecks(const QVector<int> &indicesToClose,
-                           int numberOfTabsBeforeClose,
-                           bool bypassConfirmation);
-  void onTabCloseOthers(int index, int numberOfTabs, bool bypassConfirmation);
-  void onTabCloseLeft(int index, int numberOfTabs, bool bypassConfirmation);
-  void onTabCloseRight(int index, int numberOfTabs, bool bypassConfirmation);
-  void onTabCopyPath(int index, int numberOfTabs);
-  void onTabReveal(int index, int numberOfTabs);
+  void onTabCloseOthers(int id, bool forceClose);
+  void onTabCloseLeft(int id, bool forceClose);
+  void onTabCloseRight(int id, bool forceClose);
+  void onTabCopyPath(int id);
+  void onTabReveal(int id);
 
   void setupKeyboardShortcuts();
   void onBufferChanged();

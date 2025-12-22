@@ -6,6 +6,7 @@
 
 struct TabContext {
   int tabIndex;
+  int tabId;
   bool isPinned;
   bool isModified;
   bool canCloseOthers;

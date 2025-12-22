@@ -35,10 +35,19 @@ impl AppState {
             .to_string()
     }
 
-    pub(crate) fn get_tab_path_wrapper(&self, index: usize) -> String {
-        self.get_tab_path(index)
+    pub(crate) fn get_tab_path_wrapper(&self, id: usize) -> String {
+        self.get_tab_path(id)
             .expect("Tried to access tab path but failed")
             .to_string()
+    }
+
+    pub(crate) fn get_tab_id_wrapper(&self, index: usize) -> usize {
+        self.get_tab_id(index)
+            .expect("Tried to get tab id but failed")
+    }
+
+    pub(crate) fn get_tab_title_wrapper(&self, id: usize) -> String {
+        self.get_tab_title(id).unwrap_or_default()
     }
 
     pub(crate) fn get_tab_index_by_path_wrapper(&self, path: &str) -> i64 {
@@ -59,32 +68,32 @@ impl AppState {
         self.save_active_tab_and_set_path(path).is_ok()
     }
 
-    pub(crate) fn close_tab_wrapper(&mut self, index: usize) -> bool {
-        self.close_tab(index).is_ok()
+    pub(crate) fn close_tab_wrapper(&mut self, id: usize) -> bool {
+        self.close_tab(id).is_ok()
     }
 
-    pub(crate) fn close_other_tabs_wrapper(self: &mut AppState, index: usize) -> bool {
-        self.close_other_tabs(index).is_ok()
+    pub(crate) fn close_other_tabs_wrapper(self: &mut AppState, id: usize) -> bool {
+        self.close_other_tabs(id).is_ok()
     }
 
-    pub(crate) fn close_left_tabs_wrapper(self: &mut AppState, index: usize) -> bool {
-        self.close_left_tabs(index).is_ok()
+    pub(crate) fn close_left_tabs_wrapper(self: &mut AppState, id: usize) -> bool {
+        self.close_left_tabs(id).is_ok()
     }
 
-    pub(crate) fn close_right_tabs_wrapper(self: &mut AppState, index: usize) -> bool {
-        self.close_right_tabs(index).is_ok()
+    pub(crate) fn close_right_tabs_wrapper(self: &mut AppState, id: usize) -> bool {
+        self.close_right_tabs(id).is_ok()
     }
 
     pub(crate) fn move_tab_wrapper(self: &mut AppState, from: usize, to: usize) -> bool {
         self.move_tab(from, to).is_ok()
     }
 
-    pub(crate) fn pin_tab_wrapper(self: &mut AppState, index: usize) -> bool {
-        self.pin_tab(index).is_ok()
+    pub(crate) fn pin_tab_wrapper(self: &mut AppState, id: usize) -> bool {
+        self.pin_tab(id).is_ok()
     }
 
-    pub(crate) fn unpin_tab_wrapper(self: &mut AppState, index: usize) -> bool {
-        self.unpin_tab(index).is_ok()
+    pub(crate) fn unpin_tab_wrapper(self: &mut AppState, id: usize) -> bool {
+        self.unpin_tab(id).is_ok()
     }
 }
 

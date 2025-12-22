@@ -8,32 +8,39 @@ pub struct Tab {
     file_path: Option<PathBuf>,
     title: String,
     is_pinned: bool,
+    id: usize,
 }
 
 impl Tab {
-    pub fn new() -> Self {
+    pub fn new(id: usize) -> Self {
         Self {
             editor: Editor::new(),
             original_content: String::new(),
             file_path: None,
             title: "Untitled".to_string(),
             is_pinned: false,
+            id,
         }
     }
 
-    pub fn with_title(title: &str) -> Self {
+    pub fn with_title(title: &str, id: usize) -> Self {
         Self {
             editor: Editor::new(),
             original_content: String::new(),
             file_path: None,
             title: title.to_string(),
             is_pinned: false,
+            id,
         }
     }
 
     // Getters
     pub fn get_title(&self) -> String {
         self.title.clone()
+    }
+
+    pub fn get_id(&self) -> usize {
+        self.id
     }
 
     pub fn get_is_pinned(&self) -> bool {
@@ -92,24 +99,24 @@ mod test {
 
     #[test]
     fn get_modified_returns_false_if_buffer_and_original_content_are_empty() {
-        let t = Tab::new();
+        let t = Tab::new(0);
         assert!(!t.get_modified());
     }
 
     #[test]
     fn get_modified_returns_true_if_buffer_does_not_equal_original_content() {
-        let mut t = Tab::new();
+        let mut t = Tab::new(0);
         t.set_original_content("hello".to_string());
         assert!(t.get_modified());
 
-        let mut t2 = Tab::new();
+        let mut t2 = Tab::new(1);
         t2.get_editor_mut().insert_text("hello");
         assert!(t.get_modified());
     }
 
     #[test]
     fn set_title_sets_title_to_untitled_if_title_empty() {
-        let mut t = Tab::new();
+        let mut t = Tab::new(0);
         t.set_title("");
 
         assert_eq!(t.get_title(), "Untitled");
@@ -117,7 +124,7 @@ mod test {
 
     #[test]
     fn set_title_updates_title_correctly() {
-        let mut t = Tab::new();
+        let mut t = Tab::new(0);
         t.set_title("my file");
 
         assert_eq!(t.get_title(), "my file");

@@ -38,17 +38,16 @@ public:
   void applyTheme();
   void setTabs(QStringList titles, QStringList paths,
                rust::Vec<bool> modifiedStates, rust::Vec<bool> pinnedStates);
-  void setCurrentIndex(size_t index);
-  void setTabModified(int index, bool modified);
+  void setCurrentId(int id);
+  void setTabModified(int id, bool modified);
   int getNumberOfTabs();
 
 signals:
-  void currentChanged(int index);
-  void tabCloseRequested(int index, int numberOfTabs,
-                         bool bypassConfirmation = false);
+  void currentChanged(int id);
+  void tabCloseRequested(int id, bool bypassConfirmation = false);
   void newTabRequested();
-  void tabPinnedChanged(int index);
-  void tabUnpinRequested(int index);
+  void tabPinnedChanged(int id);
+  void tabUnpinRequested(int id);
 
 protected:
   void dragEnterEvent(QDragEnterEvent *event) override;
@@ -73,7 +72,7 @@ private:
   QWidget *dropIndicator;
   QHBoxLayout *layout;
   QList<TabWidget *> tabs;
-  size_t currentTabIndex;
+  int currentTabId;
 };
 
 #endif // TAB_BAR_WIDGET_H

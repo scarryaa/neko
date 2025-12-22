@@ -8,14 +8,15 @@ const int TabController::getTabCount() const {
   return !appState ? 0 : appState->get_tab_count();
 }
 
-const int TabController::getActiveTabIndex() const {
-  return !appState ? -1 : appState->get_active_tab_index();
+const int TabController::getActiveTabId() const {
+  return !appState ? -1 : appState->get_active_tab_id();
 }
 
 const rust::Vec<rust::String> TabController::getTabTitles() const {
   if (!appState) {
     return {};
   }
+
   return appState->get_tab_titles();
 }
 
@@ -35,8 +36,8 @@ const rust::Vec<bool> TabController::getTabPinnedStates() const {
   return appState->get_tab_pinned_states();
 }
 
-const bool TabController::getTabModified(int index) const {
-  return appState->get_tab_modified(index);
+const bool TabController::getTabModified(int id) const {
+  return appState->get_tab_modified(id);
 }
 
 const bool TabController::getTabWithPathExists(const std::string &path) const {
@@ -51,8 +52,19 @@ const bool TabController::getTabsEmpty() const {
   return appState->get_tabs_empty();
 }
 
-const bool TabController::getIsPinned(int index) const {
-  return appState->get_tab_pinned(index);
+const bool TabController::getIsPinned(int id) const {
+  return appState->get_tab_pinned(id);
+}
+
+const int TabController::getTabId(int index) const {
+  return appState->get_tab_id(index);
+}
+
+const QString TabController::getTabTitle(int id) const {
+  const auto rawTitle = appState->get_tab_title(id);
+  const QString title = QString::fromUtf8(rawTitle);
+
+  return title;
 }
 
 int TabController::addTab() {
@@ -60,44 +72,34 @@ int TabController::addTab() {
     return -1;
   }
 
-  int index = appState->new_tab();
+  int id = appState->new_tab();
   emit tabListChanged();
-  emit activeTabChanged(index);
-  return index;
+  emit activeTabChanged(id);
+  return id;
 }
 
-bool TabController::closeTab(int index) {
+bool TabController::closeTab(int id) {
   if (!appState) {
     return false;
   }
 
-  int count = appState->get_tab_count();
-  if (index < 0 || index >= count) {
-    return false;
-  }
-
-  if (!appState->close_tab(index)) {
+  if (!appState->close_tab(id)) {
     return false;
   }
 
   emit tabListChanged();
 
-  int newActive = appState->get_active_tab_index();
+  int newActive = appState->get_active_tab_id();
   emit activeTabChanged(newActive);
   return true;
 }
 
-bool TabController::closeOtherTabs(int index) {
+bool TabController::closeOtherTabs(int id) {
   if (!appState) {
     return false;
   }
 
-  int count = appState->get_tab_count();
-  if (index < 0 || index >= count) {
-    return false;
-  }
-
-  if (!appState->close_other_tabs(index)) {
+  if (!appState->close_other_tabs(id)) {
     return false;
   }
 
@@ -106,17 +108,12 @@ bool TabController::closeOtherTabs(int index) {
   return true;
 }
 
-bool TabController::closeLeftTabs(int index) {
+bool TabController::closeLeftTabs(int id) {
   if (!appState) {
     return false;
   }
 
-  int count = appState->get_tab_count();
-  if (index < 0 || index >= count || index == 0) {
-    return false;
-  }
-
-  if (!appState->close_left_tabs(index)) {
+  if (!appState->close_left_tabs(id)) {
     return false;
   }
 
@@ -125,17 +122,12 @@ bool TabController::closeLeftTabs(int index) {
   return true;
 }
 
-bool TabController::closeRightTabs(int index) {
+bool TabController::closeRightTabs(int id) {
   if (!appState) {
     return false;
   }
 
-  int count = appState->get_tab_count();
-  if (index < 0 || index >= count || index == count - 1) {
-    return false;
-  }
-
-  if (!appState->close_right_tabs(index)) {
+  if (!appState->close_right_tabs(id)) {
     return false;
   }
 
@@ -144,41 +136,31 @@ bool TabController::closeRightTabs(int index) {
   return true;
 }
 
-bool TabController::pinTab(int index) {
+bool TabController::pinTab(int id) {
   if (!appState) {
     return false;
   }
 
-  int count = appState->get_tab_count();
-  if (index < 0 || index >= count) {
-    return false;
-  }
-
-  if (!appState->pin_tab(index)) {
+  if (!appState->pin_tab(id)) {
     return false;
   }
 
   emit tabListChanged();
-  emit activeTabChanged(appState->get_active_tab_index());
+  emit activeTabChanged(appState->get_active_tab_id());
   return true;
 }
 
-bool TabController::unpinTab(int index) {
+bool TabController::unpinTab(int id) {
   if (!appState) {
     return false;
   }
 
-  int count = appState->get_tab_count();
-  if (index < 0 || index >= count) {
-    return false;
-  }
-
-  if (!appState->unpin_tab(index)) {
+  if (!appState->unpin_tab(id)) {
     return false;
   }
 
   emit tabListChanged();
-  emit activeTabChanged(appState->get_active_tab_index());
+  emit activeTabChanged(appState->get_active_tab_id());
   return true;
 }
 
@@ -197,23 +179,18 @@ bool TabController::moveTab(int from, int to) {
   }
 
   emit tabListChanged();
-  emit activeTabChanged(appState->get_active_tab_index());
+  emit activeTabChanged(appState->get_active_tab_id());
 
   return true;
 }
 
-void TabController::setActiveTabIndex(int index) {
+void TabController::setActiveTab(int id) {
   if (!appState) {
     return;
   }
 
-  int count = appState->get_tab_count();
-  if (index < 0 || index >= count) {
-    return;
-  }
-
-  appState->set_active_tab_index(index);
-  emit activeTabChanged(index);
+  appState->set_active_tab(id);
+  emit activeTabChanged(id);
 }
 
 const bool TabController::saveActiveTab() const {
@@ -225,8 +202,8 @@ TabController::saveActiveTabAndSetPath(const std::string &path) const {
   return appState->save_active_tab_and_set_path(path);
 }
 
-const QString TabController::getTabPath(int index) const {
-  const auto rawPath = appState->get_tab_path(index);
+const QString TabController::getTabPath(int id) const {
+  const auto rawPath = appState->get_tab_path(id);
   const QString path = QString::fromUtf8(rawPath);
 
   return path;

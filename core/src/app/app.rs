@@ -8,16 +8,18 @@ use std::{
 #[derive(Debug)]
 pub struct AppState {
     tabs: Vec<Tab>,
-    active_tab_index: usize,
+    active_tab_id: usize,
     file_tree: FileTree,
+    next_tab_id: usize,
 }
 
 impl AppState {
     pub fn new(root_path: Option<&str>) -> Result<Self, std::io::Error> {
         let mut state = Self {
             tabs: Vec::new(),
-            active_tab_index: 0,
+            active_tab_id: 0,
             file_tree: FileTree::new(root_path)?,
+            next_tab_id: 0,
         };
 
         state.new_tab();
@@ -34,28 +36,61 @@ impl AppState {
     }
 
     pub fn get_active_editor(&self) -> Option<&Editor> {
-        self.tabs.get(self.active_tab_index).map(|t| t.get_editor())
+        if let Some(index) = self
+            .tabs
+            .iter()
+            .position(|t| t.get_id() == self.active_tab_id)
+        {
+            self.tabs.get(index).map(|t| t.get_editor())
+        } else {
+            None
+        }
     }
 
     pub fn get_active_editor_mut(&mut self) -> Option<&mut Editor> {
-        self.tabs
-            .get_mut(self.active_tab_index)
-            .map(|t| t.get_editor_mut())
+        if let Some(index) = self
+            .tabs
+            .iter()
+            .position(|t| t.get_id() == self.active_tab_id)
+        {
+            self.tabs.get_mut(index).map(|t| t.get_editor_mut())
+        } else {
+            None
+        }
+    }
+
+    pub fn get_tab_id(&self, index: usize) -> Option<usize> {
+        self.tabs.get(index).map(|t| t.get_id())
     }
 
     pub fn get_active_tab_path(&self) -> Option<&str> {
-        self.tabs
-            .get(self.active_tab_index)
-            .and_then(|t| t.get_file_path())
-            .and_then(|p| p.to_str())
+        if let Some(index) = self
+            .tabs
+            .iter()
+            .position(|t| t.get_id() == self.active_tab_id)
+        {
+            self.tabs
+                .get(index)
+                .and_then(|t| t.get_file_path())
+                .and_then(|p| p.to_str())
+        } else {
+            None
+        }
     }
 
-    pub fn get_active_tab_index(&self) -> usize {
-        self.active_tab_index
+    pub fn get_active_tab_id(&self) -> usize {
+        self.active_tab_id
     }
 
     pub fn get_tab_titles(&self) -> Vec<String> {
         self.tabs.iter().map(|t| t.get_title().clone()).collect()
+    }
+
+    pub fn get_tab_title(&self, id: usize) -> Option<String> {
+        self.tabs
+            .iter()
+            .find(|t| t.get_id() == id)
+            .map(|t| t.get_title())
     }
 
     pub fn get_tab_modified_states(&self) -> Vec<bool> {
@@ -68,19 +103,20 @@ impl AppState {
             .collect()
     }
 
-    pub fn get_tab_modified(&self, index: usize) -> bool {
+    pub fn get_tab_modified(&self, id: usize) -> bool {
         self.tabs
-            .get(index)
+            .iter()
+            .find(|t| t.get_id() == id)
             .map(|t| t.get_modified())
             .unwrap_or(false)
     }
 
-    pub fn get_tab_pinned(&self, index: usize) -> bool {
-        if let Some(tab) = self.tabs.get(index) {
-            tab.get_is_pinned()
-        } else {
-            false
-        }
+    pub fn get_tab_pinned(&self, id: usize) -> bool {
+        self.tabs
+            .iter()
+            .find(|t| t.get_id() == id)
+            .map(|t| t.get_is_pinned())
+            .unwrap_or_default()
     }
 
     pub fn get_tab_pinned_states(&self) -> Vec<bool> {
@@ -107,8 +143,8 @@ impl AppState {
         &mut self.file_tree
     }
 
-    pub fn get_tab_path(&self, index: usize) -> Option<&str> {
-        self.tabs.get(index).and_then(|t| {
+    pub fn get_tab_path(&self, id: usize) -> Option<&str> {
+        self.tabs.iter().find(|t| t.get_id() == id).and_then(|t| {
             if let Some(path) = t.get_file_path() {
                 path.to_str()
             } else {
@@ -119,81 +155,88 @@ impl AppState {
 
     // Setters
     pub fn new_tab(&mut self) -> usize {
-        let tab = Tab::new();
+        let id = self.get_next_tab_id();
+        let tab = Tab::new(id);
 
         self.tabs.push(tab);
-        self.active_tab_index = self.tabs.len() - 1;
-        self.active_tab_index
+        self.active_tab_id = id;
+        id
     }
 
-    pub fn close_tab(&mut self, index: usize) -> Result<(), Error> {
-        if index < self.tabs.len() {
+    pub fn close_tab(&mut self, id: usize) -> Result<(), Error> {
+        if let Some(index) = self.tabs.iter().position(|t| t.get_id() == id) {
             self.tabs.remove(index);
 
-            if self.active_tab_index >= self.tabs.len() && !self.tabs.is_empty() {
-                self.active_tab_index = self.tabs.len() - 1;
-            }
-
-            Ok(())
-        } else {
-            Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))
-        }
-    }
-
-    pub fn close_other_tabs(&mut self, index: usize) -> Result<(), Error> {
-        if index < self.tabs.len() {
-            for i in (0..self.tabs.len()).rev() {
-                if i == index {
-                    continue;
+            if self.active_tab_id == id && !self.tabs.is_empty() {
+                if let Some(last_id) = self.tabs.last().map(|t| t.get_id()) {
+                    self.active_tab_id = last_id;
                 }
-
-                self.tabs.remove(i);
-            }
-
-            if !self.tabs.is_empty() {
-                self.active_tab_index -= self.tabs.len().saturating_sub(1);
+            } else if self.tabs.is_empty() {
+                self.active_tab_id = 0;
             }
 
             Ok(())
         } else {
-            Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))
+            Err(Error::new(
+                ErrorKind::NotFound,
+                "Tab with given id not found",
+            ))
         }
     }
 
-    pub fn close_left_tabs(&mut self, index: usize) -> Result<(), Error> {
-        if index < self.tabs.len() {
-            for i in (0..index).rev() {
-                self.tabs.remove(i);
-            }
+    pub fn close_other_tabs(&mut self, id: usize) -> Result<(), Error> {
+        let index = self
+            .tabs
+            .iter()
+            .position(|t| t.get_id() == id)
+            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
 
-            if !self.tabs.is_empty() {
-                self.active_tab_index -= index;
-            }
+        let kept = self.tabs.remove(index);
+        self.tabs.clear();
+        self.tabs.push(kept);
 
-            Ok(())
-        } else {
-            Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))
-        }
+        self.active_tab_id = id;
+
+        Ok(())
     }
 
-    pub fn close_right_tabs(&mut self, index: usize) -> Result<(), Error> {
-        if index < self.tabs.len() {
-            for i in (index..self.tabs.len()).rev() {
-                self.tabs.remove(i);
-            }
+    pub fn close_left_tabs(&mut self, id: usize) -> Result<(), Error> {
+        let index = self
+            .tabs
+            .iter()
+            .position(|t| t.get_id() == id)
+            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
 
-            if !self.tabs.is_empty() {
-                self.active_tab_index -= self.tabs.len().saturating_sub(1) - index;
-            }
+        self.tabs.drain(0..index);
 
-            Ok(())
-        } else {
-            Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))
+        if self.tabs.iter().all(|t| t.get_id() != self.active_tab_id) {
+            self.active_tab_id = id;
         }
+
+        Ok(())
     }
 
-    pub fn pin_tab(&mut self, index: usize) -> Result<(), Error> {
-        if index < self.tabs.len() {
+    pub fn close_right_tabs(&mut self, id: usize) -> Result<(), Error> {
+        let index = self
+            .tabs
+            .iter()
+            .position(|t| t.get_id() == id)
+            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
+
+        let start = index + 1;
+        if start < self.tabs.len() {
+            self.tabs.drain(start..);
+        }
+
+        if self.tabs.iter().all(|t| t.get_id() != self.active_tab_id) {
+            self.active_tab_id = id;
+        }
+
+        Ok(())
+    }
+
+    pub fn pin_tab(&mut self, id: usize) -> Result<(), Error> {
+        if let Some(index) = self.tabs.iter().position(|t| t.get_id() == id) {
             if !self.tabs.is_empty() {
                 if let Some(t) = self.tabs.get_mut(index) {
                     t.set_is_pinned(true)
@@ -203,12 +246,15 @@ impl AppState {
             self.reorder_tabs_by_pin();
             Ok(())
         } else {
-            Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))
+            Err(Error::new(
+                ErrorKind::NotFound,
+                "Tab with given id not found",
+            ))
         }
     }
 
-    pub fn unpin_tab(&mut self, index: usize) -> Result<(), Error> {
-        if index < self.tabs.len() {
+    pub fn unpin_tab(&mut self, id: usize) -> Result<(), Error> {
+        if let Some(index) = self.tabs.iter().position(|t| t.get_id() == id) {
             if !self.tabs.is_empty() {
                 if let Some(t) = self.tabs.get_mut(index) {
                     t.set_is_pinned(false)
@@ -218,16 +264,22 @@ impl AppState {
             self.reorder_tabs_by_pin();
             Ok(())
         } else {
-            Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"))
+            Err(Error::new(
+                ErrorKind::NotFound,
+                "Tab with given id not found",
+            ))
         }
     }
 
-    pub fn set_active_tab_index(&mut self, index: usize) -> Result<(), Error> {
-        if self.tabs.is_empty() || index >= self.tabs.len() {
-            Err(Error::other("Provided tab index is out of range"))
-        } else {
-            self.active_tab_index = index;
+    pub fn set_active_tab(&mut self, id: usize) -> Result<(), Error> {
+        if self.tabs.iter().any(|t| t.get_id() == id) {
+            self.active_tab_id = id;
             Ok(())
+        } else {
+            Err(Error::new(
+                ErrorKind::NotFound,
+                "Tab with given id not found",
+            ))
         }
     }
 
@@ -254,14 +306,6 @@ impl AppState {
 
         self.tabs.insert(insert_index, tab);
 
-        if self.active_tab_index == from {
-            self.active_tab_index = insert_index;
-        } else if from < self.active_tab_index && insert_index >= self.active_tab_index {
-            self.active_tab_index = self.active_tab_index.saturating_sub(1);
-        } else if from > self.active_tab_index && insert_index <= self.active_tab_index {
-            self.active_tab_index = (self.active_tab_index + 1).min(self.tabs.len() - 1);
-        }
-
         Ok(())
     }
 
@@ -280,7 +324,11 @@ impl AppState {
 
         let content = std::fs::read_to_string(path)?;
 
-        if let Some(t) = self.tabs.get_mut(self.active_tab_index) {
+        if let Some(t) = self
+            .tabs
+            .iter_mut()
+            .find(|t| t.get_id() == self.active_tab_id)
+        {
             t.get_editor_mut().load_file(&content);
             t.set_original_content(content);
             t.set_file_path(Some(path.into()));
@@ -298,7 +346,8 @@ impl AppState {
     pub fn save_active_tab(&mut self) -> Result<(), std::io::Error> {
         let tab = self
             .tabs
-            .get_mut(self.active_tab_index)
+            .iter_mut()
+            .find(|t| t.get_id() == self.active_tab_id)
             .ok_or_else(|| Error::new(ErrorKind::NotFound, "No active tab"))?;
 
         let maybe_file_path = tab.get_file_path();
@@ -321,7 +370,8 @@ impl AppState {
 
         let tab = self
             .tabs
-            .get_mut(self.active_tab_index)
+            .iter_mut()
+            .find(|t| t.get_id() == self.active_tab_id)
             .ok_or_else(|| Error::new(ErrorKind::NotFound, "No active tab"))?;
 
         let content = tab.get_editor().buffer().get_text();
@@ -338,11 +388,10 @@ impl AppState {
 
     fn reorder_tabs_by_pin(&mut self) {
         if self.tabs.is_empty() {
-            self.active_tab_index = 0;
+            self.active_tab_id = 0;
             return;
         }
 
-        let active_index = self.active_tab_index;
         let mut pinned: Vec<(usize, Tab)> = Vec::new();
         let mut unpinned: Vec<(usize, Tab)> = Vec::new();
 
@@ -355,20 +404,20 @@ impl AppState {
         }
 
         let mut new_tabs: Vec<Tab> = Vec::with_capacity(pinned.len() + unpinned.len());
-        let mut new_active_index = 0;
 
-        for (new_index, (old_index, tab)) in
-            pinned.into_iter().chain(unpinned.into_iter()).enumerate()
-        {
-            if old_index == active_index {
-                new_active_index = new_index;
-            }
-
+        for (_, tab) in pinned.into_iter().chain(unpinned.into_iter()) {
             new_tabs.push(tab);
         }
 
         self.tabs = new_tabs;
-        self.active_tab_index = new_active_index;
+    }
+
+    // Utility
+    fn get_next_tab_id(&mut self) -> usize {
+        let id = self.next_tab_id;
+        self.next_tab_id += 1;
+
+        id
     }
 }
 
@@ -385,7 +434,7 @@ mod test {
     }
 
     #[test]
-    fn close_tab_returns_error_when_index_greater_than_number_of_tabs() {
+    fn close_tab_returns_error_when_id_not_found() {
         let mut a = AppState::new(None).unwrap();
         let result = a.close_tab(1);
 
@@ -393,18 +442,18 @@ mod test {
     }
 
     #[test]
-    fn set_active_tab_index_returns_error_when_tabs_are_empty() {
+    fn set_active_tab_returns_error_when_tabs_are_empty() {
         let mut a = AppState::new(None).unwrap();
         let _ = a.close_tab(0);
-        let result = a.set_active_tab_index(0);
+        let result = a.set_active_tab(0);
 
         assert!(result.is_err())
     }
 
     #[test]
-    fn set_active_tab_index_returns_error_when_index_greater_than_number_of_tabs() {
+    fn set_active_tab_returns_error_when_id_not_found() {
         let mut a = AppState::new(None).unwrap();
-        let result = a.set_active_tab_index(1);
+        let result = a.set_active_tab(1);
 
         assert!(result.is_err())
     }
@@ -464,10 +513,10 @@ mod test {
         a.tabs[1].set_title("B");
         a.tabs[2].set_title("C");
 
-        let _ = a.set_active_tab_index(2);
+        let _ = a.set_active_tab(2);
         a.pin_tab(2).unwrap();
 
         assert_eq!(a.get_tab_titles(), vec!["C", "A", "B"]);
-        assert_eq!(a.get_active_tab_index(), 0);
+        assert_eq!(a.get_active_tab_id(), 2);
     }
 }

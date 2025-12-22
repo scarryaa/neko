@@ -132,6 +132,7 @@ void MainWindow::onFileSelected(const std::string &filePath,
     if (shouldFocusEditor) {
       editorWidget->setFocus();
     }
+
     return;
   }
 
@@ -159,10 +160,10 @@ void MainWindow::onFileSelected(const std::string &filePath,
       editorWidget->setFocus();
     }
   } else {
-    int newTabIndex = tabController->getActiveTabIndex();
-    tabController->closeTab(newTabIndex);
+    int newTabId = tabController->getActiveTabId();
+    tabController->closeTab(newTabId);
 
-    removeTabScrollOffset(newTabIndex);
+    removeTabScrollOffset(newTabId);
 
     updateTabBar();
   }
@@ -175,8 +176,8 @@ MainWindow::SaveResult MainWindow::onFileSaved(bool isSaveAs) {
   }
 
   if (tabController->saveActiveTab()) {
-    int activeIndex = tabController->getActiveTabIndex();
-    tabBarWidget->setTabModified(activeIndex, false);
+    int activeId = tabController->getActiveTabId();
+    tabBarWidget->setTabModified(activeId, false);
 
     return SaveResult::Saved;
   } else {
@@ -420,10 +421,11 @@ void MainWindow::applyInitialState() {
   editorWidget->setFocus();
 }
 
-MainWindow::CloseDecision MainWindow::showTabCloseConfirmationDialog(
-    int index, const rust::Vec<rust::String> &titles) {
+MainWindow::CloseDecision MainWindow::showTabCloseConfirmationDialog(int id) {
+  const QString tabTitle = tabController->getTabTitle(id);
+
   QMessageBox box(QMessageBox::Warning, tr("Close Tab"),
-                  tr("%1 has unsaved edits.").arg(titles[index]),
+                  tr("%1 has unsaved edits.").arg(tabTitle),
                   QMessageBox::NoButton, this->window());
 
   auto *saveBtn = box.addButton(tr("Save"), QMessageBox::AcceptRole);
@@ -475,8 +477,8 @@ MainWindow::SaveResult MainWindow::saveAs() {
     return SaveResult::Canceled;
 
   if (tabController->saveActiveTabAndSetPath(filePath.toStdString())) {
-    int activeIndex = tabController->getActiveTabIndex();
-    tabBarWidget->setTabModified(activeIndex, false);
+    int activeId = tabController->getActiveTabId();
+    tabBarWidget->setTabModified(activeId, false);
 
     updateTabBar();
 
@@ -496,7 +498,8 @@ void MainWindow::updateTabBar() {
   for (int i = 0; i < rawTitles.size(); i++) {
     tabTitles.append(QString::fromUtf8(rawTitles[i]));
 
-    auto path = tabController->getTabPath(i);
+    const int id = tabController->getTabId(i);
+    auto path = tabController->getTabPath(id);
     tabPaths.append(path);
   }
 
@@ -504,54 +507,51 @@ void MainWindow::updateTabBar() {
   rust::Vec<bool> pinnedStates = tabController->getTabPinnedStates();
 
   tabBarWidget->setTabs(tabTitles, tabPaths, modifieds, pinnedStates);
-  tabBarWidget->setCurrentIndex(tabController->getActiveTabIndex());
-}
+  tabBarWidget->setCurrentId(tabController->getActiveTabId());
 
-void MainWindow::removeTabScrollOffset(int closedIndex) {
-  tabScrollOffsets.erase(closedIndex);
-
-  std::unordered_map<int, ScrollOffset> updatedOffsets;
-  for (const auto &[tabIndex, offset] : tabScrollOffsets) {
-    int newIndex = tabIndex > closedIndex ? tabIndex - 1 : tabIndex;
-    updatedOffsets[newIndex] = offset;
+  if (rawTitles.size() != 0) {
+    setActiveEditor(&appStateController->getActiveEditorMut());
+  } else {
+    setActiveEditor(nullptr);
   }
-
-  tabScrollOffsets = std::move(updatedOffsets);
 }
 
-void MainWindow::handleTabClosed(int closedIndex, int numberOfTabsBeforeClose) {
-  removeTabScrollOffset(closedIndex);
+void MainWindow::removeTabScrollOffset(int closedId) {
+  tabScrollOffsets.erase(closedId);
+}
+
+void MainWindow::handleTabClosed(int closedId, int numberOfTabsBeforeClose) {
+  removeTabScrollOffset(closedId);
   statusBarWidget->onTabClosed(numberOfTabsBeforeClose - 1);
   switchToActiveTab();
   updateTabBar();
 }
 
-void MainWindow::onTabCloseRequested(int index, int numberOfTabs,
-                                     bool bypassConfirmation) {
-  if (tabController->getIsPinned(index)) {
+void MainWindow::onTabCloseRequested(int id, bool forceClose) {
+  if (tabController->getIsPinned(id)) {
     return;
   }
 
   saveCurrentScrollState();
-  closeTabWithChecks(index, numberOfTabs, bypassConfirmation);
+  tabController->closeTab(id);
 }
 
-void MainWindow::onTabChanged(int index) {
+void MainWindow::onTabChanged(int id) {
   saveCurrentScrollState();
-  tabController->setActiveTabIndex(index);
+  tabController->setActiveTab(id);
 
   switchToActiveTab();
   updateTabBar();
 }
 
-void MainWindow::onTabUnpinRequested(int index) {
-  tabController->unpinTab(index);
-
+void MainWindow::onTabUnpinRequested(int id) {
+  tabController->unpinTab(id);
   updateTabBar();
 }
 
 void MainWindow::onNewTabRequested() {
   saveCurrentScrollState();
+
   tabController->addTab();
   setActiveEditor(&appStateController->getActiveEditorMut());
 
@@ -583,8 +583,9 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
     gutterWidget->updateDimensions();
     gutterWidget->redraw();
 
-    int currentIndex = tabController->getActiveTabIndex();
-    auto it = tabScrollOffsets.find(currentIndex);
+    int currentId = tabController->getActiveTabId();
+
+    auto it = tabScrollOffsets.find(currentId);
     if (it != tabScrollOffsets.end()) {
       editorWidget->horizontalScrollBar()->setValue(it->second.x);
       editorWidget->verticalScrollBar()->setValue(it->second.y);
@@ -603,170 +604,64 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
 
 void MainWindow::onActiveTabCloseRequested(int numberOfTabs,
                                            bool bypassConfirmation) {
-  auto closeTab = [this](int activeIndex, int numberOfTabs) {
+  auto closeTab = [this](int activeId, int numberOfTabs) {
     // Save current scroll offset before closing
     saveCurrentScrollState();
 
-    if (tabController->closeTab(activeIndex)) {
-      handleTabClosed(activeIndex, numberOfTabs);
+    if (tabController->closeTab(activeId)) {
+      handleTabClosed(activeId, numberOfTabs);
     }
   };
 
-  if (tabController->getTabTitles().empty()) {
+  if (tabController->getTabCount() == 0) {
     // Close the window
     QApplication::quit();
   } else {
-    int activeIndex = tabController->getActiveTabIndex();
+    int activeId = tabController->getActiveTabId();
 
-    if (tabController->getTabModified(activeIndex) && !bypassConfirmation) {
-      const auto titles = tabController->getTabTitles();
+    if (tabController->getTabModified(activeId) && !bypassConfirmation) {
       const CloseDecision closeResult =
-          showTabCloseConfirmationDialog(activeIndex, titles);
+          showTabCloseConfirmationDialog(activeId);
 
       switch (closeResult) {
       case CloseDecision::Save: {
         auto result = onFileSaved(false);
 
         if (result == SaveResult::Saved) {
-          closeTab(activeIndex, numberOfTabs);
+          closeTab(activeId, numberOfTabs);
         }
 
         return;
       }
       case CloseDecision::DontSave:
-        closeTab(activeIndex, numberOfTabs);
+        closeTab(activeId, numberOfTabs);
         return;
       case CloseDecision::Cancel:
         return;
       }
     } else {
-      closeTab(activeIndex, numberOfTabs);
+      closeTab(activeId, numberOfTabs);
     }
   }
 }
 
-bool MainWindow::closeTabWithChecks(int index, int numberOfTabsBeforeClose,
-                                    bool bypassConfirmation) {
-  auto close = [this, index, numberOfTabsBeforeClose]() -> bool {
-    if (tabController->closeTab(index)) {
-      handleTabClosed(index, numberOfTabsBeforeClose);
-      return true;
-    }
-    return false;
-  };
-
-  if (bypassConfirmation) {
-    return close();
-  }
-
-  if (!tabController->getTabModified(index)) {
-    return close();
-  }
-
-  auto titles = tabController->getTabTitles();
-
-  switch (showTabCloseConfirmationDialog(index, titles)) {
-  case CloseDecision::Save: {
-    SaveResult result = onFileSaved(false);
-    if (result == SaveResult::Saved) {
-      return close();
-    }
-    return false;
-  }
-  case CloseDecision::DontSave:
-    return close();
-  case CloseDecision::Cancel:
-    return false;
-  }
-
-  return false;
-}
-
-bool MainWindow::closeTabsWithChecks(const QVector<int> &indicesToClose,
-                                     int numberOfTabsBeforeClose,
-                                     bool bypassConfirmation) {
-  QVector<int> indices = indicesToClose;
-  std::sort(indices.begin(), indices.end(), std::greater<int>());
-
-  bool allClosed = true;
-  int tabsBefore = numberOfTabsBeforeClose;
-
-  for (int idx : indices) {
-    if (idx < 0 || idx >= tabController->getTabCount()) {
-      continue;
-    }
-
-    bool closed = closeTabWithChecks(idx, tabsBefore, bypassConfirmation);
-    if (closed) {
-      tabsBefore -= 1;
-    } else {
-      allClosed = false;
-
-      if (!bypassConfirmation) {
-        break;
-      }
-    }
-  }
-
-  return allClosed;
-}
-
-void MainWindow::onTabCloseOthers(int index, int numberOfTabs,
-                                  bool bypassConfirmation) {
+void MainWindow::onTabCloseOthers(int id, bool forceClose) {
   saveCurrentScrollState();
-
-  QVector<int> toClose;
-  toClose.reserve(numberOfTabs - 1);
-
-  for (int i = 0; i < numberOfTabs; ++i) {
-    if (i == index || tabController->getIsPinned(i))
-      continue;
-
-    toClose.push_back(i);
-  }
-
-  // TODO: Enable holding shift to force close
-  closeTabsWithChecks(toClose, numberOfTabs, bypassConfirmation);
+  tabController->closeOtherTabs(id);
 }
 
-void MainWindow::onTabCloseLeft(int index, int numberOfTabs,
-                                bool bypassConfirmation) {
+void MainWindow::onTabCloseLeft(int id, bool forceClose) {
   saveCurrentScrollState();
-
-  QVector<int> toClose;
-  toClose.reserve(index);
-
-  for (int i = 0; i < index; ++i) {
-    if (tabController->getIsPinned(i)) {
-      continue;
-    }
-
-    toClose.push_back(i);
-  }
-
-  closeTabsWithChecks(toClose, numberOfTabs, bypassConfirmation);
+  tabController->closeLeftTabs(id);
 }
 
-void MainWindow::onTabCloseRight(int index, int numberOfTabs,
-                                 bool bypassConfirmation) {
+void MainWindow::onTabCloseRight(int id, bool forceClose) {
   saveCurrentScrollState();
-
-  QVector<int> toClose;
-  toClose.reserve(numberOfTabs - index - 1);
-
-  for (int i = index + 1; i < numberOfTabs; ++i) {
-    if (tabController->getIsPinned(i)) {
-      continue;
-    }
-
-    toClose.push_back(i);
-  }
-
-  closeTabsWithChecks(toClose, numberOfTabs, bypassConfirmation);
+  tabController->closeRightTabs(id);
 }
 
-void MainWindow::onTabCopyPath(int index, int numberOfTabs) {
-  const QString path = tabController->getTabPath(index);
+void MainWindow::onTabCopyPath(int id) {
+  const QString path = tabController->getTabPath(id);
 
   if (path.isEmpty())
     return;
@@ -774,8 +669,8 @@ void MainWindow::onTabCopyPath(int index, int numberOfTabs) {
   QApplication::clipboard()->setText(path);
 }
 
-void MainWindow::onTabReveal(int index, int numberOfTabs) {
-  const QString path = tabController->getTabPath(index);
+void MainWindow::onTabReveal(int id) {
+  const QString path = tabController->getTabPath(id);
 
   if (path.isEmpty())
     return;
@@ -869,13 +764,26 @@ void MainWindow::setupKeyboardShortcuts() {
   addShortcut(nextTabAction,
               seqFor("Tab::Next", QKeySequence(Qt::MetaModifier | Qt::Key_Tab)),
               Qt::WindowShortcut, [this]() {
-                int tabCount = tabController->getTabCount();
+                const int tabCount = tabController->getTabCount();
 
-                if (tabCount > 0) {
-                  int currentIndex = tabController->getActiveTabIndex();
-                  size_t nextIndex = (currentIndex + 1) % tabCount;
-                  onTabChanged(nextIndex);
+                if (tabCount <= 0)
+                  return;
+
+                const int currentId = tabController->getActiveTabId();
+
+                int currentIndex = -1;
+                for (int i = 0; i < tabCount; ++i) {
+                  if (tabController->getTabId(i) == currentId) {
+                    currentIndex = i;
+                    break;
+                  }
                 }
+
+                if (currentIndex == -1)
+                  return;
+
+                const int nextIndex = (currentIndex + 1) % tabCount;
+                onTabChanged(tabController->getTabId(nextIndex));
               });
 
   // Cmd+Shift+Tab for previous tab
@@ -885,14 +793,26 @@ void MainWindow::setupKeyboardShortcuts() {
       seqFor("Tab::Previous",
              QKeySequence(Qt::MetaModifier | Qt::ShiftModifier | Qt::Key_Tab)),
       Qt::WindowShortcut, [this]() {
-        int tabCount = tabController->getTabCount();
+        const int tabCount = tabController->getTabCount();
 
-        if (tabCount > 0) {
-          int currentIndex = tabController->getActiveTabIndex();
-          size_t prevIndex =
-              (currentIndex == 0) ? tabCount - 1 : currentIndex - 1;
-          onTabChanged(prevIndex);
+        if (tabCount <= 0)
+          return;
+
+        const int currentId = tabController->getActiveTabId();
+
+        int currentIndex = -1;
+        for (int i = 0; i < tabCount; ++i) {
+          if (tabController->getTabId(i) == currentId) {
+            currentIndex = i;
+            break;
+          }
         }
+        if (currentIndex == -1)
+          return;
+
+        const int prevIndex =
+            (currentIndex == 0) ? (tabCount - 1) : (currentIndex - 1);
+        onTabChanged(tabController->getTabId(prevIndex));
       });
 
   // Ctrl+G for jump to
@@ -947,20 +867,21 @@ void MainWindow::setupKeyboardShortcuts() {
 }
 
 void MainWindow::onBufferChanged() {
-  int activeIndex = tabController->getActiveTabIndex();
-  bool modified = tabController->getTabModified(activeIndex);
+  int activeId = tabController->getActiveTabId();
+  bool modified = tabController->getTabModified(activeId);
 
-  tabBarWidget->setTabModified(activeIndex, modified);
+  tabBarWidget->setTabModified(activeId, modified);
 }
 
 void MainWindow::switchToTabWithFile(const std::string &path) {
   int index = tabController->getTabIndexByPath(path);
+  int id = tabController->getTabId(index);
 
   if (index != -1) {
     // Save current scroll offset
     saveCurrentScrollState();
 
-    tabController->setActiveTabIndex(index);
+    tabController->setActiveTab(id);
     switchToActiveTab();
     updateTabBar();
   }
@@ -971,9 +892,9 @@ void MainWindow::saveCurrentScrollState() {
     return;
   }
 
-  int currentIndex = tabController->getActiveTabIndex();
+  int currentId = tabController->getActiveTabId();
 
-  tabScrollOffsets[currentIndex] =
+  tabScrollOffsets[currentId] =
       ScrollOffset{editorWidget->horizontalScrollBar()->value(),
                    editorWidget->verticalScrollBar()->value()};
 }
@@ -1109,37 +1030,36 @@ void MainWindow::registerCommands() {
     auto shiftPressed = QApplication::keyboardModifiers().testFlag(
         Qt::KeyboardModifier::ShiftModifier);
 
-    onTabCloseRequested(ctx.tabIndex, tabController->getTabCount(),
-                        shiftPressed);
+    onTabCloseRequested(ctx.tabId, shiftPressed);
   });
   commandRegistry.registerCommand("tab.closeOthers", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
     auto shiftPressed = QApplication::keyboardModifiers().testFlag(
         Qt::KeyboardModifier::ShiftModifier);
 
-    onTabCloseOthers(ctx.tabIndex, tabController->getTabCount(), shiftPressed);
+    onTabCloseOthers(ctx.tabId, shiftPressed);
   });
   commandRegistry.registerCommand("tab.closeLeft", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
     auto shiftPressed = QApplication::keyboardModifiers().testFlag(
         Qt::KeyboardModifier::ShiftModifier);
 
-    onTabCloseLeft(ctx.tabIndex, tabController->getTabCount(), shiftPressed);
+    onTabCloseLeft(ctx.tabId, shiftPressed);
   });
   commandRegistry.registerCommand("tab.closeRight", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
     auto shiftPressed = QApplication::keyboardModifiers().testFlag(
         Qt::KeyboardModifier::ShiftModifier);
 
-    onTabCloseRight(ctx.tabIndex, tabController->getTabCount(), shiftPressed);
+    onTabCloseRight(ctx.tabId, shiftPressed);
   });
   commandRegistry.registerCommand("tab.copyPath", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
-    onTabCopyPath(ctx.tabIndex, tabController->getTabCount());
+    onTabCopyPath(ctx.tabId);
   });
   commandRegistry.registerCommand("tab.reveal", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
-    onTabReveal(ctx.tabIndex, tabController->getTabCount());
+    onTabReveal(ctx.tabId);
   });
 }
 
