@@ -9,11 +9,17 @@ public:
   WorkspaceController(TabController *tabController, WorkspaceUi workspaceUi);
   ~WorkspaceController();
 
-  void closeMany(const QList<int> &ids, bool forceClose,
-                 std::function<void()> closeAction);
+  void closeLeft(int id, bool forceClose);
+  void closeRight(int id, bool forceClose);
+  void closeOthers(int id, bool forceClose);
+  void closeTab(int id, bool forceClose);
+
   bool saveTabWithPromptIfNeeded(int id);
 
 private:
+  void closeMany(const QList<int> &ids, bool forceClose,
+                 std::function<void()> closeAction);
+
   TabController *tabController;
   WorkspaceUi workspaceUi;
 };
