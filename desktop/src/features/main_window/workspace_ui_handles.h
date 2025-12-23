@@ -17,6 +17,7 @@ struct WorkspaceUiHandles {
   FileExplorerWidget *fileExplorerWidget;
   StatusBarWidget *statusBarWidget;
   CommandPaletteWidget *commandPaletteWidget;
+  QWidget *window;
 };
 
 #endif

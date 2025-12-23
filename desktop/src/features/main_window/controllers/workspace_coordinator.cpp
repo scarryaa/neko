@@ -141,6 +141,32 @@ void WorkspaceCoordinator::fileSaved(bool saveAs) {
   }
 }
 
+void WorkspaceCoordinator::openConfig() {
+  auto configPath = configManager->get_config_path();
+
+  if (!configPath.empty()) {
+    fileSelected(configPath.c_str(), true);
+  }
+}
+
+void WorkspaceCoordinator::tabCopyPath(int id) {
+  const QString path = tabController->getTabPath(id);
+
+  if (path.isEmpty())
+    return;
+
+  QApplication::clipboard()->setText(path);
+}
+
+void WorkspaceCoordinator::tabReveal(int id) {
+  const QString path = tabController->getTabPath(id);
+
+  if (path.isEmpty())
+    return;
+
+  uiHandles.fileExplorerWidget->showItem(path);
+}
+
 void WorkspaceCoordinator::newTab() {
   saveScrollOffsetsForActiveTab();
 
@@ -161,6 +187,51 @@ void WorkspaceCoordinator::tabChanged(int id) {
 void WorkspaceCoordinator::tabUnpinned(int id) {
   tabController->unpinTab(id);
   updateTabBar();
+}
+
+void WorkspaceCoordinator::bufferChanged() {
+  int activeId = tabController->getActiveTabId();
+  bool modified = tabController->getTabModified(activeId);
+
+  uiHandles.tabBarWidget->setTabModified(activeId, modified);
+}
+
+CloseDecision
+WorkspaceCoordinator::showTabCloseConfirmationDialog(const QList<int> &ids) {
+  int modifiedCount = 0;
+
+  for (int i = 0; i < ids.size(); i++) {
+    if (tabController->getTabModified(ids[i])) {
+      modifiedCount++;
+    }
+  }
+
+  if (modifiedCount == 0) {
+    return CloseDecision::DontSave;
+  }
+
+  QMessageBox box(QMessageBox::Warning, tr("Close Tabs"),
+                  tr("%1 tab%2 unsaved edits.")
+                      .arg(modifiedCount)
+                      .arg(modifiedCount > 1 ? "s have" : " has"),
+                  QMessageBox::NoButton, uiHandles.window);
+
+  auto *saveBtn = box.addButton(tr("Save"), QMessageBox::AcceptRole);
+  auto *dontSaveBtn =
+      box.addButton(tr("Don't Save"), QMessageBox::DestructiveRole);
+  auto *cancelBtn = box.addButton(QMessageBox::Cancel);
+
+  box.setDefaultButton(cancelBtn);
+  box.setEscapeButton(cancelBtn);
+
+  box.exec();
+
+  if (box.clickedButton() == saveBtn)
+    return CloseDecision::Save;
+  if (box.clickedButton() == dontSaveBtn)
+    return CloseDecision::DontSave;
+
+  return CloseDecision::Cancel;
 }
 
 SaveResult WorkspaceCoordinator::saveTab(int id, bool isSaveAs) {

@@ -29,25 +29,27 @@ MainWindow::MainWindow(QWidget *parent)
   editorController = new EditorController(editor);
   workspaceController = new WorkspaceController(
       tabController,
-      WorkspaceUi{.promptSaveAsPath =
-                      [this](int tabId) {
-                        return QFileDialog::getSaveFileName(this, tr("Save As"),
-                                                            QDir::homePath());
-                      },
-                  .confirmCloseTabs =
-                      [this](const QList<int> &ids) {
-                        return showTabCloseConfirmationDialog(ids);
-                      }});
+      WorkspaceUi{
+          .promptSaveAsPath =
+              [this](int tabId) {
+                return QFileDialog::getSaveFileName(this, tr("Save As"),
+                                                    QDir::homePath());
+              },
+          .confirmCloseTabs =
+              [this](const QList<int> &ids) {
+                return workspaceCoordinator->showTabCloseConfirmationDialog(
+                    ids);
+              }});
 
   registerProviders();
   registerCommands();
   setupWidgets(editor, fileTree);
   setupLayout();
 
-  WorkspaceUiHandles uiHandles{editorWidget,     gutterWidget,
-                               tabBarWidget,     tabBarContainer,
-                               emptyStateWidget, fileExplorerWidget,
-                               statusBarWidget,  commandPaletteWidget};
+  WorkspaceUiHandles uiHandles{
+      editorWidget,    gutterWidget,         tabBarWidget,
+      tabBarContainer, emptyStateWidget,     fileExplorerWidget,
+      statusBarWidget, commandPaletteWidget, this->window()};
 
   workspaceCoordinator = new WorkspaceCoordinator(
       workspaceController, tabController, appStateController, editorController,
@@ -242,8 +244,8 @@ void MainWindow::connectSignals() {
           fileExplorerWidget, &FileExplorerWidget::directorySelectionRequested);
 
   // EditorController -> MainWindow
-  connect(editorController, &EditorController::bufferChanged, this,
-          &MainWindow::onBufferChanged);
+  connect(editorController, &EditorController::bufferChanged,
+          workspaceCoordinator, &WorkspaceCoordinator::bufferChanged);
 
   // StatusBarWidget -> MainWindow
   connect(statusBarWidget, &StatusBarWidget::fileExplorerToggled,
@@ -268,62 +270,6 @@ void MainWindow::connectSignals() {
   // TODO: Rework the tab update system to not rely on mass setting
   // all the tabs and have the TabBarWidget be in charge of mgmt/updates,
   // with each TabWidget in control of its repaints?
-}
-
-CloseDecision
-MainWindow::showTabCloseConfirmationDialog(const QList<int> &ids) {
-  int modifiedCount = 0;
-
-  for (int i = 0; i < ids.size(); i++) {
-    if (tabController->getTabModified(ids[i])) {
-      modifiedCount++;
-    }
-  }
-
-  if (modifiedCount == 0) {
-    return CloseDecision::DontSave;
-  }
-
-  QMessageBox box(QMessageBox::Warning, tr("Close Tabs"),
-                  tr("%1 tab%2 unsaved edits.")
-                      .arg(modifiedCount)
-                      .arg(modifiedCount > 1 ? "s have" : " has"),
-                  QMessageBox::NoButton, this->window());
-
-  auto *saveBtn = box.addButton(tr("Save"), QMessageBox::AcceptRole);
-  auto *dontSaveBtn =
-      box.addButton(tr("Don't Save"), QMessageBox::DestructiveRole);
-  auto *cancelBtn = box.addButton(QMessageBox::Cancel);
-
-  box.setDefaultButton(cancelBtn);
-  box.setEscapeButton(cancelBtn);
-
-  box.exec();
-
-  if (box.clickedButton() == saveBtn)
-    return CloseDecision::Save;
-  if (box.clickedButton() == dontSaveBtn)
-    return CloseDecision::DontSave;
-
-  return CloseDecision::Cancel;
-}
-
-void MainWindow::onTabCopyPath(int id) {
-  const QString path = tabController->getTabPath(id);
-
-  if (path.isEmpty())
-    return;
-
-  QApplication::clipboard()->setText(path);
-}
-
-void MainWindow::onTabReveal(int id) {
-  const QString path = tabController->getTabPath(id);
-
-  if (path.isEmpty())
-    return;
-
-  fileExplorerWidget->showItem(path);
 }
 
 void MainWindow::setupKeyboardShortcuts() {
@@ -502,7 +448,8 @@ void MainWindow::setupKeyboardShortcuts() {
   addShortcut(openConfigAction,
               seqFor("Editor::OpenConfig",
                      QKeySequence(Qt::ControlModifier | Qt::Key_Comma)),
-              Qt::WindowShortcut, &MainWindow::openConfig);
+              Qt::WindowShortcut,
+              [this]() { workspaceCoordinator->openConfig(); });
 
   // Ctrl + P for show command palette
   QAction *showCommandPalette = new QAction(this);
@@ -511,35 +458,6 @@ void MainWindow::setupKeyboardShortcuts() {
                      QKeySequence(Qt::ControlModifier | Qt::Key_P)),
               Qt::WindowShortcut,
               [this]() { commandPaletteWidget->showPalette(); });
-}
-
-void MainWindow::onBufferChanged() {
-  int activeId = tabController->getActiveTabId();
-  bool modified = tabController->getTabModified(activeId);
-
-  tabBarWidget->setTabModified(activeId, modified);
-}
-
-void MainWindow::saveCurrentScrollState() {
-  if (tabController->getTabsEmpty()) {
-    return;
-  }
-
-  int activeId = tabController->getActiveTabId();
-  double x = editorWidget->horizontalScrollBar()->value();
-  double y = editorWidget->verticalScrollBar()->value();
-
-  neko::ScrollOffsetFfi newOffsets =
-      neko::ScrollOffsetFfi{static_cast<int32_t>(x), static_cast<int32_t>(y)};
-  tabController->setTabScrollOffsets(activeId, newOffsets);
-}
-
-void MainWindow::openConfig() {
-  auto configPath = configManager->get_config_path();
-
-  if (!configPath.empty()) {
-    workspaceCoordinator->fileSelected(configPath.c_str(), true);
-  }
 }
 
 void MainWindow::applyTheme(const std::string &themeName) {
@@ -691,11 +609,11 @@ void MainWindow::registerCommands() {
   });
   commandRegistry.registerCommand("tab.copyPath", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
-    onTabCopyPath(ctx.tabId);
+    workspaceCoordinator->tabCopyPath(ctx.tabId);
   });
   commandRegistry.registerCommand("tab.reveal", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
-    onTabReveal(ctx.tabId);
+    workspaceCoordinator->tabReveal(ctx.tabId);
   });
 }
 

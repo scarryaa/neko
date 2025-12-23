@@ -31,10 +31,17 @@ public:
   void commandPaletteGoToPosition(int row, int col);
   void commandPaletteCommand(const QString &command);
 
+  void openConfig();
+
+  void tabCopyPath(int id);
+  void tabReveal(int id);
   void newTab();
   void tabChanged(int id);
   void tabUnpinned(int id);
 
+  void bufferChanged();
+
+  CloseDecision showTabCloseConfirmationDialog(const QList<int> &ids);
   SaveResult saveTab(int id, bool isSaveAs);
 
   void closeTab(int id, bool forceClose);

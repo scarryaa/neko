@@ -1,11 +1,8 @@
 #ifndef MAIN_WINDOW_H
 #define MAIN_WINDOW_H
 
-#include "close_decision.h"
 #include "features/command_palette/command_palette_widget.h"
 #include "features/context_menu/command_registry.h"
-#include "features/context_menu/context_menu_item.h"
-#include "features/context_menu/context_menu_item_kind.h"
 #include "features/context_menu/context_menu_registry.h"
 #include "features/editor/controllers/editor_controller.h"
 #include "features/editor/editor_widget.h"
@@ -14,13 +11,11 @@
 #include "features/main_window/controllers/app_state_controller.h"
 #include "features/main_window/controllers/workspace_controller.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
-#include "features/main_window/save_result.h"
 #include "features/status_bar/status_bar_widget.h"
 #include "features/tabs/controllers/tab_controller.h"
 #include "features/tabs/tab_bar_widget.h"
 #include "features/title_bar/title_bar_widget.h"
 #include "neko-core/src/ffi/bridge.rs.h"
-#include "utils/gui_utils.h"
 #include "utils/mac_utils.h"
 #include <QMainWindow>
 #include <QPushButton>
@@ -43,15 +38,8 @@ private:
   QWidget *buildEditorSection(QWidget *emptyState);
   QSplitter *buildSplitter(QWidget *editorSideContainer);
   void connectSignals();
-  CloseDecision showTabCloseConfirmationDialog(const QList<int> &ids);
-
-  void onTabCopyPath(int id);
-  void onTabReveal(int id);
 
   void setupKeyboardShortcuts();
-  void onBufferChanged();
-  void saveCurrentScrollState();
-  void openConfig();
   void applyTheme(const std::string &themeName);
   void registerProviders();
   void registerCommands();
