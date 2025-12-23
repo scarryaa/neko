@@ -42,151 +42,27 @@ MainWindow::MainWindow(QWidget *parent)
   registerProviders();
   registerCommands();
   setupWidgets(editor, fileTree);
-  connectSignals();
   setupLayout();
+
+  WorkspaceUiHandles uiHandles{editorWidget,     gutterWidget,
+                               tabBarWidget,     tabBarContainer,
+                               emptyStateWidget, fileExplorerWidget,
+                               statusBarWidget,  commandPaletteWidget};
+
+  workspaceCoordinator = new WorkspaceCoordinator(
+      workspaceController, tabController, appStateController, editorController,
+      &*configManager, &*themeManager, uiHandles, this);
+
+  connectSignals();
 
   auto snapshot = configManager->get_config_snapshot();
   auto currentTheme = snapshot.current_theme;
   applyTheme(std::string(currentTheme.c_str()));
   setupKeyboardShortcuts();
-  applyInitialState();
+  workspaceCoordinator->applyInitialState();
 }
 
 MainWindow::~MainWindow() {}
-
-void MainWindow::onFileExplorerToggled() {
-  bool isOpen = fileExplorerWidget->isHidden();
-
-  if (isOpen) {
-    fileExplorerWidget->show();
-  } else {
-    fileExplorerWidget->hide();
-  }
-
-  auto snapshot = configManager->get_config_snapshot();
-  snapshot.file_explorer_shown = isOpen;
-  configManager->apply_config_snapshot(snapshot);
-}
-
-void MainWindow::onCursorPositionClicked() {
-  if (tabController->getTabsEmpty()) {
-    return;
-  }
-
-  neko::CursorPosition cursor = editorController->getLastAddedCursor();
-  int lineCount = editorController->getLineCount();
-
-  if (lineCount == 0) {
-    return;
-  }
-
-  auto maxCol =
-      std::max<size_t>(1, editorController->getLineLength(cursor.row));
-  auto lastLineMaxCol =
-      std::max<size_t>(1, editorController->getLineLength(lineCount - 1));
-
-  commandPaletteWidget->jumpToRowColumn(cursor.row, cursor.col, maxCol,
-                                        lineCount, lastLineMaxCol);
-}
-
-void MainWindow::onCommandPaletteGoToPosition(int row, int col) {
-  if (tabController->getTabsEmpty()) {
-    return;
-  }
-
-  editorController->moveTo(row, col, true);
-  editorWidget->setFocus();
-}
-
-void MainWindow::onCommandPaletteCommand(const QString &command) {
-  neko::CommandKindFfi kind;
-  rust::String argument;
-
-  if (command == "file explorer: toggle") {
-    kind = neko::CommandKindFfi::FileExplorerToggle;
-  } else if (command == "set theme: light") {
-    kind = neko::CommandKindFfi::ChangeTheme;
-    argument = rust::String("Default Light");
-  } else if (command == "set theme: dark") {
-    kind = neko::CommandKindFfi::ChangeTheme;
-    argument = rust::String("Default Dark");
-  } else {
-    return;
-  }
-
-  auto commandFfi = neko::new_command(kind, std::move(argument));
-  auto result =
-      neko::execute_command(commandFfi, *configManager, *themeManager);
-
-  for (auto &intent : result.intents) {
-    switch (intent.kind) {
-    case neko::UiIntentKindFfi::ToggleFileExplorer:
-      onFileExplorerToggled();
-      emit onFileExplorerToggledViaShortcut(!fileExplorerWidget->isHidden());
-      break;
-    case neko::UiIntentKindFfi::ApplyTheme:
-      applyTheme(std::string(intent.argument.c_str()));
-      break;
-    }
-  }
-}
-
-void MainWindow::onFileSelected(const std::string &filePath,
-                                bool shouldFocusEditor) {
-  // Check if file is already open
-  if (tabController->getTabWithPathExists(filePath)) {
-    // Save current scroll offset before switching
-    saveCurrentScrollState();
-
-    // Switch to existing tab instead
-    switchToTabWithFile(filePath);
-    if (shouldFocusEditor) {
-      editorWidget->setFocus();
-    }
-
-    return;
-  }
-
-  // Check if file exists and is readable before creating tab
-  if (!std::filesystem::exists(filePath) ||
-      !std::filesystem::is_regular_file(filePath)) {
-    return;
-  }
-
-  // Save current scroll offset
-  saveCurrentScrollState();
-
-  tabController->addTab();
-
-  if (appStateController->openFile(filePath)) {
-    updateTabBar();
-    switchToActiveTab(false);
-
-    editorWidget->updateDimensions();
-    editorWidget->redraw();
-    gutterWidget->updateDimensions();
-    gutterWidget->redraw();
-
-    if (shouldFocusEditor) {
-      editorWidget->setFocus();
-    }
-  } else {
-    int newTabId = tabController->getActiveTabId();
-    tabController->closeTab(newTabId);
-
-    updateTabBar();
-  }
-}
-
-void MainWindow::onFileSaved(bool isSaveAs) {
-  const int activeId = tabController->getActiveTabId();
-  const bool success = workspaceController->saveTab(activeId, isSaveAs);
-
-  if (success) {
-    tabBarWidget->setTabModified(activeId, false);
-    updateTabBar();
-  }
-}
 
 void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
   emptyStateWidget = new QWidget(this);
@@ -205,8 +81,6 @@ void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
   tabBarWidget =
       new TabBarWidget(*configManager, *themeManager, contextMenuRegistry,
                        commandRegistry, tabController, tabBarContainer);
-
-  setActiveEditor(editor);
 }
 
 void MainWindow::setupLayout() {
@@ -248,9 +122,6 @@ QWidget *MainWindow::buildTabBarSection() {
   tabBarLayout->addWidget(tabBarWidget);
   tabBarLayout->addWidget(newTabButton);
 
-  connect(newTabButton, &QPushButton::clicked, this,
-          &MainWindow::onNewTabRequested);
-
   return tabBarContainer;
 }
 
@@ -271,10 +142,8 @@ QWidget *MainWindow::buildEmptyStateSection() {
   auto *emptyLayout = new QVBoxLayout(emptyStateWidget);
   emptyLayout->setAlignment(Qt::AlignCenter);
 
-  auto *emptyStateNewTabButton = new QPushButton("New Tab", emptyStateWidget);
+  emptyStateNewTabButton = new QPushButton("New Tab", emptyStateWidget);
   emptyStateNewTabButton->setFixedSize(80, 35);
-  connect(emptyStateNewTabButton, &QPushButton::clicked, this,
-          &MainWindow::onNewTabRequested);
 
   emptyLayout->addWidget(emptyStateNewTabButton);
   emptyStateWidget->hide();
@@ -340,6 +209,18 @@ QSplitter *MainWindow::buildSplitter(QWidget *editorSideContainer) {
 }
 
 void MainWindow::connectSignals() {
+  // NewTabButton -> WorkspaceCoordinator
+  connect(newTabButton, &QPushButton::clicked, workspaceCoordinator,
+          &WorkspaceCoordinator::newTab);
+
+  // EmptyStateNewTabButton -> WorkspaceCoordinator
+  connect(emptyStateNewTabButton, &QPushButton::clicked, workspaceCoordinator,
+          &WorkspaceCoordinator::newTab);
+
+  // WorkspaceCoordinator -> MainWindow
+  connect(workspaceCoordinator, &WorkspaceCoordinator::themeChanged, this,
+          &MainWindow::applyTheme);
+
   // GutterWidget <-> EditorWidget
   connect(gutterWidget->verticalScrollBar(), &QScrollBar::valueChanged,
           editorWidget->verticalScrollBar(), &QScrollBar::setValue);
@@ -349,8 +230,8 @@ void MainWindow::connectSignals() {
           &GutterWidget::onEditorFontSizeChanged);
 
   // FileExplorerWidget -> MainWindow
-  connect(fileExplorerWidget, &FileExplorerWidget::fileSelected, this,
-          &MainWindow::onFileSelected);
+  connect(fileExplorerWidget, &FileExplorerWidget::fileSelected,
+          workspaceCoordinator, &WorkspaceCoordinator::fileSelected);
 
   // FileExplorerWidget <-> TitleBarWidget
   connect(fileExplorerWidget, &FileExplorerWidget::directorySelected,
@@ -360,66 +241,33 @@ void MainWindow::connectSignals() {
   connect(titleBarWidget, &TitleBarWidget::directorySelectionButtonPressed,
           fileExplorerWidget, &FileExplorerWidget::directorySelectionRequested);
 
-  // EditorWidget -> MainWindow
-  connect(editorWidget, &EditorWidget::newTabRequested, this,
-          &MainWindow::onNewTabRequested);
-
   // EditorController -> MainWindow
   connect(editorController, &EditorController::bufferChanged, this,
           &MainWindow::onBufferChanged);
 
   // StatusBarWidget -> MainWindow
-  connect(statusBarWidget, &StatusBarWidget::fileExplorerToggled, this,
-          &MainWindow::onFileExplorerToggled);
-  connect(this, &MainWindow::onFileExplorerToggledViaShortcut, statusBarWidget,
-          &StatusBarWidget::onFileExplorerToggledExternally);
-  connect(statusBarWidget, &StatusBarWidget::cursorPositionClicked, this,
-          &MainWindow::onCursorPositionClicked);
+  connect(statusBarWidget, &StatusBarWidget::fileExplorerToggled,
+          workspaceCoordinator, &WorkspaceCoordinator::fileExplorerToggled);
+  connect(workspaceCoordinator,
+          &WorkspaceCoordinator::onFileExplorerToggledViaShortcut,
+          statusBarWidget, &StatusBarWidget::onFileExplorerToggledExternally);
+  connect(statusBarWidget, &StatusBarWidget::cursorPositionClicked,
+          workspaceCoordinator, &WorkspaceCoordinator::cursorPositionClicked);
 
   // CommandPalette -> MainWindow
   connect(commandPaletteWidget, &CommandPaletteWidget::goToPositionRequested,
-          this, &MainWindow::onCommandPaletteGoToPosition);
-  connect(commandPaletteWidget, &CommandPaletteWidget::commandRequested, this,
-          &MainWindow::onCommandPaletteCommand);
+          workspaceCoordinator,
+          &WorkspaceCoordinator::commandPaletteGoToPosition);
+  connect(commandPaletteWidget, &CommandPaletteWidget::commandRequested,
+          workspaceCoordinator, &WorkspaceCoordinator::commandPaletteCommand);
 
   // EditorController -> StatusBarWidget
   connect(editorController, &EditorController::cursorChanged, statusBarWidget,
           &StatusBarWidget::onCursorPositionChanged);
 
-  // TabController -> MainWindow
-  connect(tabController, &TabController::tabListChanged, this,
-          &MainWindow::updateTabBar);
-  connect(tabController, &TabController::activeTabChanged, this,
-          &MainWindow::switchToActiveTab);
-
   // TODO: Rework the tab update system to not rely on mass setting
   // all the tabs and have the TabBarWidget be in charge of mgmt/updates,
   // with each TabWidget in control of its repaints?
-  // TabBarWidget -> MainWindow connections
-  connect(tabBarWidget, &TabBarWidget::tabCloseRequested, this,
-          &MainWindow::closeTab);
-  connect(tabBarWidget, &TabBarWidget::currentChanged, this,
-          &MainWindow::onTabChanged);
-  connect(tabBarWidget, &TabBarWidget::tabPinnedChanged, this,
-          &MainWindow::onTabChanged);
-  connect(tabBarWidget, &TabBarWidget::tabUnpinRequested, this,
-          &MainWindow::onTabUnpinRequested);
-  connect(tabBarWidget, &TabBarWidget::newTabRequested, this,
-          &MainWindow::onNewTabRequested);
-}
-
-void MainWindow::applyInitialState() {
-  updateTabBar();
-  refreshStatusBarCursor();
-
-  auto snapshot = configManager->get_config_snapshot();
-  if (!snapshot.file_explorer_shown) {
-    fileExplorerWidget->hide();
-  }
-
-  fileExplorerWidget->loadSavedDir();
-  editorController->refresh();
-  editorWidget->setFocus();
 }
 
 CloseDecision
@@ -458,192 +306,6 @@ MainWindow::showTabCloseConfirmationDialog(const QList<int> &ids) {
     return CloseDecision::DontSave;
 
   return CloseDecision::Cancel;
-}
-
-void MainWindow::setActiveEditor(neko::Editor *newEditor) {
-  editorController->setEditor(newEditor);
-
-  if (!newEditor) {
-    editorWidget->setEditorController(nullptr);
-    gutterWidget->setEditorController(nullptr);
-  } else {
-    editorWidget->setEditorController(editorController);
-    gutterWidget->setEditorController(editorController);
-  }
-}
-
-void MainWindow::refreshStatusBarCursor() {
-  if (!editorController) {
-    return;
-  }
-
-  auto cursorPosition = editorController->getLastAddedCursor();
-  int numberOfCursors = editorController->getCursorPositions().size();
-  statusBarWidget->updateCursorPosition(cursorPosition.row, cursorPosition.col,
-                                        numberOfCursors);
-}
-
-SaveResult MainWindow::saveTab(int id, bool isSaveAs) {
-  if (workspaceController->saveTab(id, isSaveAs)) {
-    tabBarWidget->setTabModified(id, false);
-
-    updateTabBar();
-
-    return SaveResult::Saved;
-  }
-
-  qDebug() << "Save as failed";
-  return SaveResult::Failed;
-}
-
-void MainWindow::updateTabBar() {
-  auto rawTitles = tabController->getTabTitles();
-  int count = rawTitles.size();
-
-  QStringList tabTitles;
-  QStringList tabPaths;
-  for (int i = 0; i < rawTitles.size(); i++) {
-    tabTitles.append(QString::fromUtf8(rawTitles[i]));
-
-    const int id = tabController->getTabId(i);
-    auto path = tabController->getTabPath(id);
-    tabPaths.append(path);
-  }
-
-  rust::Vec<bool> modifieds = tabController->getTabModifiedStates();
-  rust::Vec<bool> pinnedStates = tabController->getTabPinnedStates();
-
-  tabBarWidget->setTabs(tabTitles, tabPaths, modifieds, pinnedStates);
-  tabBarWidget->setCurrentId(tabController->getActiveTabId());
-
-  if (rawTitles.size() != 0) {
-    setActiveEditor(&appStateController->getActiveEditorMut());
-  } else {
-    setActiveEditor(nullptr);
-  }
-}
-
-void MainWindow::handleTabsClosed(QList<int> &closedIds) {
-  int newTabCount = tabController->getTabCount();
-  statusBarWidget->onTabClosed(newTabCount);
-  switchToActiveTab();
-  updateTabBar();
-}
-
-void MainWindow::onTabChanged(int id) {
-  saveCurrentScrollState();
-  tabController->setActiveTab(id);
-
-  switchToActiveTab();
-  updateTabBar();
-}
-
-void MainWindow::onTabUnpinRequested(int id) {
-  tabController->unpinTab(id);
-  updateTabBar();
-}
-
-void MainWindow::onNewTabRequested() {
-  saveCurrentScrollState();
-
-  tabController->addTab();
-
-  updateTabBar();
-  switchToActiveTab();
-}
-
-void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
-  if (tabController->getTabsEmpty()) {
-    // All tabs closed
-    tabBarContainer->hide();
-    editorWidget->hide();
-    gutterWidget->hide();
-    setActiveEditor(nullptr);
-    emptyStateWidget->show();
-
-    fileExplorerWidget->setFocus();
-  } else {
-    emptyStateWidget->hide();
-    tabBarContainer->show();
-    editorWidget->show();
-    gutterWidget->show();
-    statusBarWidget->showCursorPositionInfo();
-
-    neko::Editor &editor = appStateController->getActiveEditorMut();
-    setActiveEditor(&editor);
-    editorWidget->updateDimensions();
-    editorWidget->redraw();
-    gutterWidget->updateDimensions();
-    gutterWidget->redraw();
-
-    int currentId = tabController->getActiveTabId();
-
-    auto offsets = tabController->getTabScrollOffsets(currentId);
-    editorWidget->horizontalScrollBar()->setValue(offsets.x);
-    editorWidget->verticalScrollBar()->setValue(offsets.y);
-
-    refreshStatusBarCursor();
-
-    if (shouldFocusEditor) {
-      editorWidget->setFocus();
-    }
-  }
-}
-
-void MainWindow::closeTab(int id, bool forceClose) {
-  // TODO: Focus remaining tabs after close process
-  auto closeTab = [this](int id, bool forceClose) {
-    // Save current scroll offset before closing
-    saveCurrentScrollState();
-
-    auto ids = workspaceController->closeTab(id, forceClose);
-    if (!ids.empty()) {
-      handleTabsClosed(ids);
-    }
-  };
-
-  if (tabController->getTabCount() == 0) {
-    // Close the window
-    QApplication::quit();
-    return;
-  }
-
-  bool isPinned = tabController->getIsPinned(id);
-  if (isPinned && !forceClose) {
-    return;
-  }
-
-  closeTab(id, forceClose && !isPinned);
-}
-
-void MainWindow::closeOtherTabs(int id, bool forceClose) {
-  // TODO: Focus remaining tabs after close process
-  saveCurrentScrollState();
-
-  auto ids = workspaceController->closeOthers(id, forceClose);
-  if (!ids.empty()) {
-    handleTabsClosed(ids);
-  }
-}
-
-void MainWindow::closeLeftTabs(int id, bool forceClose) {
-  // TODO: Focus remaining tabs after close process
-  saveCurrentScrollState();
-
-  auto ids = workspaceController->closeLeft(id, forceClose);
-  if (!ids.empty()) {
-    handleTabsClosed(ids);
-  }
-}
-
-void MainWindow::closeRightTabs(int id, bool forceClose) {
-  // TODO: Focus remaining tabs after close process
-  saveCurrentScrollState();
-
-  auto ids = workspaceController->closeRight(id, forceClose);
-  if (!ids.empty()) {
-    handleTabsClosed(ids);
-  }
 }
 
 void MainWindow::onTabCopyPath(int id) {
@@ -710,7 +372,7 @@ void MainWindow::setupKeyboardShortcuts() {
   addShortcut(
       saveAction,
       seqFor("Tab::Save", QKeySequence(Qt::ControlModifier | Qt::Key_S)),
-      Qt::WindowShortcut, &MainWindow::onFileSaved);
+      Qt::WindowShortcut, [this]() { workspaceCoordinator->fileSaved(false); });
 
   // Cmd+Shift+S for save as
   QAction *saveAsAction = new QAction(this);
@@ -718,21 +380,22 @@ void MainWindow::setupKeyboardShortcuts() {
       saveAsAction,
       seqFor("Tab::SaveAs",
              QKeySequence(Qt::ControlModifier | Qt::ShiftModifier | Qt::Key_S)),
-      Qt::WindowShortcut, [this]() { onFileSaved(true); });
+      Qt::WindowShortcut, [this]() { workspaceCoordinator->fileSaved(true); });
 
   // Cmd+T for new tab
   QAction *newTabAction = new QAction(this);
   addShortcut(newTabAction,
               seqFor("Tab::New", QKeySequence(Qt::ControlModifier | Qt::Key_T)),
-              Qt::WindowShortcut, &MainWindow::onNewTabRequested);
+              Qt::WindowShortcut, [this]() { workspaceCoordinator->newTab(); });
 
   // Cmd+W for close tab
   QAction *closeTabAction = new QAction(this);
   addShortcut(
       closeTabAction,
       seqFor("Tab::Close", QKeySequence(Qt::ControlModifier | Qt::Key_W)),
-      Qt::WindowShortcut,
-      [this]() { closeTab(tabController->getActiveTabId(), false); });
+      Qt::WindowShortcut, [this]() {
+        workspaceCoordinator->closeTab(tabController->getActiveTabId(), false);
+      });
 
   // Cmd+Shift+W for force close tab (bypass unsaved confirmation)
   QAction *forceCloseTabAction = new QAction(this);
@@ -740,8 +403,10 @@ void MainWindow::setupKeyboardShortcuts() {
               seqFor("Tab::ForceClose",
                      QKeySequence(QKeySequence(Qt::ControlModifier,
                                                Qt::ShiftModifier, Qt::Key_W))),
-              Qt::WindowShortcut,
-              [this]() { closeTab(tabController->getActiveTabId(), true); });
+              Qt::WindowShortcut, [this]() {
+                workspaceCoordinator->closeTab(tabController->getActiveTabId(),
+                                               true);
+              });
 
   // Cmd+Tab for next tab
   QAction *nextTabAction = new QAction(this);
@@ -767,7 +432,8 @@ void MainWindow::setupKeyboardShortcuts() {
                   return;
 
                 const int nextIndex = (currentIndex + 1) % tabCount;
-                onTabChanged(tabController->getTabId(nextIndex));
+                workspaceCoordinator->tabChanged(
+                    tabController->getTabId(nextIndex));
               });
 
   // Cmd+Shift+Tab for previous tab
@@ -796,7 +462,7 @@ void MainWindow::setupKeyboardShortcuts() {
 
         const int prevIndex =
             (currentIndex == 0) ? (tabCount - 1) : (currentIndex - 1);
-        onTabChanged(tabController->getTabId(prevIndex));
+        workspaceCoordinator->tabChanged(tabController->getTabId(prevIndex));
       });
 
   // Ctrl+G for jump to
@@ -804,19 +470,16 @@ void MainWindow::setupKeyboardShortcuts() {
   addShortcut(
       jumpToAction,
       seqFor("Cursor::JumpTo", QKeySequence(Qt::ControlModifier | Qt::Key_G)),
-      Qt::WindowShortcut, [this]() { onCursorPositionClicked(); });
+      Qt::WindowShortcut,
+      [this]() { workspaceCoordinator->cursorPositionClicked(); });
 
   // Ctrl + E for File Explorer toggle
   QAction *toggleExplorerAction = new QAction(this);
   addShortcut(toggleExplorerAction,
               seqFor("FileExplorer::Toggle",
                      QKeySequence(Qt::ControlModifier | Qt::Key_E)),
-              Qt::WindowShortcut, [this]() {
-                onFileExplorerToggled();
-
-                bool isOpen = !fileExplorerWidget->isHidden();
-                emit onFileExplorerToggledViaShortcut(isOpen);
-              });
+              Qt::WindowShortcut,
+              [this]() { workspaceCoordinator->fileExplorerToggled(); });
 
   // Ctrl + H for focus File Explorer
   // TODO: Generalize this, i.e. "focus left widget/pane"
@@ -857,20 +520,6 @@ void MainWindow::onBufferChanged() {
   tabBarWidget->setTabModified(activeId, modified);
 }
 
-void MainWindow::switchToTabWithFile(const std::string &path) {
-  int index = tabController->getTabIndexByPath(path);
-  int id = tabController->getTabId(index);
-
-  if (index != -1) {
-    // Save current scroll offset
-    saveCurrentScrollState();
-
-    tabController->setActiveTab(id);
-    switchToActiveTab();
-    updateTabBar();
-  }
-}
-
 void MainWindow::saveCurrentScrollState() {
   if (tabController->getTabsEmpty()) {
     return;
@@ -889,7 +538,7 @@ void MainWindow::openConfig() {
   auto configPath = configManager->get_config_path();
 
   if (!configPath.empty()) {
-    onFileSelected(configPath.c_str());
+    workspaceCoordinator->fileSelected(configPath.c_str(), true);
   }
 }
 
@@ -1017,28 +666,28 @@ void MainWindow::registerCommands() {
     auto shiftPressed = QApplication::keyboardModifiers().testFlag(
         Qt::KeyboardModifier::ShiftModifier);
 
-    closeTab(ctx.tabId, shiftPressed);
+    workspaceCoordinator->closeTab(ctx.tabId, shiftPressed);
   });
   commandRegistry.registerCommand("tab.closeOthers", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
     auto shiftPressed = QApplication::keyboardModifiers().testFlag(
         Qt::KeyboardModifier::ShiftModifier);
 
-    closeOtherTabs(ctx.tabId, shiftPressed);
+    workspaceCoordinator->closeOtherTabs(ctx.tabId, shiftPressed);
   });
   commandRegistry.registerCommand("tab.closeLeft", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
     auto shiftPressed = QApplication::keyboardModifiers().testFlag(
         Qt::KeyboardModifier::ShiftModifier);
 
-    closeLeftTabs(ctx.tabId, shiftPressed);
+    workspaceCoordinator->closeLeftTabs(ctx.tabId, shiftPressed);
   });
   commandRegistry.registerCommand("tab.closeRight", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();
     auto shiftPressed = QApplication::keyboardModifiers().testFlag(
         Qt::KeyboardModifier::ShiftModifier);
 
-    closeRightTabs(ctx.tabId, shiftPressed);
+    workspaceCoordinator->closeRightTabs(ctx.tabId, shiftPressed);
   });
   commandRegistry.registerCommand("tab.copyPath", [this](const QVariant &v) {
     auto ctx = v.value<TabContext>();

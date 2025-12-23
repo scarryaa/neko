@@ -13,6 +13,7 @@
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/controllers/app_state_controller.h"
 #include "features/main_window/controllers/workspace_controller.h"
+#include "features/main_window/controllers/workspace_coordinator.h"
 #include "features/main_window/save_result.h"
 #include "features/status_bar/status_bar_widget.h"
 #include "features/tabs/controllers/tab_controller.h"
@@ -34,21 +35,6 @@ public:
   explicit MainWindow(QWidget *parent = nullptr);
   ~MainWindow();
 
-public slots:
-  void onFileExplorerToggled();
-  void onCursorPositionClicked();
-  void onCommandPaletteGoToPosition(int row, int col);
-  void onCommandPaletteCommand(const QString &command);
-
-private slots:
-  void onFileSelected(const std::string &filePath,
-                      bool shouldFocusEditor = true);
-  void onFileSaved(bool isSaveAs);
-
-signals:
-  void onFileExplorerToggledViaShortcut(bool isOpen);
-  void onThemeChanged(std::string newTheme);
-
 private:
   void setupWidgets(neko::Editor *editor, neko::FileTree *fileTree);
   void setupLayout();
@@ -57,29 +43,13 @@ private:
   QWidget *buildEditorSection(QWidget *emptyState);
   QSplitter *buildSplitter(QWidget *editorSideContainer);
   void connectSignals();
-  void applyInitialState();
   CloseDecision showTabCloseConfirmationDialog(const QList<int> &ids);
 
-  void setActiveEditor(neko::Editor *newEditor);
-  void refreshStatusBarCursor();
-  SaveResult saveTab(int id, bool isSaveAs);
-  void updateTabBar();
-  void handleTabsClosed(QList<int> &closedIds);
-  void onTabChanged(int id);
-  void onTabUnpinRequested(int id);
-  void onNewTabRequested();
-  void switchToActiveTab(bool shouldFocusEditor = true);
-
-  void closeTab(int id, bool forceClose);
-  void closeOtherTabs(int id, bool forceClose);
-  void closeLeftTabs(int id, bool forceClose);
-  void closeRightTabs(int id, bool forceClose);
   void onTabCopyPath(int id);
   void onTabReveal(int id);
 
   void setupKeyboardShortcuts();
   void onBufferChanged();
-  void switchToTabWithFile(const std::string &path);
   void saveCurrentScrollState();
   void openConfig();
   void applyTheme(const std::string &themeName);
@@ -96,12 +66,14 @@ private:
   rust::Box<neko::ShortcutsManager> shortcutsManager;
   EditorController *editorController;
   TabController *tabController;
+  WorkspaceCoordinator *workspaceCoordinator;
   WorkspaceController *workspaceController;
   AppStateController *appStateController;
   CommandRegistry commandRegistry;
   ContextMenuRegistry contextMenuRegistry;
 
   QWidget *emptyStateWidget;
+  QPushButton *emptyStateNewTabButton;
   FileExplorerWidget *fileExplorerWidget;
   CommandPaletteWidget *commandPaletteWidget;
   EditorWidget *editorWidget;
