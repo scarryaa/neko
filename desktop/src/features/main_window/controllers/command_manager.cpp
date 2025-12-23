@@ -7,53 +7,56 @@ CommandManager::CommandManager(CommandRegistry *commandRegistry,
       contextMenuRegistry(contextMenuRegistry),
       workspaceCoordinator(workspaceCoordinator) {}
 
-CommandManager::~CommandManager() {}
-
 void CommandManager::registerCommands() {
-  // TODO: Clean this up
-  commandRegistry->registerCommand("tab.close", [this](const QVariant &v) {
-    auto ctx = v.value<TabContext>();
-    auto shiftPressed = QApplication::keyboardModifiers().testFlag(
-        Qt::KeyboardModifier::ShiftModifier);
-
-    workspaceCoordinator->closeTab(ctx.tabId, shiftPressed);
-  });
+  // TODO(scarlet): Clean this up
   commandRegistry->registerCommand(
-      "tab.closeOthers", [this](const QVariant &v) {
-        auto ctx = v.value<TabContext>();
+      "tab.close", [this](const QVariant &variant) {
+        auto ctx = variant.value<TabContext>();
+        auto shiftPressed = QApplication::keyboardModifiers().testFlag(
+            Qt::KeyboardModifier::ShiftModifier);
+
+        workspaceCoordinator->closeTab(ctx.tabId, shiftPressed);
+      });
+  commandRegistry->registerCommand(
+      "tab.closeOthers", [this](const QVariant &variant) {
+        auto ctx = variant.value<TabContext>();
         auto shiftPressed = QApplication::keyboardModifiers().testFlag(
             Qt::KeyboardModifier::ShiftModifier);
 
         workspaceCoordinator->closeOtherTabs(ctx.tabId, shiftPressed);
       });
-  commandRegistry->registerCommand("tab.closeLeft", [this](const QVariant &v) {
-    auto ctx = v.value<TabContext>();
-    auto shiftPressed = QApplication::keyboardModifiers().testFlag(
-        Qt::KeyboardModifier::ShiftModifier);
+  commandRegistry->registerCommand(
+      "tab.closeLeft", [this](const QVariant &variant) {
+        auto ctx = variant.value<TabContext>();
+        auto shiftPressed = QApplication::keyboardModifiers().testFlag(
+            Qt::KeyboardModifier::ShiftModifier);
 
-    workspaceCoordinator->closeLeftTabs(ctx.tabId, shiftPressed);
-  });
-  commandRegistry->registerCommand("tab.closeRight", [this](const QVariant &v) {
-    auto ctx = v.value<TabContext>();
-    auto shiftPressed = QApplication::keyboardModifiers().testFlag(
-        Qt::KeyboardModifier::ShiftModifier);
+        workspaceCoordinator->closeLeftTabs(ctx.tabId, shiftPressed);
+      });
+  commandRegistry->registerCommand(
+      "tab.closeRight", [this](const QVariant &variant) {
+        auto ctx = variant.value<TabContext>();
+        auto shiftPressed = QApplication::keyboardModifiers().testFlag(
+            Qt::KeyboardModifier::ShiftModifier);
 
-    workspaceCoordinator->closeRightTabs(ctx.tabId, shiftPressed);
-  });
-  commandRegistry->registerCommand("tab.copyPath", [this](const QVariant &v) {
-    auto ctx = v.value<TabContext>();
-    workspaceCoordinator->tabCopyPath(ctx.tabId);
-  });
-  commandRegistry->registerCommand("tab.reveal", [this](const QVariant &v) {
-    auto ctx = v.value<TabContext>();
-    workspaceCoordinator->tabReveal(ctx.tabId);
-  });
+        workspaceCoordinator->closeRightTabs(ctx.tabId, shiftPressed);
+      });
+  commandRegistry->registerCommand(
+      "tab.copyPath", [this](const QVariant &variant) {
+        auto ctx = variant.value<TabContext>();
+        workspaceCoordinator->tabCopyPath(ctx.tabId);
+      });
+  commandRegistry->registerCommand("tab.reveal",
+                                   [this](const QVariant &variant) {
+                                     auto ctx = variant.value<TabContext>();
+                                     workspaceCoordinator->tabReveal(ctx.tabId);
+                                   });
 }
 
 void CommandManager::registerProviders() {
-  // TODO: Centralize this
-  contextMenuRegistry->registerProvider("tab", [](const QVariant &v) {
-    const auto ctx = v.value<TabContext>();
+  // TODO(scarlet): Centralize this
+  contextMenuRegistry->registerProvider("tab", [](const QVariant &variant) {
+    const auto ctx = variant.value<TabContext>();
 
     QVector<ContextMenuItem> items;
 

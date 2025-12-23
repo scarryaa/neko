@@ -28,10 +28,13 @@ double getTitleBarContentMargin();
 QIcon createColorizedIcon(const QIcon &originalIcon, const QColor &color,
                           const QSize &size);
 QLabel *
-createLabel(QString text, QString styleSheet, QFont font = QFont(),
-            QWidget *parent = nullptr, bool wordWrap = true,
+createLabel(const QString &text, const QString &styleSheet,
+            const QFont &font = QFont(), QWidget *parent = nullptr,
+            bool wordWrap = true,
             QSizePolicy::Policy sizePolicyHorizontal = QSizePolicy::Expanding,
             QSizePolicy::Policy sizePolicyVertical = QSizePolicy::Expanding);
+
+static double constexpr MACOS_TRAFFIC_LIGHTS_MARGIN = 84.0;
 } // namespace UiUtils
 
 #endif // UI_UTILS_H

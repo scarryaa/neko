@@ -104,7 +104,6 @@ private:
   const double VIEWPORT_PADDING = 74.0;
 
   static constexpr int TRIPLE_CLICK_MS = 200;
-  static constexpr int MAX_TEXT_LINE_WIDTH = 1e9;
 };
 
 #endif // EDITOR_WIDGET_H

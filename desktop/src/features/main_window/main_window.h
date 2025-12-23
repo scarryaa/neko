@@ -30,7 +30,7 @@ class MainWindow : public QMainWindow {
 
 public:
   explicit MainWindow(QWidget *parent = nullptr);
-  ~MainWindow();
+  ~MainWindow() override = default;
 
 private:
   void setupWidgets(neko::Editor *editor, neko::FileTree *fileTree);
@@ -69,6 +69,12 @@ private:
   QPushButton *newTabButton;
   QSplitter *mainSplitter;
   WorkspaceUiHandles uiHandles;
+
+  static double constexpr SPLITTER_LARGE_WIDTH = 1000000.0;
+  static double constexpr EMPTY_STATE_NEW_TAB_BUTTON_WIDTH = 80.0;
+  static double constexpr EMPTY_STATE_NEW_TAB_BUTTON_HEIGHT = 35.0;
+  static double constexpr TOP_TAB_BAR_PADDING = 8.0;
+  static double constexpr BOTTOM_TAB_BAR_PADDING = 8.0;
 };
 
 #endif // MAIN_WINDOW_H

@@ -21,7 +21,7 @@ public:
                            neko::ConfigManager &configManager,
                            neko::ThemeManager &themeManager,
                            QWidget *parent = nullptr);
-  ~StatusBarWidget();
+  ~StatusBarWidget() override = default;
 
   void applyTheme();
   void updateCursorPosition(int row, int col, int numberOfCursors);
@@ -49,6 +49,12 @@ private:
   double m_height;
   QPushButton *fileExplorerToggleButton;
   QPushButton *cursorPosition;
+
+  static double constexpr ICON_SIZE = 18.0;
+  static double constexpr HORIZONTAL_CONTENT_MARGIN = 10.0;
+  static double constexpr VERTICAL_CONTENT_MARGIN = 5.0;
+  static double constexpr TOP_PADDING = 8.0;
+  static double constexpr BOTTOM_PADDING = 8.0;
 };
 
 #endif // STATUS_BAR_WIDGET_H

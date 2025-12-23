@@ -23,8 +23,9 @@ public:
 
   void applyTheme();
 
+  // NOLINTNEXTLINE
 public slots:
-  void onDirChanged(std::string newDir);
+  void onDirChanged(const std::string &newDir);
 
 signals:
   void directorySelectionButtonPressed();
@@ -43,6 +44,11 @@ private:
   QPushButton *m_directorySelectionButton;
   QPoint m_clickPos;
   QString m_currentDir;
+
+  static double constexpr TOP_PADDING = 8.0;
+  static double constexpr BOTTOM_PADDING = 8.0;
+  static double constexpr RIGHT_CONTENT_MARGIN = 10.0;
+  static double constexpr VERTICAL_CONTENT_MARGIN = 5.0;
 };
 
 #endif // TITLE_BAR_WIDGET_H

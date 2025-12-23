@@ -1,32 +1,36 @@
 #include "tab_widget.h"
+#include "utils/gui_utils.h"
 
-TabWidget::TabWidget(const QString &title, const QString &path, int index,
-                     int id, bool isPinned, neko::ConfigManager &configManager,
+#include <utility>
+
+// NOLINTNEXTLINE
+TabWidget::TabWidget(const QString &title, QString path, int index, int tabId,
+                     bool isPinned, neko::ConfigManager &configManager,
                      neko::ThemeManager &themeManager,
                      ContextMenuRegistry &contextMenuRegistry,
                      CommandRegistry &commandRegistry,
                      GetTabCountFn getTabCount, QWidget *parent)
     : QWidget(parent), configManager(configManager), themeManager(themeManager),
       contextMenuRegistry(contextMenuRegistry),
-      commandRegistry(commandRegistry), title(title), path(path),
-      isPinned(isPinned), index(index), id(id), isActive(false),
+      commandRegistry(commandRegistry), title(title), path(std::move(path)),
+      isPinned(isPinned), index(index), tabId(tabId), isActive(false),
       getTabCount_(std::move(getTabCount)) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 
   // Height = Font Height + Top Padding (8) + Bottom Padding (8)
-  QFontMetrics fm(uiFont);
-  int dynamicHeight = fm.height() + 16;
+  QFontMetrics fontMetrics(uiFont);
+  int dynamicHeight =
+      static_cast<int>(fontMetrics.height() + TOP_PADDING + BOTTOM_PADDING);
   setFixedHeight(dynamicHeight);
 
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
   setMouseTracking(true);
 
   double titleWidth = measureText(title);
-  setMinimumWidth(12 + titleWidth + 44);
+  setMinimumWidth(LEFT_PADDING_PX + static_cast<int>(titleWidth) +
+                  MIN_RIGHT_EXTRA_PX);
 }
-
-TabWidget::~TabWidget() {}
 
 void TabWidget::setActive(bool active) {
   isActive = active;
@@ -45,7 +49,7 @@ void TabWidget::setIsPinned(bool isPinned) {
 
 bool TabWidget::getIsPinned() const { return isPinned; }
 
-int TabWidget::getId() const { return id; }
+int TabWidget::getId() const { return tabId; }
 
 void TabWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
@@ -84,42 +88,41 @@ void TabWidget::paintEvent(QPaintEvent *event) {
   }
 
   // Text
-  QRect textRect = rect().adjusted(12, 0, -30, 0);
   painter.setPen(isActive ? foregroundColor : foregroundMutedColor);
-  painter.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, title);
+  painter.drawText(titleRect(), Qt::AlignLeft | Qt::AlignVCenter, title);
 
   // Modified marker
   if (isModified) {
-    QRect modifiedRect(width() - 37, (height() - 6) / 2, 6, 6);
     painter.setPen(Qt::NoPen);
     painter.setBrush(modifiedColor);
-    painter.drawEllipse(modifiedRect);
+    painter.drawEllipse(modifiedRect());
   }
 
-  // Close button hover rect
-  QRect closeRect(width() - 24, (height() - 12) / 2, 12, 12);
+  const QRect cRect = closeRect();
   if (isCloseHovered) {
     painter.setPen(Qt::NoPen);
-    painter.setBrush(QBrush(QColor(255, 255, 255, 60)));
-    painter.drawRoundedRect(closeRect.adjusted(-3, -3, 3, 3), 4, 4);
+    auto closeHoverColor =
+        UiUtils::getThemeColor(themeManager, "ui.background.hover");
+    painter.setBrush(closeHoverColor);
+    painter.drawRoundedRect(closeHitRect(), 4, 4);
   }
 
-  // Close button
-  QPen closePen = QPen(isCloseHovered ? foregroundColor : foregroundMutedColor);
-  closePen.setWidthF(1.5);
+  // Close button glyph
+  QPen closePen(isCloseHovered ? foregroundColor : foregroundMutedColor);
+  closePen.setWidthF(CLOSE_PEN_THICKNESS);
   closePen.setCapStyle(Qt::RoundCap);
 
   if (isPinned) {
     QIcon pinIcon = QIcon::fromTheme("pin");
-
     if (!pinIcon.isNull()) {
-      const QSize iconSize(12, 12);
+      const QSize iconSize(PIN_ICON_SIZE_PX, PIN_ICON_SIZE_PX);
       const QColor iconColor(isCloseHovered ? foregroundColor
                                             : foregroundMutedColor);
+
       QIcon colorizedIcon =
           UiUtils::createColorizedIcon(pinIcon, iconColor, iconSize);
-
       const QPixmap basePixmap = colorizedIcon.pixmap(iconSize);
+
       QPixmap boldPixmap(iconSize);
       boldPixmap.fill(Qt::transparent);
 
@@ -132,14 +135,21 @@ void TabWidget::paintEvent(QPaintEvent *event) {
       iconPainter.drawPixmap(0, 1, basePixmap);
       iconPainter.end();
 
-      painter.drawPixmap(closeRect.adjusted(0, 1, 0, 1).topLeft(), boldPixmap);
+      painter.drawPixmap(
+          cRect.adjusted(0, PIN_ICON_NUDGE_Y_PX, 0, PIN_ICON_NUDGE_Y_PX)
+              .topLeft(),
+          boldPixmap);
     }
   } else {
     painter.setPen(closePen);
-    painter.drawLine(closeRect.topLeft() + QPoint(2, 2),
-                     closeRect.bottomRight() - QPoint(2, 2));
-    painter.drawLine(closeRect.topRight() + QPoint(-2, 2),
-                     closeRect.bottomLeft() - QPoint(-2, 2));
+    painter.drawLine(cRect.topLeft() +
+                         QPoint(CLOSE_GLYPH_INSET_PX, CLOSE_GLYPH_INSET_PX),
+                     cRect.bottomRight() -
+                         QPoint(CLOSE_GLYPH_INSET_PX, CLOSE_GLYPH_INSET_PX));
+    painter.drawLine(cRect.topRight() +
+                         QPoint(-CLOSE_GLYPH_INSET_PX, CLOSE_GLYPH_INSET_PX),
+                     cRect.bottomLeft() +
+                         QPoint(CLOSE_GLYPH_INSET_PX, -CLOSE_GLYPH_INSET_PX));
   }
 }
 
@@ -150,9 +160,7 @@ void TabWidget::mousePressEvent(QMouseEvent *event) {
       modifiers.testFlag(Qt::KeyboardModifier::ShiftModifier);
 
   if (event->button() == Qt::LeftButton) {
-    QRect closeRect(width() - 24, (height() - 12) / 2, 12, 12);
-
-    if (closeRect.adjusted(-3, -3, 3, 3).contains(event->pos())) {
+    if (closeHitRect().contains(event->pos())) {
       dragEligible = false;
       dragInProgress = false;
 
@@ -162,24 +170,26 @@ void TabWidget::mousePressEvent(QMouseEvent *event) {
       }
 
       emit closeRequested(shiftPressed);
-    } else {
-      dragStartPosition = event->pos();
-      dragEligible = true;
-      dragInProgress = false;
+      return;
     }
+
+    dragStartPosition = event->pos();
+    dragEligible = true;
+    dragInProgress = false;
   } else if (event->button() == Qt::MiddleButton) {
     dragEligible = false;
     dragInProgress = false;
 
-    if (isPinned)
+    if (isPinned) {
       return;
+    }
 
     emit closeRequested(shiftPressed);
   }
 }
 
 void TabWidget::mouseMoveEvent(QMouseEvent *event) {
-  if ((event->buttons() & Qt::LeftButton) && dragEligible) {
+  if (((event->buttons() & Qt::LeftButton) != 0U) && dragEligible) {
     const int dragDistance =
         (event->pos() - dragStartPosition).manhattanLength();
 
@@ -202,14 +212,7 @@ void TabWidget::mouseMoveEvent(QMouseEvent *event) {
     }
   }
 
-  QRect closeRect(width() - 24, (height() - 12) / 2, 12, 12);
-
-  if (closeRect.adjusted(-3, -3, 3, 3).contains(event->pos())) {
-    isCloseHovered = true;
-  } else {
-    isCloseHovered = false;
-  }
-
+  isCloseHovered = closeHitRect().contains(event->pos());
   update();
 }
 
@@ -233,26 +236,51 @@ void TabWidget::leaveEvent(QEvent *event) {
   update();
 }
 
-double TabWidget::measureText(QString text) {
+double TabWidget::measureText(const QString &text) {
   return fontMetrics().horizontalAdvance(text);
+}
+
+QRect TabWidget::closeRect() const {
+  const int yPos = (height() - CLOSE_BUTTON_SIZE_PX) / 2;
+  const int xPos = width() - CLOSE_BUTTON_RIGHT_INSET_PX;
+  return {xPos, yPos, CLOSE_BUTTON_SIZE_PX, CLOSE_BUTTON_SIZE_PX};
+}
+
+QRect TabWidget::closeHitRect() const {
+  return closeRect().adjusted(-CLOSE_HIT_INFLATE_PX, -CLOSE_HIT_INFLATE_PX,
+                              CLOSE_HIT_INFLATE_PX, CLOSE_HIT_INFLATE_PX);
+}
+
+QRect TabWidget::titleRect() const {
+  // Left padding, reserve right side for close/modifier area
+  return rect().adjusted(LEFT_PADDING_PX, 0, -RIGHT_RESERVED_FOR_CONTROLS_PX,
+                         0);
+}
+
+QRect TabWidget::modifiedRect() const {
+  const int yPos = (height() - MODIFIED_DOT_SIZE_PX) / 2;
+  const int xPos = width() - MODIFIED_DOT_RIGHT_INSET_PX;
+  return {xPos, yPos, MODIFIED_DOT_SIZE_PX, MODIFIED_DOT_SIZE_PX};
 }
 
 void TabWidget::contextMenuEvent(QContextMenuEvent *event) {
   TabContext ctx{};
-  ctx.tabId = id;
+  ctx.tabId = tabId;
   ctx.isPinned = isPinned;
   ctx.isModified = isModified;
   ctx.filePath = path;
   ctx.canCloseOthers = getTabCount_() > 1;
 
-  const QVariant v = QVariant::fromValue(ctx);
-  const auto items = contextMenuRegistry.build("tab", v);
+  const QVariant variant = QVariant::fromValue(ctx);
+  const auto items = contextMenuRegistry.build("tab", variant);
 
   auto *menu = new ContextMenuWidget(&themeManager, &configManager);
   menu->setItems(items);
 
   connect(menu, &ContextMenuWidget::actionTriggered, this,
-          [this, v](const QString &id) { commandRegistry.run(id, v); });
+          [this, variant](const QString &actionId) {
+            commandRegistry.run(actionId, variant);
+          });
 
   menu->showMenu(event->globalPos());
   event->accept();

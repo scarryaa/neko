@@ -36,8 +36,6 @@ WorkspaceCoordinator::WorkspaceCoordinator(
   setActiveEditor(&activeEditor);
 }
 
-WorkspaceCoordinator::~WorkspaceCoordinator() {}
-
 void WorkspaceCoordinator::fileExplorerToggled() {
   bool isOpen = uiHandles->fileExplorerWidget->isHidden();
 
@@ -65,13 +63,14 @@ void WorkspaceCoordinator::cursorPositionClicked() {
     return;
   }
 
-  auto maxCol =
-      std::max<size_t>(1, editorController->getLineLength(cursor.row));
+  auto maxCol = std::max<size_t>(
+      1, editorController->getLineLength(static_cast<int>(cursor.row)));
   auto lastLineMaxCol =
       std::max<size_t>(1, editorController->getLineLength(lineCount - 1));
 
   uiHandles->commandPaletteWidget->jumpToRowColumn(
-      cursor.row, cursor.col, maxCol, lineCount, lastLineMaxCol);
+      static_cast<int>(cursor.row), static_cast<int>(cursor.col),
+      static_cast<int>(maxCol), lineCount, static_cast<int>(lastLineMaxCol));
 }
 
 void WorkspaceCoordinator::commandPaletteGoToPosition(int row, int col) {
@@ -128,9 +127,9 @@ void WorkspaceCoordinator::fileSelected(const std::string &path,
     }
 
     // If file already open, just activate it
-    for (const auto &t : snapshot.tabs) {
-      if (t.path_present && t.path == path) {
-        tabController->setActiveTab(static_cast<int>(t.id));
+    for (const auto &tab : snapshot.tabs) {
+      if (tab.path_present && tab.path == path) {
+        tabController->setActiveTab(static_cast<int>(tab.id));
         refreshUiForActiveTab(focusEditor);
         updateTabBar();
         return;
@@ -154,7 +153,7 @@ void WorkspaceCoordinator::fileSaved(bool saveAs) {
   const auto snapshot = tabController->getTabsSnapshot();
 
   if (snapshot.active_present) {
-    const int activeId = snapshot.active_id;
+    const int activeId = static_cast<int>(snapshot.active_id);
     const bool success = workspaceController->saveTab(activeId, saveAs);
 
     if (success) {
@@ -172,32 +171,34 @@ void WorkspaceCoordinator::openConfig() {
   }
 }
 
-void WorkspaceCoordinator::tabCopyPath(int id) {
+void WorkspaceCoordinator::tabCopyPath(int tabId) {
   const auto snapshot = tabController->getTabsSnapshot();
   QString path = QString();
-  for (const auto &t : snapshot.tabs) {
-    if (t.id == id) {
-      path = QString::fromUtf8(t.path);
+  for (const auto &tab : snapshot.tabs) {
+    if (tab.id == tabId) {
+      path = QString::fromUtf8(tab.path);
     }
   }
 
-  if (path.isEmpty())
+  if (path.isEmpty()) {
     return;
+  }
 
   QApplication::clipboard()->setText(path);
 }
 
-void WorkspaceCoordinator::tabReveal(int id) {
+void WorkspaceCoordinator::tabReveal(int tabId) {
   const auto snapshot = tabController->getTabsSnapshot();
   QString path = QString();
-  for (const auto &t : snapshot.tabs) {
-    if (t.id == id) {
-      path = QString::fromUtf8(t.path);
+  for (const auto &tab : snapshot.tabs) {
+    if (tab.id == tabId) {
+      path = QString::fromUtf8(tab.path);
     }
   }
 
-  if (path.isEmpty())
+  if (path.isEmpty()) {
     return;
+  }
 
   uiHandles->fileExplorerWidget->showItem(path);
 }
@@ -211,27 +212,27 @@ void WorkspaceCoordinator::newTab() {
   refreshUiForActiveTab(true);
 }
 
-void WorkspaceCoordinator::tabChanged(int id) {
+void WorkspaceCoordinator::tabChanged(int tabId) {
   saveScrollOffsetsForActiveTab();
-  tabController->setActiveTab(id);
+  tabController->setActiveTab(tabId);
 
   refreshUiForActiveTab(true);
   updateTabBar();
 }
 
-void WorkspaceCoordinator::tabUnpinned(int id) {
-  tabController->unpinTab(id);
+void WorkspaceCoordinator::tabUnpinned(int tabId) {
+  tabController->unpinTab(tabId);
   updateTabBar();
 }
 
 void WorkspaceCoordinator::bufferChanged() {
   const auto snapshot = tabController->getTabsSnapshot();
-  int activeId = snapshot.active_id;
+  int activeId = static_cast<int>(snapshot.active_id);
 
   bool modified = false;
-  for (const auto &t : snapshot.tabs) {
-    if (t.id == activeId) {
-      modified = t.modified;
+  for (const auto &tab : snapshot.tabs) {
+    if (tab.id == activeId) {
+      modified = tab.modified;
       break;
     }
   }
@@ -241,27 +242,30 @@ void WorkspaceCoordinator::bufferChanged() {
 
 CloseDecision
 WorkspaceCoordinator::showTabCloseConfirmationDialog(const QList<int> &ids) {
-  if (ids.isEmpty())
+  if (ids.isEmpty()) {
     return CloseDecision::DontSave;
+  }
 
   const auto snapshot = tabController->getTabsSnapshot();
 
   QSet<int> idSet;
   idSet.reserve(ids.size());
-  for (int id : ids)
-    idSet.insert(id);
+  for (int tabId : ids) {
+    idSet.insert(tabId);
+  }
 
   int modifiedCount = 0;
-  for (const auto &t : snapshot.tabs) {
-    const int tid = static_cast<int>(t.id);
+  for (const auto &tab : snapshot.tabs) {
+    const int tabId = static_cast<int>(tab.id);
 
-    if (idSet.contains(tid) && t.modified) {
+    if (idSet.contains(tabId) && tab.modified) {
       modifiedCount++;
     }
   }
 
-  if (modifiedCount == 0)
+  if (modifiedCount == 0) {
     return CloseDecision::DontSave;
+  }
 
   QMessageBox box(QMessageBox::Warning, tr("Close Tabs"),
                   tr("%1 tab%2 unsaved edits.")
@@ -279,18 +283,20 @@ WorkspaceCoordinator::showTabCloseConfirmationDialog(const QList<int> &ids) {
 
   box.exec();
 
-  if (box.clickedButton() == saveBtn)
+  if (box.clickedButton() == saveBtn) {
     return CloseDecision::Save;
+  }
 
-  if (box.clickedButton() == dontSaveBtn)
+  if (box.clickedButton() == dontSaveBtn) {
     return CloseDecision::DontSave;
+  }
 
   return CloseDecision::Cancel;
 }
 
-SaveResult WorkspaceCoordinator::saveTab(int id, bool isSaveAs) {
-  if (workspaceController->saveTab(id, isSaveAs)) {
-    uiHandles->tabBarWidget->setTabModified(id, false);
+SaveResult WorkspaceCoordinator::saveTab(int tabId, bool isSaveAs) {
+  if (workspaceController->saveTab(tabId, isSaveAs)) {
+    uiHandles->tabBarWidget->setTabModified(tabId, false);
 
     updateTabBar();
 
@@ -301,13 +307,13 @@ SaveResult WorkspaceCoordinator::saveTab(int id, bool isSaveAs) {
   return SaveResult::Failed;
 }
 
-void WorkspaceCoordinator::closeTab(int id, bool forceClose) {
-  // TODO: Focus remaining tabs after close process
-  auto close = [this](int id, bool forceClose) {
+void WorkspaceCoordinator::closeTab(int tabId, bool forceClose) {
+  // TODO(scarlet): Focus remaining tabs after close process
+  auto close = [this](int tabId, bool forceClose) {
     // Save current scroll offset before closing
     saveScrollOffsetsForActiveTab();
 
-    auto ids = workspaceController->closeTab(id, forceClose);
+    auto ids = workspaceController->closeTab(tabId, forceClose);
     if (!ids.empty()) {
       handleTabsClosed();
     }
@@ -321,9 +327,9 @@ void WorkspaceCoordinator::closeTab(int id, bool forceClose) {
   }
 
   bool isPinned = false;
-  for (const auto &t : snapshot.tabs) {
-    if (id == t.id) {
-      isPinned = t.pinned;
+  for (const auto &tab : snapshot.tabs) {
+    if (tabId == tab.id) {
+      isPinned = tab.pinned;
     }
   }
 
@@ -331,34 +337,34 @@ void WorkspaceCoordinator::closeTab(int id, bool forceClose) {
     return;
   }
 
-  close(id, forceClose && !isPinned);
+  close(tabId, forceClose && !isPinned);
 }
 
-void WorkspaceCoordinator::closeLeftTabs(int id, bool forceClose) {
-  // TODO: Focus remaining tabs after close process
+void WorkspaceCoordinator::closeLeftTabs(int tabId, bool forceClose) {
+  // TODO(scarlet): Focus remaining tabs after close process
   saveScrollOffsetsForActiveTab();
 
-  auto ids = workspaceController->closeLeft(id, forceClose);
+  auto ids = workspaceController->closeLeft(tabId, forceClose);
   if (!ids.empty()) {
     handleTabsClosed();
   }
 }
 
-void WorkspaceCoordinator::closeRightTabs(int id, bool forceClose) {
-  // TODO: Focus remaining tabs after close process
+void WorkspaceCoordinator::closeRightTabs(int tabId, bool forceClose) {
+  // TODO(scarlet): Focus remaining tabs after close process
   saveScrollOffsetsForActiveTab();
 
-  auto ids = workspaceController->closeRight(id, forceClose);
+  auto ids = workspaceController->closeRight(tabId, forceClose);
   if (!ids.empty()) {
     handleTabsClosed();
   }
 }
 
-void WorkspaceCoordinator::closeOtherTabs(int id, bool forceClose) {
-  // TODO: Focus remaining tabs after close process
+void WorkspaceCoordinator::closeOtherTabs(int tabId, bool forceClose) {
+  // TODO(scarlet): Focus remaining tabs after close process
   saveScrollOffsetsForActiveTab();
 
-  auto ids = workspaceController->closeOthers(id, forceClose);
+  auto ids = workspaceController->closeOthers(tabId, forceClose);
 
   if (!ids.empty()) {
     handleTabsClosed();
@@ -382,25 +388,29 @@ void WorkspaceCoordinator::applyInitialState() {
 void WorkspaceCoordinator::saveScrollOffsetsForActiveTab() {
   const auto snapshot = tabController->getTabsSnapshot();
 
-  if (!snapshot.active_present)
+  if (!snapshot.active_present) {
     return;
+  }
 
-  int id = snapshot.active_id;
-  double x = uiHandles->editorWidget->horizontalScrollBar()->value();
-  double y = uiHandles->editorWidget->verticalScrollBar()->value();
-  neko::ScrollOffsetFfi scrollOffsets = {static_cast<int32_t>(x),
-                                         static_cast<int32_t>(y)};
+  int activeId = static_cast<int>(snapshot.active_id);
+  double horizontalScrollOffset =
+      uiHandles->editorWidget->horizontalScrollBar()->value();
+  double verticalScrollOffset =
+      uiHandles->editorWidget->verticalScrollBar()->value();
+  neko::ScrollOffsetFfi scrollOffsets = {
+      static_cast<int32_t>(horizontalScrollOffset),
+      static_cast<int32_t>(verticalScrollOffset)};
 
-  tabController->setTabScrollOffsets(id, scrollOffsets);
+  tabController->setTabScrollOffsets(activeId, scrollOffsets);
 }
 
 void WorkspaceCoordinator::restoreScrollOffsetsForActiveTab() {
   const auto snapshot = tabController->getTabsSnapshot();
 
   neko::ScrollOffsetFfi offsets;
-  for (const auto &t : snapshot.tabs) {
-    if (t.id == snapshot.active_id) {
-      offsets = t.scroll_offsets;
+  for (const auto &tab : snapshot.tabs) {
+    if (tab.id == snapshot.active_id) {
+      offsets = tab.scroll_offsets;
     }
   }
 
@@ -439,8 +449,9 @@ void WorkspaceCoordinator::refreshUiForActiveTab(bool focusEditor) {
   restoreScrollOffsetsForActiveTab();
   refreshStatusBarCursorInfo();
 
-  if (focusEditor)
+  if (focusEditor) {
     uiHandles->editorWidget->setFocus();
+  }
 }
 
 void WorkspaceCoordinator::updateTabBar() {
@@ -451,16 +462,16 @@ void WorkspaceCoordinator::updateTabBar() {
   QList<bool> modifiedStates = QList<bool>();
   QList<bool> pinnedStates = QList<bool>();
 
-  for (const auto &t : snapshot.tabs) {
-    tabTitles.append(QString::fromUtf8(t.title));
-    tabPaths.append(QString::fromUtf8(t.path));
-    modifiedStates.append(t.modified);
-    pinnedStates.append(t.pinned);
+  for (const auto &tab : snapshot.tabs) {
+    tabTitles.append(QString::fromUtf8(tab.title));
+    tabPaths.append(QString::fromUtf8(tab.path));
+    modifiedStates.append(tab.modified);
+    pinnedStates.append(tab.pinned);
   }
 
   uiHandles->tabBarWidget->setTabs(tabTitles, tabPaths, modifiedStates,
                                    pinnedStates);
-  uiHandles->tabBarWidget->setCurrentId(snapshot.active_id);
+  uiHandles->tabBarWidget->setCurrentId(static_cast<int>(snapshot.active_id));
 
   if (snapshot.active_present) {
     setActiveEditor(&appStateController->getActiveEditorMut());
@@ -471,7 +482,7 @@ void WorkspaceCoordinator::updateTabBar() {
 
 void WorkspaceCoordinator::handleTabsClosed() {
   const auto snapshot = tabController->getTabsSnapshot();
-  const int newTabCount = snapshot.tabs.size();
+  const int newTabCount = static_cast<int>(snapshot.tabs.size());
 
   uiHandles->statusBarWidget->onTabClosed(newTabCount);
   refreshUiForActiveTab(true);
@@ -486,12 +497,14 @@ void WorkspaceCoordinator::setActiveEditor(neko::Editor *editor) {
 }
 
 void WorkspaceCoordinator::refreshStatusBarCursorInfo() {
-  if (!editorController) {
+  if (editorController == nullptr) {
     return;
   }
 
   auto cursorPosition = editorController->getLastAddedCursor();
-  int numberOfCursors = editorController->getCursorPositions().size();
+  int numberOfCursors =
+      static_cast<int>(editorController->getCursorPositions().size());
   uiHandles->statusBarWidget->updateCursorPosition(
-      cursorPosition.row, cursorPosition.col, numberOfCursors);
+      static_cast<int>(cursorPosition.row),
+      static_cast<int>(cursorPosition.col), numberOfCursors);
 }

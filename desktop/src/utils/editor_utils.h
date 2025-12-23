@@ -18,7 +18,7 @@ double getLineTopY(size_t lineIndex, const ViewportContext &ctx);
 
 double getLineBottomY(size_t lineIndex, const ViewportContext &ctx);
 
-QRectF getLineRect(size_t lineIndex, double x1, double x2,
+QRectF getLineRect(size_t lineIndex, double x1Pos, double x2Pos,
                    const ViewportContext &ctx);
 
 #endif // EDITOR_UTILS_H

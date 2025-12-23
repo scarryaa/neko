@@ -1,5 +1,7 @@
 #include "tab_bar_widget.h"
 
+#include <algorithm>
+
 TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
                            neko::ThemeManager &themeManager,
                            ContextMenuRegistry &contextMenuRegistry,
@@ -11,9 +13,9 @@ TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 
-  // Height = Font Height + Top Padding (8) + Bottom Padding (8)
-  QFontMetrics fm(uiFont);
-  int dynamicHeight = fm.height() + 16;
+  QFontMetrics fontMetrics(uiFont);
+  int dynamicHeight =
+      static_cast<int>(fontMetrics.height() + TOP_PADDING + BOTTOM_PADDING);
   setFixedHeight(dynamicHeight);
 
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -43,8 +45,6 @@ TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
   applyTheme();
 }
 
-TabBarWidget::~TabBarWidget() {}
-
 void TabBarWidget::applyTheme() {
   auto backgroundColor =
       UiUtils::getThemeColor(themeManager, "tab_bar.background");
@@ -59,18 +59,20 @@ void TabBarWidget::applyTheme() {
       QString("background-color: %1;").arg(indicatorColor));
 
   for (auto *tab : tabs) {
-    if (tab) {
+    if (tab != nullptr) {
       tab->update();
     }
   }
 }
 
-void TabBarWidget::setTabs(QStringList titles, QStringList paths,
-                           QList<bool> modifiedStates,
-                           QList<bool> pinnedStates) {
+// NOLINTNEXTLINE
+void TabBarWidget::setTabs(const QStringList &titles, const QStringList &paths,
+                           // NOLINTNEXTLINE
+                           const QList<bool> &modifiedStates,
+                           const QList<bool> &pinnedStates) {
   QLayoutItem *item;
   while ((item = layout->takeAt(0)) != nullptr) {
-    if (item->widget() && item->widget() != newTabButton) {
+    if ((item->widget() != nullptr) && item->widget() != newTabButton) {
       item->widget()->deleteLater();
     }
     delete item;
@@ -79,61 +81,63 @@ void TabBarWidget::setTabs(QStringList titles, QStringList paths,
 
   // Create new tabs
   auto snapshot = tabController->getTabsSnapshot();
-  int i = 0;
-  for (const auto &t : snapshot.tabs) {
-    const int id = t.id;
-    const QString title = QString::fromUtf8(t.title);
-    const QString path = QString::fromUtf8(t.path);
-    const bool pinned = t.pinned;
-    const bool modified = t.modified;
+  int tabIndex = 0;
+  for (const auto &tab : snapshot.tabs) {
+    const int tabId = static_cast<int>(tab.id);
+    const QString title = QString::fromUtf8(tab.title);
+    const QString path = QString::fromUtf8(tab.path);
+    const bool pinned = tab.pinned;
+    const bool modified = tab.modified;
 
     auto *tabWidget = new TabWidget(
-        title, path, i, id, pinned, configManager, themeManager,
+        title, path, tabIndex, tabId, pinned, configManager, themeManager,
         contextMenuRegistry, commandRegistry,
         [this]() -> int {
           const auto snapshot = tabController->getTabsSnapshot();
-          return snapshot.tabs.size();
+          return static_cast<int>(snapshot.tabs.size());
         },
         this);
     tabWidget->setModified(modified);
     tabWidget->setIsPinned(pinned);
 
-    connect(tabWidget, &TabWidget::clicked, this, [this, id]() {
-      setCurrentId(id);
-      emit currentChanged(id);
+    connect(tabWidget, &TabWidget::clicked, this, [this, tabId]() {
+      setCurrentId(tabId);
+      emit currentChanged(tabId);
     });
     connect(tabWidget, &TabWidget::closeRequested, this,
-            [this, id](bool bypassConfirmation) {
-              emit tabCloseRequested(id, bypassConfirmation);
+            [this, tabId](bool bypassConfirmation) {
+              emit tabCloseRequested(tabId, bypassConfirmation);
             });
     connect(tabWidget, &TabWidget::unpinRequested, this,
-            [this, id]() { emit tabUnpinRequested(id); });
+            [this, tabId]() { emit tabUnpinRequested(tabId); });
 
     layout->addWidget(tabWidget);
     tabs.append(tabWidget);
 
-    i++;
+    tabIndex++;
   }
 
   layout->addStretch();
   updateTabAppearance();
 }
 
-void TabBarWidget::setCurrentId(int id) {
-  currentTabId = id;
+void TabBarWidget::setCurrentId(int tabId) {
+  currentTabId = tabId;
   updateTabAppearance();
 }
 
-void TabBarWidget::setTabModified(int id, bool modified) {
-  auto it = std::find_if(tabs.begin(), tabs.end(),
-                         [&](TabWidget *t) { return t && t->getId() == id; });
+void TabBarWidget::setTabModified(int tabId, bool modified) {
+  auto foundTabWidget =
+      std::find_if(tabs.begin(), tabs.end(), [&](TabWidget *tabWidget) {
+        return tabWidget && tabWidget->getId() == tabId;
+      });
 
-  if (it != tabs.end() && *it) {
-    (*it)->setModified(modified);
+  if (foundTabWidget != tabs.end() && (*foundTabWidget != nullptr)) {
+    (*foundTabWidget)->setModified(modified);
   }
 }
 
-int TabBarWidget::getNumberOfTabs() { return tabs.size(); }
+int TabBarWidget::getNumberOfTabs() { return static_cast<int>(tabs.size()); }
 
 void TabBarWidget::dragEnterEvent(QDragEnterEvent *event) {
   if (event->mimeData()->hasFormat("application/x-neko-tab-index")) {
@@ -155,24 +159,20 @@ void TabBarWidget::dragMoveEvent(QDragMoveEvent *event) {
 
     int pinnedCount = 0;
     for (auto *tab : tabs) {
-      if (tab && tab->getIsPinned()) {
+      if ((tab != nullptr) && tab->getIsPinned()) {
         pinnedCount += 1;
       }
     }
 
-    bool ok = false;
+    bool success = false;
     const int fromIndex =
-        event->mimeData()->data("application/x-neko-tab-index").toInt(&ok);
-    if (ok && fromIndex >= 0 && fromIndex < tabs.size()) {
+        event->mimeData()->data("application/x-neko-tab-index").toInt(&success);
+    if (success && fromIndex >= 0 && fromIndex < tabs.size()) {
       const bool draggingPinned = tabs[fromIndex]->getIsPinned();
       if (draggingPinned) {
-        if (toIndex > pinnedCount) {
-          toIndex = pinnedCount;
-        }
+        toIndex = std::min(toIndex, pinnedCount);
       } else {
-        if (toIndex < pinnedCount) {
-          toIndex = pinnedCount;
-        }
+        toIndex = std::max(toIndex, pinnedCount);
       }
     }
 
@@ -195,10 +195,10 @@ void TabBarWidget::dropEvent(QDropEvent *event) {
 
   const QByteArray data =
       event->mimeData()->data("application/x-neko-tab-index");
-  bool ok = false;
-  const int fromIndex = data.toInt(&ok);
+  bool success = false;
+  const int fromIndex = data.toInt(&success);
 
-  if (!ok || fromIndex < 0 || fromIndex >= tabs.size()) {
+  if (!success || fromIndex < 0 || fromIndex >= tabs.size()) {
     event->ignore();
     return;
   }
@@ -210,20 +210,16 @@ void TabBarWidget::dropEvent(QDropEvent *event) {
   int pinnedCount = 0;
 
   for (auto *tab : tabs) {
-    if (tab && tab->getIsPinned()) {
+    if ((tab != nullptr) && tab->getIsPinned()) {
       pinnedCount += 1;
     }
   }
 
   const bool draggingPinned = tabs[fromIndex]->getIsPinned();
   if (draggingPinned) {
-    if (toIndex > pinnedCount) {
-      toIndex = pinnedCount;
-    }
+    toIndex = std::min(toIndex, pinnedCount);
   } else {
-    if (toIndex < pinnedCount) {
-      toIndex = pinnedCount;
-    }
+    toIndex = std::max(toIndex, pinnedCount);
   }
 
   if (fromIndex == toIndex || fromIndex + 1 == toIndex) {
@@ -270,7 +266,7 @@ int TabBarWidget::dropIndexForPosition(const QPoint &pos) const {
     }
   }
 
-  return tabs.size();
+  return static_cast<int>(tabs.size());
 }
 
 void TabBarWidget::updateDropIndicator(int index) {
@@ -279,17 +275,17 @@ void TabBarWidget::updateDropIndicator(int index) {
     return;
   }
 
-  int x = 0;
+  int xPos = 0;
   int height = containerWidget->height();
   if (index <= 0) {
-    x = tabs.first()->geometry().left();
+    xPos = tabs.first()->geometry().left();
   } else if (index >= tabs.size()) {
-    x = tabs.last()->geometry().right() + 1;
+    xPos = tabs.last()->geometry().right() + 1;
   } else {
-    x = tabs[index]->geometry().left();
+    xPos = tabs[index]->geometry().left();
   }
 
-  dropIndicator->setGeometry(x - 1, 0, 2, height);
+  dropIndicator->setGeometry(xPos - 1, 0, 2, height);
   dropIndicator->setVisible(true);
   dropIndicator->raise();
 }
@@ -297,21 +293,22 @@ void TabBarWidget::updateDropIndicator(int index) {
 void TabBarWidget::updateTabAppearance() {
   const auto snapshot = tabController->getTabsSnapshot();
 
-  int i = 0;
-  for (const auto &t : snapshot.tabs) {
-    tabs[i]->setActive(t.id == currentTabId);
-    i++;
+  int index = 0;
+  for (const auto &tab : snapshot.tabs) {
+    tabs[index]->setActive(tab.id == currentTabId);
+    index++;
   }
 }
 
 void TabBarWidget::registerCommands() {
-  // TODO: Centralize these
-  commandRegistry.registerCommand("tab.copyPath", [this](const QVariant &v) {
-    auto ctx = v.value<TabContext>();
-    QGuiApplication::clipboard()->setText(ctx.filePath);
-  });
-  commandRegistry.registerCommand("tab.pin", [this](const QVariant &v) {
-    auto ctx = v.value<TabContext>();
+  // TODO(scarlet): Centralize these
+  commandRegistry.registerCommand(
+      "tab.copyPath", [this](const QVariant &variant) {
+        auto ctx = variant.value<TabContext>();
+        QGuiApplication::clipboard()->setText(ctx.filePath);
+      });
+  commandRegistry.registerCommand("tab.pin", [this](const QVariant &variant) {
+    auto ctx = variant.value<TabContext>();
 
     tabController->setActiveTab(ctx.tabId);
     if (ctx.isPinned) {
@@ -321,6 +318,6 @@ void TabBarWidget::registerCommands() {
     }
 
     const auto snapshot = tabController->getTabsSnapshot();
-    emit tabPinnedChanged(snapshot.active_id);
+    emit tabPinnedChanged(static_cast<int>(snapshot.active_id));
   });
 }

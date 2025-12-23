@@ -20,19 +20,15 @@ ThemeManager::ThemeManager(neko::ThemeManager *nekoThemeManager,
           &CommandPaletteWidget::applyTheme);
 }
 
-ThemeManager::~ThemeManager() {}
-
 void ThemeManager::applyTheme(const std::string &themeName) {
-  std::string targetTheme = themeName;
-
-  if (targetTheme.empty()) {
+  if (themeName.empty()) {
     return;
   }
 
-  nekoThemeManager->set_theme(targetTheme);
+  nekoThemeManager->set_theme(themeName);
   emit themeChanged();
 
-  if (uiHandles->newTabButton) {
+  if (uiHandles->newTabButton != nullptr) {
     QString newTabButtonBackgroundColor =
         UiUtils::getThemeColor(*nekoThemeManager, "ui.background");
     QString newTabButtonForegroundColor =
@@ -59,7 +55,7 @@ void ThemeManager::applyTheme(const std::string &themeName) {
     uiHandles->newTabButton->setStyleSheet(newTabButtonStylesheet);
   }
 
-  if (uiHandles->emptyStateWidget) {
+  if (uiHandles->emptyStateWidget != nullptr) {
     QString accentMutedColor =
         UiUtils::getThemeColor(*nekoThemeManager, "ui.accent.muted");
     QString foregroundColor =
@@ -75,7 +71,7 @@ void ThemeManager::applyTheme(const std::string &themeName) {
     uiHandles->emptyStateWidget->setStyleSheet(emptyStateStylesheet);
   }
 
-  if (uiHandles->mainSplitter) {
+  if (uiHandles->mainSplitter != nullptr) {
     QString borderColor =
         UiUtils::getThemeColor(*nekoThemeManager, "ui.border");
     QString splitterStylesheet = QString("QSplitter::handle {"

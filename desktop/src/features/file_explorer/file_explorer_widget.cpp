@@ -16,7 +16,7 @@ FileExplorerWidget::FileExplorerWidget(neko::FileTree *tree,
 
   applyTheme();
 
-  auto layout = new QVBoxLayout();
+  auto *layout = new QVBoxLayout();
   layout->addWidget(directorySelectionButton, 0, Qt::AlignCenter);
   setLayout(layout);
 
@@ -28,9 +28,7 @@ FileExplorerWidget::FileExplorerWidget(neko::FileTree *tree,
           [this]() { redraw(); });
 }
 
-FileExplorerWidget::~FileExplorerWidget() {}
-
-void FileExplorerWidget::initialize(std::string path) {
+void FileExplorerWidget::initialize(const std::string &path) {
   tree->set_root_dir(path);
   emit directorySelected(path);
   loadDirectory(path);
@@ -55,7 +53,7 @@ void FileExplorerWidget::applyTheme() {
   setStyleSheet(UiUtils::getScrollBarStylesheet(
       themeManager, "FileExplorerWidget", backgroundColor));
 
-  if (directorySelectionButton) {
+  if (directorySelectionButton != nullptr) {
     QString buttonBg = UiUtils::getThemeColor(themeManager, "ui.accent");
     QString buttonHover =
         UiUtils::getThemeColor(themeManager, "ui.accent.hover");
@@ -114,6 +112,8 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
     case Qt::Key_0:
       resetFontSize();
       return;
+    default:
+      break;
     }
   }
 
@@ -147,10 +147,12 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
     } else {
       handleDeleteConfirm();
     }
+  default:
+    break;
   }
 
   if (shouldScroll) {
-    int index = tree->get_current_index();
+    int index = static_cast<int>(tree->get_current_index());
     scrollToNode(index);
   }
 
@@ -197,16 +199,16 @@ void FileExplorerWidget::paintEvent(QPaintEvent *event) {
 void FileExplorerWidget::wheelEvent(QWheelEvent *event) {
   auto horizontalScrollOffset = horizontalScrollBar()->value();
   auto verticalScrollOffset = verticalScrollBar()->value();
-  double verticalDelta =
-      (event->isInverted() ? -1 : 1) * event->angleDelta().y() / 4.0;
-  double horizontallDelta =
-      (event->isInverted() ? -1 : 1) * event->angleDelta().x() / 4.0;
+  double verticalDelta = (event->isInverted() ? -1 : 1) *
+                         event->angleDelta().y() / SCROLL_WHEEL_DIVIDER;
+  double horizontallDelta = (event->isInverted() ? -1 : 1) *
+                            event->angleDelta().x() / SCROLL_WHEEL_DIVIDER;
 
   auto newHorizontalScrollOffset = horizontalScrollOffset + horizontallDelta;
   auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;
 
-  horizontalScrollBar()->setValue(newHorizontalScrollOffset);
-  verticalScrollBar()->setValue(newVerticalScrollOffset);
+  horizontalScrollBar()->setValue(static_cast<int>(newHorizontalScrollOffset));
+  verticalScrollBar()->setValue(static_cast<int>(newVerticalScrollOffset));
   redraw();
 }
 
@@ -254,19 +256,19 @@ void FileExplorerWidget::drawFiles(QPainter *painter, size_t count,
   int endRow = std::ceil((verticalOffset + viewportHeight) / lineHeight);
 
   startRow = std::max(0, startRow);
-  endRow = std::min((int)count, endRow);
+  endRow = std::min(static_cast<int>(count), endRow);
 
   for (int i = startRow; i < endRow; i++) {
-    double y = (i * lineHeight) - verticalOffset;
-    drawFile(painter, -horizontalOffset + ICON_EDGE_PADDING, y, nodes[i]);
+    double yPos = (i * lineHeight) - verticalOffset;
+    drawFile(painter, -horizontalOffset + ICON_EDGE_PADDING, yPos, nodes[i]);
   }
 }
 
-void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
-                                  neko::FileNode node) {
+void FileExplorerWidget::drawFile(QPainter *painter, double xPos, double yPos,
+                                  const neko::FileNode &node) {
   painter->setFont(font);
 
-  double indent = node.depth * 20.0;
+  double indent = static_cast<int>(node.depth) * NODE_INDENT;
   double viewportWidth = viewport()->width();
   double lineHeight = fontMetrics.height();
   double horizontalOffset = horizontalScrollBar()->value();
@@ -275,8 +277,8 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   bool isCurrent = tree->is_current(node.path);
 
   auto accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
-  QColor selectionColor = QColor(accentColor);
-  selectionColor.setAlpha(60);
+  auto selectionColor = QColor(accentColor);
+  selectionColor.setAlpha(SELECTION_ALPHA);
 
   auto fileTextColor = UiUtils::getThemeColor(themeManager, "ui.foreground");
 
@@ -285,7 +287,7 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
     painter->setBrush(selectionColor);
     painter->setPen(Qt::NoPen);
     painter->drawRect(QRectF(
-        -horizontalOffset, y,
+        -horizontalOffset, yPos,
         viewportWidth + ICON_EDGE_PADDING + horizontalOffset, lineHeight));
   }
 
@@ -293,7 +295,7 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   if (isCurrent && hasFocus()) {
     painter->setBrush(Qt::NoBrush);
     painter->setPen(accentColor);
-    painter->drawRect(QRectF(-horizontalOffset, y,
+    painter->drawRect(QRectF(-horizontalOffset, yPos,
                              viewportWidth - 1 + horizontalOffset,
                              lineHeight - 1));
   }
@@ -309,7 +311,7 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
     icon = QApplication::style()->standardIcon(QStyle::SP_FileIcon);
   }
 
-  int iconSize = lineHeight - ICON_ADJUSTMENT;
+  int iconSize = static_cast<int>(lineHeight - ICON_ADJUSTMENT);
   QIcon colorizedIcon = UiUtils::createColorizedIcon(icon, accentColor,
                                                      QSize(iconSize, iconSize));
   QIcon normalIcon = UiUtils::createColorizedIcon(icon, fileTextColor,
@@ -326,8 +328,8 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
   }
 
   // Draw icon with indentation
-  double iconX = x + indent + 2;
-  double iconY = y + (lineHeight - iconSize) / 2;
+  double iconX = xPos + indent + 2;
+  double iconY = yPos + ((lineHeight - iconSize) / 2);
   painter->drawPixmap(QPointF(iconX, iconY), pixmap);
 
   // Draw text after icon
@@ -341,11 +343,11 @@ void FileExplorerWidget::drawFile(QPainter *painter, double x, double y,
     painter->setBrush(fileTextColor);
     painter->setPen(fileTextColor);
   }
-  painter->drawText(QPointF(textX, y + fontMetrics.ascent()),
+  painter->drawText(QPointF(textX, yPos + fontMetrics.ascent()),
                     QString::fromUtf8(node.name));
 }
 
-void FileExplorerWidget::loadDirectory(const std::string path) {
+void FileExplorerWidget::loadDirectory(const std::string &path) {
   setFileNodes(tree->get_children(path));
   redraw();
 }
@@ -353,7 +355,7 @@ void FileExplorerWidget::loadDirectory(const std::string path) {
 void FileExplorerWidget::setFileNodes(rust::Vec<neko::FileNode> nodes,
                                       bool updateScrollbars) {
   fileNodes = std::move(nodes);
-  fileCount = fileNodes.size();
+  fileCount = static_cast<int>(fileNodes.size());
 
   if (updateScrollbars) {
     updateDimensions();
@@ -367,7 +369,7 @@ void FileExplorerWidget::refreshVisibleNodes(bool updateScrollbars) {
 double FileExplorerWidget::measureContent() {
   double finalWidth = 0;
 
-  // TODO: Make this faster
+  // TODO(scarlet): Make this faster
   for (int i = 0; i < fileCount; i++) {
     auto rawLine = fileNodes[i].name;
     QString lineText = QString::fromUtf8(rawLine);
@@ -385,21 +387,21 @@ void FileExplorerWidget::updateDimensions() {
   const double viewportWidth =
       std::max(0.0, measureContent() - viewport()->width() + VIEWPORT_PADDING);
 
-  horizontalScrollBar()->setRange(0, viewportWidth);
-  verticalScrollBar()->setRange(0, viewportHeight);
+  horizontalScrollBar()->setRange(0, static_cast<int>(viewportWidth));
+  verticalScrollBar()->setRange(0, static_cast<int>(viewportHeight));
 }
 
 void FileExplorerWidget::scrollToNode(int index) {
   const double viewportHeight = viewport()->height();
   const double lineHeight = fontMetrics.height();
   const int scrollY = verticalScrollBar()->value();
-  const size_t nodeY = (index * lineHeight);
+  const double nodeY = index * lineHeight;
 
   if (nodeY + lineHeight > viewportHeight - VIEWPORT_PADDING + scrollY) {
-    verticalScrollBar()->setValue(nodeY - viewportHeight + VIEWPORT_PADDING +
-                                  lineHeight);
+    verticalScrollBar()->setValue(static_cast<int>(
+        nodeY - viewportHeight + VIEWPORT_PADDING + lineHeight));
   } else if (nodeY < scrollY + VIEWPORT_PADDING) {
-    verticalScrollBar()->setValue(nodeY - VIEWPORT_PADDING);
+    verticalScrollBar()->setValue(static_cast<int>(nodeY - VIEWPORT_PADDING));
   }
 }
 
@@ -494,7 +496,7 @@ void FileExplorerWidget::handleRight() {
 void FileExplorerWidget::handleCopy() {
   auto rawCurrentPath = tree->get_path_of_current();
 
-  QMimeData *mimeData = new QMimeData();
+  auto *mimeData = new QMimeData();
 
   QList<QUrl> urls;
   urls.append(QUrl::fromLocalFile(QString::fromUtf8(rawCurrentPath)));
@@ -513,8 +515,9 @@ void FileExplorerWidget::handlePaste() {
                                          : QString::fromUtf8(parentPath);
 
   const QMimeData *mimeData = QApplication::clipboard()->mimeData();
-  if (!mimeData->hasUrls())
+  if (!mimeData->hasUrls()) {
     return;
+  }
 
   QList<QUrl> urls = mimeData->urls();
 
@@ -546,11 +549,12 @@ void FileExplorerWidget::handlePaste() {
   refreshVisibleNodes();
 }
 
-bool FileExplorerWidget::copyRecursively(QString sourceFolder,
-                                         QString destFolder) {
+bool FileExplorerWidget::copyRecursively(const QString &sourceFolder,
+                                         const QString &destFolder) {
   QDir sourceDir(sourceFolder);
-  if (!sourceDir.exists())
+  if (!sourceDir.exists()) {
     return false;
+  }
 
   QDir destDir(destFolder);
   if (!destDir.exists()) {
@@ -597,8 +601,8 @@ void FileExplorerWidget::handleDeleteNoConfirm() {
   deleteItem(rawCurrentPath.c_str(), currentNode);
 }
 
-void FileExplorerWidget::deleteItem(std::string path,
-                                    neko::FileNode currentNode) {
+void FileExplorerWidget::deleteItem(const std::string &path,
+                                    const neko::FileNode &currentNode) {
   auto prevNode = tree->get_prev_node(path);
   auto parentPath = tree->get_path_of_parent(path);
   bool currentIsDir = currentNode.is_dir;
@@ -719,11 +723,11 @@ void FileExplorerWidget::collapseNode() {
   refreshVisibleNodes();
 }
 
-int FileExplorerWidget::convertMousePositionToRow(double y) {
+int FileExplorerWidget::convertMousePositionToRow(double yPos) {
   const double lineHeight = fontMetrics.height();
   const int scrollY = verticalScrollBar()->value();
 
-  const size_t targetRow = (y + scrollY) / lineHeight;
+  const int targetRow = static_cast<int>((yPos + scrollY) / lineHeight);
 
   return targetRow;
 }

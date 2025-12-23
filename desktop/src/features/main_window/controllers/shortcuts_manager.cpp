@@ -10,9 +10,8 @@ ShortcutsManager::ShortcutsManager(QWidget *actionOwner,
       workspaceCoordinator(workspaceCoordinator), tabController(tabController),
       uiHandles(uiHandles), QObject(parent) {}
 
-ShortcutsManager::~ShortcutsManager() {}
-
 void ShortcutsManager::setUpKeyboardShortcuts() {
+  // TODO(scarlet): Break this down
   auto rustShortcuts = nekoShortcutsManager->get_shortcuts();
   std::unordered_map<std::string, std::string> shortcutMap;
   shortcutMap.reserve(rustShortcuts.size());
@@ -26,8 +25,8 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
   rust::Vec<neko::Shortcut> missingShortcuts;
   auto ensureShortcut = [&](const std::string &key,
                             const std::string &keyCombo) {
-    auto it = shortcutMap.find(key);
-    if (it == shortcutMap.end() || it->second.empty()) {
+    auto foundShortcut = shortcutMap.find(key);
+    if (foundShortcut == shortcutMap.end() || foundShortcut->second.empty()) {
       neko::Shortcut shortcut;
       shortcut.key = key;
       shortcut.key_combo = keyCombo;
@@ -46,22 +45,22 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
 
   auto seqFor = [&](const std::string &key,
                     const QKeySequence &fallback) -> QKeySequence {
-    auto it = shortcutMap.find(key);
-    if (it != shortcutMap.end() && !it->second.empty()) {
-      return QKeySequence(it->second.c_str());
+    auto foundShortcut = shortcutMap.find(key);
+    if (foundShortcut != shortcutMap.end() && !foundShortcut->second.empty()) {
+      return {foundShortcut->second.c_str()};
     }
     return fallback;
   };
 
   // Cmd+S for save
-  QAction *saveAction = new QAction(this);
+  auto *saveAction = new QAction(this);
   addShortcut(
       saveAction,
       seqFor("Tab::Save", QKeySequence(Qt::ControlModifier | Qt::Key_S)),
       Qt::WindowShortcut, [this]() { workspaceCoordinator->fileSaved(false); });
 
   // Cmd+Shift+S for save as
-  QAction *saveAsAction = new QAction(this);
+  auto *saveAsAction = new QAction(this);
   addShortcut(
       saveAsAction,
       seqFor("Tab::SaveAs",
@@ -69,57 +68,64 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
       Qt::WindowShortcut, [this]() { workspaceCoordinator->fileSaved(true); });
 
   // Cmd+T for new tab
-  QAction *newTabAction = new QAction(this);
+  auto *newTabAction = new QAction(this);
   addShortcut(newTabAction,
               seqFor("Tab::New", QKeySequence(Qt::ControlModifier | Qt::Key_T)),
               Qt::WindowShortcut, [this]() { workspaceCoordinator->newTab(); });
 
   // Cmd+W for close tab
-  QAction *closeTabAction = new QAction(this);
+  auto *closeTabAction = new QAction(this);
   addShortcut(
       closeTabAction,
       seqFor("Tab::Close", QKeySequence(Qt::ControlModifier | Qt::Key_W)),
       Qt::WindowShortcut, [this]() {
         const auto snapshot = tabController->getTabsSnapshot();
-        workspaceCoordinator->closeTab(snapshot.active_id, false);
+        workspaceCoordinator->closeTab(static_cast<int>(snapshot.active_id),
+                                       false);
       });
 
   // Cmd+Shift+W for force close tab (bypass unsaved confirmation)
-  QAction *forceCloseTabAction = new QAction(this);
+  auto *forceCloseTabAction = new QAction(this);
   addShortcut(forceCloseTabAction,
               seqFor("Tab::ForceClose",
                      QKeySequence(QKeySequence(Qt::ControlModifier,
                                                Qt::ShiftModifier, Qt::Key_W))),
               Qt::WindowShortcut, [this]() {
                 const auto snapshot = tabController->getTabsSnapshot();
-                workspaceCoordinator->closeTab(snapshot.active_id, true);
+                workspaceCoordinator->closeTab(
+                    static_cast<int>(snapshot.active_id), true);
               });
 
-  auto findIndexById = [](const neko::TabsSnapshot &snap, uint64_t id) -> int {
+  auto findIndexById = [](const neko::TabsSnapshot &snap,
+                          uint64_t tabId) -> int {
     for (int i = 0; i < static_cast<int>(snap.tabs.size()); ++i) {
-      if (snap.tabs[i].id == id)
+      if (snap.tabs[i].id == tabId) {
         return i;
+      }
     }
     return -1;
   };
 
   // Cmd+Tab for next tab
-  QAction *nextTabAction = new QAction(this);
+  auto *nextTabAction = new QAction(this);
   addShortcut(nextTabAction,
               seqFor("Tab::Next", QKeySequence(Qt::MetaModifier | Qt::Key_Tab)),
               Qt::WindowShortcut, [this, findIndexById]() {
                 const auto snapshot = tabController->getTabsSnapshot();
-                if (!snapshot.active_present)
+                if (!snapshot.active_present) {
                   return;
+                }
 
                 const int tabCount = static_cast<int>(snapshot.tabs.size());
-                if (tabCount <= 1)
+                if (tabCount <= 1) {
                   return;
+                }
 
                 const int currentIndex =
                     findIndexById(snapshot, snapshot.active_id);
-                if (currentIndex < 0)
+                if (currentIndex < 0) {
                   return;
+                }
 
                 const int nextIndex = (currentIndex + 1) % tabCount;
                 workspaceCoordinator->tabChanged(
@@ -127,23 +133,26 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
               });
 
   // Cmd+Shift+Tab for previous tab
-  QAction *prevTabAction = new QAction(this);
+  auto *prevTabAction = new QAction(this);
   addShortcut(
       prevTabAction,
       seqFor("Tab::Previous",
              QKeySequence(Qt::MetaModifier | Qt::ShiftModifier | Qt::Key_Tab)),
       Qt::WindowShortcut, [this, findIndexById]() {
         const auto snapshot = tabController->getTabsSnapshot();
-        if (!snapshot.active_present)
+        if (!snapshot.active_present) {
           return;
+        }
 
         const int tabCount = static_cast<int>(snapshot.tabs.size());
-        if (tabCount <= 1)
+        if (tabCount <= 1) {
           return;
+        }
 
         const int currentIndex = findIndexById(snapshot, snapshot.active_id);
-        if (currentIndex < 0)
+        if (currentIndex < 0) {
           return;
+        }
 
         const int prevIndex =
             (currentIndex == 0) ? (tabCount - 1) : (currentIndex - 1);
@@ -152,7 +161,7 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
       });
 
   // Ctrl+G for jump to
-  QAction *jumpToAction = new QAction(this);
+  auto *jumpToAction = new QAction(this);
   addShortcut(
       jumpToAction,
       seqFor("Cursor::JumpTo", QKeySequence(Qt::ControlModifier | Qt::Key_G)),
@@ -160,7 +169,7 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
       [this]() { workspaceCoordinator->cursorPositionClicked(); });
 
   // Ctrl + E for File Explorer toggle
-  QAction *toggleExplorerAction = new QAction(this);
+  auto *toggleExplorerAction = new QAction(this);
   addShortcut(toggleExplorerAction,
               seqFor("FileExplorer::Toggle",
                      QKeySequence(Qt::ControlModifier | Qt::Key_E)),
@@ -168,8 +177,8 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
               [this]() { workspaceCoordinator->fileExplorerToggled(); });
 
   // Ctrl + H for focus File Explorer
-  // TODO: Generalize this, i.e. "focus left widget/pane"
-  QAction *focusExplorerAction = new QAction(this);
+  // TODO(scarlet): Generalize this, i.e. "focus left widget/pane"
+  auto *focusExplorerAction = new QAction(this);
   addShortcut(
       focusExplorerAction,
       seqFor("FileExplorer::Focus", QKeySequence(Qt::MetaModifier | Qt::Key_H)),
@@ -177,15 +186,15 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
       [this]() { uiHandles->fileExplorerWidget->setFocus(); });
 
   // Ctrl + L for focus Editor
-  // TODO: Generalize this, i.e. "focus right widget/pane"
-  QAction *focusEditorAction = new QAction(this);
+  // TODO(scarlet): Generalize this, i.e. "focus right widget/pane"
+  auto *focusEditorAction = new QAction(this);
   addShortcut(
       focusEditorAction,
       seqFor("Editor::Focus", QKeySequence(Qt::MetaModifier | Qt::Key_L)),
       Qt::WindowShortcut, [this]() { uiHandles->editorWidget->setFocus(); });
 
   // Ctrl + , for open config
-  QAction *openConfigAction = new QAction(this);
+  auto *openConfigAction = new QAction(this);
   addShortcut(openConfigAction,
               seqFor("Editor::OpenConfig",
                      QKeySequence(Qt::ControlModifier | Qt::Key_Comma)),
@@ -193,7 +202,7 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
               [this]() { workspaceCoordinator->openConfig(); });
 
   // Ctrl + P for show command palette
-  QAction *showCommandPalette = new QAction(this);
+  auto *showCommandPalette = new QAction(this);
   addShortcut(showCommandPalette,
               seqFor("CommandPalette::Show",
                      QKeySequence(Qt::ControlModifier | Qt::Key_P)),

@@ -2,12 +2,13 @@
 
 QString UiUtils::getConfigString(neko::ConfigManager *manager,
                                  char *(*getter)(neko::ConfigManager *)) {
-  auto raw = getter(manager);
+  auto *raw = getter(manager);
   QString result = QString::fromUtf8(raw);
 
   return result;
 }
 
+// NOLINTNEXTLINE
 QString UiUtils::getThemeColor(neko::ThemeManager &manager, const char *key,
                                const char *fallback) {
   auto colorStr = manager.get_color(key);
@@ -46,11 +47,12 @@ QFont UiUtils::loadFont(neko::ConfigManager &manager, neko::FontType type) {
     break;
   }
 
-  if (rawFamily.empty() || !size)
-    return QFont();
+  if (rawFamily.empty() || (size == 0.0)) {
+    return {};
+  }
 
   QString family = QString::fromUtf8(rawFamily);
-  QFont font(family, size);
+  QFont font(family, static_cast<int>(size));
   return font;
 }
 
@@ -60,16 +62,16 @@ void UiUtils::setFontSize(neko::ConfigManager &manager, neko::FontType type,
 
   switch (type) {
   case neko::FontType::Editor:
-    snapshot.editor_font_size = newFontSize;
+    snapshot.editor_font_size = static_cast<int>(newFontSize);
     break;
   case neko::FontType::FileExplorer:
-    snapshot.file_explorer_font_size = newFontSize;
+    snapshot.file_explorer_font_size = static_cast<int>(newFontSize);
     break;
   case neko::FontType::Interface:
-    snapshot.interface_font_size = newFontSize;
+    snapshot.interface_font_size = static_cast<int>(newFontSize);
     break;
   case neko::FontType::Terminal:
-    snapshot.terminal_font_size = newFontSize;
+    snapshot.terminal_font_size = static_cast<int>(newFontSize);
     break;
   }
 
@@ -113,7 +115,7 @@ QString UiUtils::getScrollBarStylesheet(neko::ThemeManager &themeManager,
 
 double UiUtils::getTitleBarContentMargin() {
 #if defined(Q_OS_MACOS)
-  return 84; // Spacing for traffic lights
+  return MACOS_TRAFFIC_LIGHTS_MARGIN;
 #else
   return 10;
 #endif
@@ -129,14 +131,15 @@ QIcon UiUtils::createColorizedIcon(const QIcon &originalIcon,
   painter.fillRect(pixmap.rect(), color);
   painter.end();
 
-  return QIcon(pixmap);
+  return {pixmap};
 }
 
-QLabel *UiUtils::createLabel(QString text, QString styleSheet, QFont font,
-                             QWidget *parent, bool wordWrap,
+// NOLINTNEXTLINE
+QLabel *UiUtils::createLabel(const QString &text, const QString &styleSheet,
+                             const QFont &font, QWidget *parent, bool wordWrap,
                              QSizePolicy::Policy sizePolicyHorizontal,
                              QSizePolicy::Policy sizePolicyVertical) {
-  QLabel *label = new QLabel(text, parent);
+  auto *label = new QLabel(text, parent);
   label->setStyleSheet(styleSheet);
   label->setWordWrap(wordWrap);
   label->setSizePolicy(sizePolicyHorizontal, sizePolicyVertical);

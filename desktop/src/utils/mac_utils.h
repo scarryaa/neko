@@ -1,4 +1,5 @@
 #pragma once
 #include <QWidget>
 
-void setupMacOSTitleBar(QWidget *window);
+// NOLINTNEXTLINE
+void setupMacOSTitleBar(QWidget *widget);

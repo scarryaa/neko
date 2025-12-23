@@ -2,12 +2,12 @@
 
 Q_DECLARE_METATYPE(TabContext);
 
-// TODO: StatusBar signals/tab inform and MainWindow editor ref
+// TODO(scarlet): StatusBar signals/tab inform and MainWindow editor ref
 // are messy and need to be cleaned up. Also consider "rearchitecting"
 // to use the AppState consistently and extract common MainWindow/StatusBar
 // functionality.
-// TODO: Auto detect config file save in editor
-// TODO: Prevent config reset on updating model
+// TODO(scarlet): Auto detect config file save in editor
+// TODO(scarlet): Prevent config reset on updating model
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), appState(neko::new_app_state("")),
       themeManager(neko::new_theme_manager()),
@@ -73,8 +73,6 @@ MainWindow::MainWindow(QWidget *parent)
   workspaceCoordinator->applyInitialState();
 }
 
-MainWindow::~MainWindow() {}
-
 void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
   emptyStateWidget = new QWidget(this);
   titleBarWidget = new TitleBarWidget(*configManager, *themeManager, this);
@@ -95,15 +93,15 @@ void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
 }
 
 void MainWindow::setupLayout() {
-  QWidget *mainContainer = new QWidget(this);
-  QVBoxLayout *mainLayout = new QVBoxLayout(mainContainer);
+  auto *mainContainer = new QWidget(this);
+  auto *mainLayout = new QVBoxLayout(mainContainer);
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(0);
 
   mainLayout->addWidget(titleBarWidget);
 
-  QWidget *editorSideContainer = new QWidget(this);
-  QVBoxLayout *editorSideLayout = new QVBoxLayout(editorSideContainer);
+  auto *editorSideContainer = new QWidget(this);
+  auto *editorSideLayout = new QVBoxLayout(editorSideContainer);
   editorSideLayout->setContentsMargins(0, 0, 0, 0);
   editorSideLayout->setSpacing(0);
 
@@ -126,8 +124,9 @@ QWidget *MainWindow::buildTabBarSection() {
   newTabButton = new QPushButton("+", tabBarContainer);
 
   QFont uiFont = UiUtils::loadFont(*configManager, neko::FontType::Interface);
-  QFontMetrics fm(uiFont);
-  int dynamicHeight = fm.height() + 16;
+  QFontMetrics fontMetrics(uiFont);
+  int dynamicHeight = static_cast<int>(
+      fontMetrics.height() + TOP_TAB_BAR_PADDING + BOTTOM_TAB_BAR_PADDING);
 
   newTabButton->setFixedSize(dynamicHeight, dynamicHeight);
   tabBarLayout->addWidget(tabBarWidget);
@@ -154,7 +153,8 @@ QWidget *MainWindow::buildEmptyStateSection() {
   emptyLayout->setAlignment(Qt::AlignCenter);
 
   emptyStateNewTabButton = new QPushButton("New Tab", emptyStateWidget);
-  emptyStateNewTabButton->setFixedSize(80, 35);
+  emptyStateNewTabButton->setFixedSize(EMPTY_STATE_NEW_TAB_BUTTON_WIDTH,
+                                       EMPTY_STATE_NEW_TAB_BUTTON_HEIGHT);
 
   emptyLayout->addWidget(emptyStateNewTabButton);
   emptyStateWidget->hide();
@@ -162,7 +162,7 @@ QWidget *MainWindow::buildEmptyStateSection() {
 }
 
 QWidget *MainWindow::buildEditorSection(QWidget *emptyState) {
-  QWidget *editorContainer = new QWidget(this);
+  auto *editorContainer = new QWidget(this);
   auto *editorLayout = new QHBoxLayout(editorContainer);
   editorLayout->setContentsMargins(0, 0, 0, 0);
   editorLayout->setSpacing(0);
@@ -177,20 +177,22 @@ QSplitter *MainWindow::buildSplitter(QWidget *editorSideContainer) {
   mainSplitter = splitter;
   auto snapshot = configManager->get_config_snapshot();
   auto fileExplorerRight = snapshot.file_explorer_right;
-  int savedSidebarWidth = snapshot.file_explorer_width;
+  int savedSidebarWidth = static_cast<int>(snapshot.file_explorer_width);
 
   if (fileExplorerRight) {
     splitter->addWidget(editorSideContainer);
     splitter->addWidget(fileExplorerWidget);
     splitter->setStretchFactor(0, 1);
     splitter->setStretchFactor(1, 0);
-    splitter->setSizes(QList<int>() << 1000000 << savedSidebarWidth);
+    splitter->setSizes(QList<int>()
+                       << SPLITTER_LARGE_WIDTH << savedSidebarWidth);
   } else {
     splitter->addWidget(fileExplorerWidget);
     splitter->addWidget(editorSideContainer);
     splitter->setStretchFactor(0, 0);
     splitter->setStretchFactor(1, 1);
-    splitter->setSizes(QList<int>() << savedSidebarWidth << 1000000);
+    splitter->setSizes(QList<int>()
+                       << savedSidebarWidth << SPLITTER_LARGE_WIDTH);
   }
 
   splitter->setHandleWidth(1);
@@ -276,7 +278,7 @@ void MainWindow::connectSignals() {
   connect(editorController, &EditorController::cursorChanged, statusBarWidget,
           &StatusBarWidget::onCursorPositionChanged);
 
-  // TODO: Rework the tab update system to not rely on mass setting
+  // TODO(scarlet): Rework the tab update system to not rely on mass setting
   // all the tabs and have the TabBarWidget be in charge of mgmt/updates,
   // with each TabWidget in control of its repaints?
 }

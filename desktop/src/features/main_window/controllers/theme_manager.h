@@ -12,7 +12,7 @@ public:
   explicit ThemeManager(neko::ThemeManager *nekoThemeManager,
                         const WorkspaceUiHandles *uiHandles,
                         QObject *parent = nullptr);
-  ~ThemeManager();
+  ~ThemeManager() override = default;
 
   void applyTheme(const std::string &themeName);
 

@@ -16,7 +16,7 @@ public:
                             TabController *tabController,
                             const WorkspaceUiHandles *uiHandles,
                             QObject *parent = nullptr);
-  ~ShortcutsManager();
+  ~ShortcutsManager() override = default;
 
   void setUpKeyboardShortcuts();
 

@@ -8,11 +8,11 @@ TitleBarWidget::TitleBarWidget(neko::ConfigManager &configManager,
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 
-  // Height = Font Height + Top Padding (8) + Bottom Padding (8)
-  QFontMetrics fm(uiFont);
-  int dynamicHeight = fm.height() + 16;
+  QFontMetrics fontMetrics(uiFont);
+  int dynamicHeight =
+      static_cast<int>(fontMetrics.height() + TOP_PADDING + BOTTOM_PADDING);
   m_height = dynamicHeight;
-  setFixedHeight(m_height);
+  setFixedHeight(static_cast<int>(m_height));
 
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
@@ -24,15 +24,16 @@ TitleBarWidget::TitleBarWidget(neko::ConfigManager &configManager,
 
   auto *layout = new QHBoxLayout(this);
 
-  int leftMargin = UiUtils::getTitleBarContentMargin();
+  int leftMargin = static_cast<int>(UiUtils::getTitleBarContentMargin());
 
-  layout->setContentsMargins(leftMargin, 5, 10, 5);
+  layout->setContentsMargins(leftMargin, VERTICAL_CONTENT_MARGIN,
+                             RIGHT_CONTENT_MARGIN, VERTICAL_CONTENT_MARGIN);
   layout->addWidget(m_directorySelectionButton);
   layout->addStretch();
 }
 
 void TitleBarWidget::applyTheme() {
-  if (!m_directorySelectionButton) {
+  if (m_directorySelectionButton == nullptr) {
     return;
   }
 
@@ -57,7 +58,7 @@ void TitleBarWidget::applyTheme() {
   update();
 }
 
-void TitleBarWidget::onDirChanged(std::string newDir) {
+void TitleBarWidget::onDirChanged(const std::string &newDir) {
   QString newDirQStr = QString::fromStdString(newDir);
 
   m_currentDir = newDirQStr;
@@ -85,9 +86,8 @@ void TitleBarWidget::mousePressEvent(QMouseEvent *event) {
 }
 
 void TitleBarWidget::mouseMoveEvent(QMouseEvent *event) {
-  if (event->buttons() & Qt::LeftButton) {
+  if (event->buttons().testFlag(Qt::LeftButton)) {
     window()->move((event->globalPosition() - m_clickPos).toPoint());
-
     event->accept();
   }
 }

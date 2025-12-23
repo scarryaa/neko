@@ -3,9 +3,7 @@
 AppStateController::AppStateController(neko::AppState *appState)
     : appState(appState) {}
 
-AppStateController::~AppStateController() {}
-
-const bool AppStateController::openFile(const std::string &path) {
+bool AppStateController::openFile(const std::string &path) {
   return appState->open_file(path);
 }
 

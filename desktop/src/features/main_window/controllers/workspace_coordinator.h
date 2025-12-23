@@ -21,7 +21,7 @@ public:
                                 neko::ThemeManager *themeManager,
                                 const WorkspaceUiHandles *uiHandles,
                                 QObject *parent = nullptr);
-  ~WorkspaceCoordinator();
+  ~WorkspaceCoordinator() override = default;
 
   void fileSelected(const std::string &path, bool focusEditor);
   void fileSaved(bool saveAs);
@@ -33,21 +33,21 @@ public:
 
   void openConfig();
 
-  void tabCopyPath(int id);
-  void tabReveal(int id);
+  void tabCopyPath(int tabId);
+  void tabReveal(int tabId);
   void newTab();
-  void tabChanged(int id);
-  void tabUnpinned(int id);
+  void tabChanged(int tabId);
+  void tabUnpinned(int tabId);
 
   void bufferChanged();
 
   CloseDecision showTabCloseConfirmationDialog(const QList<int> &ids);
-  SaveResult saveTab(int id, bool isSaveAs);
+  SaveResult saveTab(int tabId, bool isSaveAs);
 
-  void closeTab(int id, bool forceClose);
-  void closeLeftTabs(int id, bool forceClose);
-  void closeRightTabs(int id, bool forceClose);
-  void closeOtherTabs(int id, bool forceClose);
+  void closeTab(int tabId, bool forceClose);
+  void closeLeftTabs(int tabId, bool forceClose);
+  void closeRightTabs(int tabId, bool forceClose);
+  void closeOtherTabs(int tabId, bool forceClose);
 
   void applyInitialState();
 

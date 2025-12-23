@@ -8,12 +8,12 @@ class AppStateController : public QObject {
   Q_OBJECT
 
 public:
-  AppStateController(neko::AppState *appState);
-  ~AppStateController();
+  explicit AppStateController(neko::AppState *appState);
+  ~AppStateController() override = default;
 
-  const bool openFile(const std::string &path);
-  neko::Editor &getActiveEditorMut() const;
-  neko::FileTree &getFileTreeMut() const;
+  bool openFile(const std::string &path);
+  [[nodiscard]] neko::Editor &getActiveEditorMut() const;
+  [[nodiscard]] neko::FileTree &getFileTreeMut() const;
 
 private:
   neko::AppState *appState;

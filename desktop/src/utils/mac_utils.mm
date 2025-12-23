@@ -3,8 +3,10 @@
 #include <Cocoa/Cocoa.h>
 #include <objc/objc.h>
 
+// NOLINTNEXTLINE
 void setupMacOSTitleBar(QWidget *widget) {
-  NSView *view = (NSView *)widget->winId();
+  // NOLINTNEXTLINE
+  auto *view = (NSView *)widget->winId();
   NSWindow *window = [view window];
 
   window.titleVisibility = NSWindowTitleHidden;

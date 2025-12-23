@@ -1,91 +1,94 @@
 #include "workspace_controller.h"
 
+#include <utility>
+
 WorkspaceController::WorkspaceController(TabController *tabController,
                                          WorkspaceUi workspaceUi)
-    : tabController(tabController), workspaceUi(workspaceUi) {}
+    : tabController(tabController), workspaceUi(std::move(workspaceUi)) {}
 
-WorkspaceController::~WorkspaceController() {}
-
-const QList<int> WorkspaceController::closeLeft(int id, bool forceClose) {
-  auto ids = tabController->getCloseLeftTabIds(id);
+QList<int> WorkspaceController::closeLeft(int tabId, bool forceClose) {
+  auto ids = tabController->getCloseLeftTabIds(tabId);
   closeMany(ids, forceClose,
-            [this, id]() { tabController->closeLeftTabs(id); });
+            [this, tabId]() { tabController->closeLeftTabs(tabId); });
 
   return ids;
 }
 
-const QList<int> WorkspaceController::closeRight(int id, bool forceClose) {
-  auto ids = tabController->getCloseRightTabIds(id);
+QList<int> WorkspaceController::closeRight(int tabId, bool forceClose) {
+  auto ids = tabController->getCloseRightTabIds(tabId);
   closeMany(ids, forceClose,
-            [this, id]() { tabController->closeRightTabs(id); });
+            [this, tabId]() { tabController->closeRightTabs(tabId); });
 
   return ids;
 }
 
-const QList<int> WorkspaceController::closeOthers(int id, bool forceClose) {
-  auto ids = tabController->getCloseOtherTabIds(id);
+QList<int> WorkspaceController::closeOthers(int tabId, bool forceClose) {
+  auto ids = tabController->getCloseOtherTabIds(tabId);
   closeMany(ids, forceClose,
-            [this, id]() { tabController->closeOtherTabs(id); });
+            [this, tabId]() { tabController->closeOtherTabs(tabId); });
 
   return ids;
 }
 
-const QList<int> WorkspaceController::closeTab(int id, bool forceClose) {
+QList<int> WorkspaceController::closeTab(int tabId, bool forceClose) {
   auto ids = QList<int>();
-  ids.push_back(id);
+  ids.push_back(tabId);
 
-  closeMany(ids, forceClose, [this, id]() { tabController->closeTab(id); });
+  closeMany(ids, forceClose,
+            [this, tabId]() { tabController->closeTab(tabId); });
 
   return ids;
 }
 
-bool WorkspaceController::saveTab(int id, bool forceSaveAs) {
-  return saveTabWithPromptIfNeeded(id, forceSaveAs);
+bool WorkspaceController::saveTab(int tabId, bool forceSaveAs) {
+  return saveTabWithPromptIfNeeded(tabId, forceSaveAs);
 }
 
-bool WorkspaceController::saveTabWithPromptIfNeeded(int id, bool isSaveAs) {
+bool WorkspaceController::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
   const auto snapshot = tabController->getTabsSnapshot();
   QString path = QString();
-  for (const auto &t : snapshot.tabs) {
-    if (t.id == id) {
-      path = QString::fromUtf8(t.path);
+  for (const auto &tab : snapshot.tabs) {
+    if (tab.id == tabId) {
+      path = QString::fromUtf8(tab.path);
     }
   }
 
   if (!path.isEmpty() && !isSaveAs) {
-    return tabController->saveTabWithId(id);
+    return tabController->saveTabWithId(tabId);
   }
 
-  // TODO: Fill in file name/path if available
-  // TODO: Switch to relevant tab
-  const QString filePath = workspaceUi.promptSaveAsPath(id);
-  if (filePath.isEmpty())
+  // TODO(scarlet): Fill in file name/path if available
+  // TODO(scarlet): Switch to relevant tab
+  const QString filePath = workspaceUi.promptSaveAsPath(tabId);
+  if (filePath.isEmpty()) {
     return false;
+  }
 
-  return tabController->saveTabWithIdAndSetPath(id, filePath.toStdString());
+  return tabController->saveTabWithIdAndSetPath(tabId, filePath.toStdString());
 }
 
 bool WorkspaceController::closeMany(const QList<int> &ids, bool forceClose,
-                                    std::function<void()> closeAction) {
-  if (ids.isEmpty())
+                                    const std::function<void()> &closeAction) {
+  if (ids.isEmpty()) {
     return false;
+  }
 
   const auto snap = tabController->getTabsSnapshot();
 
   QHash<int, bool> modifiedById = QHash<int, bool>();
   modifiedById.reserve(static_cast<int>(snap.tabs.size()));
-  for (const auto &t : snap.tabs) {
-    modifiedById.insert(static_cast<int>(t.id), t.modified);
+  for (const auto &tab : snap.tabs) {
+    modifiedById.insert(static_cast<int>(tab.id), tab.modified);
   }
 
-  auto isModified = [&](int id) -> bool {
-    auto it = modifiedById.constFind(id);
-    return it != modifiedById.constEnd() ? it.value() : false;
+  auto isModified = [&](int tabId) -> bool {
+    auto foundTab = modifiedById.constFind(tabId);
+    return foundTab != modifiedById.constEnd() ? foundTab.value() : false;
   };
 
   bool anyModified = false;
-  for (int id : ids) {
-    if (isModified(id)) {
+  for (int tabId : ids) {
+    if (isModified(tabId)) {
       anyModified = true;
       break;
     }
@@ -94,10 +97,11 @@ bool WorkspaceController::closeMany(const QList<int> &ids, bool forceClose,
   if (!forceClose && anyModified) {
     switch (workspaceUi.confirmCloseTabs(ids)) {
     case CloseDecision::Save:
-      for (int id : ids) {
-        if (isModified(id)) {
-          if (!saveTabWithPromptIfNeeded(id, false))
+      for (int tabId : ids) {
+        if (isModified(tabId)) {
+          if (!saveTabWithPromptIfNeeded(tabId, false)) {
             return false;
+          }
         }
       }
       break;

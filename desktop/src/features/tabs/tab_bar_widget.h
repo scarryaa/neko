@@ -33,21 +33,22 @@ public:
                         CommandRegistry &commandRegistry,
                         TabController *tabController,
                         QWidget *parent = nullptr);
-  ~TabBarWidget();
+  ~TabBarWidget() override = default;
 
   void applyTheme();
-  void setTabs(QStringList titles, QStringList paths,
-               QList<bool> modifiedStates, QList<bool> pinnedStates);
-  void setCurrentId(int id);
-  void setTabModified(int id, bool modified);
+  void setTabs(const QStringList &titles, const QStringList &paths,
+               const QList<bool> &modifiedStates,
+               const QList<bool> &pinnedStates);
+  void setCurrentId(int tabId);
+  void setTabModified(int tabId, bool modified);
   int getNumberOfTabs();
 
 signals:
-  void currentChanged(int id);
-  void tabCloseRequested(int id, bool bypassConfirmation = false);
+  void currentChanged(int tabId);
+  void tabCloseRequested(int tabId, bool bypassConfirmation = false);
   void newTabRequested();
-  void tabPinnedChanged(int id);
-  void tabUnpinRequested(int id);
+  void tabPinnedChanged(int tabId);
+  void tabUnpinRequested(int tabId);
 
 protected:
   void dragEnterEvent(QDragEnterEvent *event) override;
@@ -57,7 +58,7 @@ protected:
   bool eventFilter(QObject *watched, QEvent *event) override;
 
 private:
-  int dropIndexForPosition(const QPoint &pos) const;
+  [[nodiscard]] int dropIndexForPosition(const QPoint &pos) const;
   void updateDropIndicator(int index);
   void updateTabAppearance();
   void registerCommands();
@@ -73,6 +74,9 @@ private:
   QHBoxLayout *layout;
   QList<TabWidget *> tabs;
   int currentTabId;
+
+  static double constexpr TOP_PADDING = 8.0;
+  static double constexpr BOTTOM_PADDING = 8.0;
 };
 
 #endif // TAB_BAR_WIDGET_H

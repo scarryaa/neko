@@ -11,7 +11,7 @@ public:
   explicit CommandManager(CommandRegistry *commandRegistry,
                           ContextMenuRegistry *contextMenuRegistry,
                           WorkspaceCoordinator *workspaceCoordinator);
-  ~CommandManager();
+  ~CommandManager() = default;
 
   void registerCommands();
   void registerProviders();

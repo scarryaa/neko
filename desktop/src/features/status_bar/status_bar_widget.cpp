@@ -9,11 +9,11 @@ StatusBarWidget::StatusBarWidget(EditorController *editorController,
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 
-  // Height = Font Height + Top Padding (8) + Bottom Padding (8)
-  QFontMetrics fm(uiFont);
-  int dynamicHeight = fm.height() + 16;
+  QFontMetrics fontMetrics(uiFont);
+  int dynamicHeight =
+      static_cast<int>(fontMetrics.height() + TOP_PADDING + BOTTOM_PADDING);
   m_height = dynamicHeight;
-  setFixedHeight(m_height);
+  setFixedHeight(static_cast<int>(m_height));
 
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
@@ -32,17 +32,17 @@ StatusBarWidget::StatusBarWidget(EditorController *editorController,
   connect(cursorPosition, &QPushButton::clicked, this,
           &StatusBarWidget::onCursorPositionClicked);
 
-  QHBoxLayout *layout = new QHBoxLayout(this);
+  auto *layout = new QHBoxLayout(this);
 
-  layout->setContentsMargins(10, 5, 10, 5);
+  layout->setContentsMargins(HORIZONTAL_CONTENT_MARGIN, VERTICAL_CONTENT_MARGIN,
+                             HORIZONTAL_CONTENT_MARGIN,
+                             VERTICAL_CONTENT_MARGIN);
   layout->addWidget(fileExplorerToggleButton);
   layout->addWidget(cursorPosition);
   layout->addStretch();
 
   applyTheme();
 }
-
-StatusBarWidget::~StatusBarWidget() {}
 
 void StatusBarWidget::applyTheme() {
   QString btnText = UiUtils::getThemeColor(
@@ -55,7 +55,7 @@ void StatusBarWidget::applyTheme() {
   QColor greyColor =
       UiUtils::getThemeColor(themeManager, "ui.foreground.muted");
   QColor accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
-  QSize iconSize(18, 18);
+  QSize iconSize(ICON_SIZE, ICON_SIZE);
 
   QIcon baseIcon =
       QApplication::style()->standardIcon(QStyle::SP_DirClosedIcon);
@@ -94,15 +94,16 @@ void StatusBarWidget::applyTheme() {
   update();
 }
 
+// NOLINTNEXTLINE
 void StatusBarWidget::updateCursorPosition(int row, int col,
                                            int numberOfCursors) {
-  if (!editorController) {
+  if (editorController == nullptr) {
     return;
   }
 
   QString newPosition = QString("%1:%2").arg(row + 1).arg(col + 1);
 
-  // TODO: Show selection lines, chars
+  // TODO(scarlet): Show selection lines, chars
   int numberOfSelections = editorController->getNumberOfSelections();
   if (numberOfCursors > 1 || numberOfSelections > 1) {
     newPosition = newPosition.append(" (%1 selections)")
@@ -113,9 +114,10 @@ void StatusBarWidget::updateCursorPosition(int row, int col,
 
 void StatusBarWidget::showCursorPositionInfo() { cursorPosition->show(); }
 
+// NOLINTNEXTLINE
 void StatusBarWidget::onCursorPositionChanged(int row, int col,
                                               int numberOfCursors) {
-  if (!editorController) {
+  if (editorController == nullptr) {
     return;
   }
 
@@ -123,7 +125,7 @@ void StatusBarWidget::onCursorPositionChanged(int row, int col,
 
   QString newPosition = QString("%1:%2").arg(row + 1).arg(col + 1);
 
-  // TODO: Show selection lines, chars
+  // TODO(scarlet): Show selection lines, chars
   int numberOfSelections = editorController->getNumberOfSelections();
   if (numberOfCursors > 1 || numberOfSelections > 1) {
     newPosition = newPosition.append(" (%1 selections)")

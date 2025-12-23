@@ -52,9 +52,9 @@ public:
                               neko::ConfigManager &configManager,
                               neko::ThemeManager &themeManager,
                               QWidget *parent = nullptr);
-  ~FileExplorerWidget();
+  ~FileExplorerWidget() override = default;
 
-  void initialize(std::string path);
+  void initialize(const std::string &path);
   void loadSavedDir();
   void applyTheme();
   void showItem(const QString &path);
@@ -69,8 +69,8 @@ protected:
   void focusOutEvent(QFocusEvent *event) override;
 
 signals:
-  void directorySelected(const std::string path);
-  void fileSelected(const std::string path, bool shouldFocusEditor = true);
+  void directorySelected(std::string path);
+  void fileSelected(std::string path, bool shouldFocusEditor = true);
 
 public slots:
   void directorySelectionRequested();
@@ -78,9 +78,10 @@ public slots:
 private:
   void redraw();
   void drawFiles(QPainter *painter, size_t count, rust::Vec<neko::FileNode>);
-  void drawFile(QPainter *painter, double x, double y, neko::FileNode node);
+  void drawFile(QPainter *painter, double xPos, double yPos,
+                const neko::FileNode &node);
 
-  void loadDirectory(const std::string path);
+  void loadDirectory(const std::string &path);
   void setFileNodes(rust::Vec<neko::FileNode> nodes,
                     bool updateScrollbars = true);
   void refreshVisibleNodes(bool updateScrollbars = true);
@@ -100,10 +101,10 @@ private:
   void handleRight();
   void handleCopy();
   void handlePaste();
-  bool copyRecursively(QString sourceFolder, QString destFolder);
+  bool copyRecursively(const QString &sourceFolder, const QString &destFolder);
   void handleDeleteConfirm();
   void handleDeleteNoConfirm();
-  void deleteItem(std::string path, neko::FileNode currentNode);
+  void deleteItem(const std::string &path, const neko::FileNode &currentNode);
 
   void selectNextNode();
   void selectPrevNode();
@@ -111,12 +112,12 @@ private:
   void expandNode();
   void collapseNode();
 
-  int convertMousePositionToRow(double y);
+  int convertMousePositionToRow(double yPos);
 
   neko::ConfigManager &configManager;
   neko::ThemeManager &themeManager;
   neko::FileTree *tree;
-  size_t fileCount = 0;
+  int fileCount = 0;
   rust::Vec<neko::FileNode> fileNodes;
   std::string rootPath;
   QPushButton *directorySelectionButton;
@@ -124,13 +125,16 @@ private:
   QFontMetricsF fontMetrics;
   bool focusReceivedFromMouse = false;
 
-  double ICON_EDGE_PADDING = 10.0;
-  double ICON_ADJUSTMENT = 6.0;
-  double FONT_STEP = 2.0;
-  double DEFAULT_FONT_SIZE = 15.0;
-  double FONT_UPPER_LIMIT = 96.0;
-  double FONT_LOWER_LIMIT = 6.0;
-  double VIEWPORT_PADDING = 74.0;
+  static constexpr double ICON_EDGE_PADDING = 10.0;
+  static constexpr double ICON_ADJUSTMENT = 6.0;
+  static constexpr double FONT_STEP = 2.0;
+  static constexpr double DEFAULT_FONT_SIZE = 15.0;
+  static constexpr double FONT_UPPER_LIMIT = 96.0;
+  static constexpr double FONT_LOWER_LIMIT = 6.0;
+  static constexpr double VIEWPORT_PADDING = 74.0;
+  static constexpr double NODE_INDENT = 20.0;
+  static constexpr double SELECTION_ALPHA = 60.0;
+  static constexpr double SCROLL_WHEEL_DIVIDER = 4.0;
 };
 
 #endif // FILE_EXPLORER_WIDGET_H
