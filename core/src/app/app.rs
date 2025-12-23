@@ -140,6 +140,10 @@ impl AppState {
             .position(|t| t.get_file_path().as_ref().and_then(|p| p.to_str()) == Some(path))
     }
 
+    pub fn get_tab_index_by_id(&self, id: usize) -> Option<usize> {
+        self.tabs.iter().position(|t| t.get_id() == id)
+    }
+
     pub fn tab_with_path_exists(&self, path: &str) -> bool {
         self.tabs
             .iter()

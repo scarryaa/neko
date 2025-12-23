@@ -56,6 +56,10 @@ impl AppState {
             .unwrap_or(-1)
     }
 
+    pub(crate) fn get_tab_index_by_id_wrapper(&self, id: usize) -> i64 {
+        self.get_tab_index_by_id(id).map(|i| i as i64).unwrap_or(-1)
+    }
+
     pub fn get_close_other_tab_ids_wrapper(&self, id: usize) -> Vec<usize> {
         self.get_close_other_tab_ids(id)
             .expect("Unable to get 'close other' tab ids")

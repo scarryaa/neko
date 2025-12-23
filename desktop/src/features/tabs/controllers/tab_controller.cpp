@@ -48,6 +48,10 @@ const int TabController::getTabIndexByPath(const std::string &path) const {
   return appState->get_tab_index_by_path(path);
 }
 
+const int TabController::getTabIndexById(int id) const {
+  return appState->get_tab_index_by_id(id);
+}
+
 const bool TabController::getTabsEmpty() const {
   return appState->get_tabs_empty();
 }

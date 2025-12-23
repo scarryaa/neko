@@ -20,6 +20,7 @@ public:
   const bool getTabModified(int id) const;
   const bool getTabWithPathExists(const std::string &path) const;
   const int getTabIndexByPath(const std::string &path) const;
+  const int getTabIndexById(int id) const;
   const bool getTabsEmpty() const;
   const bool getIsPinned(int id) const;
   const int getTabId(int index) const;

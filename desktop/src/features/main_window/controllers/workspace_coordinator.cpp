@@ -118,17 +118,27 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
 
 void WorkspaceCoordinator::fileSelected(const std::string &path,
                                         bool focusEditor) {
-  int index = tabController->getTabIndexByPath(path);
-  int id = tabController->getTabId(index);
-
-  if (index != -1) {
-    // Save current scroll offset
+  // Save current scroll offset
+  if (tabController->getTabCount() > 0)
     saveScrollOffsetsForActiveTab();
 
+  // Check if file is already open
+  if (tabController->getTabWithPathExists(path)) {
+    const int index = tabController->getTabIndexByPath(path);
+    const int id = tabController->getTabId(index);
+
     tabController->setActiveTab(id);
-    refreshUiForActiveTab(focusEditor);
-    updateTabBar();
+  } else {
+    int newTabId = tabController->addTab();
+    if (appStateController->openFile(path)) {
+      tabController->setActiveTab(newTabId);
+    } else {
+      tabController->closeTab(newTabId);
+    }
   }
+
+  refreshUiForActiveTab(focusEditor);
+  updateTabBar();
 }
 
 void WorkspaceCoordinator::fileSaved(bool saveAs) {

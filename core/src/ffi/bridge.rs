@@ -136,6 +136,8 @@ pub mod ffi {
         pub(crate) fn get_tab_pinned_states(self: &AppState) -> Vec<bool>;
         #[cxx_name = "get_tab_index_by_path"]
         pub(crate) fn get_tab_index_by_path_wrapper(self: &AppState, path: &str) -> i64;
+        #[cxx_name = "get_tab_index_by_id"]
+        pub(crate) fn get_tab_index_by_id_wrapper(self: &AppState, id: usize) -> i64;
         pub(crate) fn tab_with_path_exists(self: &AppState, path: &str) -> bool;
         pub(crate) fn get_file_tree(self: &AppState) -> &FileTree;
         pub(crate) fn get_file_tree_mut(self: &mut AppState) -> &mut FileTree;
