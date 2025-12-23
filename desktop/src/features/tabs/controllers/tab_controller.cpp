@@ -67,10 +67,11 @@ bool TabController::closeTab(int id) {
     return false;
   }
 
-  emit tabListChanged();
+  const auto snapshot = getTabsSnapshot();
 
-  int newActive = appState->get_active_tab_id();
-  emit activeTabChanged(newActive);
+  emit tabListChanged();
+  emit activeTabChanged(snapshot.active_id);
+
   return true;
 }
 
@@ -125,8 +126,10 @@ bool TabController::pinTab(int id) {
     return false;
   }
 
+  const auto snapshot = getTabsSnapshot();
+
   emit tabListChanged();
-  emit activeTabChanged(appState->get_active_tab_id());
+  emit activeTabChanged(snapshot.active_id);
   return true;
 }
 
@@ -139,8 +142,10 @@ bool TabController::unpinTab(int id) {
     return false;
   }
 
+  const auto snapshot = getTabsSnapshot();
+
   emit tabListChanged();
-  emit activeTabChanged(appState->get_active_tab_id());
+  emit activeTabChanged(snapshot.active_id);
   return true;
 }
 
@@ -149,7 +154,8 @@ bool TabController::moveTab(int from, int to) {
     return false;
   }
 
-  int count = appState->get_tab_count();
+  const auto beforeSnapshot = getTabsSnapshot();
+  int count = beforeSnapshot.tabs.size();
   if (from < 0 || from >= count || to < 0 || to > count) {
     return false;
   }
@@ -158,8 +164,10 @@ bool TabController::moveTab(int from, int to) {
     return false;
   }
 
+  const auto snapshot = getTabsSnapshot();
+
   emit tabListChanged();
-  emit activeTabChanged(appState->get_active_tab_id());
+  emit activeTabChanged(snapshot.active_id);
 
   return true;
 }
@@ -189,13 +197,6 @@ const bool TabController::saveTabWithId(int id) const {
 const bool
 TabController::saveTabWithIdAndSetPath(int id, const std::string &path) const {
   return appState->save_tab_with_id_and_set_path(id, path);
-}
-
-const QString TabController::getTabPath(int id) const {
-  const auto rawPath = appState->get_tab_path(id);
-  const QString path = QString::fromUtf8(rawPath);
-
-  return path;
 }
 
 void TabController::setTabScrollOffsets(

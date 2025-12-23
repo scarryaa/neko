@@ -44,7 +44,13 @@ bool WorkspaceController::saveTab(int id, bool forceSaveAs) {
 }
 
 bool WorkspaceController::saveTabWithPromptIfNeeded(int id, bool isSaveAs) {
-  const QString path = tabController->getTabPath(id);
+  const auto snapshot = tabController->getTabsSnapshot();
+  QString path = QString();
+  for (const auto &t : snapshot.tabs) {
+    if (t.id == id) {
+      path = QString::fromUtf8(t.path);
+    }
+  }
 
   if (!path.isEmpty() && !isSaveAs) {
     return tabController->saveTabWithId(id);

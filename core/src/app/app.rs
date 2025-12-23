@@ -27,27 +27,12 @@ impl AppState {
     }
 
     // Getters
-    pub fn get_tab_count(&self) -> usize {
-        self.tabs.len()
-    }
-
-    pub fn get_tabs_empty(&self) -> bool {
-        self.tabs.is_empty()
-    }
-
     pub fn get_tabs(&self) -> &Vec<Tab> {
         &self.tabs
     }
 
-    pub fn get_tab_scroll_offsets(&self, id: usize) -> Result<(i32, i32), Error> {
-        if let Some(tab) = self.tabs.iter().find(|t| t.get_id() == id) {
-            Ok(tab.get_scroll_offsets())
-        } else {
-            Err(Error::new(
-                ErrorKind::NotFound,
-                "Tab with given id not found",
-            ))
-        }
+    pub fn get_active_tab_id(&self) -> usize {
+        self.active_tab_id
     }
 
     pub fn get_active_editor(&self) -> Option<&Editor> {
@@ -74,102 +59,12 @@ impl AppState {
         }
     }
 
-    pub fn get_tab_id(&self, index: usize) -> Option<usize> {
-        self.tabs.get(index).map(|t| t.get_id())
-    }
-
-    pub fn get_active_tab_path(&self) -> Option<&str> {
-        if let Some(index) = self
-            .tabs
-            .iter()
-            .position(|t| t.get_id() == self.active_tab_id)
-        {
-            self.tabs
-                .get(index)
-                .and_then(|t| t.get_file_path())
-                .and_then(|p| p.to_str())
-        } else {
-            None
-        }
-    }
-
-    pub fn get_active_tab_id(&self) -> usize {
-        self.active_tab_id
-    }
-
-    pub fn get_tab_titles(&self) -> Vec<String> {
-        self.tabs.iter().map(|t| t.get_title().clone()).collect()
-    }
-
-    pub fn get_tab_title(&self, id: usize) -> Option<String> {
-        self.tabs
-            .iter()
-            .find(|t| t.get_id() == id)
-            .map(|t| t.get_title())
-    }
-
-    pub fn get_tab_modified_states(&self) -> Vec<bool> {
-        self.tabs
-            .iter()
-            .map(|t| {
-                let original_content = t.get_original_content();
-                original_content != t.get_editor().buffer().get_text()
-            })
-            .collect()
-    }
-
-    pub fn get_tab_modified(&self, id: usize) -> bool {
-        self.tabs
-            .iter()
-            .find(|t| t.get_id() == id)
-            .map(|t| t.get_modified())
-            .unwrap_or(false)
-    }
-
-    pub fn get_tab_pinned(&self, id: usize) -> bool {
-        self.tabs
-            .iter()
-            .find(|t| t.get_id() == id)
-            .map(|t| t.get_is_pinned())
-            .unwrap_or_default()
-    }
-
-    pub fn get_tab_pinned_states(&self) -> Vec<bool> {
-        self.tabs.iter().map(|t| t.get_is_pinned()).collect()
-    }
-
-    pub fn get_tab_index_by_path(&self, path: &str) -> Option<usize> {
-        self.tabs
-            .iter()
-            .position(|t| t.get_file_path().as_ref().and_then(|p| p.to_str()) == Some(path))
-    }
-
-    pub fn get_tab_index_by_id(&self, id: usize) -> Option<usize> {
-        self.tabs.iter().position(|t| t.get_id() == id)
-    }
-
-    pub fn tab_with_path_exists(&self, path: &str) -> bool {
-        self.tabs
-            .iter()
-            .any(|t| t.get_file_path().as_ref().and_then(|p| p.to_str()) == Some(path))
-    }
-
     pub fn get_file_tree(&self) -> &FileTree {
         &self.file_tree
     }
 
     pub fn get_file_tree_mut(&mut self) -> &mut FileTree {
         &mut self.file_tree
-    }
-
-    pub fn get_tab_path(&self, id: usize) -> Option<&str> {
-        self.tabs.iter().find(|t| t.get_id() == id).and_then(|t| {
-            if let Some(path) = t.get_file_path() {
-                path.to_str()
-            } else {
-                Some("")
-            }
-        })
     }
 
     pub fn get_close_other_tab_ids(&self, id: usize) -> Result<Vec<usize>, Error> {
@@ -655,7 +550,13 @@ mod test {
         let _ = a.set_active_tab(2);
         a.pin_tab(2).unwrap();
 
-        assert_eq!(a.get_tab_titles(), vec!["C", "A", "B"]);
+        assert_eq!(
+            a.get_tabs()
+                .iter()
+                .map(|t| t.get_title())
+                .collect::<Vec<String>>(),
+            vec!["C", "A", "B"]
+        );
         assert_eq!(a.get_active_tab_id(), 2);
     }
 }

@@ -29,37 +29,6 @@ impl AppState {
             .expect("Attempted to access mutable editor but failed")
     }
 
-    pub(crate) fn get_active_tab_path_wrapper(&self) -> String {
-        self.get_active_tab_path()
-            .expect("Tried to access active tab path but failed")
-            .to_string()
-    }
-
-    pub(crate) fn get_tab_path_wrapper(&self, id: usize) -> String {
-        self.get_tab_path(id)
-            .expect("Tried to access tab path but failed")
-            .to_string()
-    }
-
-    pub(crate) fn get_tab_id_wrapper(&self, index: usize) -> usize {
-        self.get_tab_id(index)
-            .expect("Tried to get tab id but failed")
-    }
-
-    pub(crate) fn get_tab_title_wrapper(&self, id: usize) -> String {
-        self.get_tab_title(id).unwrap_or_default()
-    }
-
-    pub(crate) fn get_tab_index_by_path_wrapper(&self, path: &str) -> i64 {
-        self.get_tab_index_by_path(path)
-            .map(|i| i as i64)
-            .unwrap_or(-1)
-    }
-
-    pub(crate) fn get_tab_index_by_id_wrapper(&self, id: usize) -> i64 {
-        self.get_tab_index_by_id(id).map(|i| i as i64).unwrap_or(-1)
-    }
-
     pub fn get_close_other_tab_ids_wrapper(&self, id: usize) -> Vec<usize> {
         self.get_close_other_tab_ids(id)
             .expect("Unable to get 'close other' tab ids")
@@ -73,12 +42,6 @@ impl AppState {
     pub fn get_close_right_tab_ids_wrapper(&self, id: usize) -> Vec<usize> {
         self.get_close_right_tab_ids(id)
             .expect("Unable to get 'close right' tab ids")
-    }
-
-    pub(crate) fn get_tab_scroll_offsets_wrapper(&self, id: usize) -> ScrollOffsetFfi {
-        self.get_tab_scroll_offsets(id)
-            .expect("Tried to get tab scroll offsets but failed")
-            .into()
     }
 
     fn make_tab_snapshot(tab: &Tab) -> TabSnapshot {

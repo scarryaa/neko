@@ -173,7 +173,13 @@ void WorkspaceCoordinator::openConfig() {
 }
 
 void WorkspaceCoordinator::tabCopyPath(int id) {
-  const QString path = tabController->getTabPath(id);
+  const auto snapshot = tabController->getTabsSnapshot();
+  QString path = QString();
+  for (const auto &t : snapshot.tabs) {
+    if (t.id == id) {
+      path = QString::fromUtf8(t.path);
+    }
+  }
 
   if (path.isEmpty())
     return;
@@ -182,7 +188,13 @@ void WorkspaceCoordinator::tabCopyPath(int id) {
 }
 
 void WorkspaceCoordinator::tabReveal(int id) {
-  const QString path = tabController->getTabPath(id);
+  const auto snapshot = tabController->getTabsSnapshot();
+  QString path = QString();
+  for (const auto &t : snapshot.tabs) {
+    if (t.id == id) {
+      path = QString::fromUtf8(t.path);
+    }
+  }
 
   if (path.isEmpty())
     return;

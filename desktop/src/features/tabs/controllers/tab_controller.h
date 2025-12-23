@@ -31,7 +31,6 @@ public:
   const bool saveActiveTabAndSetPath(const std::string &path) const;
   const bool saveTabWithId(int id) const;
   const bool saveTabWithIdAndSetPath(int id, const std::string &path) const;
-  const QString getTabPath(int id) const;
   void setTabScrollOffsets(int id, const neko::ScrollOffsetFfi &newOffsets);
 
 signals:

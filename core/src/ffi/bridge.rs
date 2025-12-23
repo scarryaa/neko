@@ -137,42 +137,18 @@ pub mod ffi {
 
         // AppState
         pub(crate) fn new_app_state(root_path: &str) -> Result<Box<AppState>>;
-        pub(crate) fn get_tab_count(self: &AppState) -> usize;
-        pub(crate) fn get_tabs_empty(self: &AppState) -> bool;
         #[cxx_name = "get_active_editor"]
         pub(crate) fn get_active_editor_wrapper(self: &AppState) -> &Editor;
         #[cxx_name = "get_active_editor_mut"]
         pub(crate) fn get_active_editor_mut_wrapper(self: &mut AppState) -> &mut Editor;
-        #[cxx_name = "get_active_tab_path"]
-        pub(crate) fn get_active_tab_path_wrapper(self: &AppState) -> String;
-        pub(crate) fn get_active_tab_id(self: &AppState) -> usize;
-        pub(crate) fn get_tab_titles(self: &AppState) -> Vec<String>;
-        pub(crate) fn get_tab_modified_states(self: &AppState) -> Vec<bool>;
-        pub(crate) fn get_tab_modified(self: &AppState, id: usize) -> bool;
-        pub(crate) fn get_tab_pinned_states(self: &AppState) -> Vec<bool>;
-        #[cxx_name = "get_tab_index_by_path"]
-        pub(crate) fn get_tab_index_by_path_wrapper(self: &AppState, path: &str) -> i64;
-        #[cxx_name = "get_tab_index_by_id"]
-        pub(crate) fn get_tab_index_by_id_wrapper(self: &AppState, id: usize) -> i64;
-        pub(crate) fn tab_with_path_exists(self: &AppState, path: &str) -> bool;
         pub(crate) fn get_file_tree(self: &AppState) -> &FileTree;
         pub(crate) fn get_file_tree_mut(self: &mut AppState) -> &mut FileTree;
-        #[cxx_name = "get_tab_path"]
-        pub(crate) fn get_tab_path_wrapper(self: &AppState, id: usize) -> String;
-        pub(crate) fn get_tab_pinned(self: &AppState, id: usize) -> bool;
-        #[cxx_name = "get_tab_id"]
-        pub(crate) fn get_tab_id_wrapper(self: &AppState, index: usize) -> usize;
-        #[cxx_name = "get_tab_title"]
-        pub(crate) fn get_tab_title_wrapper(self: &AppState, id: usize) -> String;
         #[cxx_name = "get_close_other_tab_ids"]
         pub(crate) fn get_close_other_tab_ids_wrapper(self: &AppState, id: usize) -> Vec<usize>;
         #[cxx_name = "get_close_left_tab_ids"]
         pub(crate) fn get_close_left_tab_ids_wrapper(self: &AppState, id: usize) -> Vec<usize>;
         #[cxx_name = "get_close_right_tab_ids"]
         pub(crate) fn get_close_right_tab_ids_wrapper(self: &AppState, id: usize) -> Vec<usize>;
-        #[cxx_name = "get_tab_scroll_offsets"]
-        pub(crate) fn get_tab_scroll_offsets_wrapper(self: &AppState, id: usize)
-        -> ScrollOffsetFfi;
         pub(crate) fn get_tabs_snapshot(self: &AppState) -> TabsSnapshot;
 
         pub(crate) fn new_tab(self: &mut AppState) -> usize;
