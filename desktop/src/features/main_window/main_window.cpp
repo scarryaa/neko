@@ -47,7 +47,8 @@ MainWindow::MainWindow(QWidget *parent)
   WorkspaceUiHandles uiHandles{
       editorWidget,    gutterWidget,         tabBarWidget,
       tabBarContainer, emptyStateWidget,     fileExplorerWidget,
-      statusBarWidget, commandPaletteWidget, this->window()};
+      statusBarWidget, commandPaletteWidget, this->window(),
+      titleBarWidget,  mainSplitter,         newTabButton};
 
   workspaceCoordinator = new WorkspaceCoordinator(
       workspaceController, tabController, appStateController, editorController,
@@ -57,6 +58,7 @@ MainWindow::MainWindow(QWidget *parent)
   qtShortcutsManager =
       new ShortcutsManager(this, &*shortcutsManager, workspaceCoordinator,
                            tabController, uiHandles, this);
+  qtThemeManager = new ThemeManager(&*themeManager, uiHandles);
 
   commandManager->registerProviders();
   commandManager->registerCommands();
@@ -64,7 +66,9 @@ MainWindow::MainWindow(QWidget *parent)
 
   auto snapshot = configManager->get_config_snapshot();
   auto currentTheme = snapshot.current_theme;
-  applyTheme(std::string(currentTheme.c_str()));
+  qtThemeManager->applyTheme(std::string(currentTheme.c_str()));
+  update();
+
   qtShortcutsManager->setUpKeyboardShortcuts();
   workspaceCoordinator->applyInitialState();
 }
@@ -225,8 +229,8 @@ void MainWindow::connectSignals() {
           &WorkspaceCoordinator::newTab);
 
   // WorkspaceCoordinator -> MainWindow
-  connect(workspaceCoordinator, &WorkspaceCoordinator::themeChanged, this,
-          &MainWindow::applyTheme);
+  connect(workspaceCoordinator, &WorkspaceCoordinator::themeChanged,
+          qtThemeManager, &ThemeManager::applyTheme);
 
   // GutterWidget <-> EditorWidget
   connect(gutterWidget->verticalScrollBar(), &QScrollBar::valueChanged,
@@ -275,84 +279,4 @@ void MainWindow::connectSignals() {
   // TODO: Rework the tab update system to not rely on mass setting
   // all the tabs and have the TabBarWidget be in charge of mgmt/updates,
   // with each TabWidget in control of its repaints?
-}
-
-void MainWindow::applyTheme(const std::string &themeName) {
-  std::string targetTheme = themeName;
-
-  if (targetTheme.empty()) {
-    return;
-  }
-
-  themeManager->set_theme(targetTheme);
-
-  if (titleBarWidget)
-    titleBarWidget->applyTheme();
-  if (fileExplorerWidget)
-    fileExplorerWidget->applyTheme();
-  if (editorWidget)
-    editorWidget->applyTheme();
-  if (gutterWidget)
-    gutterWidget->applyTheme();
-  if (statusBarWidget)
-    statusBarWidget->applyTheme();
-  if (tabBarWidget)
-    tabBarWidget->applyTheme();
-  if (commandPaletteWidget)
-    commandPaletteWidget->applyTheme();
-
-  if (newTabButton) {
-    QString newTabButtonBackgroundColor =
-        UiUtils::getThemeColor(*themeManager, "ui.background");
-    QString newTabButtonForegroundColor =
-        UiUtils::getThemeColor(*themeManager, "ui.foreground");
-    QString newTabButtonBorderColor =
-        UiUtils::getThemeColor(*themeManager, "ui.border");
-    QString newTabButtonHoverBackgroundColor =
-        UiUtils::getThemeColor(*themeManager, "ui.background.hover");
-
-    QString newTabButtonStylesheet =
-        QString("QPushButton {"
-                "  background: %1;"
-                "  color: %2;"
-                "  border: none;"
-                "  border-left: 1px solid %3;"
-                "  border-bottom: 1px solid %3;"
-                "  font-size: 20px;"
-                "}"
-                "QPushButton:hover {"
-                "  background: %4;"
-                "}")
-            .arg(newTabButtonBackgroundColor, newTabButtonForegroundColor,
-                 newTabButtonBorderColor, newTabButtonHoverBackgroundColor);
-    newTabButton->setStyleSheet(newTabButtonStylesheet);
-  }
-
-  if (emptyStateWidget) {
-    QString accentMutedColor =
-        UiUtils::getThemeColor(*themeManager, "ui.accent.muted");
-    QString foregroundColor =
-        UiUtils::getThemeColor(*themeManager, "ui.foreground");
-    QString emptyStateBackgroundColor =
-        UiUtils::getThemeColor(*themeManager, "ui.background");
-
-    QString emptyStateStylesheet =
-        QString("QWidget { background-color: %1; }"
-                "QPushButton { background-color: %2; border-radius: 4px; "
-                "color: %3; }")
-            .arg(emptyStateBackgroundColor, accentMutedColor, foregroundColor);
-    emptyStateWidget->setStyleSheet(emptyStateStylesheet);
-  }
-
-  if (mainSplitter) {
-    QString borderColor = UiUtils::getThemeColor(*themeManager, "ui.border");
-    QString splitterStylesheet = QString("QSplitter::handle {"
-                                         "  background-color: %1;"
-                                         "  margin: 0px;"
-                                         "}")
-                                     .arg(borderColor);
-    mainSplitter->setStyleSheet(splitterStylesheet);
-  }
-
-  update();
 }

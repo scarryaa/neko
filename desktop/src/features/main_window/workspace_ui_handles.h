@@ -7,6 +7,8 @@
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/status_bar/status_bar_widget.h"
 #include "features/tabs/tab_bar_widget.h"
+#include "features/title_bar/title_bar_widget.h"
+#include <QSplitter>
 
 struct WorkspaceUiHandles {
   EditorWidget *editorWidget;
@@ -18,6 +20,9 @@ struct WorkspaceUiHandles {
   StatusBarWidget *statusBarWidget;
   CommandPaletteWidget *commandPaletteWidget;
   QWidget *window;
+  TitleBarWidget *titleBarWidget;
+  QSplitter *mainSplitter;
+  QPushButton *newTabButton;
 };
 
 #endif

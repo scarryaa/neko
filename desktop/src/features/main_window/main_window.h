@@ -11,6 +11,7 @@
 #include "features/main_window/controllers/app_state_controller.h"
 #include "features/main_window/controllers/command_manager.h"
 #include "features/main_window/controllers/shortcuts_manager.h"
+#include "features/main_window/controllers/theme_manager.h"
 #include "features/main_window/controllers/workspace_controller.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
 #include "features/status_bar/status_bar_widget.h"
@@ -23,7 +24,6 @@
 #include <QPushButton>
 #include <QSplitter>
 #include <QVBoxLayout>
-#include <string>
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -41,8 +41,6 @@ private:
   QSplitter *buildSplitter(QWidget *editorSideContainer);
   void connectSignals();
 
-  void applyTheme(const std::string &themeName);
-
   rust::Box<neko::AppState> appState;
   rust::Box<neko::ThemeManager> themeManager;
   rust::Box<neko::ConfigManager> configManager;
@@ -56,6 +54,7 @@ private:
   ContextMenuRegistry contextMenuRegistry;
   CommandManager *commandManager;
   ShortcutsManager *qtShortcutsManager;
+  ThemeManager *qtThemeManager;
 
   QWidget *emptyStateWidget;
   QPushButton *emptyStateNewTabButton;

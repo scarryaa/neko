@@ -32,6 +32,8 @@ qt_add_executable(neko
     src/features/main_window/controllers/command_manager.h
     src/features/main_window/controllers/shortcuts_manager.cpp
     src/features/main_window/controllers/shortcuts_manager.h
+    src/features/main_window/controllers/theme_manager.cpp
+    src/features/main_window/controllers/theme_manager.h
 
     src/features/title_bar/title_bar_widget.cpp
     src/features/title_bar/title_bar_widget.h
