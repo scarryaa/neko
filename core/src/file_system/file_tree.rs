@@ -3,14 +3,14 @@ use std::{
     collections::{HashMap, HashSet},
     fs::{self},
     io,
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
 #[repr(C)]
 #[derive(Debug)]
 pub struct FileTree {
     pub nodes: Vec<FileNode>,
-    root_path: PathBuf,
+    pub root_path: PathBuf,
     expanded: HashMap<PathBuf, Vec<FileNode>>,
     selected: HashSet<PathBuf>,
     current: Option<PathBuf>,
@@ -124,7 +124,7 @@ impl FileTree {
         visible
     }
 
-    pub fn collect_visible<'a>(
+    fn collect_visible<'a>(
         &'a self,
         path: &PathBuf,
         visible: &mut Vec<&'a FileNode>,
@@ -142,7 +142,7 @@ impl FileTree {
         }
     }
 
-    pub fn collect_visible_owned(&self, path: &PathBuf, visible: &mut Vec<FileNode>, depth: usize) {
+    fn collect_visible_owned(&self, path: &PathBuf, visible: &mut Vec<FileNode>, depth: usize) {
         if let Some(children) = self.expanded.get(path) {
             for node in children {
                 let node_with_depth = FileNode {
@@ -169,12 +169,6 @@ impl FileTree {
         let mut visible = Vec::new();
         self.collect_visible_owned(&self.root_path, &mut visible, 0);
         visible
-    }
-
-    pub fn get_node(&self, current_path: &str) -> Option<&FileNode> {
-        let visible = self.get_visible_nodes();
-        let current_idx = visible.iter().position(|n| n.path == current_path)?;
-        visible.get(current_idx).copied()
     }
 
     pub fn next(&self, current_path: &str) -> Option<&FileNode> {
@@ -266,16 +260,8 @@ impl FileTree {
         }
     }
 
-    pub fn is_expanded(&self, path: &str) -> bool {
+    fn is_expanded(&self, path: &str) -> bool {
         self.expanded.contains_key(&PathBuf::from(path))
-    }
-
-    pub fn select(&mut self, path: &str) {
-        self.selected.insert(PathBuf::from(path));
-    }
-
-    pub fn unselect(&mut self, path: &str) {
-        self.selected.remove(&PathBuf::from(path));
     }
 
     pub fn toggle_select(&mut self, path: &str) {
@@ -296,16 +282,12 @@ impl FileTree {
         self.current = None;
     }
 
-    pub fn is_selected(&self, path: &str) -> bool {
-        self.selected.contains(&PathBuf::from(path))
+    pub fn get_selected_owned(&self) -> HashSet<PathBuf> {
+        self.selected.clone()
     }
 
-    pub fn get_selected(&self) -> Vec<&PathBuf> {
-        self.selected.iter().collect()
-    }
-
-    pub fn is_current(&self, path: &str) -> bool {
-        self.current.as_deref() == Some(Path::new(path))
+    pub fn get_expanded_owned(&self) -> HashMap<PathBuf, Vec<FileNode>> {
+        self.expanded.clone()
     }
 
     pub fn get_current(&self) -> Option<PathBuf> {
@@ -314,17 +296,5 @@ impl FileTree {
 
     pub fn clear_selection(&mut self) {
         self.selected.clear();
-    }
-
-    pub fn get_index(&self) -> usize {
-        if self.current.is_none() {
-            return 0;
-        }
-
-        let visible = self.get_visible_nodes();
-        visible
-            .iter()
-            .position(|n| n.path == self.current.clone().unwrap().to_str().unwrap())
-            .unwrap()
     }
 }

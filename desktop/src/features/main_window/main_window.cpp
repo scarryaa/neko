@@ -26,6 +26,8 @@ MainWindow::MainWindow(QWidget *parent)
 
   neko::Editor *editor = &appStateController->getActiveEditorMut();
   neko::FileTree *fileTree = &appStateController->getFileTreeMut();
+
+  fileTreeController = new FileTreeController(fileTree, this);
   editorController = new EditorController(editor);
   workspaceController = new WorkspaceController(
       tabController,
@@ -41,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
                     ids);
               }});
 
-  setupWidgets(editor, fileTree);
+  setupWidgets(editor, fileTreeController);
   setupLayout();
 
   uiHandles = WorkspaceUiHandles{
@@ -73,11 +75,12 @@ MainWindow::MainWindow(QWidget *parent)
   workspaceCoordinator->applyInitialState();
 }
 
-void MainWindow::setupWidgets(neko::Editor *editor, neko::FileTree *fileTree) {
+void MainWindow::setupWidgets(neko::Editor *editor,
+                              FileTreeController *fileTreeController) {
   emptyStateWidget = new QWidget(this);
   titleBarWidget = new TitleBarWidget(*configManager, *themeManager, this);
-  fileExplorerWidget =
-      new FileExplorerWidget(fileTree, *configManager, *themeManager, this);
+  fileExplorerWidget = new FileExplorerWidget(
+      fileTreeController, *configManager, *themeManager, this);
   commandPaletteWidget =
       new CommandPaletteWidget(*themeManager, *configManager, this);
   editorWidget =

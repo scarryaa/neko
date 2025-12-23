@@ -1,6 +1,7 @@
 #ifndef FILE_EXPLORER_WIDGET_H
 #define FILE_EXPLORER_WIDGET_H
 
+#include "features/file_explorer/controllers/file_tree_controller.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 #include "utils/gui_utils.h"
 #include <QApplication>
@@ -48,7 +49,7 @@ class FileExplorerWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit FileExplorerWidget(neko::FileTree *tree,
+  explicit FileExplorerWidget(FileTreeController *fileTreeController,
                               neko::ConfigManager &configManager,
                               neko::ThemeManager &themeManager,
                               QWidget *parent = nullptr);
@@ -77,14 +78,12 @@ public slots:
 
 private:
   void redraw();
-  void drawFiles(QPainter *painter, size_t count, rust::Vec<neko::FileNode>);
+  void drawFiles(QPainter *painter, size_t count,
+                 rust::Vec<neko::FileNodeSnapshot>);
   void drawFile(QPainter *painter, double xPos, double yPos,
-                const neko::FileNode &node);
+                const neko::FileNodeSnapshot &node);
 
   void loadDirectory(const std::string &path);
-  void setFileNodes(rust::Vec<neko::FileNode> nodes,
-                    bool updateScrollbars = true);
-  void refreshVisibleNodes(bool updateScrollbars = true);
 
   double measureContent();
   void updateDimensions();
@@ -104,7 +103,8 @@ private:
   bool copyRecursively(const QString &sourceFolder, const QString &destFolder);
   void handleDeleteConfirm();
   void handleDeleteNoConfirm();
-  void deleteItem(const std::string &path, const neko::FileNode &currentNode);
+  void deleteItem(const std::string &path,
+                  const neko::FileNodeSnapshot &currentNode);
 
   void selectNextNode();
   void selectPrevNode();
@@ -114,12 +114,9 @@ private:
 
   int convertMousePositionToRow(double yPos);
 
+  FileTreeController *fileTreeController;
   neko::ConfigManager &configManager;
   neko::ThemeManager &themeManager;
-  neko::FileTree *tree;
-  int fileCount = 0;
-  rust::Vec<neko::FileNode> fileNodes;
-  std::string rootPath;
   QPushButton *directorySelectionButton;
   QFont font;
   QFontMetricsF fontMetrics;

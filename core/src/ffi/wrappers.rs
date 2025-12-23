@@ -429,61 +429,14 @@ impl Editor {
 }
 
 impl FileTree {
-    pub(crate) fn get_children_wrapper(&mut self, path: &str) -> Vec<FileNode> {
-        self.get_children(path)
-            .iter()
-            .map(|n| FileNode {
-                path: n.path_str(),
-                name: n.name_str(),
-                is_dir: n.is_dir,
-                is_hidden: n.is_hidden,
-                size: n.size,
-                modified: n.modified,
-                depth: n.depth,
-            })
-            .collect()
-    }
-
-    pub(crate) fn get_node_wrapper(&self, path: &str) -> FileNode {
-        let node = self.get_node(path).unwrap();
-
-        FileNode {
-            path: node.path_str(),
-            name: node.name_str(),
-            is_dir: node.is_dir,
-            is_hidden: node.is_hidden,
-            size: node.size,
-            modified: node.modified,
-            depth: node.depth,
-        }
-    }
-
-    pub(crate) fn get_next_node(&self, current_path: &str) -> FileNode {
+    pub(crate) fn get_next_node(&self, current_path: &str) -> FileNodeSnapshot {
         let node = self.next(current_path).unwrap();
-
-        FileNode {
-            path: node.path_str(),
-            name: node.name_str(),
-            is_dir: node.is_dir,
-            is_hidden: node.is_hidden,
-            size: node.size,
-            modified: node.modified,
-            depth: node.depth,
-        }
+        self.make_file_node_snapshot(node)
     }
 
-    pub(crate) fn get_prev_node(&self, current_path: &str) -> FileNode {
+    pub(crate) fn get_prev_node(&self, current_path: &str) -> FileNodeSnapshot {
         let node = self.prev(current_path).unwrap();
-
-        FileNode {
-            path: node.path_str(),
-            name: node.name_str(),
-            is_dir: node.is_dir,
-            is_hidden: node.is_hidden,
-            size: node.size,
-            modified: node.modified,
-            depth: node.depth,
-        }
+        self.make_file_node_snapshot(node)
     }
 
     pub(crate) fn get_path_of_parent(&self, path: &str) -> String {
@@ -496,57 +449,46 @@ impl FileTree {
             .to_string()
     }
 
-    pub(crate) fn get_visible_nodes_wrapper(tree: &FileTree) -> Vec<FileNode> {
-        tree.get_visible_nodes_owned()
+    pub(crate) fn get_children_wrapper(&mut self, path: &str) -> Vec<FileNodeSnapshot> {
+        let children_owned = self.get_children(path).to_vec();
+
+        children_owned
             .iter()
-            .map(|n| FileNode {
-                path: n.path_str(),
-                name: n.name_str(),
-                is_dir: n.is_dir,
-                is_hidden: n.is_hidden,
-                size: n.size,
-                modified: n.modified,
-                depth: n.depth,
-            })
+            .map(|node| self.make_file_node_snapshot(node))
             .collect()
     }
 
-    pub(crate) fn get_path_of_current(&self) -> String {
-        self.get_current()
-            .unwrap_or("".into())
-            .to_string_lossy()
-            .as_ref()
-            .to_string()
-    }
-}
+    fn make_file_node_snapshot(&self, node: &crate::FileNode) -> FileNodeSnapshot {
+        let p = PathBuf::from(node.path_str());
 
-impl FileNode {
-    pub(crate) fn get_path(&self) -> String {
-        self.path.clone()
-    }
-
-    pub(crate) fn get_name(&self) -> String {
-        self.name.clone()
-    }
-
-    pub(crate) fn get_is_dir(&self) -> bool {
-        self.is_dir
+        FileNodeSnapshot {
+            path: node.path.clone(),
+            name: node.name.clone(),
+            is_dir: node.is_dir,
+            is_hidden: node.is_hidden,
+            is_expanded: node.is_dir && self.get_expanded_owned().contains_key(&p),
+            is_selected: self.get_selected_owned().contains(&p),
+            is_current: self.get_current().as_ref() == Some(&p),
+            size: node.size,
+            modified: node.modified,
+            depth: node.depth,
+        }
     }
 
-    pub(crate) fn get_is_hidden(&self) -> bool {
-        self.is_hidden
-    }
+    pub(crate) fn get_tree_snapshot(&self) -> FileTreeSnapshot {
+        let nodes: Vec<FileNodeSnapshot> = self
+            .get_visible_nodes_owned()
+            .iter()
+            .map(|node| self.make_file_node_snapshot(node))
+            .collect();
 
-    pub(crate) fn get_size(&self) -> u64 {
-        self.size
-    }
+        let root_present = !self.root_path.as_os_str().is_empty();
 
-    pub(crate) fn get_modified(&self) -> u64 {
-        self.modified
-    }
-
-    pub(crate) fn get_depth(&self) -> usize {
-        self.depth
+        FileTreeSnapshot {
+            root_present,
+            root: self.root_path.to_string_lossy().to_string(),
+            nodes,
+        }
     }
 }
 

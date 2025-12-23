@@ -27,16 +27,6 @@ pub mod ffi {
         active: bool,
     }
 
-    struct FileNode {
-        path: String,
-        name: String,
-        is_dir: bool,
-        is_hidden: bool,
-        size: u64,
-        modified: u64,
-        depth: usize,
-    }
-
     struct ScrollOffsetFfi {
         x: i32,
         y: i32,
@@ -125,6 +115,25 @@ pub mod ffi {
         pub active_present: bool,
         pub active_id: u64,
         pub tabs: Vec<TabSnapshot>,
+    }
+
+    struct FileNodeSnapshot {
+        path: String,
+        name: String,
+        is_dir: bool,
+        is_hidden: bool,
+        is_expanded: bool,
+        is_selected: bool,
+        is_current: bool,
+        size: u64,
+        modified: u64,
+        depth: usize,
+    }
+
+    struct FileTreeSnapshot {
+        pub root_present: bool,
+        pub root: String,
+        pub nodes: Vec<FileNodeSnapshot>,
     }
 
     extern "Rust" {
@@ -316,37 +325,22 @@ pub mod ffi {
         // FileTree
         #[cxx_name = "set_root_dir"]
         pub(crate) fn set_root_path(self: &mut FileTree, path: &str);
-        #[cxx_name = "get_children"]
-        pub(crate) fn get_children_wrapper(self: &mut FileTree, path: &str) -> Vec<FileNode>;
-        #[cxx_name = "get_node"]
-        pub(crate) fn get_node_wrapper(self: &FileTree, path: &str) -> FileNode;
-        pub(crate) fn get_next_node(self: &FileTree, current_path: &str) -> FileNode;
-        pub(crate) fn get_prev_node(self: &FileTree, current_path: &str) -> FileNode;
+        pub(crate) fn get_next_node(self: &FileTree, current_path: &str) -> FileNodeSnapshot;
+        pub(crate) fn get_prev_node(self: &FileTree, current_path: &str) -> FileNodeSnapshot;
         pub(crate) fn get_path_of_parent(self: &FileTree, path: &str) -> String;
         pub(crate) fn toggle_expanded(self: &mut FileTree, path: &str);
         pub(crate) fn set_expanded(self: &mut FileTree, path: &str);
         pub(crate) fn set_collapsed(self: &mut FileTree, path: &str);
-        #[cxx_name = "get_visible_nodes"]
-        pub(crate) fn get_visible_nodes_wrapper(self: &mut FileTree) -> Vec<FileNode>;
         pub(crate) fn toggle_select(self: &mut FileTree, path: &str);
         pub(crate) fn set_current(self: &mut FileTree, path: &str);
         pub(crate) fn clear_current(self: &mut FileTree);
-        #[cxx_name = "get_current_index"]
-        pub(crate) fn get_index(self: &FileTree) -> usize;
-        pub(crate) fn get_path_of_current(self: &FileTree) -> String;
-        pub(crate) fn is_expanded(self: &FileTree, path: &str) -> bool;
-        pub(crate) fn is_selected(self: &FileTree, path: &str) -> bool;
-        pub(crate) fn is_current(self: &FileTree, path: &str) -> bool;
+        #[cxx_name = "get_children"]
+        pub(crate) fn get_children_wrapper(
+            self: &mut FileTree,
+            path: &str,
+        ) -> Vec<FileNodeSnapshot>;
         pub(crate) fn refresh_dir(self: &mut FileTree, path: &str);
-
-        // FileNode
-        pub(crate) fn get_path(self: &FileNode) -> String;
-        pub(crate) fn get_name(self: &FileNode) -> String;
-        pub(crate) fn get_is_dir(self: &FileNode) -> bool;
-        pub(crate) fn get_is_hidden(self: &FileNode) -> bool;
-        pub(crate) fn get_size(self: &FileNode) -> u64;
-        pub(crate) fn get_modified(self: &FileNode) -> u64;
-        pub(crate) fn get_depth(self: &FileNode) -> usize;
+        pub(crate) fn get_tree_snapshot(self: &FileTree) -> FileTreeSnapshot;
 
         // Commands
         #[cxx_name = "execute_command"]

@@ -56,6 +56,8 @@ qt_add_executable(neko
 
     src/features/file_explorer/file_explorer_widget.cpp
     src/features/file_explorer/file_explorer_widget.h
+    src/features/file_explorer/controllers/file_tree_controller.cpp
+    src/features/file_explorer/controllers/file_tree_controller.h
 
     src/features/tabs/tab_bar_widget.cpp
     src/features/tabs/tab_bar_widget.h
