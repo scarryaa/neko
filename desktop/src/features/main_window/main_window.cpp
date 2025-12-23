@@ -7,7 +7,6 @@ Q_DECLARE_METATYPE(TabContext);
 // to use the AppState consistently and extract common MainWindow/StatusBar
 // functionality.
 // TODO(scarlet): Auto detect config file save in editor
-// TODO(scarlet): Prevent config reset on updating model
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), appState(neko::new_app_state("")),
       themeManager(neko::new_theme_manager()),
@@ -21,13 +20,13 @@ MainWindow::MainWindow(QWidget *parent)
 
   commandRegistry = CommandRegistry();
   contextMenuRegistry = ContextMenuRegistry();
-  appStateController = new AppStateController(&*appState);
-  tabController = new TabController(&*appState);
+  auto *appStateController = new AppStateController(&*appState);
+  auto *tabController = new TabController(&*appState);
 
   neko::Editor *editor = &appStateController->getActiveEditorMut();
   neko::FileTree *fileTree = &appStateController->getFileTreeMut();
 
-  fileTreeController = new FileTreeController(fileTree, this);
+  auto *fileTreeController = new FileTreeController(fileTree, this);
   editorController = new EditorController(editor);
   workspaceController = new WorkspaceController(
       tabController,
@@ -43,7 +42,7 @@ MainWindow::MainWindow(QWidget *parent)
                     ids);
               }});
 
-  setupWidgets(editor, fileTreeController);
+  setupWidgets(editor, fileTreeController, tabController);
   setupLayout();
 
   uiHandles = WorkspaceUiHandles{
@@ -55,9 +54,9 @@ MainWindow::MainWindow(QWidget *parent)
   workspaceCoordinator = new WorkspaceCoordinator(
       workspaceController, tabController, appStateController, editorController,
       &*configManager, &*themeManager, &uiHandles, this);
-  commandManager = new CommandManager(&commandRegistry, &contextMenuRegistry,
-                                      workspaceCoordinator);
-  qtShortcutsManager =
+  auto *commandManager = new CommandManager(
+      &commandRegistry, &contextMenuRegistry, workspaceCoordinator);
+  auto *qtShortcutsManager =
       new ShortcutsManager(this, &*shortcutsManager, workspaceCoordinator,
                            tabController, &uiHandles, this);
   qtThemeManager = new ThemeManager(&*themeManager, &uiHandles, this);
@@ -76,7 +75,8 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 void MainWindow::setupWidgets(neko::Editor *editor,
-                              FileTreeController *fileTreeController) {
+                              FileTreeController *fileTreeController,
+                              TabController *tabController) {
   emptyStateWidget = new QWidget(this);
   titleBarWidget = new TitleBarWidget(*configManager, *themeManager, this);
   fileExplorerWidget = new FileExplorerWidget(

@@ -9,7 +9,6 @@
 #include "features/editor/gutter_widget.h"
 #include "features/file_explorer/controllers/file_tree_controller.h"
 #include "features/file_explorer/file_explorer_widget.h"
-#include "features/main_window/controllers/app_state_controller.h"
 #include "features/main_window/controllers/command_manager.h"
 #include "features/main_window/controllers/shortcuts_manager.h"
 #include "features/main_window/controllers/theme_manager.h"
@@ -35,7 +34,8 @@ public:
 
 private:
   void setupWidgets(neko::Editor *editor,
-                    FileTreeController *fileTreeController);
+                    FileTreeController *fileTreeController,
+                    TabController *tabController);
   void setupLayout();
   QWidget *buildTabBarSection();
   QWidget *buildEmptyStateSection();
@@ -48,15 +48,10 @@ private:
   rust::Box<neko::ConfigManager> configManager;
   rust::Box<neko::ShortcutsManager> shortcutsManager;
   EditorController *editorController;
-  TabController *tabController;
   WorkspaceCoordinator *workspaceCoordinator;
   WorkspaceController *workspaceController;
-  AppStateController *appStateController;
-  FileTreeController *fileTreeController;
   CommandRegistry commandRegistry;
   ContextMenuRegistry contextMenuRegistry;
-  CommandManager *commandManager;
-  ShortcutsManager *qtShortcutsManager;
   ThemeManager *qtThemeManager;
 
   QWidget *emptyStateWidget;
