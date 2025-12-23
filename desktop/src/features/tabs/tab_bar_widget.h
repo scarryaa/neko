@@ -37,7 +37,7 @@ public:
 
   void applyTheme();
   void setTabs(QStringList titles, QStringList paths,
-               rust::Vec<bool> modifiedStates, rust::Vec<bool> pinnedStates);
+               QList<bool> modifiedStates, QList<bool> pinnedStates);
   void setCurrentId(int id);
   void setTabModified(int id, bool modified);
   int getNumberOfTabs();

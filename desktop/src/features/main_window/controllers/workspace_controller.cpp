@@ -64,9 +64,22 @@ bool WorkspaceController::closeMany(const QList<int> &ids, bool forceClose,
   if (ids.isEmpty())
     return false;
 
+  const auto snap = tabController->getTabsSnapshot();
+
+  QHash<int, bool> modifiedById = QHash<int, bool>();
+  modifiedById.reserve(static_cast<int>(snap.tabs.size()));
+  for (const auto &t : snap.tabs) {
+    modifiedById.insert(static_cast<int>(t.id), t.modified);
+  }
+
+  auto isModified = [&](int id) -> bool {
+    auto it = modifiedById.constFind(id);
+    return it != modifiedById.constEnd() ? it.value() : false;
+  };
+
   bool anyModified = false;
   for (int id : ids) {
-    if (tabController->getTabModified(id)) {
+    if (isModified(id)) {
       anyModified = true;
       break;
     }
@@ -76,7 +89,7 @@ bool WorkspaceController::closeMany(const QList<int> &ids, bool forceClose,
     switch (workspaceUi.confirmCloseTabs(ids)) {
     case CloseDecision::Save:
       for (int id : ids) {
-        if (tabController->getTabModified(id)) {
+        if (isModified(id)) {
           if (!saveTabWithPromptIfNeeded(id, false))
             return false;
         }

@@ -80,7 +80,8 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
       closeTabAction,
       seqFor("Tab::Close", QKeySequence(Qt::ControlModifier | Qt::Key_W)),
       Qt::WindowShortcut, [this]() {
-        workspaceCoordinator->closeTab(tabController->getActiveTabId(), false);
+        const auto snapshot = tabController->getTabsSnapshot();
+        workspaceCoordinator->closeTab(snapshot.active_id, false);
       });
 
   // Cmd+Shift+W for force close tab (bypass unsaved confirmation)
@@ -90,36 +91,39 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
                      QKeySequence(QKeySequence(Qt::ControlModifier,
                                                Qt::ShiftModifier, Qt::Key_W))),
               Qt::WindowShortcut, [this]() {
-                workspaceCoordinator->closeTab(tabController->getActiveTabId(),
-                                               true);
+                const auto snapshot = tabController->getTabsSnapshot();
+                workspaceCoordinator->closeTab(snapshot.active_id, true);
               });
+
+  auto findIndexById = [](const neko::TabsSnapshot &snap, uint64_t id) -> int {
+    for (int i = 0; i < static_cast<int>(snap.tabs.size()); ++i) {
+      if (snap.tabs[i].id == id)
+        return i;
+    }
+    return -1;
+  };
 
   // Cmd+Tab for next tab
   QAction *nextTabAction = new QAction(this);
   addShortcut(nextTabAction,
               seqFor("Tab::Next", QKeySequence(Qt::MetaModifier | Qt::Key_Tab)),
-              Qt::WindowShortcut, [this]() {
-                const int tabCount = tabController->getTabCount();
-
-                if (tabCount <= 0)
+              Qt::WindowShortcut, [this, findIndexById]() {
+                const auto snapshot = tabController->getTabsSnapshot();
+                if (!snapshot.active_present)
                   return;
 
-                const int currentId = tabController->getActiveTabId();
+                const int tabCount = static_cast<int>(snapshot.tabs.size());
+                if (tabCount <= 1)
+                  return;
 
-                int currentIndex = -1;
-                for (int i = 0; i < tabCount; ++i) {
-                  if (tabController->getTabId(i) == currentId) {
-                    currentIndex = i;
-                    break;
-                  }
-                }
-
-                if (currentIndex == -1)
+                const int currentIndex =
+                    findIndexById(snapshot, snapshot.active_id);
+                if (currentIndex < 0)
                   return;
 
                 const int nextIndex = (currentIndex + 1) % tabCount;
                 workspaceCoordinator->tabChanged(
-                    tabController->getTabId(nextIndex));
+                    static_cast<int>(snapshot.tabs[nextIndex].id));
               });
 
   // Cmd+Shift+Tab for previous tab
@@ -128,27 +132,23 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
       prevTabAction,
       seqFor("Tab::Previous",
              QKeySequence(Qt::MetaModifier | Qt::ShiftModifier | Qt::Key_Tab)),
-      Qt::WindowShortcut, [this]() {
-        const int tabCount = tabController->getTabCount();
-
-        if (tabCount <= 0)
+      Qt::WindowShortcut, [this, findIndexById]() {
+        const auto snapshot = tabController->getTabsSnapshot();
+        if (!snapshot.active_present)
           return;
 
-        const int currentId = tabController->getActiveTabId();
+        const int tabCount = static_cast<int>(snapshot.tabs.size());
+        if (tabCount <= 1)
+          return;
 
-        int currentIndex = -1;
-        for (int i = 0; i < tabCount; ++i) {
-          if (tabController->getTabId(i) == currentId) {
-            currentIndex = i;
-            break;
-          }
-        }
-        if (currentIndex == -1)
+        const int currentIndex = findIndexById(snapshot, snapshot.active_id);
+        if (currentIndex < 0)
           return;
 
         const int prevIndex =
             (currentIndex == 0) ? (tabCount - 1) : (currentIndex - 1);
-        workspaceCoordinator->tabChanged(tabController->getTabId(prevIndex));
+        workspaceCoordinator->tabChanged(
+            static_cast<int>(snapshot.tabs[prevIndex].id));
       });
 
   // Ctrl+G for jump to

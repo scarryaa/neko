@@ -12,23 +12,10 @@ public:
   ~TabController();
 
   // Getters
-  const int getTabCount() const;
-  const int getActiveTabId() const;
-  const rust::Vec<rust::String> getTabTitles() const;
-  const rust::Vec<bool> getTabModifiedStates() const;
-  const rust::Vec<bool> getTabPinnedStates() const;
-  const bool getTabModified(int id) const;
-  const bool getTabWithPathExists(const std::string &path) const;
-  const int getTabIndexByPath(const std::string &path) const;
-  const int getTabIndexById(int id) const;
-  const bool getTabsEmpty() const;
-  const bool getIsPinned(int id) const;
-  const int getTabId(int index) const;
-  const QString getTabTitle(int id) const;
+  const neko::TabsSnapshot getTabsSnapshot();
   const QList<int> getCloseOtherTabIds(int id) const;
   const QList<int> getCloseLeftTabIds(int id) const;
   const QList<int> getCloseRightTabIds(int id) const;
-  const neko::ScrollOffsetFfi getTabScrollOffsets(int id) const;
 
   // Setters
   int addTab();

@@ -4,71 +4,8 @@ TabController::TabController(neko::AppState *appState) : appState(appState) {}
 
 TabController::~TabController() {}
 
-const int TabController::getTabCount() const {
-  return !appState ? 0 : appState->get_tab_count();
-}
-
-const int TabController::getActiveTabId() const {
-  return !appState ? -1 : appState->get_active_tab_id();
-}
-
-const rust::Vec<rust::String> TabController::getTabTitles() const {
-  if (!appState) {
-    return {};
-  }
-
-  return appState->get_tab_titles();
-}
-
-const rust::Vec<bool> TabController::getTabModifiedStates() const {
-  if (!appState) {
-    return {};
-  }
-
-  return appState->get_tab_modified_states();
-}
-
-const rust::Vec<bool> TabController::getTabPinnedStates() const {
-  if (!appState) {
-    return {};
-  }
-
-  return appState->get_tab_pinned_states();
-}
-
-const bool TabController::getTabModified(int id) const {
-  return appState->get_tab_modified(id);
-}
-
-const bool TabController::getTabWithPathExists(const std::string &path) const {
-  return appState->tab_with_path_exists(path);
-}
-
-const int TabController::getTabIndexByPath(const std::string &path) const {
-  return appState->get_tab_index_by_path(path);
-}
-
-const int TabController::getTabIndexById(int id) const {
-  return appState->get_tab_index_by_id(id);
-}
-
-const bool TabController::getTabsEmpty() const {
-  return appState->get_tabs_empty();
-}
-
-const bool TabController::getIsPinned(int id) const {
-  return appState->get_tab_pinned(id);
-}
-
-const int TabController::getTabId(int index) const {
-  return appState->get_tab_id(index);
-}
-
-const QString TabController::getTabTitle(int id) const {
-  const auto rawTitle = appState->get_tab_title(id);
-  const QString title = QString::fromUtf8(rawTitle);
-
-  return title;
+const neko::TabsSnapshot TabController::getTabsSnapshot() {
+  return appState->get_tabs_snapshot();
 }
 
 const QList<int> TabController::getCloseOtherTabIds(int id) const {
@@ -108,10 +45,6 @@ const QList<int> TabController::getCloseRightTabIds(int id) const {
   }
 
   return ids;
-}
-
-const neko::ScrollOffsetFfi TabController::getTabScrollOffsets(int id) const {
-  return appState->get_tab_scroll_offsets(id);
 }
 
 int TabController::addTab() {

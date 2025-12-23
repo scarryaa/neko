@@ -66,8 +66,8 @@ void TabBarWidget::applyTheme() {
 }
 
 void TabBarWidget::setTabs(QStringList titles, QStringList paths,
-                           rust::Vec<bool> modifiedStates,
-                           rust::Vec<bool> pinnedStates) {
+                           QList<bool> modifiedStates,
+                           QList<bool> pinnedStates) {
   QLayoutItem *item;
   while ((item = layout->takeAt(0)) != nullptr) {
     if (item->widget() && item->widget() != newTabButton) {
@@ -78,16 +78,25 @@ void TabBarWidget::setTabs(QStringList titles, QStringList paths,
   tabs.clear();
 
   // Create new tabs
-  int numberOfTabs = tabController->getTabCount();
-  for (int i = 0; i < numberOfTabs; i++) {
-    const int id = tabController->getTabId(i);
+  auto snapshot = tabController->getTabsSnapshot();
+  int i = 0;
+  for (const auto &t : snapshot.tabs) {
+    const int id = t.id;
+    const QString title = QString::fromUtf8(t.title);
+    const QString path = QString::fromUtf8(t.path);
+    const bool pinned = t.pinned;
+    const bool modified = t.modified;
 
     auto *tabWidget = new TabWidget(
-        titles[i], paths[i], i, id, pinnedStates[i], configManager,
-        themeManager, contextMenuRegistry, commandRegistry,
-        [this]() -> int { return tabController->getTabCount(); }, this);
-    tabWidget->setModified(modifiedStates[i]);
-    tabWidget->setIsPinned(pinnedStates[i]);
+        title, path, i, id, pinned, configManager, themeManager,
+        contextMenuRegistry, commandRegistry,
+        [this]() -> int {
+          const auto snapshot = tabController->getTabsSnapshot();
+          return snapshot.tabs.size();
+        },
+        this);
+    tabWidget->setModified(modified);
+    tabWidget->setIsPinned(pinned);
 
     connect(tabWidget, &TabWidget::clicked, this, [this, id]() {
       setCurrentId(id);
@@ -102,6 +111,8 @@ void TabBarWidget::setTabs(QStringList titles, QStringList paths,
 
     layout->addWidget(tabWidget);
     tabs.append(tabWidget);
+
+    i++;
   }
 
   layout->addStretch();
@@ -284,9 +295,12 @@ void TabBarWidget::updateDropIndicator(int index) {
 }
 
 void TabBarWidget::updateTabAppearance() {
-  for (int i = 0; i < tabs.size(); i++) {
-    const int id = tabController->getTabId(i);
-    tabs[i]->setActive(id == currentTabId);
+  const auto snapshot = tabController->getTabsSnapshot();
+
+  int i = 0;
+  for (const auto &t : snapshot.tabs) {
+    tabs[i]->setActive(t.id == currentTabId);
+    i++;
   }
 }
 
@@ -306,7 +320,7 @@ void TabBarWidget::registerCommands() {
       tabController->pinTab(ctx.tabId);
     }
 
-    const int activeId = tabController->getActiveTabId();
-    emit tabPinnedChanged(activeId);
+    const auto snapshot = tabController->getTabsSnapshot();
+    emit tabPinnedChanged(snapshot.active_id);
   });
 }

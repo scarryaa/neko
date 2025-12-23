@@ -111,6 +111,22 @@ pub mod ffi {
         current_theme: String,
     }
 
+    struct TabSnapshot {
+        pub id: u64,
+        pub title: String,
+        pub path_present: bool,
+        pub path: String,
+        pub modified: bool,
+        pub pinned: bool,
+        pub scroll_offsets: ScrollOffsetFfi,
+    }
+
+    struct TabsSnapshot {
+        pub active_present: bool,
+        pub active_id: u64,
+        pub tabs: Vec<TabSnapshot>,
+    }
+
     extern "Rust" {
         type AppState;
         type ConfigManager;
@@ -157,6 +173,7 @@ pub mod ffi {
         #[cxx_name = "get_tab_scroll_offsets"]
         pub(crate) fn get_tab_scroll_offsets_wrapper(self: &AppState, id: usize)
         -> ScrollOffsetFfi;
+        pub(crate) fn get_tabs_snapshot(self: &AppState) -> TabsSnapshot;
 
         pub(crate) fn new_tab(self: &mut AppState) -> usize;
         #[cxx_name = "close_tab"]

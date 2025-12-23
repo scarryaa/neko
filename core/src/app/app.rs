@@ -35,6 +35,10 @@ impl AppState {
         self.tabs.is_empty()
     }
 
+    pub fn get_tabs(&self) -> &Vec<Tab> {
+        &self.tabs
+    }
+
     pub fn get_tab_scroll_offsets(&self, id: usize) -> Result<(i32, i32), Error> {
         if let Some(tab) = self.tabs.iter().find(|t| t.get_id() == id) {
             Ok(tab.get_scroll_offsets())

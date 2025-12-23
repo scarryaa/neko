@@ -1,7 +1,7 @@
 use super::bridge::ffi::*;
 use crate::{
-    AppState, Editor, FileTree, ShortcutsManager, commands::execute_command, config::ConfigManager,
-    theme::ThemeManager,
+    AppState, Editor, FileTree, ShortcutsManager, app::Tab, commands::execute_command,
+    config::ConfigManager, theme::ThemeManager,
 };
 use std::path::PathBuf;
 
@@ -79,6 +79,47 @@ impl AppState {
         self.get_tab_scroll_offsets(id)
             .expect("Tried to get tab scroll offsets but failed")
             .into()
+    }
+
+    fn make_tab_snapshot(tab: &Tab) -> TabSnapshot {
+        let (path_present, path) = match tab.get_file_path() {
+            Some(p) => (true, p.to_string_lossy().to_string()),
+            None => (false, String::new()),
+        };
+
+        TabSnapshot {
+            id: tab.get_id() as u64,
+            title: tab.get_title().to_string(),
+            path_present,
+            path,
+            modified: tab.get_modified(),
+            pinned: tab.get_is_pinned(),
+            scroll_offsets: ScrollOffsetFfi {
+                x: tab.get_scroll_offsets().0,
+                y: tab.get_scroll_offsets().1,
+            },
+        }
+    }
+
+    pub(crate) fn get_tabs_snapshot(&self) -> TabsSnapshot {
+        let tabs: Vec<TabSnapshot> = self
+            .get_tabs()
+            .iter()
+            .map(Self::make_tab_snapshot)
+            .collect();
+
+        let active_present = !self.get_tabs().is_empty();
+        let active_id = if active_present {
+            self.get_active_tab_id() as u64
+        } else {
+            0
+        };
+
+        TabsSnapshot {
+            active_present,
+            active_id,
+            tabs,
+        }
     }
 
     pub(crate) fn open_file_wrapper(&mut self, path: &str) -> bool {

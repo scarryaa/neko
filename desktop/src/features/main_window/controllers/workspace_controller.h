@@ -3,6 +3,7 @@
 
 #include "features/main_window/hooks/workspace_ui.h"
 #include "features/tabs/controllers/tab_controller.h"
+#include <QHash>
 
 class WorkspaceController {
 public:
