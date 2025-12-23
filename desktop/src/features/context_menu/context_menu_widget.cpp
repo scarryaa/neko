@@ -13,13 +13,13 @@ ContextMenuWidget::ContextMenuWidget(neko::ThemeManager *themeManager,
   setAttribute(Qt::WA_TranslucentBackground);
   setFocusPolicy(Qt::StrongFocus);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-  setMinimumWidth(200);
+  setMinimumWidth(MIN_WIDTH);
   setMouseTracking(true);
   setAutoFillBackground(false);
 
   const auto shadowColor =
       UiUtils::getThemeColor(*themeManager, "command_palette.shadow");
-  QGraphicsDropShadowEffect *shadow = new QGraphicsDropShadowEffect(this);
+  auto *shadow = new QGraphicsDropShadowEffect(this);
   shadow->setBlurRadius(SHADOW_BLUR_RADIUS);
   shadow->setColor(shadowColor);
   shadow->setOffset(SHADOW_X_OFFSET, SHADOW_Y_OFFSET);
@@ -28,13 +28,14 @@ ContextMenuWidget::ContextMenuWidget(neko::ThemeManager *themeManager,
   mainFrame->setGraphicsEffect(shadow);
 
   auto *rootLayout = new QVBoxLayout(this);
-  rootLayout->setContentsMargins(CONTENT_MARGIN, CONTENT_MARGIN, CONTENT_MARGIN,
-                                 CONTENT_MARGIN);
+  rootLayout->setContentsMargins(SHADOW_CONTENT_MARGIN, SHADOW_CONTENT_MARGIN,
+                                 SHADOW_CONTENT_MARGIN, SHADOW_CONTENT_MARGIN);
   rootLayout->setSizeConstraint(QLayout::SetMinimumSize);
   rootLayout->addWidget(mainFrame);
 
   layout = new QVBoxLayout(mainFrame);
-  layout->setContentsMargins(6, 6, 6, 6);
+  layout->setContentsMargins(CONTENT_MARGIN, CONTENT_MARGIN, CONTENT_MARGIN,
+                             CONTENT_MARGIN);
   layout->setSpacing(4);
 
   const auto borderColor =
@@ -74,10 +75,8 @@ ContextMenuWidget::ContextMenuWidget(neko::ThemeManager *themeManager,
       labelDisabledColor, shortcutColor, shortcutDisabledColor));
 }
 
-ContextMenuWidget::~ContextMenuWidget() {}
-
 void ContextMenuWidget::showMenu(const QPoint &position) {
-  const int margin = static_cast<int>(CONTENT_MARGIN);
+  const int margin = static_cast<int>(SHADOW_CONTENT_MARGIN);
   move(position - QPoint(margin / 2, margin / 2));
   show();
   setFocus(Qt::PopupFocusReason);
@@ -91,11 +90,12 @@ void ContextMenuWidget::setItems(const QVector<ContextMenuItem> &items) {
   const QFont font =
       UiUtils::loadFont(*configManager, neko::FontType::Interface);
 
-  for (const auto &it : items) {
-    if (!it.visible)
+  for (const auto &item : items) {
+    if (!item.visible) {
       continue;
+    }
 
-    if (it.kind == ContextMenuItemKind::Separator) {
+    if (item.kind == ContextMenuItemKind::Separator) {
       auto *sep = new QFrame(mainFrame);
       sep->setFrameShape(QFrame::NoFrame);
       sep->setFrameShadow(QFrame::Plain);
@@ -110,15 +110,15 @@ void ContextMenuWidget::setItems(const QVector<ContextMenuItem> &items) {
     btn->setObjectName("ContextMenuItem");
     btn->setAutoRaise(false);
     btn->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-    btn->setEnabled(it.enabled);
+    btn->setEnabled(item.enabled);
     btn->setCheckable(true);
-    btn->setChecked(it.checked);
+    btn->setChecked(item.checked);
 
     auto *btnLayout = new QHBoxLayout(btn);
     btnLayout->setContentsMargins(0, 0, 0, 0);
     btnLayout->setSpacing(0);
 
-    auto *label = new QLabel(it.label, btn);
+    auto *label = new QLabel(item.label, btn);
     label->setObjectName("ContextMenuLabel");
     label->setFont(font);
     label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -126,21 +126,21 @@ void ContextMenuWidget::setItems(const QVector<ContextMenuItem> &items) {
     label->setAttribute(Qt::WA_TransparentForMouseEvents);
     label->setWordWrap(false);
 
-    auto *shortcutLabel = new QLabel(it.shortcut, btn);
+    auto *shortcutLabel = new QLabel(item.shortcut, btn);
     shortcutLabel->setObjectName("ContextMenuShortcutLabel");
     shortcutLabel->setFont(font);
     shortcutLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
     shortcutLabel->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     shortcutLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
-    shortcutLabel->setVisible(!it.shortcut.isEmpty());
+    shortcutLabel->setVisible(!item.shortcut.isEmpty());
 
     btnLayout->addWidget(label);
     btnLayout->addWidget(shortcutLabel);
     btnLayout->setStretch(0, 1);
     btn->setMinimumSize(btnLayout->sizeHint());
 
-    connect(btn, &QToolButton::clicked, this, [this, id = it.id] {
-      emit actionTriggered(id);
+    connect(btn, &QToolButton::clicked, this, [this, itemId = item.id] {
+      emit actionTriggered(itemId);
       close();
     });
 
@@ -181,8 +181,10 @@ void ContextMenuWidget::keyPressEvent(QKeyEvent *event) {
 
 void ContextMenuWidget::clearRows() {
   while (QLayoutItem *item = layout->takeAt(0)) {
-    if (QWidget *w = item->widget())
-      w->deleteLater();
+    if (QWidget *widget = item->widget()) {
+      widget->deleteLater();
+    }
+
     delete item;
   }
 }

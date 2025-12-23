@@ -13,7 +13,7 @@ class ContextMenuFrame : public QFrame {
 public:
   explicit ContextMenuFrame(neko::ThemeManager &themeManager,
                             QWidget *parent = nullptr);
-  ~ContextMenuFrame();
+  ~ContextMenuFrame() override = default;
 
 protected:
   void paintEvent(QPaintEvent *event) override;

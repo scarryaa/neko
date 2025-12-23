@@ -22,7 +22,7 @@ CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
   rootLayout->addWidget(mainFrame);
 
   frameLayout = new QVBoxLayout(mainFrame);
-  frameLayout->setSpacing(8);
+  frameLayout->setSpacing(FRAME_LAYOUT_SPACING);
   frameLayout->setContentsMargins(0, 0, 0, 0);
   frameLayout->setAlignment(Qt::AlignTop);
 
@@ -301,7 +301,7 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
       std::find_if(NAV.begin(), NAV.end(),
                    [&](const NavEntry &entry) { return entry.key == value; });
   if (foundEntry != NAV.end()) {
-    if (text != NAV[8].key.data()) {
+    if (text != NAV[JUMP_TO_LAST_TARGET_INDEX].key.data()) {
       storeEntry(text);
     }
 
@@ -459,7 +459,8 @@ void CommandPaletteWidget::addJumpInputRow(const int clampedRow,
   jumpInput->setClearButtonEnabled(false);
   jumpInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   jumpInput->installEventFilter(this);
-  jumpInput->setMinimumWidth(static_cast<int>(WIDTH / 1.5));
+  jumpInput->setMinimumWidth(
+      static_cast<int>(WIDTH / JUMP_INPUT_WIDTH_DIVIDER));
 
   connect(jumpInput, &QLineEdit::textEdited, this,
           [this](const QString &) { resetJumpHistoryNavigation(); });
@@ -486,7 +487,7 @@ void CommandPaletteWidget::addCommandInputRow(
   commandInput->setClearButtonEnabled(false);
   commandInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   commandInput->installEventFilter(this);
-  commandInput->setMinimumWidth(WIDTH / 1.25);
+  commandInput->setMinimumWidth(WIDTH / COMMAND_INPUT_WIDTH_DIVIDER);
 
   connect(commandInput, &QLineEdit::textEdited, this,
           [this](const QString &) { resetCommandHistoryNavigation(); });
@@ -583,7 +584,7 @@ void CommandPaletteWidget::addShortcutsSection(
   auto *shortcutsRow = new QWidget(mainFrame);
   auto *shortcutsRowLayout = new QHBoxLayout(shortcutsRow);
   shortcutsRowLayout->setContentsMargins(0, 2, 0, 0);
-  shortcutsRowLayout->setSpacing(6);
+  shortcutsRowLayout->setSpacing(SHORTCUTS_ROW_SPACING);
 
   shortcutsToggle = new QToolButton(mainFrame);
   shortcutsToggle->setText(SHORTCUTS_BUTTON_TEXT);
@@ -629,18 +630,21 @@ void CommandPaletteWidget::addShortcutsSection(
   for (const auto &row : rows) {
     auto *rowWidget = new QWidget(shortcutsContainer);
     auto *rowLayout = new QHBoxLayout(rowWidget);
-    rowLayout->setContentsMargins(16, 0, 16, 0);
+    rowLayout->setContentsMargins(COMMAND_ROW_HORIZONTAL_CONTENT_MARGIN, 0,
+                                  COMMAND_ROW_HORIZONTAL_CONTENT_MARGIN, 0);
     rowLayout->setSpacing(4);
 
     auto *codeLabel =
         UiUtils::createLabel(row.code, hintStyle, shortcutFont, rowWidget,
                              false, QSizePolicy::Fixed, QSizePolicy::Fixed);
-    codeLabel->setMinimumWidth(static_cast<int>(codeColWidth / 1.5));
+    codeLabel->setMinimumWidth(
+        static_cast<int>(codeColWidth / CODE_LABEL_WIDTH_DIVIDER));
 
     auto *dashLabel =
         UiUtils::createLabel("", hintStyle, shortcutFont, rowWidget, false,
                              QSizePolicy::Fixed, QSizePolicy::Fixed);
-    dashLabel->setMinimumWidth(static_cast<int>(codeColWidth / 1.93));
+    dashLabel->setMinimumWidth(
+        static_cast<int>(codeColWidth / DASH_LABEL_WIDTH_DIVIDER));
     auto *descLabel =
         UiUtils::createLabel(row.desc, hintStyle, shortcutFont, rowWidget,
                              false, QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -831,6 +835,7 @@ bool CommandPaletteWidget::handleCommandHistoryNavigation(
   return false;
 }
 
+// TODO(scarlet): Break this up into smaller fns
 bool CommandPaletteWidget::handleCommandSuggestionNavigation(
     const QKeyEvent *event) {
   if ((commandInput == nullptr) || (commandSuggestions == nullptr) ||

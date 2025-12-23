@@ -9,8 +9,9 @@ using ProviderFn = std::function<QVector<ContextMenuItem>(const QVariant &ctx)>;
 
 class ContextMenuRegistry {
 public:
-  void registerProvider(const QString &key, ProviderFn fn);
-  QVector<ContextMenuItem> build(const QString &key, const QVariant &ctx) const;
+  void registerProvider(const QString &key, ProviderFn providerFn);
+  [[nodiscard]] QVector<ContextMenuItem> build(const QString &key,
+                                               const QVariant &ctx) const;
 
 private:
   QHash<QString, ProviderFn> providers;

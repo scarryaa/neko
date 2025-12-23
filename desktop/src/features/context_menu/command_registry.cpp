@@ -1,11 +1,12 @@
 #include "command_registry.h"
 
-void CommandRegistry::registerCommand(QString id, Fn fn) {
-  cmds[id] = std::move(fn);
+void CommandRegistry::registerCommand(const QString &commandId, Fn commandFn) {
+  cmds[commandId] = std::move(commandFn);
 }
 
-void CommandRegistry::run(const QString &id, const QVariant &ctx) const {
-  auto it = cmds.find(id);
-  if (it != cmds.end())
-    it.value()(ctx);
+void CommandRegistry::run(const QString &commandId, const QVariant &ctx) const {
+  auto foundCommand = cmds.find(commandId);
+  if (foundCommand != cmds.end()) {
+    foundCommand.value()(ctx);
+  }
 }

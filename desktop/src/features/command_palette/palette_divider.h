@@ -16,6 +16,8 @@ protected:
 
 private:
   const QColor color;
+
+  static constexpr double HEIGHT_DIVIDER = 2.0;
 };
 
 #endif // PALETTE_DIVIDER_H

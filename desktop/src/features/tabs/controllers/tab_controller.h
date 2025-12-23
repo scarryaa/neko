@@ -9,33 +9,34 @@ class TabController : public QObject {
 
 public:
   explicit TabController(neko::AppState *appState);
-  ~TabController();
+  ~TabController() override = default;
 
   // Getters
-  const neko::TabsSnapshot getTabsSnapshot();
-  const QList<int> getCloseOtherTabIds(int id) const;
-  const QList<int> getCloseLeftTabIds(int id) const;
-  const QList<int> getCloseRightTabIds(int id) const;
+  neko::TabsSnapshot getTabsSnapshot();
+  [[nodiscard]] QList<int> getCloseOtherTabIds(int tabId) const;
+  [[nodiscard]] QList<int> getCloseLeftTabIds(int tabId) const;
+  [[nodiscard]] QList<int> getCloseRightTabIds(int tabId) const;
 
   // Setters
   int addTab();
-  bool closeTab(int id);
-  bool closeOtherTabs(int id);
-  bool closeLeftTabs(int id);
-  bool closeRightTabs(int id);
-  bool pinTab(int id);
-  bool unpinTab(int id);
-  bool moveTab(int from, int to);
-  void setActiveTab(int id);
-  const bool saveActiveTab() const;
-  const bool saveActiveTabAndSetPath(const std::string &path) const;
-  const bool saveTabWithId(int id) const;
-  const bool saveTabWithIdAndSetPath(int id, const std::string &path) const;
-  void setTabScrollOffsets(int id, const neko::ScrollOffsetFfi &newOffsets);
+  bool closeTab(int tabId);
+  bool closeOtherTabs(int tabId);
+  bool closeLeftTabs(int tabId);
+  bool closeRightTabs(int tabId);
+  bool pinTab(int tabId);
+  bool unpinTab(int tabId);
+  bool moveTab(int fromIndex, int toIndex);
+  void setActiveTab(int tabId);
+  [[nodiscard]] bool saveActiveTab() const;
+  [[nodiscard]] bool saveActiveTabAndSetPath(const std::string &path) const;
+  [[nodiscard]] bool saveTabWithId(int tabId) const;
+  [[nodiscard]] bool saveTabWithIdAndSetPath(int tabId,
+                                             const std::string &path) const;
+  void setTabScrollOffsets(int tabId, const neko::ScrollOffsetFfi &newOffsets);
 
 signals:
   void tabListChanged();
-  void activeTabChanged(int id);
+  void activeTabChanged(int tabId);
 
 private:
   neko::AppState *appState;

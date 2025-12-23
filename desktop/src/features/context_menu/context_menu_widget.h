@@ -22,13 +22,13 @@ public:
   explicit ContextMenuWidget(neko::ThemeManager *themeManager,
                              neko::ConfigManager *configManager,
                              QWidget *parent = nullptr);
-  ~ContextMenuWidget() override;
+  ~ContextMenuWidget() override = default;
 
   void setItems(const QVector<ContextMenuItem> &items);
   void showMenu(const QPoint &position);
 
 signals:
-  void actionTriggered(const QString &id);
+  void actionTriggered(const QString &actionId);
 
 protected:
   bool eventFilter(QObject *watched, QEvent *event) override;
@@ -45,8 +45,10 @@ private:
   static constexpr double SHADOW_X_OFFSET = 0.0;
   static constexpr double SHADOW_Y_OFFSET = 5.0;
   static constexpr double SHADOW_BLUR_RADIUS = 25.0;
-  static constexpr double CONTENT_MARGIN =
+  static constexpr double SHADOW_CONTENT_MARGIN =
       20.0; // Content margin for drop shadow
+  static constexpr double MIN_WIDTH = 200.0;
+  static constexpr double CONTENT_MARGIN = 6.0;
 };
 
 #endif

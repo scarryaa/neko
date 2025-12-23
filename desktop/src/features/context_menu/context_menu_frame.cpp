@@ -7,11 +7,9 @@ ContextMenuFrame::ContextMenuFrame(neko::ThemeManager &themeManager,
   setAttribute(Qt::WA_TranslucentBackground);
 }
 
-ContextMenuFrame::~ContextMenuFrame() {}
-
-void ContextMenuFrame::paintEvent(QPaintEvent *) {
-  QPainter p(this);
-  p.setRenderHint(QPainter::Antialiasing, true);
+void ContextMenuFrame::paintEvent(QPaintEvent *event) {
+  QPainter painter(this);
+  painter.setRenderHint(QPainter::Antialiasing, true);
 
   const QColor fill =
       UiUtils::getThemeColor(themeManager, "context_menu.background");
@@ -19,10 +17,10 @@ void ContextMenuFrame::paintEvent(QPaintEvent *) {
       UiUtils::getThemeColor(themeManager, "context_menu.border");
 
   QPainterPath path;
-  const constexpr qreal r = 12.0;
-  path.addRoundedRect(rect().adjusted(1, 1, -1, -1), r, r);
-  p.fillPath(path, fill);
+  const constexpr qreal radius = 12.0;
+  path.addRoundedRect(rect().adjusted(1, 1, -1, -1), radius, radius);
+  painter.fillPath(path, fill);
   const QPen pen(stroke, 1);
-  p.setPen(pen);
-  p.drawPath(path);
+  painter.setPen(pen);
+  painter.drawPath(path);
 }

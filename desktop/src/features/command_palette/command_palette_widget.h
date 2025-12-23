@@ -182,12 +182,21 @@ private:
   static constexpr char COMMAND_PLACEHOLDER_TEXT[] =             // NOLINT
       "Enter a command";
 
+  static constexpr double FRAME_LAYOUT_SPACING = 8.0;
+  static constexpr double DASH_LABEL_WIDTH_DIVIDER = 1.93;
+  static constexpr double CODE_LABEL_WIDTH_DIVIDER = 1.5;
+  static constexpr double COMMAND_ROW_HORIZONTAL_CONTENT_MARGIN = 16.0;
+  static constexpr double SHORTCUTS_ROW_SPACING = 6.0;
+  static constexpr double COMMAND_INPUT_WIDTH_DIVIDER = 1.25;
+  static constexpr double JUMP_INPUT_WIDTH_DIVIDER = 1.5;
+
   inline static const QStringList AVAILABLE_COMMANDS = {
       TOGGLE_FILE_EXPLORER_COMMAND,
       SET_THEME_TO_LIGHT,
       SET_THEME_TO_DARK,
   };
 
+  static constexpr int JUMP_TO_LAST_TARGET_INDEX = 8;
   static constexpr std::array<NavEntry, 9> NAV = {{
       {"lb", &CommandPaletteWidget::jumpToLineStart},
       {"lm", &CommandPaletteWidget::jumpToLineMiddle},

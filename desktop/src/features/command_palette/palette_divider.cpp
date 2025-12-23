@@ -17,6 +17,6 @@ void PaletteDivider::paintEvent(QPaintEvent *event) {
   pen.setJoinStyle(Qt::MiterJoin);
 
   painter.setPen(pen);
-  painter.drawLine(QPointF(0, height() / 2.0),
-                   QPointF(width(), height() / 2.0));
+  painter.drawLine(QPointF(0, height() / HEIGHT_DIVIDER),
+                   QPointF(width(), height() / HEIGHT_DIVIDER));
 }

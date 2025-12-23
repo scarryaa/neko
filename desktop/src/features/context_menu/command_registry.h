@@ -7,8 +7,8 @@ class CommandRegistry {
 public:
   using Fn = std::function<void(const QVariant &)>;
 
-  void registerCommand(QString id, Fn fn);
-  void run(const QString &id, const QVariant &ctx) const;
+  void registerCommand(const QString &commandId, Fn commandFn);
+  void run(const QString &commandId, const QVariant &ctx) const;
 
 private:
   QHash<QString, Fn> cmds;
