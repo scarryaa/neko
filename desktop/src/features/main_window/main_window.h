@@ -10,6 +10,7 @@
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/controllers/app_state_controller.h"
 #include "features/main_window/controllers/command_manager.h"
+#include "features/main_window/controllers/shortcuts_manager.h"
 #include "features/main_window/controllers/workspace_controller.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
 #include "features/status_bar/status_bar_widget.h"
@@ -40,12 +41,7 @@ private:
   QSplitter *buildSplitter(QWidget *editorSideContainer);
   void connectSignals();
 
-  void setupKeyboardShortcuts();
   void applyTheme(const std::string &themeName);
-
-  template <typename Slot>
-  void addShortcut(QAction *action, const QKeySequence &sequence,
-                   Qt::ShortcutContext context, Slot &&slot);
 
   rust::Box<neko::AppState> appState;
   rust::Box<neko::ThemeManager> themeManager;
@@ -59,6 +55,7 @@ private:
   CommandRegistry commandRegistry;
   ContextMenuRegistry contextMenuRegistry;
   CommandManager *commandManager;
+  ShortcutsManager *qtShortcutsManager;
 
   QWidget *emptyStateWidget;
   QPushButton *emptyStateNewTabButton;
