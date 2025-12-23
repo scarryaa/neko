@@ -28,16 +28,15 @@ public:
   explicit CommandPaletteWidget(neko::ThemeManager &themeManager,
                                 neko::ConfigManager &configManager,
                                 QWidget *parent = nullptr);
-  ~CommandPaletteWidget();
+  ~CommandPaletteWidget() override = default;
 
   void applyTheme();
   void showPalette();
-  void jumpToRowColumn(const int currentRow = 0, const int currentCol = 0,
-                       const int maxCol = 1, const int lineCount = 1,
-                       const int lastLineMaxCol = 1);
+  void jumpToRowColumn(int currentRow = 0, int currentCol = 0, int maxCol = 1,
+                       int lineCount = 1, int lastLineMaxCol = 1);
 
 signals:
-  void goToPositionRequested(const int row, const int col);
+  void goToPositionRequested(int row, int col);
   void commandRequested(const QString &command);
 
 protected:
@@ -45,7 +44,7 @@ protected:
   bool eventFilter(QObject *obj, QEvent *event) override;
 
 private:
-  enum class Mode { None, GoToPosition };
+  enum class Mode : std::uint8_t { None, GoToPosition };
 
   struct PaletteColors {
     QString foreground;
@@ -63,12 +62,10 @@ private:
 
   void clearContent();
   void adjustPosition();
-  void prepareJumpState(const int currentRow, const int currentCol,
-                        const int maxCol, const int lineCount,
-                        const int lastLineMaxCol);
-  void buildJumpContent(const int currentRow, const int currentCol,
-                        const int maxCol, const int lineCount,
-                        const int lastLineMaxCol);
+  void prepareJumpState(int currentRow, int currentCol, int maxCol,
+                        int lineCount, int lastLineMaxCol);
+  void buildJumpContent(int currentRow, int currentCol, int maxCol,
+                        int lineCount, int lastLineMaxCol);
   void buildCommandPalette();
   void emitCommandRequestFromInput();
   void emitJumpRequestFromInput();
@@ -81,20 +78,19 @@ private:
   void jumpToDocumentThreeQuarters();
   void jumpToDocumentEnd();
   void jumpToLastTarget();
-  void adjustShortcutsAfterToggle(const bool checked);
+  void adjustShortcutsAfterToggle(bool checked);
 
-  const PaletteColors loadPaletteColors() const;
-  const QFont makeInterfaceFont(const qreal pointSize) const;
-  void addSpacer(const int height);
+  [[nodiscard]] PaletteColors loadPaletteColors() const;
+  [[nodiscard]] QFont makeInterfaceFont(qreal pointSize) const;
+  void addSpacer(int height);
   PaletteDivider *addDivider(const QString &borderColor);
-  void addJumpInputRow(const int clampedRow, const int clampedCol,
+  void addJumpInputRow(int clampedRow, int clampedCol,
                        const PaletteColors &paletteColors, QFont &font);
   void addCommandInputRow(const PaletteColors &paletteColors, QFont &font);
   void addCommandSuggestionsList(const PaletteColors &paletteColors,
                                  const QFont &font);
-  void addCurrentLineLabel(const int clampedRow, const int clampedCol,
-                           const PaletteColors &paletteColors,
-                           const QFont font);
+  void addCurrentLineLabel(int clampedRow, int clampedCol,
+                           const PaletteColors &paletteColors, QFont font);
   void addShortcutsSection(const PaletteColors &paletteColors,
                            const QFont &font);
   void updateHistoryHint(QWidget *targetInput, const QString &placeholder);
@@ -103,10 +99,10 @@ private:
   void saveCommandHistoryEntry(const QString &entry);
   void saveJumpHistoryEntry(const QString &entry);
   void resetJumpHistoryNavigation();
-  const bool handleJumpHistoryNavigation(const QKeyEvent *event);
+  bool handleJumpHistoryNavigation(const QKeyEvent *event);
   void resetCommandHistoryNavigation();
-  const bool handleCommandHistoryNavigation(const QKeyEvent *event);
-  const bool handleCommandSuggestionNavigation(const QKeyEvent *event);
+  bool handleCommandHistoryNavigation(const QKeyEvent *event);
+  bool handleCommandSuggestionNavigation(const QKeyEvent *event);
   void updateCommandSuggestions(const QString &text);
 
   neko::ThemeManager &themeManager;
@@ -156,34 +152,35 @@ private:
   static constexpr qreal JUMP_FONT_SIZE = 20.0;
   static constexpr qreal LABEL_FONT_SIZE = 18.0;
 
-  static constexpr char JUMP_INPUT_STYLE[] =
+  static constexpr char JUMP_INPUT_STYLE[] = // NOLINT
       "color: %1; border: 0px; background: transparent; padding-left: 12px; "
       "padding-right: 12px;";
-  static constexpr char LABEL_STYLE[] =
+  static constexpr char LABEL_STYLE[] = // NOLINT
       "color: %1; border: 0px; padding-left: 0px; padding-right: 0px;";
-  static constexpr char SHORTCUTS_BUTTON_STYLE[] =
+  static constexpr char SHORTCUTS_BUTTON_STYLE[] = // NOLINT
       "QToolButton { color: %1; border: none; background: transparent; "
       "padding-left: 16px; padding-right: 16px; }"
       "QToolButton:hover { color: %2; }";
 
-  static constexpr char COMMAND_SUGGESTION_STYLE[] =
+  static constexpr char COMMAND_SUGGESTION_STYLE[] = // NOLINT
       "QListWidget { background: transparent; border: none; padding-left: 8px; "
       "padding-right: 8px; }"
       "QListWidget::item { padding: 6px 8px; color: %1; border-radius: 6px; }"
       "QListWidget::item:selected { background: %2; color: %3; }";
 
-  // TODO: Move to rust
-  // TODO: Add autocomplete/correct
-  static constexpr char TOGGLE_FILE_EXPLORER_COMMAND[] =
+  // TODO(scarlet): Move to rust
+  // TODO(scarlet): Add autocomplete/correct
+  static constexpr char TOGGLE_FILE_EXPLORER_COMMAND[] = // NOLINT
       "file explorer: toggle";
-  static constexpr char SET_THEME_TO_LIGHT[] = "set theme: light";
-  static constexpr char SET_THEME_TO_DARK[] = "set theme: dark";
+  static constexpr char SET_THEME_TO_LIGHT[] = "set theme: light"; // NOLINT
+  static constexpr char SET_THEME_TO_DARK[] = "set theme: dark";   // NOLINT
 
   static constexpr int JUMP_HISTORY_LIMIT = 20;
   static constexpr int COMMAND_HISTORY_LIMIT = 20;
-  static constexpr char SHORTCUTS_BUTTON_TEXT[] = "  Shortcuts";
-  static constexpr char HISTORY_HINT[] = "↑↓ History";
-  static constexpr char COMMAND_PLACEHOLDER_TEXT[] = "Enter a command";
+  static constexpr char SHORTCUTS_BUTTON_TEXT[] = "  Shortcuts"; // NOLINT
+  static constexpr char HISTORY_HINT[] = "↑↓ History";           // NOLINT
+  static constexpr char COMMAND_PLACEHOLDER_TEXT[] =             // NOLINT
+      "Enter a command";
 
   inline static const QStringList AVAILABLE_COMMANDS = {
       TOGGLE_FILE_EXPLORER_COMMAND,
@@ -191,7 +188,7 @@ private:
       SET_THEME_TO_DARK,
   };
 
-  inline static constexpr std::array<NavEntry, 9> NAV = {{
+  static constexpr std::array<NavEntry, 9> NAV = {{
       {"lb", &CommandPaletteWidget::jumpToLineStart},
       {"lm", &CommandPaletteWidget::jumpToLineMiddle},
       {"le", &CommandPaletteWidget::jumpToLineEnd},

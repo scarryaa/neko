@@ -13,7 +13,7 @@ class PaletteFrame : public QFrame {
 public:
   explicit PaletteFrame(neko::ThemeManager &themeManager,
                         QWidget *parent = nullptr);
-  ~PaletteFrame();
+  ~PaletteFrame() override = default;
 
 protected:
   void paintEvent(QPaintEvent *event) override;

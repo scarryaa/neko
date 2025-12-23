@@ -15,7 +15,7 @@ CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
 
   mainFrame = new PaletteFrame(themeManager, this);
 
-  QVBoxLayout *rootLayout = new QVBoxLayout(this);
+  auto *rootLayout = new QVBoxLayout(this);
   rootLayout->setContentsMargins(CONTENT_MARGIN, CONTENT_MARGIN, CONTENT_MARGIN,
                                  CONTENT_MARGIN);
   rootLayout->setSizeConstraint(QLayout::SetFixedSize);
@@ -26,7 +26,7 @@ CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
   frameLayout->setContentsMargins(0, 0, 0, 0);
   frameLayout->setAlignment(Qt::AlignTop);
 
-  QGraphicsDropShadowEffect *shadow = new QGraphicsDropShadowEffect(this);
+  auto *shadow = new QGraphicsDropShadowEffect(this);
   shadow->setBlurRadius(SHADOW_BLUR_RADIUS);
   shadow->setColor(Qt::black);
   shadow->setOffset(SHADOW_X_OFFSET, SHADOW_Y_OFFSET);
@@ -44,8 +44,6 @@ CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
 
   applyTheme();
 }
-
-CommandPaletteWidget::~CommandPaletteWidget() {}
 
 void CommandPaletteWidget::applyTheme() {
   const auto backgroundColor =
@@ -80,7 +78,7 @@ void CommandPaletteWidget::showPalette() {
   buildCommandPalette();
   show();
 
-  if (commandInput) {
+  if (commandInput != nullptr) {
     commandInput->setFocus();
   }
 }
@@ -91,14 +89,15 @@ void CommandPaletteWidget::jumpToRowColumn(int currentRow, int currentCol,
   buildJumpContent(currentRow, currentCol, maxCol, lineCount, lastLineMaxCol);
   show();
 
-  if (jumpInput) {
+  if (jumpInput != nullptr) {
     jumpInput->setFocus();
   }
 }
 
 void CommandPaletteWidget::showEvent(QShowEvent *event) {
-  if (!parentWidget())
+  if (parentWidget() == nullptr) {
     return;
+  }
 
   adjustPosition();
   QWidget::showEvent(event);
@@ -134,7 +133,7 @@ bool CommandPaletteWidget::eventFilter(QObject *obj, QEvent *event) {
   }
 
   if (event->type() == QEvent::MouseButtonPress) {
-    QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+    auto *mouseEvent = static_cast<QMouseEvent *>(event);
 
     if (!this->rect().contains(
             this->mapFromGlobal(mouseEvent->globalPosition().toPoint()))) {
@@ -147,13 +146,14 @@ bool CommandPaletteWidget::eventFilter(QObject *obj, QEvent *event) {
 }
 
 void CommandPaletteWidget::clearContent() {
-  if (!frameLayout)
+  if (frameLayout == nullptr) {
     return;
+  }
 
-  while (frameLayout->count()) {
+  while (frameLayout->count() != 0) {
     const QLayoutItem *item = frameLayout->takeAt(0);
-    if (QWidget *w = item->widget()) {
-      w->deleteLater();
+    if (QWidget *widget = item->widget()) {
+      widget->deleteLater();
     }
 
     delete item;
@@ -170,17 +170,18 @@ void CommandPaletteWidget::clearContent() {
 }
 
 void CommandPaletteWidget::adjustPosition() {
-  if (!parentWidget())
+  if (parentWidget() == nullptr) {
     return;
+  }
 
   const int availableWidth = std::max(
       0, parentWidget()->width() - static_cast<int>(CONTENT_MARGIN * 2));
   setFixedWidth(WIDTH);
 
-  const int x = (parentWidget()->width() - WIDTH) / 2;
-  const int y = TOP_OFFSET;
+  const int xPos = static_cast<int>((parentWidget()->width() - WIDTH) / 2.0);
+  const int yPos = static_cast<int>(TOP_OFFSET);
 
-  move(parentWidget()->mapToGlobal(QPoint(x, y)));
+  move(parentWidget()->mapToGlobal(QPoint(xPos, yPos)));
 }
 
 void CommandPaletteWidget::prepareJumpState(const int currentRow,
@@ -250,8 +251,9 @@ void CommandPaletteWidget::buildCommandPalette() {
 }
 
 void CommandPaletteWidget::emitCommandRequestFromInput() {
-  if (!commandInput)
+  if (commandInput == nullptr) {
     return;
+  }
 
   const QString text = commandInput->text().trimmed();
   if (text.isEmpty()) {
@@ -263,14 +265,9 @@ void CommandPaletteWidget::emitCommandRequestFromInput() {
     saveCommandHistoryEntry(entry);
   };
 
-  // TODO: Allow aliases?
-  if (text == TOGGLE_FILE_EXPLORER_COMMAND) {
-    storeEntry(text);
-    emit commandRequested(text);
-  } else if (text == SET_THEME_TO_LIGHT) {
-    storeEntry(text);
-    emit commandRequested(text);
-  } else if (text == SET_THEME_TO_DARK) {
+  // TODO(scarlet): Allow aliases?
+  if (text == TOGGLE_FILE_EXPLORER_COMMAND || text == SET_THEME_TO_LIGHT ||
+      text == SET_THEME_TO_DARK) {
     storeEntry(text);
     emit commandRequested(text);
   }
@@ -279,8 +276,9 @@ void CommandPaletteWidget::emitCommandRequestFromInput() {
 }
 
 void CommandPaletteWidget::emitJumpRequestFromInput() {
-  if (!jumpInput)
+  if (jumpInput == nullptr) {
     return;
+  }
 
   const QString text = jumpInput->text().trimmed();
   if (text.isEmpty()) {
@@ -296,18 +294,18 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
     saveJumpHistoryEntry(entry);
   };
 
-  // TODO: Allow aliases?
-  const QString value = text;
+  // TODO(scarlet): Allow aliases?
+  const QString &value = text;
 
-  const auto it = std::find_if(NAV.begin(), NAV.end(), [&](const NavEntry &e) {
-    return e.key == value;
-  });
-  if (it != NAV.end()) {
+  const auto *const foundEntry =
+      std::find_if(NAV.begin(), NAV.end(),
+                   [&](const NavEntry &entry) { return entry.key == value; });
+  if (foundEntry != NAV.end()) {
     if (text != NAV[8].key.data()) {
       storeEntry(text);
     }
 
-    (this->*(it->fn))();
+    (this->*(foundEntry->fn))();
     return;
   }
 
@@ -369,17 +367,18 @@ void CommandPaletteWidget::jumpToDocumentEnd() {
 }
 
 void CommandPaletteWidget::jumpToLastTarget() {
-  if (!jumpInput || jumpHistory.isEmpty()) {
+  if ((jumpInput == nullptr) || jumpHistory.isEmpty()) {
     close();
     return;
   }
 
   const auto lsKey = NAV[8].key;
-  for (int i = jumpHistory.size() - 1; i >= 0; --i) {
+  for (int i = static_cast<int>(jumpHistory.size()) - 1; i >= 0; --i) {
     const auto &entry = jumpHistory.at(i);
     if (entry.trimmed() ==
-        QString::fromLatin1(lsKey.data(), static_cast<int>(lsKey.size())))
+        QString::fromLatin1(lsKey.data(), static_cast<int>(lsKey.size()))) {
       continue;
+    }
 
     jumpInput->setText(entry);
     emitJumpRequestFromInput();
@@ -390,8 +389,9 @@ void CommandPaletteWidget::jumpToLastTarget() {
 }
 
 void CommandPaletteWidget::adjustShortcutsAfterToggle(const bool checked) {
-  if (!shortcutsContainer || !shortcutsToggle)
+  if ((shortcutsContainer == nullptr) || (shortcutsToggle == nullptr)) {
     return;
+  }
 
   shortcutsContainer->setVisible(checked);
   shortcutsToggle->setArrowType(checked ? Qt::DownArrow : Qt::RightArrow);
@@ -402,7 +402,7 @@ void CommandPaletteWidget::adjustShortcutsAfterToggle(const bool checked) {
   this->adjustSize();
 }
 
-const CommandPaletteWidget::PaletteColors
+CommandPaletteWidget::PaletteColors
 CommandPaletteWidget::loadPaletteColors() const {
   PaletteColors paletteColors{};
   paletteColors.foreground =
@@ -418,16 +418,16 @@ CommandPaletteWidget::loadPaletteColors() const {
   return paletteColors;
 }
 
-const QFont
-CommandPaletteWidget::makeInterfaceFont(const qreal pointSize) const {
+QFont CommandPaletteWidget::makeInterfaceFont(const qreal pointSize) const {
   auto font = UiUtils::loadFont(configManager, neko::FontType::Interface);
   font.setPointSizeF(pointSize);
   return font;
 }
 
 void CommandPaletteWidget::addSpacer(const int height) {
-  if (!frameLayout)
+  if (frameLayout == nullptr) {
     return;
+  }
 
   frameLayout->addItem(
       new QSpacerItem(0, height, QSizePolicy::Minimum, QSizePolicy::Fixed));
@@ -459,7 +459,7 @@ void CommandPaletteWidget::addJumpInputRow(const int clampedRow,
   jumpInput->setClearButtonEnabled(false);
   jumpInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   jumpInput->installEventFilter(this);
-  jumpInput->setMinimumWidth(WIDTH / 1.5);
+  jumpInput->setMinimumWidth(static_cast<int>(WIDTH / 1.5));
 
   connect(jumpInput, &QLineEdit::textEdited, this,
           [this](const QString &) { resetJumpHistoryNavigation(); });
@@ -523,11 +523,13 @@ void CommandPaletteWidget::addCommandSuggestionsList(
 
   connect(commandSuggestions, &QListWidget::itemClicked, this,
           [this](QListWidgetItem *item) {
-            if (!item || !commandInput)
+            if (!item || !commandInput) {
               return;
+            }
 
             commandInput->setText(item->text());
-            commandInput->setCursorPosition(commandInput->text().length());
+            commandInput->setCursorPosition(
+                static_cast<int>(commandInput->text().length()));
             emitCommandRequestFromInput();
           });
 
@@ -551,23 +553,24 @@ void CommandPaletteWidget::addCurrentLineLabel(
 
 void CommandPaletteWidget::addShortcutsSection(
     const PaletteColors &paletteColors, const QFont &font) {
-  const QFont shortcutFont = font;
+  const QFont &shortcutFont = font;
 
   struct ShortcutRow {
     const char *code;
     const char *desc;
   };
 
+  // NOLINTNEXTLINE
   static const ShortcutRow rows[] = {
-      {NAV[0].key.data(), "current line beginning"},
-      {NAV[1].key.data(), "current line middle"},
-      {NAV[2].key.data(), "current line end"},
-      {NAV[3].key.data(), "document beginning"},
-      {NAV[4].key.data(), "document middle"},
-      {NAV[5].key.data(), "document end"},
-      {NAV[6].key.data(), "document quarter"},
-      {NAV[7].key.data(), "document three-quarters"},
-      {NAV[8].key.data(), "last jumped-to position"},
+      {NAV[0].key.data(), "current line beginning"},  // NOLINT
+      {NAV[1].key.data(), "current line middle"},     // NOLINT
+      {NAV[2].key.data(), "current line end"},        // NOLINT
+      {NAV[3].key.data(), "document beginning"},      // NOLINT
+      {NAV[4].key.data(), "document middle"},         // NOLINT
+      {NAV[5].key.data(), "document end"},            // NOLINT
+      {NAV[6].key.data(), "document quarter"},        // NOLINT
+      {NAV[7].key.data(), "document three-quarters"}, // NOLINT
+      {NAV[8].key.data(), "last jumped-to position"}, // NOLINT
   };
 
   const QFontMetrics metrics(shortcutFont);
@@ -577,7 +580,7 @@ void CommandPaletteWidget::addShortcutsSection(
   }
   codeColWidth += metrics.horizontalAdvance("  ");
 
-  QWidget *shortcutsRow = new QWidget(mainFrame);
+  auto *shortcutsRow = new QWidget(mainFrame);
   auto *shortcutsRowLayout = new QHBoxLayout(shortcutsRow);
   shortcutsRowLayout->setContentsMargins(0, 2, 0, 0);
   shortcutsRowLayout->setSpacing(6);
@@ -595,7 +598,7 @@ void CommandPaletteWidget::addShortcutsSection(
   shortcutsToggle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   shortcutsRowLayout->addWidget(shortcutsToggle);
 
-  if (shortcutsToggleShortcut) {
+  if (shortcutsToggleShortcut != nullptr) {
     const QString shortcutText =
         shortcutsToggleShortcut->key().toString(QKeySequence::NativeText);
     if (!shortcutText.isEmpty()) {
@@ -632,12 +635,12 @@ void CommandPaletteWidget::addShortcutsSection(
     auto *codeLabel =
         UiUtils::createLabel(row.code, hintStyle, shortcutFont, rowWidget,
                              false, QSizePolicy::Fixed, QSizePolicy::Fixed);
-    codeLabel->setMinimumWidth(codeColWidth / 1.5);
+    codeLabel->setMinimumWidth(static_cast<int>(codeColWidth / 1.5));
 
     auto *dashLabel =
         UiUtils::createLabel("", hintStyle, shortcutFont, rowWidget, false,
                              QSizePolicy::Fixed, QSizePolicy::Fixed);
-    dashLabel->setMinimumWidth(codeColWidth / 1.93);
+    dashLabel->setMinimumWidth(static_cast<int>(codeColWidth / 1.93));
     auto *descLabel =
         UiUtils::createLabel(row.desc, hintStyle, shortcutFont, rowWidget,
                              false, QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -655,8 +658,9 @@ void CommandPaletteWidget::addShortcutsSection(
 
 void CommandPaletteWidget::updateHistoryHint(QWidget *targetInput,
                                              const QString &placeholder) {
-  if (!targetInput || !historyHint)
+  if ((targetInput == nullptr) || (historyHint == nullptr)) {
     return;
+  }
 
   historyHint->setText(placeholder);
   const bool shouldShow =
@@ -678,8 +682,9 @@ void CommandPaletteWidget::createHistoryHint(QWidget *targetInput,
 }
 
 void CommandPaletteWidget::saveCommandHistoryEntry(const QString &entry) {
-  if (entry.isEmpty())
+  if (entry.isEmpty()) {
     return;
+  }
 
   if (commandHistory.isEmpty() || commandHistory.back() != entry) {
     commandHistory.append(entry);
@@ -692,8 +697,9 @@ void CommandPaletteWidget::saveCommandHistoryEntry(const QString &entry) {
 }
 
 void CommandPaletteWidget::saveJumpHistoryEntry(const QString &entry) {
-  if (entry.isEmpty())
+  if (entry.isEmpty()) {
     return;
+  }
 
   if (jumpHistory.isEmpty() || jumpHistory.back() != entry) {
     jumpHistory.append(entry);
@@ -706,23 +712,25 @@ void CommandPaletteWidget::saveJumpHistoryEntry(const QString &entry) {
 }
 
 void CommandPaletteWidget::resetJumpHistoryNavigation() {
-  jumpHistoryIndex = jumpHistory.size();
-  jumpInputDraft = jumpInput ? jumpInput->text() : QString();
+  jumpHistoryIndex = static_cast<int>(jumpHistory.size());
+  jumpInputDraft = (jumpInput != nullptr) ? jumpInput->text() : QString();
 }
 
-const bool
-CommandPaletteWidget::handleJumpHistoryNavigation(const QKeyEvent *event) {
-  if (!jumpInput)
+bool CommandPaletteWidget::handleJumpHistoryNavigation(const QKeyEvent *event) {
+  if (jumpInput == nullptr) {
     return false;
+  }
 
   Qt::KeyboardModifiers mods =
       event->modifiers() &
       static_cast<Qt::KeyboardModifier>(~Qt::KeypadModifier);
-  if (mods != Qt::NoModifier)
+  if (mods != Qt::NoModifier) {
     return false;
+  }
 
-  if (jumpHistory.isEmpty())
+  if (jumpHistory.isEmpty()) {
     return false;
+  }
 
   const auto applyHistoryEntry = [this](int index) {
     if (index >= 0 && index < jumpHistory.size()) {
@@ -730,7 +738,7 @@ CommandPaletteWidget::handleJumpHistoryNavigation(const QKeyEvent *event) {
     } else {
       jumpInput->setText(jumpInputDraft);
     }
-    jumpInput->setCursorPosition(jumpInput->text().length());
+    jumpInput->setCursorPosition(static_cast<int>(jumpInput->text().length()));
   };
 
   if (event->key() == Qt::Key_Up) {
@@ -748,7 +756,8 @@ CommandPaletteWidget::handleJumpHistoryNavigation(const QKeyEvent *event) {
       jumpInputDraft = jumpInput->text();
     }
 
-    jumpHistoryIndex = std::min(jumpHistoryIndex + 1, (int)jumpHistory.size());
+    jumpHistoryIndex =
+        std::min(jumpHistoryIndex + 1, static_cast<int>(jumpHistory.size()));
     applyHistoryEntry(jumpHistoryIndex);
     return true;
   }
@@ -757,24 +766,28 @@ CommandPaletteWidget::handleJumpHistoryNavigation(const QKeyEvent *event) {
 }
 
 void CommandPaletteWidget::resetCommandHistoryNavigation() {
-  commandHistoryIndex = commandHistory.size();
-  commandInputDraft = commandInput ? commandInput->text() : QString();
+  commandHistoryIndex = static_cast<int>(commandHistory.size());
+  commandInputDraft =
+      (commandInput != nullptr) ? commandInput->text() : QString();
   currentlyInHistory = false;
 }
 
-const bool
-CommandPaletteWidget::handleCommandHistoryNavigation(const QKeyEvent *event) {
-  if (!commandInput)
+bool CommandPaletteWidget::handleCommandHistoryNavigation(
+    const QKeyEvent *event) {
+  if (commandInput == nullptr) {
     return false;
+  }
 
   Qt::KeyboardModifiers mods =
       event->modifiers() &
       static_cast<Qt::KeyboardModifier>(~Qt::KeypadModifier);
-  if (mods != Qt::NoModifier)
+  if (mods != Qt::NoModifier) {
     return false;
+  }
 
-  if (commandHistory.isEmpty())
+  if (commandHistory.isEmpty()) {
     return false;
+  }
 
   auto applyHistoryEntry = [this](int index) {
     if (index >= 0 && index < commandHistory.size()) {
@@ -782,7 +795,8 @@ CommandPaletteWidget::handleCommandHistoryNavigation(const QKeyEvent *event) {
     } else {
       commandInput->setText(commandInputDraft);
     }
-    commandInput->setCursorPosition(commandInput->text().length());
+    commandInput->setCursorPosition(
+        static_cast<int>(commandInput->text().length()));
   };
 
   if (event->key() == Qt::Key_Up) {
@@ -801,12 +815,12 @@ CommandPaletteWidget::handleCommandHistoryNavigation(const QKeyEvent *event) {
       commandInputDraft = commandInput->text();
     }
 
-    commandHistoryIndex =
-        std::min(commandHistoryIndex + 1, (int)commandHistory.size());
+    commandHistoryIndex = std::min(commandHistoryIndex + 1,
+                                   static_cast<int>(commandHistory.size()));
     applyHistoryEntry(commandHistoryIndex);
     currentlyInHistory = commandHistoryIndex < commandHistory.size();
 
-    if (!currentlyInHistory && commandSuggestions &&
+    if (!currentlyInHistory && (commandSuggestions != nullptr) &&
         commandSuggestions->count() > 0) {
       commandSuggestions->setCurrentRow(0);
     }
@@ -817,17 +831,19 @@ CommandPaletteWidget::handleCommandHistoryNavigation(const QKeyEvent *event) {
   return false;
 }
 
-const bool CommandPaletteWidget::handleCommandSuggestionNavigation(
+bool CommandPaletteWidget::handleCommandSuggestionNavigation(
     const QKeyEvent *event) {
-  if (!commandInput || !commandSuggestions ||
-      !commandSuggestions->isVisible() || commandSuggestions->count() == 0)
+  if ((commandInput == nullptr) || (commandSuggestions == nullptr) ||
+      !commandSuggestions->isVisible() || commandSuggestions->count() == 0) {
     return false;
+  }
 
   const Qt::KeyboardModifiers mods =
       event->modifiers() &
       static_cast<Qt::KeyboardModifier>(~Qt::KeypadModifier);
-  if (mods != Qt::NoModifier)
+  if (mods != Qt::NoModifier) {
     return false;
+  }
 
   if (currentlyInHistory &&
       (event->key() == Qt::Key_Up || event->key() == Qt::Key_Down)) {
@@ -843,8 +859,9 @@ const bool CommandPaletteWidget::handleCommandSuggestionNavigation(
   }
 
   const auto clampRow = [&](int row) {
-    if (commandSuggestions->count() == 0)
+    if (commandSuggestions->count() == 0) {
       return 0;
+    }
 
     return std::clamp(row, 0, commandSuggestions->count() - 1);
   };
@@ -866,14 +883,15 @@ const bool CommandPaletteWidget::handleCommandSuggestionNavigation(
   if (event->key() == Qt::Key_Tab || event->key() == Qt::Key_Return ||
       event->key() == Qt::Key_Enter) {
     const QListWidgetItem *current = commandSuggestions->currentItem();
-    if (!current && commandSuggestions->count() > 0) {
+    if ((current == nullptr) && commandSuggestions->count() > 0) {
       commandSuggestions->setCurrentRow(0);
       current = commandSuggestions->item(0);
     }
 
-    if (current) {
+    if (current != nullptr) {
       commandInput->setText(current->text());
-      commandInput->setCursorPosition(commandInput->text().length());
+      commandInput->setCursorPosition(
+          static_cast<int>(commandInput->text().length()));
       commandSuggestions->clearSelection();
       commandSuggestions->setCurrentRow(-1);
       if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
@@ -891,9 +909,10 @@ const bool CommandPaletteWidget::handleCommandSuggestionNavigation(
 }
 
 void CommandPaletteWidget::updateCommandSuggestions(const QString &text) {
-  if (!commandSuggestions) {
-    if (commandPaletteBottomDivider)
+  if (commandSuggestions == nullptr) {
+    if (commandPaletteBottomDivider != nullptr) {
       commandPaletteBottomDivider->hide();
+    }
     return;
   }
 
@@ -911,13 +930,15 @@ void CommandPaletteWidget::updateCommandSuggestions(const QString &text) {
   if (!hasSuggestions) {
     commandSuggestions->setVisible(false);
     commandSuggestions->setFixedHeight(0);
-    if (commandPaletteBottomDivider)
+    if (commandPaletteBottomDivider != nullptr) {
       commandPaletteBottomDivider->hide();
+    }
     return;
   }
 
-  if (commandPaletteBottomDivider)
+  if (commandPaletteBottomDivider != nullptr) {
     commandPaletteBottomDivider->show();
+  }
   commandSuggestions->setVisible(true);
 
   const int rowHeight = std::max(1, commandSuggestions->sizeHintForRow(0));

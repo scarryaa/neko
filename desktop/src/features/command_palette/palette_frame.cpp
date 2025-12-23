@@ -6,21 +6,19 @@ PaletteFrame::PaletteFrame(neko::ThemeManager &themeManager, QWidget *parent)
   setAttribute(Qt::WA_TranslucentBackground);
 }
 
-PaletteFrame::~PaletteFrame() {}
-
-void PaletteFrame::paintEvent(QPaintEvent *) {
-  QPainter p(this);
-  p.setRenderHint(QPainter::Antialiasing, true);
+void PaletteFrame::paintEvent(QPaintEvent *event) {
+  QPainter painter(this);
+  painter.setRenderHint(QPainter::Antialiasing, true);
 
   const QColor fill =
       UiUtils::getThemeColor(themeManager, "command_palette.background");
   const QColor stroke =
       UiUtils::getThemeColor(themeManager, "command_palette.border");
   QPainterPath path;
-  const constexpr qreal r = 12.0;
-  path.addRoundedRect(rect().adjusted(1, 1, -1, -1), r, r);
-  p.fillPath(path, fill);
+  const constexpr qreal radius = 12.0;
+  path.addRoundedRect(rect().adjusted(1, 1, -1, -1), radius, radius);
+  painter.fillPath(path, fill);
   const QPen pen(stroke, 1.5);
-  p.setPen(pen);
-  p.drawPath(path);
+  painter.setPen(pen);
+  painter.drawPath(path);
 }

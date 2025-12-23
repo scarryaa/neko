@@ -9,6 +9,7 @@ class PaletteDivider : public QWidget {
 
 public:
   explicit PaletteDivider(const QColor &color, QWidget *parent = nullptr);
+  ~PaletteDivider() override = default;
 
 protected:
   void paintEvent(QPaintEvent *event) override;

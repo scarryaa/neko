@@ -7,15 +7,16 @@ PaletteDivider::PaletteDivider(const QColor &color, QWidget *parent)
   setAttribute(Qt::WA_TranslucentBackground);
 }
 
-void PaletteDivider::paintEvent(QPaintEvent *) {
-  QPainter p(this);
-  p.setRenderHint(QPainter::Antialiasing, true);
+void PaletteDivider::paintEvent(QPaintEvent *event) {
+  QPainter painter(this);
+  painter.setRenderHint(QPainter::Antialiasing, true);
 
   QPen pen(color, 1.0);
   pen.setCosmetic(true);
   pen.setCapStyle(Qt::FlatCap);
   pen.setJoinStyle(Qt::MiterJoin);
 
-  p.setPen(pen);
-  p.drawLine(QPointF(0, height() / 2.0), QPointF(width(), height() / 2.0));
+  painter.setPen(pen);
+  painter.drawLine(QPointF(0, height() / 2.0),
+                   QPointF(width(), height() / 2.0));
 }

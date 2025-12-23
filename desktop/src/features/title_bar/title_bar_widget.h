@@ -19,7 +19,7 @@ public:
   explicit TitleBarWidget(neko::ConfigManager &configManager,
                           neko::ThemeManager &themeManager,
                           QWidget *parent = nullptr);
-  ~TitleBarWidget();
+  ~TitleBarWidget() override = default;
 
   void applyTheme();
 

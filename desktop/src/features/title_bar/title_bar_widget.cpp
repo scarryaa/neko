@@ -22,7 +22,7 @@ TitleBarWidget::TitleBarWidget(neko::ConfigManager &configManager,
   connect(m_directorySelectionButton, &QPushButton::clicked, this,
           &TitleBarWidget::onDirectorySelectionButtonPressed);
 
-  QHBoxLayout *layout = new QHBoxLayout(this);
+  auto *layout = new QHBoxLayout(this);
 
   int leftMargin = UiUtils::getTitleBarContentMargin();
 
@@ -30,8 +30,6 @@ TitleBarWidget::TitleBarWidget(neko::ConfigManager &configManager,
   layout->addWidget(m_directorySelectionButton);
   layout->addStretch();
 }
-
-TitleBarWidget::~TitleBarWidget() {}
 
 void TitleBarWidget::applyTheme() {
   if (!m_directorySelectionButton) {
