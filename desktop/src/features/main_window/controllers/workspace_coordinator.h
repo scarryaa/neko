@@ -19,7 +19,7 @@ public:
                                 EditorController *editorController,
                                 neko::ConfigManager *configManager,
                                 neko::ThemeManager *themeManager,
-                                WorkspaceUiHandles uiHandles,
+                                const WorkspaceUiHandles *uiHandles,
                                 QObject *parent = nullptr);
   ~WorkspaceCoordinator();
 
@@ -70,7 +70,7 @@ private:
   EditorController *editorController;
   neko::ConfigManager *configManager;
   neko::ThemeManager *themeManager;
-  WorkspaceUiHandles uiHandles;
+  const WorkspaceUiHandles *uiHandles;
 };
 
 #endif

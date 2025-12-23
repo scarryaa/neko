@@ -4,7 +4,7 @@ WorkspaceCoordinator::WorkspaceCoordinator(
     WorkspaceController *workspaceController, TabController *tabController,
     AppStateController *appStateController, EditorController *editorController,
     neko::ConfigManager *configManager, neko::ThemeManager *themeManager,
-    WorkspaceUiHandles uiHandles, QObject *parent)
+    const WorkspaceUiHandles *uiHandles, QObject *parent)
     : workspaceController(workspaceController), tabController(tabController),
       appStateController(appStateController),
       editorController(editorController), uiHandles(uiHandles),
@@ -17,19 +17,19 @@ WorkspaceCoordinator::WorkspaceCoordinator(
           &WorkspaceCoordinator::refreshUiForActiveTab);
 
   // WorkspaceCoordinator -> TabBarWidget
-  connect(uiHandles.tabBarWidget, &TabBarWidget::tabCloseRequested, this,
+  connect(uiHandles->tabBarWidget, &TabBarWidget::tabCloseRequested, this,
           &WorkspaceCoordinator::closeTab);
-  connect(uiHandles.tabBarWidget, &TabBarWidget::currentChanged, this,
+  connect(uiHandles->tabBarWidget, &TabBarWidget::currentChanged, this,
           &WorkspaceCoordinator::tabChanged);
-  connect(uiHandles.tabBarWidget, &TabBarWidget::tabPinnedChanged, this,
+  connect(uiHandles->tabBarWidget, &TabBarWidget::tabPinnedChanged, this,
           &WorkspaceCoordinator::tabChanged);
-  connect(uiHandles.tabBarWidget, &TabBarWidget::tabUnpinRequested, this,
+  connect(uiHandles->tabBarWidget, &TabBarWidget::tabUnpinRequested, this,
           &WorkspaceCoordinator::tabUnpinned);
-  connect(uiHandles.tabBarWidget, &TabBarWidget::newTabRequested, this,
+  connect(uiHandles->tabBarWidget, &TabBarWidget::newTabRequested, this,
           &WorkspaceCoordinator::newTab);
 
   // WorkspaceCoordinator -> EditorWidget
-  connect(uiHandles.editorWidget, &EditorWidget::newTabRequested, this,
+  connect(uiHandles->editorWidget, &EditorWidget::newTabRequested, this,
           &WorkspaceCoordinator::newTab);
 
   neko::Editor &activeEditor = appStateController->getActiveEditorMut();
@@ -39,12 +39,12 @@ WorkspaceCoordinator::WorkspaceCoordinator(
 WorkspaceCoordinator::~WorkspaceCoordinator() {}
 
 void WorkspaceCoordinator::fileExplorerToggled() {
-  bool isOpen = uiHandles.fileExplorerWidget->isHidden();
+  bool isOpen = uiHandles->fileExplorerWidget->isHidden();
 
   if (isOpen) {
-    uiHandles.fileExplorerWidget->show();
+    uiHandles->fileExplorerWidget->show();
   } else {
-    uiHandles.fileExplorerWidget->hide();
+    uiHandles->fileExplorerWidget->hide();
   }
 
   auto snapshot = configManager->get_config_snapshot();
@@ -69,7 +69,7 @@ void WorkspaceCoordinator::cursorPositionClicked() {
   auto lastLineMaxCol =
       std::max<size_t>(1, editorController->getLineLength(lineCount - 1));
 
-  uiHandles.commandPaletteWidget->jumpToRowColumn(
+  uiHandles->commandPaletteWidget->jumpToRowColumn(
       cursor.row, cursor.col, maxCol, lineCount, lastLineMaxCol);
 }
 
@@ -79,7 +79,7 @@ void WorkspaceCoordinator::commandPaletteGoToPosition(int row, int col) {
   }
 
   editorController->moveTo(row, col, true);
-  uiHandles.editorWidget->setFocus();
+  uiHandles->editorWidget->setFocus();
 }
 
 void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
@@ -107,7 +107,7 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
     case neko::UiIntentKindFfi::ToggleFileExplorer:
       fileExplorerToggled();
       emit onFileExplorerToggledViaShortcut(
-          !uiHandles.fileExplorerWidget->isHidden());
+          !uiHandles->fileExplorerWidget->isHidden());
       break;
     case neko::UiIntentKindFfi::ApplyTheme:
       emit themeChanged(std::string(intent.argument.c_str()));
@@ -136,7 +136,7 @@ void WorkspaceCoordinator::fileSaved(bool saveAs) {
   const bool success = workspaceController->saveTab(activeId, saveAs);
 
   if (success) {
-    uiHandles.tabBarWidget->setTabModified(activeId, false);
+    uiHandles->tabBarWidget->setTabModified(activeId, false);
     updateTabBar();
   }
 }
@@ -164,7 +164,7 @@ void WorkspaceCoordinator::tabReveal(int id) {
   if (path.isEmpty())
     return;
 
-  uiHandles.fileExplorerWidget->showItem(path);
+  uiHandles->fileExplorerWidget->showItem(path);
 }
 
 void WorkspaceCoordinator::newTab() {
@@ -193,7 +193,7 @@ void WorkspaceCoordinator::bufferChanged() {
   int activeId = tabController->getActiveTabId();
   bool modified = tabController->getTabModified(activeId);
 
-  uiHandles.tabBarWidget->setTabModified(activeId, modified);
+  uiHandles->tabBarWidget->setTabModified(activeId, modified);
 }
 
 CloseDecision
@@ -214,7 +214,7 @@ WorkspaceCoordinator::showTabCloseConfirmationDialog(const QList<int> &ids) {
                   tr("%1 tab%2 unsaved edits.")
                       .arg(modifiedCount)
                       .arg(modifiedCount > 1 ? "s have" : " has"),
-                  QMessageBox::NoButton, uiHandles.window);
+                  QMessageBox::NoButton, uiHandles->window);
 
   auto *saveBtn = box.addButton(tr("Save"), QMessageBox::AcceptRole);
   auto *dontSaveBtn =
@@ -236,7 +236,7 @@ WorkspaceCoordinator::showTabCloseConfirmationDialog(const QList<int> &ids) {
 
 SaveResult WorkspaceCoordinator::saveTab(int id, bool isSaveAs) {
   if (workspaceController->saveTab(id, isSaveAs)) {
-    uiHandles.tabBarWidget->setTabModified(id, false);
+    uiHandles->tabBarWidget->setTabModified(id, false);
 
     updateTabBar();
 
@@ -310,12 +310,12 @@ void WorkspaceCoordinator::applyInitialState() {
 
   auto snapshot = configManager->get_config_snapshot();
   if (!snapshot.file_explorer_shown) {
-    uiHandles.fileExplorerWidget->hide();
+    uiHandles->fileExplorerWidget->hide();
   }
 
-  uiHandles.fileExplorerWidget->loadSavedDir();
+  uiHandles->fileExplorerWidget->loadSavedDir();
   editorController->refresh();
-  uiHandles.editorWidget->setFocus();
+  uiHandles->editorWidget->setFocus();
 }
 
 void WorkspaceCoordinator::saveScrollOffsetsForActiveTab() {
@@ -324,8 +324,8 @@ void WorkspaceCoordinator::saveScrollOffsetsForActiveTab() {
 
   int id = tabController->getActiveTabId();
 
-  double x = uiHandles.editorWidget->horizontalScrollBar()->value();
-  double y = uiHandles.editorWidget->verticalScrollBar()->value();
+  double x = uiHandles->editorWidget->horizontalScrollBar()->value();
+  double y = uiHandles->editorWidget->verticalScrollBar()->value();
   neko::ScrollOffsetFfi scrollOffsets = {static_cast<int32_t>(x),
                                          static_cast<int32_t>(y)};
 
@@ -336,41 +336,41 @@ void WorkspaceCoordinator::restoreScrollOffsetsForActiveTab() {
   int id = tabController->getActiveTabId();
   auto offsets = tabController->getTabScrollOffsets(id);
 
-  uiHandles.editorWidget->horizontalScrollBar()->setValue(offsets.x);
-  uiHandles.editorWidget->verticalScrollBar()->setValue(offsets.y);
+  uiHandles->editorWidget->horizontalScrollBar()->setValue(offsets.x);
+  uiHandles->editorWidget->verticalScrollBar()->setValue(offsets.y);
 }
 
 void WorkspaceCoordinator::refreshUiForActiveTab(bool focusEditor) {
   if (tabController->getTabsEmpty()) {
-    uiHandles.tabBarContainerWidget->hide();
-    uiHandles.editorWidget->hide();
-    uiHandles.gutterWidget->hide();
-    uiHandles.emptyStateWidget->show();
-    uiHandles.fileExplorerWidget->setFocus();
+    uiHandles->tabBarContainerWidget->hide();
+    uiHandles->editorWidget->hide();
+    uiHandles->gutterWidget->hide();
+    uiHandles->emptyStateWidget->show();
+    uiHandles->fileExplorerWidget->setFocus();
 
     return;
   }
 
-  uiHandles.emptyStateWidget->hide();
-  uiHandles.tabBarContainerWidget->show();
-  uiHandles.editorWidget->show();
-  uiHandles.gutterWidget->show();
-  uiHandles.statusBarWidget->showCursorPositionInfo();
+  uiHandles->emptyStateWidget->hide();
+  uiHandles->tabBarContainerWidget->show();
+  uiHandles->editorWidget->show();
+  uiHandles->gutterWidget->show();
+  uiHandles->statusBarWidget->showCursorPositionInfo();
 
   // Update active editor
   neko::Editor &activeEditor = appStateController->getActiveEditorMut();
   setActiveEditor(&activeEditor);
 
-  uiHandles.editorWidget->updateDimensions();
-  uiHandles.editorWidget->redraw();
-  uiHandles.gutterWidget->updateDimensions();
-  uiHandles.gutterWidget->redraw();
+  uiHandles->editorWidget->updateDimensions();
+  uiHandles->editorWidget->redraw();
+  uiHandles->gutterWidget->updateDimensions();
+  uiHandles->gutterWidget->redraw();
 
   restoreScrollOffsetsForActiveTab();
   refreshStatusBarCursorInfo();
 
   if (focusEditor)
-    uiHandles.editorWidget->setFocus();
+    uiHandles->editorWidget->setFocus();
 }
 
 void WorkspaceCoordinator::updateTabBar() {
@@ -390,8 +390,9 @@ void WorkspaceCoordinator::updateTabBar() {
   rust::Vec<bool> modifieds = tabController->getTabModifiedStates();
   rust::Vec<bool> pinnedStates = tabController->getTabPinnedStates();
 
-  uiHandles.tabBarWidget->setTabs(tabTitles, tabPaths, modifieds, pinnedStates);
-  uiHandles.tabBarWidget->setCurrentId(tabController->getActiveTabId());
+  uiHandles->tabBarWidget->setTabs(tabTitles, tabPaths, modifieds,
+                                   pinnedStates);
+  uiHandles->tabBarWidget->setCurrentId(tabController->getActiveTabId());
 
   if (rawTitles.size() != 0) {
     setActiveEditor(&appStateController->getActiveEditorMut());
@@ -402,7 +403,7 @@ void WorkspaceCoordinator::updateTabBar() {
 
 void WorkspaceCoordinator::handleTabsClosed(const QList<int> &ids) {
   int newTabCount = tabController->getTabCount();
-  uiHandles.statusBarWidget->onTabClosed(newTabCount);
+  uiHandles->statusBarWidget->onTabClosed(newTabCount);
   refreshUiForActiveTab(true);
   updateTabBar();
 }
@@ -410,8 +411,8 @@ void WorkspaceCoordinator::handleTabsClosed(const QList<int> &ids) {
 void WorkspaceCoordinator::setActiveEditor(neko::Editor *editor) {
   editorController->setEditor(editor);
 
-  uiHandles.editorWidget->setEditorController(editorController);
-  uiHandles.gutterWidget->setEditorController(editorController);
+  uiHandles->editorWidget->setEditorController(editorController);
+  uiHandles->gutterWidget->setEditorController(editorController);
 }
 
 void WorkspaceCoordinator::refreshStatusBarCursorInfo() {
@@ -421,6 +422,6 @@ void WorkspaceCoordinator::refreshStatusBarCursorInfo() {
 
   auto cursorPosition = editorController->getLastAddedCursor();
   int numberOfCursors = editorController->getCursorPositions().size();
-  uiHandles.statusBarWidget->updateCursorPosition(
+  uiHandles->statusBarWidget->updateCursorPosition(
       cursorPosition.row, cursorPosition.col, numberOfCursors);
 }

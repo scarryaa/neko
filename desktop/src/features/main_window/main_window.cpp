@@ -44,7 +44,7 @@ MainWindow::MainWindow(QWidget *parent)
   setupWidgets(editor, fileTree);
   setupLayout();
 
-  WorkspaceUiHandles uiHandles{
+  uiHandles = WorkspaceUiHandles{
       editorWidget,    gutterWidget,         tabBarWidget,
       tabBarContainer, emptyStateWidget,     fileExplorerWidget,
       statusBarWidget, commandPaletteWidget, this->window(),
@@ -52,13 +52,13 @@ MainWindow::MainWindow(QWidget *parent)
 
   workspaceCoordinator = new WorkspaceCoordinator(
       workspaceController, tabController, appStateController, editorController,
-      &*configManager, &*themeManager, uiHandles, this);
+      &*configManager, &*themeManager, &uiHandles, this);
   commandManager = new CommandManager(&commandRegistry, &contextMenuRegistry,
                                       workspaceCoordinator);
   qtShortcutsManager =
       new ShortcutsManager(this, &*shortcutsManager, workspaceCoordinator,
-                           tabController, uiHandles, this);
-  qtThemeManager = new ThemeManager(&*themeManager, uiHandles);
+                           tabController, &uiHandles, this);
+  qtThemeManager = new ThemeManager(&*themeManager, &uiHandles, this);
 
   commandManager->registerProviders();
   commandManager->registerCommands();

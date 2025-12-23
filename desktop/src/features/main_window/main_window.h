@@ -68,6 +68,7 @@ private:
   StatusBarWidget *statusBarWidget;
   QPushButton *newTabButton;
   QSplitter *mainSplitter;
+  WorkspaceUiHandles uiHandles;
 };
 
 #endif // MAIN_WINDOW_H

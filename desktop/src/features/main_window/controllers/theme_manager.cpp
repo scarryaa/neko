@@ -1,8 +1,24 @@
 #include "theme_manager.h"
 
 ThemeManager::ThemeManager(neko::ThemeManager *nekoThemeManager,
-                           WorkspaceUiHandles uiHandles)
-    : nekoThemeManager(nekoThemeManager), uiHandles(uiHandles) {}
+                           const WorkspaceUiHandles *uiHandles, QObject *parent)
+    : nekoThemeManager(nekoThemeManager), uiHandles(uiHandles),
+      QObject(parent) {
+  connect(this, &ThemeManager::themeChanged, uiHandles->titleBarWidget,
+          &TitleBarWidget::applyTheme);
+  connect(this, &ThemeManager::themeChanged, uiHandles->fileExplorerWidget,
+          &FileExplorerWidget::applyTheme);
+  connect(this, &ThemeManager::themeChanged, uiHandles->editorWidget,
+          &EditorWidget::applyTheme);
+  connect(this, &ThemeManager::themeChanged, uiHandles->gutterWidget,
+          &GutterWidget::applyTheme);
+  connect(this, &ThemeManager::themeChanged, uiHandles->statusBarWidget,
+          &StatusBarWidget::applyTheme);
+  connect(this, &ThemeManager::themeChanged, uiHandles->tabBarWidget,
+          &TabBarWidget::applyTheme);
+  connect(this, &ThemeManager::themeChanged, uiHandles->commandPaletteWidget,
+          &CommandPaletteWidget::applyTheme);
+}
 
 ThemeManager::~ThemeManager() {}
 
@@ -14,23 +30,9 @@ void ThemeManager::applyTheme(const std::string &themeName) {
   }
 
   nekoThemeManager->set_theme(targetTheme);
+  emit themeChanged();
 
-  if (uiHandles.titleBarWidget)
-    uiHandles.titleBarWidget->applyTheme();
-  if (uiHandles.fileExplorerWidget)
-    uiHandles.fileExplorerWidget->applyTheme();
-  if (uiHandles.editorWidget)
-    uiHandles.editorWidget->applyTheme();
-  if (uiHandles.gutterWidget)
-    uiHandles.gutterWidget->applyTheme();
-  if (uiHandles.statusBarWidget)
-    uiHandles.statusBarWidget->applyTheme();
-  if (uiHandles.tabBarWidget)
-    uiHandles.tabBarWidget->applyTheme();
-  if (uiHandles.commandPaletteWidget)
-    uiHandles.commandPaletteWidget->applyTheme();
-
-  if (uiHandles.newTabButton) {
+  if (uiHandles->newTabButton) {
     QString newTabButtonBackgroundColor =
         UiUtils::getThemeColor(*nekoThemeManager, "ui.background");
     QString newTabButtonForegroundColor =
@@ -54,10 +56,10 @@ void ThemeManager::applyTheme(const std::string &themeName) {
                 "}")
             .arg(newTabButtonBackgroundColor, newTabButtonForegroundColor,
                  newTabButtonBorderColor, newTabButtonHoverBackgroundColor);
-    uiHandles.newTabButton->setStyleSheet(newTabButtonStylesheet);
+    uiHandles->newTabButton->setStyleSheet(newTabButtonStylesheet);
   }
 
-  if (uiHandles.emptyStateWidget) {
+  if (uiHandles->emptyStateWidget) {
     QString accentMutedColor =
         UiUtils::getThemeColor(*nekoThemeManager, "ui.accent.muted");
     QString foregroundColor =
@@ -70,10 +72,10 @@ void ThemeManager::applyTheme(const std::string &themeName) {
                 "QPushButton { background-color: %2; border-radius: 4px; "
                 "color: %3; }")
             .arg(emptyStateBackgroundColor, accentMutedColor, foregroundColor);
-    uiHandles.emptyStateWidget->setStyleSheet(emptyStateStylesheet);
+    uiHandles->emptyStateWidget->setStyleSheet(emptyStateStylesheet);
   }
 
-  if (uiHandles.mainSplitter) {
+  if (uiHandles->mainSplitter) {
     QString borderColor =
         UiUtils::getThemeColor(*nekoThemeManager, "ui.border");
     QString splitterStylesheet = QString("QSplitter::handle {"
@@ -81,6 +83,6 @@ void ThemeManager::applyTheme(const std::string &themeName) {
                                          "  margin: 0px;"
                                          "}")
                                      .arg(borderColor);
-    uiHandles.mainSplitter->setStyleSheet(splitterStylesheet);
+    uiHandles->mainSplitter->setStyleSheet(splitterStylesheet);
   }
 }

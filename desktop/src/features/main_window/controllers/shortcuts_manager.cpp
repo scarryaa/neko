@@ -4,7 +4,7 @@ ShortcutsManager::ShortcutsManager(QWidget *actionOwner,
                                    neko::ShortcutsManager *nekoShortcutsManager,
                                    WorkspaceCoordinator *workspaceCoordinator,
                                    TabController *tabController,
-                                   WorkspaceUiHandles uiHandles,
+                                   const WorkspaceUiHandles *uiHandles,
                                    QObject *parent)
     : actionOwner(actionOwner), nekoShortcutsManager(nekoShortcutsManager),
       workspaceCoordinator(workspaceCoordinator), tabController(tabController),
@@ -174,7 +174,7 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
       focusExplorerAction,
       seqFor("FileExplorer::Focus", QKeySequence(Qt::MetaModifier | Qt::Key_H)),
       Qt::WindowShortcut,
-      [this]() { uiHandles.fileExplorerWidget->setFocus(); });
+      [this]() { uiHandles->fileExplorerWidget->setFocus(); });
 
   // Ctrl + L for focus Editor
   // TODO: Generalize this, i.e. "focus right widget/pane"
@@ -182,7 +182,7 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
   addShortcut(
       focusEditorAction,
       seqFor("Editor::Focus", QKeySequence(Qt::MetaModifier | Qt::Key_L)),
-      Qt::WindowShortcut, [this]() { uiHandles.editorWidget->setFocus(); });
+      Qt::WindowShortcut, [this]() { uiHandles->editorWidget->setFocus(); });
 
   // Ctrl + , for open config
   QAction *openConfigAction = new QAction(this);
@@ -198,7 +198,7 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
               seqFor("CommandPalette::Show",
                      QKeySequence(Qt::ControlModifier | Qt::Key_P)),
               Qt::WindowShortcut,
-              [this]() { uiHandles.commandPaletteWidget->showPalette(); });
+              [this]() { uiHandles->commandPaletteWidget->showPalette(); });
 }
 
 template <typename Slot>

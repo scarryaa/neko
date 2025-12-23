@@ -10,14 +10,18 @@ class ThemeManager : public QObject {
 
 public:
   explicit ThemeManager(neko::ThemeManager *nekoThemeManager,
-                        WorkspaceUiHandles uiHandles);
+                        const WorkspaceUiHandles *uiHandles,
+                        QObject *parent = nullptr);
   ~ThemeManager();
 
   void applyTheme(const std::string &themeName);
 
+signals:
+  void themeChanged();
+
 private:
   neko::ThemeManager *nekoThemeManager;
-  WorkspaceUiHandles uiHandles;
+  const WorkspaceUiHandles *uiHandles;
 };
 
 #endif

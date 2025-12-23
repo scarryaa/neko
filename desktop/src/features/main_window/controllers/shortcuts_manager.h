@@ -14,7 +14,7 @@ public:
                             neko::ShortcutsManager *nekoShortcutsManager,
                             WorkspaceCoordinator *workspaceCoordinator,
                             TabController *tabController,
-                            WorkspaceUiHandles uiHandles,
+                            const WorkspaceUiHandles *uiHandles,
                             QObject *parent = nullptr);
   ~ShortcutsManager();
 
@@ -29,7 +29,7 @@ private:
   neko::ShortcutsManager *nekoShortcutsManager;
   WorkspaceCoordinator *workspaceCoordinator;
   TabController *tabController;
-  WorkspaceUiHandles uiHandles;
+  const WorkspaceUiHandles *uiHandles;
 };
 
 #endif
