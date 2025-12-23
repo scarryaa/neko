@@ -7,14 +7,14 @@
 
 class GutterRenderer {
 public:
-  void paint(QPainter &painter, const RenderState &state,
-             const ViewportContext &ctx) const;
+  static void paint(QPainter &painter, const RenderState &state,
+                    const ViewportContext &ctx);
 
 private:
-  void drawText(QPainter *painter, const RenderState &state,
-                const ViewportContext &ctx) const;
-  void drawLineHighlight(QPainter *painter, const RenderState &state,
-                         const ViewportContext &ctx) const;
+  static void drawText(QPainter *painter, const RenderState &state,
+                       const ViewportContext &ctx);
+  static void drawLineHighlight(QPainter *painter, const RenderState &state,
+                                const ViewportContext &ctx);
 };
 
 #endif // GUTTER_RENDERER_H

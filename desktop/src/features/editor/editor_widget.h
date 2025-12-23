@@ -35,17 +35,18 @@ public:
                         neko::ConfigManager &configManager,
                         neko::ThemeManager &themeManager,
                         QWidget *parent = nullptr);
-  ~EditorWidget();
+  ~EditorWidget() override = default;
 
   void applyTheme();
   void redraw() const;
   void updateDimensions();
   void setEditorController(EditorController *newEditorController);
 
+  // NOLINTNEXTLINE
 public slots:
-  void onBufferChanged();
+  void onBufferChanged() const;
   void onCursorChanged();
-  void onSelectionChanged();
+  void onSelectionChanged() const;
   void onViewportChanged();
 
 protected:
@@ -59,21 +60,21 @@ protected:
   bool focusNextPrevChild(bool next) override;
 
 signals:
-  void fontSizeChanged(const qreal newSize);
+  void fontSizeChanged(qreal newSize);
   void newTabRequested();
 
 private:
-  const double getTextWidth(const QString &text,
-                            const double horizontalOffset) const;
-  const RowCol convertMousePositionToRowCol(const double x, const double y);
+  [[nodiscard]] double getTextWidth(const QString &text,
+                                    double horizontalOffset) const;
+  RowCol convertMousePositionToRowCol(double xPos, double yPos);
 
   void increaseFontSize();
   void decreaseFontSize();
   void resetFontSize();
-  void setFontSize(const double newFontSize);
+  void setFontSize(double newFontSize);
 
   void scrollToCursor();
-  const double measureWidth() const;
+  [[nodiscard]] double measureWidth() const;
 
   neko::ConfigManager &configManager;
   neko::ThemeManager &themeManager;
@@ -84,10 +85,10 @@ private:
 
   QTimer suppressDblTimer;
   bool suppressNextDouble = false;
-  QPoint suppressDblPos{};
+  QPoint suppressDblPos;
   QTimer tripleArmTimer;
   bool tripleArmed = false;
-  QPoint triplePos{};
+  QPoint triplePos;
   int tripleRow = 0;
   bool lineSelectMode = false;
   bool wordSelectMode = false;
@@ -103,6 +104,7 @@ private:
   const double VIEWPORT_PADDING = 74.0;
 
   static constexpr int TRIPLE_CLICK_MS = 200;
+  static constexpr int MAX_TEXT_LINE_WIDTH = 1e9;
 };
 
 #endif // EDITOR_WIDGET_H

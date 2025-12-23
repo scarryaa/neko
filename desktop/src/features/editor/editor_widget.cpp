@@ -38,8 +38,6 @@ EditorWidget::EditorWidget(EditorController *editorController,
           &EditorWidget::onViewportChanged);
 }
 
-EditorWidget::~EditorWidget() {}
-
 void EditorWidget::applyTheme() {
   const QString bgHex =
       UiUtils::getThemeColor(themeManager, "editor.background", "#000000");
@@ -52,7 +50,7 @@ void EditorWidget::applyTheme() {
 void EditorWidget::redraw() const { viewport()->update(); }
 
 void EditorWidget::updateDimensions() {
-  if (!editorController) {
+  if (editorController == nullptr) {
     return;
   }
 
@@ -69,8 +67,8 @@ void EditorWidget::updateDimensions() {
       viewportHeight -
       (horizontalScrollBarVisible ? horizontalScrollBarHeight : 0.0);
 
-  horizontalScrollBar()->setRange(0, viewportWidth);
-  verticalScrollBar()->setRange(0, adjustedVerticalRange);
+  horizontalScrollBar()->setRange(0, static_cast<int>(viewportWidth));
+  verticalScrollBar()->setRange(0, static_cast<int>(adjustedVerticalRange));
   redraw();
 }
 
@@ -78,27 +76,29 @@ void EditorWidget::setEditorController(EditorController *newEditorController) {
   editorController = newEditorController;
 }
 
-void EditorWidget::onBufferChanged() { redraw(); }
+void EditorWidget::onBufferChanged() const { redraw(); }
 
 void EditorWidget::onCursorChanged() {
   scrollToCursor();
   redraw();
 }
 
-void EditorWidget::onSelectionChanged() { redraw(); }
+void EditorWidget::onSelectionChanged() const { redraw(); }
 
 void EditorWidget::onViewportChanged() { updateDimensions(); }
 
-static const int tripleWindowMs() {
-  return std::max(120, QApplication::doubleClickInterval() / 2);
+static int tripleWindowMs() {
+  static constexpr int TRIPLE_CLICK_MS = 120;
+  return std::max(TRIPLE_CLICK_MS, QApplication::doubleClickInterval() / 2);
 }
 
-static const bool nearPos(const QPoint &a, const QPoint &b, const int px = 4) {
-  return (a - b).manhattanLength() <= px;
+static bool nearPos(const QPoint &pointA, const QPoint &pointB,
+                    const int pixelThreshold = 4) {
+  return (pointA - pointB).manhattanLength() <= pixelThreshold;
 }
 
 void EditorWidget::keyPressEvent(QKeyEvent *event) {
-  if (!editorController) {
+  if (editorController == nullptr) {
     return;
   }
 
@@ -151,6 +151,8 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
     case Qt::Key_0:
       resetFontSize();
       return;
+    default:
+      break;
     }
   }
 
@@ -190,21 +192,22 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
 }
 
 void EditorWidget::mousePressEvent(QMouseEvent *event) {
-  if (!editorController)
+  if (editorController == nullptr) {
     return;
+  }
 
-  const RowCol rc =
+  const RowCol rowCol =
       convertMousePositionToRowCol(event->pos().x(), event->pos().y());
 
   if (event->modifiers().testFlag(Qt::AltModifier)) {
     tripleArmed = false;
     tripleArmTimer.stop();
 
-    if (editorController->cursorExistsAt(rc.row, rc.col)) {
-      editorController->removeCursor(rc.row, rc.col);
+    if (editorController->cursorExistsAt(rowCol.row, rowCol.col)) {
+      editorController->removeCursor(rowCol.row, rowCol.col);
     } else {
-      editorController->addCursor(neko::AddCursorDirectionKind::At, rc.row,
-                                  rc.col);
+      editorController->addCursor(neko::AddCursorDirectionKind::At, rowCol.row,
+                                  rowCol.col);
     }
 
     redraw();
@@ -248,7 +251,7 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
 
     wordSelectMode = false;
     lineSelectMode = false;
-    editorController->moveTo(rc.row, rc.col, true);
+    editorController->moveTo(rowCol.row, rowCol.col, true);
 
     redraw();
 
@@ -256,12 +259,13 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
     return;
   }
 
-  QWidget::mousePressEvent(event);
+  QAbstractScrollArea::mousePressEvent(event);
 }
 
 void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
-  if (!editorController)
+  if (editorController == nullptr) {
     return;
+  }
 
   if (suppressNextDouble && suppressDblTimer.isActive() &&
       nearPos(event->pos(), suppressDblPos)) {
@@ -269,10 +273,10 @@ void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
     suppressDblTimer.stop();
     tripleArmTimer.stop();
 
-    const RowCol rc =
+    const RowCol rowCol =
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
 
-    editorController->moveTo(rc.row, rc.col, true);
+    editorController->moveTo(rowCol.row, rowCol.col, true);
 
     redraw();
 
@@ -280,9 +284,9 @@ void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
     return;
   }
 
-  const RowCol rc =
+  const RowCol rowCol =
       convertMousePositionToRowCol(event->pos().x(), event->pos().y());
-  editorController->selectWord(rc.row, rc.col);
+  editorController->selectWord(rowCol.row, rowCol.col);
 
   const auto selection = editorController->getSelection();
 
@@ -300,7 +304,7 @@ void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
 
   tripleArmed = true;
   triplePos = event->pos();
-  tripleRow = rc.row;
+  tripleRow = rowCol.row;
   tripleArmTimer.start(tripleWindowMs());
 
   redraw();
@@ -308,7 +312,7 @@ void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
 }
 
 void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
-  if (!editorController) {
+  if (editorController == nullptr) {
     return;
   }
 
@@ -317,11 +321,11 @@ void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
       return;
     }
 
-    const RowCol rc =
+    const RowCol rowCol =
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
     editorController->selectWordDrag(wordAnchorStart.row, wordAnchorStart.col,
                                      wordAnchorEnd.row, wordAnchorEnd.col,
-                                     rc.row, rc.col);
+                                     rowCol.row, rowCol.col);
 
     redraw();
   } else if (lineSelectMode) {
@@ -329,16 +333,16 @@ void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
       return;
     }
 
-    const RowCol rc =
+    const RowCol rowCol =
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
-    editorController->selectLineDrag(lineAnchorRow, rc.row);
+    editorController->selectLineDrag(lineAnchorRow, rowCol.row);
 
     redraw();
   } else {
     if (event->buttons() == Qt::LeftButton) {
-      const RowCol rc =
+      const RowCol rowCol =
           convertMousePositionToRowCol(event->pos().x(), event->pos().y());
-      editorController->selectTo(rc.row, rc.col);
+      editorController->selectTo(rowCol.row, rowCol.col);
 
       redraw();
     }
@@ -351,11 +355,11 @@ void EditorWidget::mouseReleaseEvent(QMouseEvent *event) {
     lineSelectMode = false;
   }
 
-  QWidget::mouseReleaseEvent(event);
+  QAbstractScrollArea::mouseReleaseEvent(event);
 }
 
 void EditorWidget::paintEvent(QPaintEvent *event) {
-  if (!editorController) {
+  if (editorController == nullptr) {
     return;
   }
 
@@ -368,9 +372,9 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
   const double lineHeight = fontMetrics.height();
 
   const int lineCount = editorController->getLineCount();
-  const int firstVisibleLine =
-      qMax(0, qMin((int)(verticalOffset / lineHeight), lineCount - 1));
-  const int visibleLineCount = viewportHeight / lineHeight;
+  const int firstVisibleLine = qMax(
+      0, qMin(static_cast<int>(verticalOffset / lineHeight), lineCount - 1));
+  const int visibleLineCount = static_cast<int>(viewportHeight / lineHeight);
   const int lastVisibleLine =
       qMax(0, qMin(firstVisibleLine + visibleLineCount + EXTRA_VERTICAL_LINES,
                    lineCount - 1));
@@ -397,15 +401,15 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
 
   const RenderTheme theme = {textColor, textColor, accentColor, highlightColor};
 
-  const auto measureWidth = [this](const QString &s) {
-    return fontMetrics.horizontalAdvance(s);
+  const auto measureWidth = [this](const QString &string) {
+    return fontMetrics.horizontalAdvance(string);
   };
   const RenderState state = {
       lines,          cursors,          selections, theme,       lineCount,
       verticalOffset, horizontalOffset, lineHeight, fontAscent,  fontDescent,
       font,           hasFocus,         isEmpty,    measureWidth};
 
-  renderer->paint(painter, state, ctx);
+  EditorRenderer::paint(painter, state, ctx);
 }
 
 void EditorWidget::wheelEvent(QWheelEvent *event) {
@@ -420,56 +424,60 @@ void EditorWidget::wheelEvent(QWheelEvent *event) {
       horizontalScrollOffset + horizontallDelta;
   const auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;
 
-  horizontalScrollBar()->setValue(newHorizontalScrollOffset);
-  verticalScrollBar()->setValue(newVerticalScrollOffset);
+  horizontalScrollBar()->setValue(static_cast<int>(newHorizontalScrollOffset));
+  verticalScrollBar()->setValue(static_cast<int>(newVerticalScrollOffset));
   redraw();
 }
 
 bool EditorWidget::focusNextPrevChild(bool next) { return false; }
 
-const double EditorWidget::getTextWidth(const QString &text,
-                                        const double horizontalOffset) const {
+double EditorWidget::getTextWidth(const QString &text,
+                                  const double horizontalOffset) const {
   return fontMetrics.horizontalAdvance(text) - horizontalOffset;
 }
 
-static const int xToCursorIndex(const QString &line, const QFont &font,
-                                const qreal x) {
+static int xToCursorIndex(const QString &line, const QFont &font,
+                          const qreal xPos) {
+  static constexpr int MAX_TEXT_LINE_WIDTH = 1e9;
+
   QTextLayout layout(line, font);
   layout.beginLayout();
 
-  QTextLine tl = layout.createLine();
+  QTextLine textLine = layout.createLine();
 
-  if (!tl.isValid())
+  if (!textLine.isValid()) {
     return 0;
+  }
 
-  tl.setLineWidth(1e9);
+  textLine.setLineWidth(MAX_TEXT_LINE_WIDTH);
 
   layout.endLayout();
 
-  return tl.xToCursor(x);
+  return textLine.xToCursor(xPos);
 }
 
-const RowCol EditorWidget::convertMousePositionToRowCol(const double x,
-                                                        const double y) {
+RowCol EditorWidget::convertMousePositionToRowCol(const double xPos,
+                                                  const double yPos) {
   const double lineHeight = fontMetrics.height();
   const int scrollX = horizontalScrollBar()->value();
   const int scrollY = verticalScrollBar()->value();
 
   const int lineCount = editorController->getLineCount();
-  if (lineCount <= 0)
+  if (lineCount <= 0) {
     return {0, 0};
+  }
 
-  const size_t targetRow = size_t((y + scrollY) / lineHeight);
-  const size_t lastRow = size_t(lineCount - 1);
-  const size_t row = std::min(targetRow, lastRow);
+  const int targetRow = static_cast<int>((yPos + scrollY) / lineHeight);
+  const int lastRow = (lineCount - 1);
+  const int row = std::min(targetRow, lastRow);
 
   const QString line = editorController->getLine(row);
-  const qreal targetX = qreal(x + scrollX);
+  const auto targetX = static_cast<qreal>(xPos + scrollX);
 
   int col = xToCursorIndex(line, font, targetX);
-  col = std::clamp(col, 0, (int)line.length());
+  col = std::clamp(col, 0, static_cast<int>(line.length()));
 
-  return {(int)row, col};
+  return {static_cast<int>(row), col};
 }
 
 void EditorWidget::increaseFontSize() {
@@ -497,18 +505,18 @@ void EditorWidget::setFontSize(double newFontSize) {
 }
 
 void EditorWidget::scrollToCursor() {
-  if (!editorController) {
+  if (editorController == nullptr) {
     return;
   }
 
   const auto cursors = editorController->getCursorPositions();
   const auto cursor = cursors.at(0);
 
-  const int targetRow = cursor.row;
+  const int targetRow = static_cast<int>(cursor.row);
   const double lineHeight = fontMetrics.height();
 
-  const QString line = editorController->getLine(cursor.row);
-  const QString textBeforeCursor = line.mid(0, cursor.col);
+  const QString line = editorController->getLine(static_cast<int>(cursor.row));
+  const QString textBeforeCursor = line.mid(0, static_cast<int>(cursor.col));
 
   const double viewportWidth = viewport()->width();
   const double viewportHeight = viewport()->height();
@@ -520,22 +528,24 @@ void EditorWidget::scrollToCursor() {
   const double targetX = fontMetrics.horizontalAdvance(textBeforeCursor);
 
   if (targetX > viewportWidth - VIEWPORT_PADDING + horizontalScrollOffset) {
-    horizontalScrollBar()->setValue(targetX - viewportWidth + VIEWPORT_PADDING);
+    horizontalScrollBar()->setValue(
+        static_cast<int>(targetX - viewportWidth + VIEWPORT_PADDING));
   } else if (targetX < horizontalScrollOffset + VIEWPORT_PADDING) {
-    horizontalScrollBar()->setValue(targetX - VIEWPORT_PADDING);
+    horizontalScrollBar()->setValue(
+        static_cast<int>(targetX - VIEWPORT_PADDING));
   }
 
   if (targetYBottom >
       viewportHeight - VIEWPORT_PADDING + verticalScrollOffset) {
-    verticalScrollBar()->setValue(targetYBottom - viewportHeight +
-                                  VIEWPORT_PADDING);
+    verticalScrollBar()->setValue(
+        static_cast<int>(targetYBottom - viewportHeight + VIEWPORT_PADDING));
   } else if (targetY < verticalScrollOffset + VIEWPORT_PADDING) {
-    verticalScrollBar()->setValue(targetY - VIEWPORT_PADDING);
+    verticalScrollBar()->setValue(static_cast<int>(targetY - VIEWPORT_PADDING));
   }
 }
 
-const double EditorWidget::measureWidth() const {
-  if (!editorController) {
+double EditorWidget::measureWidth() const {
+  if (editorController == nullptr) {
     return 0;
   }
 

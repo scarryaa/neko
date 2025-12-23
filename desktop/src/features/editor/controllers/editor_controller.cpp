@@ -2,37 +2,32 @@
 
 EditorController::EditorController(neko::Editor *editor) : editor(editor) {}
 
-EditorController::~EditorController() {}
+bool EditorController::isEmpty() const { return editor->buffer_is_empty(); }
 
-const bool EditorController::isEmpty() const {
-  return editor->buffer_is_empty();
-}
-
-const QString EditorController::getLine(const int index) const {
+QString EditorController::getLine(const int index) const {
   return QString::fromUtf8(editor->get_line(index));
 }
 
-const QStringList EditorController::getLines() const {
+QStringList EditorController::getLines() const {
   const auto rawLines = editor->get_lines();
   QStringList lines = QStringList();
 
-  for (auto line : rawLines) {
+  for (const auto &line : rawLines) {
     lines.append(QString::fromUtf8(line));
   }
 
   return lines;
 }
 
-const int EditorController::getLineCount() const {
-  return editor->get_line_count();
+int EditorController::getLineCount() const {
+  return static_cast<int>(editor->get_line_count());
 }
 
-const neko::Selection EditorController::getSelection() const {
+neko::Selection EditorController::getSelection() const {
   return editor->get_selection();
 }
 
-const std::vector<neko::CursorPosition>
-EditorController::getCursorPositions() const {
+std::vector<neko::CursorPosition> EditorController::getCursorPositions() const {
   std::vector<neko::CursorPosition> cursors;
   const auto rawCursors = editor->get_cursor_positions();
 
@@ -43,33 +38,30 @@ EditorController::getCursorPositions() const {
   return cursors;
 }
 
-const bool EditorController::needsWidthMeasurement(const int index) const {
+bool EditorController::needsWidthMeasurement(const int index) const {
   return editor->needs_width_measurement(index);
 }
 
-const double EditorController::getMaxWidth() const {
-  return editor->get_max_width();
-}
+double EditorController::getMaxWidth() const { return editor->get_max_width(); }
 
-const bool EditorController::cursorExistsAt(const int row,
-                                            const int column) const {
+bool EditorController::cursorExistsAt(const int row, const int column) const {
   return editor->cursor_exists_at(row, column);
 }
 
-const bool EditorController::bufferIsEmpty() const {
+bool EditorController::bufferIsEmpty() const {
   return editor->buffer_is_empty();
 }
 
-const int EditorController::getNumberOfSelections() const {
-  return editor->get_number_of_selections();
+int EditorController::getNumberOfSelections() const {
+  return static_cast<int>(editor->get_number_of_selections());
 }
 
-const neko::CursorPosition EditorController::getLastAddedCursor() const {
+neko::CursorPosition EditorController::getLastAddedCursor() const {
   return editor->get_last_added_cursor();
 }
 
-const int EditorController::getLineLength(int index) const {
-  return editor->get_line_length(index);
+int EditorController::getLineLength(int index) const {
+  return static_cast<int>(editor->get_line_length(index));
 }
 
 void EditorController::setLineWidth(const int index, const double width) {
@@ -85,11 +77,11 @@ void EditorController::selectWord(const int row, const int column) {
 }
 
 void EditorController::selectLine(int row) {
-  if (!editor) {
+  if (editor == nullptr) {
     return;
   }
 
-  const int lineCount = editor->get_line_count();
+  const int lineCount = static_cast<int>(editor->get_line_count());
   if (lineCount == 0) {
     return;
   }
@@ -102,7 +94,8 @@ void EditorController::selectLine(int row) {
   if (clampedRow + 1 < lineCount) {
     selectTo(clampedRow + 1, 0);
   } else {
-    const int lineLength = editor->get_line_length(clampedRow);
+    const int lineLength =
+        static_cast<int>(editor->get_line_length(clampedRow));
     selectTo(clampedRow, lineLength);
   }
 }
@@ -146,8 +139,9 @@ void EditorController::selectTo(const int row, const int column) {
 }
 
 void EditorController::insertText(const std::string &text) {
-  if (text.empty())
+  if (text.empty()) {
     return;
+  }
 
   do_op(&neko::Editor::insert_text, text);
 }
@@ -165,16 +159,19 @@ void EditorController::deleteForwards() {
 void EditorController::selectAll() { do_op(&neko::Editor::select_all); }
 
 void EditorController::copy() {
-  if (!editor)
+  if (editor == nullptr) {
     return;
+  }
 
   const auto selection = editor->get_selection();
-  if (!selection.active)
+  if (!selection.active) {
     return;
+  }
 
   const auto rawText = editor->copy();
-  if (rawText.empty())
+  if (rawText.empty()) {
     return;
+  }
 
   QApplication::clipboard()->setText(QString::fromUtf8(rawText));
 }
@@ -210,8 +207,9 @@ void EditorController::clearSelectionOrCursors() {
   }
 }
 
-void EditorController::addCursor(const neko::AddCursorDirectionKind dirKind,
-                                 const int row, const int column) {
+// NOLINTNEXTLINE
+void EditorController::addCursor(neko::AddCursorDirectionKind dirKind, int row,
+                                 int column) {
   switch (dirKind) {
   case neko::AddCursorDirectionKind::Above: {
     neko::AddCursorDirectionFfi dir;
@@ -241,11 +239,14 @@ void EditorController::addCursor(const neko::AddCursorDirectionKind dirKind,
   const auto cursorPosition =
       editor->get_cursor_positions()[editor->get_active_cursor_index()];
   const auto [normalizedRow, normalizedCol] =
-      normalizeCursorPosition(cursorPosition.row, cursorPosition.col);
+      normalizeCursorPosition(static_cast<int>(cursorPosition.row),
+                              static_cast<int>(cursorPosition.col));
 
   const auto cursorCount = editor->get_cursor_positions().size();
   const auto selectionCount = editor->get_number_of_selections();
-  emit cursorChanged(normalizedRow, normalizedCol, cursorCount, selectionCount);
+  emit cursorChanged(normalizedRow, normalizedCol,
+                     static_cast<int>(cursorCount),
+                     static_cast<int>(selectionCount));
 
   emit viewportChanged();
 }
@@ -256,51 +257,57 @@ void EditorController::removeCursor(const int row, const int col) {
   const auto cursorPosition =
       editor->get_cursor_positions()[editor->get_active_cursor_index()];
   const auto [normalizedRow, normalizedCol] =
-      normalizeCursorPosition(cursorPosition.row, cursorPosition.col);
+      normalizeCursorPosition(static_cast<int>(cursorPosition.row),
+                              static_cast<int>(cursorPosition.col));
 
   const auto cursorCount = editor->get_cursor_positions().size();
   const auto selectionCount = editor->get_number_of_selections();
-  emit cursorChanged(normalizedRow, normalizedCol, cursorCount, selectionCount);
+  emit cursorChanged(normalizedRow, normalizedCol,
+                     static_cast<int>(cursorCount),
+                     static_cast<int>(selectionCount));
 
   emit viewportChanged();
 }
 
 void EditorController::refresh() {
-  // TODO: Emit current state after change (e.g. opening a file)
+  // TODO(scarlet): Emit current state after change (e.g. opening a file)
 }
 
 void EditorController::applyChangeSet(const neko::ChangeSetFfi &changeSet) {
-  if (!editor) {
+  if (editor == nullptr) {
     return;
   }
 
-  const uint32_t m = changeSet.mask;
+  const uint32_t mask = changeSet.mask;
 
-  if (m & ChangeMask::Selection) {
+  if ((mask & ChangeMask::Selection) != 0U) {
     const auto selectionCount = editor->get_number_of_selections();
-    emit selectionChanged(selectionCount);
+    emit selectionChanged(static_cast<int>(selectionCount));
   }
 
-  if (m & (ChangeMask::Viewport | ChangeMask::LineCount | ChangeMask::Widths)) {
+  if ((mask & (ChangeMask::Viewport | ChangeMask::LineCount |
+               ChangeMask::Widths)) != 0U) {
     emit viewportChanged();
   }
 
-  if (m & ChangeMask::LineCount) {
-    const int lineCount = editor->get_line_count();
+  if ((mask & ChangeMask::LineCount) != 0U) {
+    const int lineCount = static_cast<int>(editor->get_line_count());
     emit lineCountChanged(lineCount);
   }
 
-  if (m & ChangeMask::Cursor) {
+  if ((mask & ChangeMask::Cursor) != 0U) {
     const auto lastAddedCursor = editor->get_last_added_cursor();
     const auto [clampedRow, clampedColumn] =
-        normalizeCursorPosition(lastAddedCursor.row, lastAddedCursor.col);
+        normalizeCursorPosition(static_cast<int>(lastAddedCursor.row),
+                                static_cast<int>(lastAddedCursor.col));
     const auto cursorCount = editor->get_cursor_positions().size();
     const auto selectionCount = editor->get_number_of_selections();
 
-    emit cursorChanged(clampedRow, clampedColumn, cursorCount, selectionCount);
+    emit cursorChanged(clampedRow, clampedColumn, static_cast<int>(cursorCount),
+                       static_cast<int>(selectionCount));
   }
 
-  if (m & ChangeMask::Buffer) {
+  if ((mask & ChangeMask::Buffer) != 0U) {
     emit bufferChanged();
   }
 }
@@ -308,8 +315,9 @@ void EditorController::applyChangeSet(const neko::ChangeSetFfi &changeSet) {
 void EditorController::nav(neko::ChangeSetFfi (neko::Editor::*moveFn)(),
                            neko::ChangeSetFfi (neko::Editor::*selectFn)(),
                            const bool shouldSelect) {
-  if (!editor)
+  if (editor == nullptr) {
     return;
+  }
 
   if (shouldSelect) {
     do_op(selectFn);
@@ -319,18 +327,19 @@ void EditorController::nav(neko::ChangeSetFfi (neko::Editor::*moveFn)(),
 }
 
 template <typename Fn, typename... Args>
-void EditorController::do_op(Fn &&fn, Args &&...args) {
-  if (!editor)
+void EditorController::do_op(Fn &&function, Args &&...args) {
+  if (!editor) {
     return;
+  }
 
-  const auto changeSet = std::invoke(std::forward<const Fn>(fn), editor,
+  const auto changeSet = std::invoke(std::forward<const Fn>(function), editor,
                                      std::forward<const Args>(args)...);
   applyChangeSet(changeSet);
 }
 
 std::pair<const int, const int>
 EditorController::normalizeCursorPosition(const int row, const int col) const {
-  if (!editor) {
+  if (editor == nullptr) {
     return {row, col};
   }
 

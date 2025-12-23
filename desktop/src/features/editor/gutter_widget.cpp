@@ -34,8 +34,6 @@ GutterWidget::GutterWidget(EditorController *editorController,
           &GutterWidget::onViewportChanged);
 }
 
-GutterWidget::~GutterWidget() {}
-
 void GutterWidget::redraw() const { viewport()->update(); }
 
 void GutterWidget::applyTheme() {
@@ -47,7 +45,7 @@ void GutterWidget::applyTheme() {
 }
 
 void GutterWidget::updateDimensions() {
-  if (!editorController) {
+  if (editorController == nullptr) {
     return;
   }
 
@@ -58,8 +56,8 @@ void GutterWidget::updateDimensions() {
   const auto viewportWidth =
       contentWidth - viewport()->width() + VIEWPORT_PADDING;
 
-  horizontalScrollBar()->setRange(0, viewportWidth);
-  verticalScrollBar()->setRange(0, viewportHeight);
+  horizontalScrollBar()->setRange(0, static_cast<int>(viewportWidth));
+  verticalScrollBar()->setRange(0, static_cast<int>(viewportHeight));
 
   updateGeometry();
   redraw();
@@ -70,11 +68,11 @@ void GutterWidget::setEditorController(EditorController *newEditorController) {
 }
 
 QSize GutterWidget::sizeHint() const {
-  return QSize(measureWidth() + VIEWPORT_PADDING, height());
+  return {static_cast<int>(measureWidth() + VIEWPORT_PADDING), height()};
 }
 
 void GutterWidget::paintEvent(QPaintEvent *event) {
-  if (!editorController) {
+  if (editorController == nullptr) {
     return;
   }
 
@@ -87,9 +85,9 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
   const double lineHeight = fontMetrics.height();
 
   const int lineCount = editorController->getLineCount();
-  const int firstVisibleLine =
-      qMax(0, qMin((int)(verticalOffset / lineHeight), lineCount - 1));
-  const int visibleLineCount = viewportHeight / lineHeight;
+  const int firstVisibleLine = qMax(
+      0, qMin(static_cast<int>(verticalOffset / lineHeight), lineCount - 1));
+  const int visibleLineCount = static_cast<int>(viewportHeight / lineHeight);
   const int lastVisibleLine =
       qMax(0, qMin(firstVisibleLine + visibleLineCount + EXTRA_VERTICAL_LINES,
                    lineCount - 1));
@@ -118,15 +116,15 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
   const RenderTheme theme = {textColor, activeLineTextColor, accentColor,
                              highlightColor};
 
-  const auto measureWidth = [this](const QString &s) {
-    return fontMetrics.horizontalAdvance(s);
+  const auto measureWidth = [this](const QString &string) {
+    return fontMetrics.horizontalAdvance(string);
   };
   const RenderState state = {
       QStringList(),  cursors,          selections, theme,       lineCount,
       verticalOffset, horizontalOffset, lineHeight, fontAscent,  fontDescent,
       font,           hasFocus,         isEmpty,    measureWidth};
 
-  renderer->paint(painter, state, ctx);
+  GutterRenderer::paint(painter, state, ctx);
 }
 
 void GutterWidget::wheelEvent(QWheelEvent *event) {
@@ -135,7 +133,7 @@ void GutterWidget::wheelEvent(QWheelEvent *event) {
       (event->isInverted() ? -1 : 1) * event->angleDelta().y() / 4.0;
   const auto newVerticalScrollOffset = verticalScrollOffset + verticalDelta;
 
-  verticalScrollBar()->setValue(newVerticalScrollOffset);
+  verticalScrollBar()->setValue(static_cast<int>(newVerticalScrollOffset));
   redraw();
 }
 
@@ -148,18 +146,18 @@ void GutterWidget::onEditorFontSizeChanged(const qreal newSize) {
 
 void GutterWidget::onEditorLineCountChanged() { updateDimensions(); }
 
-void GutterWidget::onEditorCursorPositionChanged() { redraw(); }
+void GutterWidget::onEditorCursorPositionChanged() const { redraw(); }
 
-void GutterWidget::onBufferChanged() { redraw(); }
+void GutterWidget::onBufferChanged() const { redraw(); }
 
-void GutterWidget::onCursorChanged() { redraw(); }
+void GutterWidget::onCursorChanged() const { redraw(); }
 
-void GutterWidget::onSelectionChanged() { redraw(); }
+void GutterWidget::onSelectionChanged() const { redraw(); }
 
 void GutterWidget::onViewportChanged() { updateDimensions(); }
 
-const double GutterWidget::measureWidth() const {
-  if (!editorController) {
+double GutterWidget::measureWidth() const {
+  if (editorController == nullptr) {
     return 0;
   }
 

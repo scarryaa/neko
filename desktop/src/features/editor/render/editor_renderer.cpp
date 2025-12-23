@@ -1,14 +1,14 @@
 #include "editor_renderer.h"
 
 void EditorRenderer::paint(QPainter &painter, const RenderState &state,
-                           const ViewportContext &ctx) const {
+                           const ViewportContext &ctx) {
   drawText(&painter, state, ctx);
   drawCursors(&painter, state, ctx);
   drawSelections(&painter, state, ctx);
 }
 
 void EditorRenderer::drawText(QPainter *painter, const RenderState &state,
-                              const ViewportContext &ctx) const {
+                              const ViewportContext &ctx) {
   auto drawLine = [painter, state, ctx](auto line) {
     const QString lineText = state.isEmpty ? "" : state.lines.at(line);
 
@@ -40,22 +40,22 @@ void EditorRenderer::drawText(QPainter *painter, const RenderState &state,
 }
 
 void EditorRenderer::drawSelections(QPainter *painter, const RenderState &state,
-                                    const ViewportContext &ctx) const {
+                                    const ViewportContext &ctx) {
   const bool hasActiveSelection = state.selections.active;
   if (!hasActiveSelection) {
     return;
   }
 
-  QColor selectionColor = QColor(state.theme.accentColor);
-  selectionColor.setAlpha(50);
+  auto selectionColor = QColor(state.theme.accentColor);
+  selectionColor.setAlpha(SELECTION_ALPHA);
   painter->setBrush(selectionColor);
   painter->setPen(Qt::transparent);
 
   const auto selection = state.selections;
-  const int startRow = selection.start.row;
-  const int endRow = selection.end.row;
-  const int startCol = selection.start.col;
-  const int endCol = selection.end.col;
+  const int startRow = static_cast<int>(selection.start.row);
+  const int endRow = static_cast<int>(selection.end.row);
+  const int startCol = static_cast<int>(selection.start.col);
+  const int endCol = static_cast<int>(selection.end.col);
 
   if (startRow == endRow) {
     drawSingleLineSelection(painter, state, ctx, startRow, startCol, endCol);
@@ -66,9 +66,12 @@ void EditorRenderer::drawSelections(QPainter *painter, const RenderState &state,
   }
 }
 
-void EditorRenderer::drawSingleLineSelection(
-    QPainter *painter, const RenderState &state, const ViewportContext &ctx,
-    const int startRow, const int startCol, const int endCol) const {
+void EditorRenderer::drawSingleLineSelection(QPainter *painter,
+                                             const RenderState &state,
+                                             const ViewportContext &ctx,
+                                             // NOLINTNEXTLINE
+                                             int startRow, int startCol,
+                                             const int endCol) {
   if (startRow >= state.lines.size()) {
     return;
   }
@@ -81,17 +84,17 @@ void EditorRenderer::drawSingleLineSelection(
   const double width = state.measureWidth(selection_text);
   const double widthBefore = state.measureWidth(selection_before_text);
 
-  const double x1 = widthBefore - ctx.horizontalOffset;
-  const double x2 = widthBefore + width - ctx.horizontalOffset;
+  const double x1Pos = widthBefore - ctx.horizontalOffset;
+  const double x2Pos = widthBefore + width - ctx.horizontalOffset;
 
-  painter->drawRect(getLineRect(startRow, x1, x2, ctx));
+  painter->drawRect(getLineRect(startRow, x1Pos, x2Pos, ctx));
 }
 
 void EditorRenderer::drawFirstLineSelection(QPainter *painter,
                                             const RenderState &state,
                                             const ViewportContext &ctx,
-                                            const int startRow,
-                                            const int startCol) const {
+                                            // NOLINTNEXTLINE
+                                            int startRow, int startCol) {
   if (startRow > ctx.lastVisibleLine || startRow < ctx.firstVisibleLine) {
     return;
   }
@@ -102,8 +105,9 @@ void EditorRenderer::drawFirstLineSelection(QPainter *painter,
 
   QString text = state.lines.at(startRow);
 
-  if (text.isEmpty())
+  if (text.isEmpty()) {
     text = " ";
+  }
 
   const QString selectionText = text.mid(startCol);
   const QString beforeText = text.mid(0, startCol);
@@ -111,18 +115,18 @@ void EditorRenderer::drawFirstLineSelection(QPainter *painter,
   const double width = state.measureWidth(selectionText);
   const double widthBefore = state.measureWidth(beforeText);
 
-  const double x1 = widthBefore - ctx.horizontalOffset;
-  const double x2 = widthBefore + width - ctx.horizontalOffset;
+  const double x1Pos = widthBefore - ctx.horizontalOffset;
+  const double x2Pos = widthBefore + width - ctx.horizontalOffset;
 
-  painter->drawRect(getLineRect(startRow, x1, x2, ctx));
+  painter->drawRect(getLineRect(startRow, x1Pos, x2Pos, ctx));
 }
 
 void EditorRenderer::drawMiddleLinesSelection(QPainter *painter,
                                               const RenderState &state,
                                               const ViewportContext &ctx,
-                                              const int startRow,
-                                              const int endRow) const {
-  for (size_t i = startRow + 1; i < endRow; i++) {
+                                              // NOLINTNEXTLINE
+                                              int startRow, int endRow) {
+  for (int i = startRow + 1; i < endRow; i++) {
     if (i >= state.lines.size()) {
       continue;
     }
@@ -132,21 +136,22 @@ void EditorRenderer::drawMiddleLinesSelection(QPainter *painter,
 
     QString text = state.lines.at(i);
 
-    if (text.isEmpty())
+    if (text.isEmpty()) {
       text = " ";
+    }
 
-    const double x1 = -ctx.horizontalOffset;
-    const double x2 = state.measureWidth(text) - ctx.horizontalOffset;
+    const double x1Pos = -ctx.horizontalOffset;
+    const double x2Pos = state.measureWidth(text) - ctx.horizontalOffset;
 
-    painter->drawRect(getLineRect(i, x1, x2, ctx));
+    painter->drawRect(getLineRect(i, x1Pos, x2Pos, ctx));
   }
 }
 
 void EditorRenderer::drawLastLineSelection(QPainter *painter,
                                            const RenderState &state,
                                            const ViewportContext &ctx,
-                                           const int endRow,
-                                           const int endCol) const {
+                                           // NOLINTNEXTLINE
+                                           int endRow, int endCol) {
   if (endRow > ctx.lastVisibleLine || endRow < ctx.firstVisibleLine) {
     return;
   }
@@ -165,7 +170,7 @@ void EditorRenderer::drawLastLineSelection(QPainter *painter,
 }
 
 void EditorRenderer::drawCursors(QPainter *painter, const RenderState &state,
-                                 const ViewportContext &ctx) const {
+                                 const ViewportContext &ctx) {
   std::vector<int> highlightedLines;
 
   const auto drawCursor = [&](int cursorRow, int cursorCol) {
@@ -178,26 +183,31 @@ void EditorRenderer::drawCursors(QPainter *painter, const RenderState &state,
       highlightedLines.push_back(cursorRow);
     }
 
-    if (!state.hasFocus)
+    if (!state.hasFocus) {
       return;
+    }
     if (!state.isEmpty &&
         (cursorRow < 0 ||
-         cursorRow >= static_cast<const int>(state.lines.size())))
+         cursorRow >= static_cast<const int>(state.lines.size()))) {
       return;
+    }
 
     const QString text = state.isEmpty ? "" : state.lines.at(cursorRow);
-    const int clampedCol = std::clamp(cursorCol, 0, (const int)text.size());
+    const int clampedCol =
+        std::clamp(cursorCol, 0, static_cast<const int>(text.size()));
 
     const qreal cursorX = state.measureWidth(text.left(clampedCol));
-    if (cursorX < 0 || cursorX > ctx.width + ctx.horizontalOffset)
+    if (cursorX < 0 || cursorX > ctx.width + ctx.horizontalOffset) {
       return;
+    }
 
     painter->setPen(state.theme.accentColor);
     painter->setBrush(Qt::NoBrush);
 
-    const double x = cursorX - ctx.horizontalOffset;
-    painter->drawLine(QLineF(QPointF(x, getLineTopY(cursorRow, ctx)),
-                             QPointF(x, getLineBottomY(cursorRow, ctx))));
+    const double finalCursorX = cursorX - ctx.horizontalOffset;
+    painter->drawLine(
+        QLineF(QPointF(finalCursorX, getLineTopY(cursorRow, ctx)),
+               QPointF(finalCursorX, getLineBottomY(cursorRow, ctx))));
   };
 
   if (state.isEmpty) {
@@ -206,12 +216,14 @@ void EditorRenderer::drawCursors(QPainter *painter, const RenderState &state,
   }
 
   for (const auto &cursor : state.cursors) {
-    if (cursor.row < ctx.firstVisibleLine || cursor.row > ctx.lastVisibleLine)
+    if (cursor.row < ctx.firstVisibleLine || cursor.row > ctx.lastVisibleLine) {
       continue;
+    }
     if (cursor.row < 0 ||
-        cursor.row >= static_cast<const int>(state.lines.size()))
+        cursor.row >= static_cast<const int>(state.lines.size())) {
       continue;
+    }
 
-    drawCursor(cursor.row, cursor.col);
+    drawCursor(static_cast<int>(cursor.row), static_cast<int>(cursor.col));
   }
 }

@@ -8,28 +8,33 @@
 
 class EditorRenderer {
 public:
-  void paint(QPainter &painter, const RenderState &state,
-             const ViewportContext &ctx) const;
+  static void paint(QPainter &painter, const RenderState &state,
+                    const ViewportContext &ctx);
 
 private:
-  void drawText(QPainter *painter, const RenderState &state,
-                const ViewportContext &ctx) const;
-  void drawCursors(QPainter *painter, const RenderState &state,
-                   const ViewportContext &ctx) const;
-  void drawSelections(QPainter *painter, const RenderState &state,
-                      const ViewportContext &ctx) const;
-  void drawSingleLineSelection(QPainter *painter, const RenderState &state,
-                               const ViewportContext &ctx, const int startRow,
-                               const int startCol, const int endCol) const;
-  void drawFirstLineSelection(QPainter *painter, const RenderState &state,
-                              const ViewportContext &ctx, const int startRow,
-                              const int startCol) const;
-  void drawMiddleLinesSelection(QPainter *painter, const RenderState &state,
-                                const ViewportContext &ctx, const int startRow,
-                                const int endRow) const;
-  void drawLastLineSelection(QPainter *painter, const RenderState &state,
-                             const ViewportContext &ctx, const int endRow,
-                             const int endCol) const;
+  static void drawText(QPainter *painter, const RenderState &state,
+                       const ViewportContext &ctx);
+  static void drawCursors(QPainter *painter, const RenderState &state,
+                          const ViewportContext &ctx);
+  static void drawSelections(QPainter *painter, const RenderState &state,
+                             const ViewportContext &ctx);
+  static void drawSingleLineSelection(QPainter *painter,
+                                      const RenderState &state,
+                                      const ViewportContext &ctx, int startRow,
+                                      int startCol, int endCol);
+  static void drawFirstLineSelection(QPainter *painter,
+                                     const RenderState &state,
+                                     const ViewportContext &ctx, int startRow,
+                                     int startCol);
+  static void drawMiddleLinesSelection(QPainter *painter,
+                                       const RenderState &state,
+                                       const ViewportContext &ctx, int startRow,
+                                       int endRow);
+  static void drawLastLineSelection(QPainter *painter, const RenderState &state,
+                                    const ViewportContext &ctx, int endRow,
+                                    int endCol);
+
+  static constexpr double SELECTION_ALPHA = 50.0;
 };
 
 #endif

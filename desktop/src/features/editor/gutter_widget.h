@@ -28,7 +28,7 @@ public:
                         neko::ConfigManager &configManager,
                         neko::ThemeManager &themeManager,
                         QWidget *parent = nullptr);
-  ~GutterWidget();
+  ~GutterWidget() override = default;
 
   void redraw() const;
   void applyTheme();
@@ -36,24 +36,23 @@ public:
   void setEditorController(EditorController *newEditorController);
 
 protected:
-  QSize sizeHint() const override;
+  [[nodiscard]] QSize sizeHint() const override;
   void paintEvent(QPaintEvent *event) override;
   void wheelEvent(QWheelEvent *event) override;
 
 public slots:
-  void onEditorFontSizeChanged(const qreal newSize);
+  void onEditorFontSizeChanged(qreal newSize);
   void onEditorLineCountChanged();
-  void onEditorCursorPositionChanged();
+  void onEditorCursorPositionChanged() const;
 
-  void onBufferChanged();
-  void onCursorChanged();
-  void onSelectionChanged();
+  void onBufferChanged() const;
+  void onCursorChanged() const;
+  void onSelectionChanged() const;
   void onViewportChanged();
 
 private:
-  const double measureWidth() const;
-  void drawText(QPainter *painter, const ViewportContext &ctx,
-                const int lineCount);
+  [[nodiscard]] double measureWidth() const;
+  void drawText(QPainter *painter, const ViewportContext &ctx, int lineCount);
   void drawLineHighlight(QPainter *painter, const ViewportContext &ctx);
 
   void decreaseFontSize();
