@@ -1,0 +1,25 @@
+#ifndef COMMAND_MANAGER_H
+#define COMMAND_MANAGER_H
+
+#include "features/context_menu/command_registry.h"
+#include "features/context_menu/providers/tab_context.h"
+#include "features/main_window/controllers/workspace_coordinator.h"
+#include <QApplication>
+
+class CommandManager {
+public:
+  explicit CommandManager(CommandRegistry *commandRegistry,
+                          ContextMenuRegistry *contextMenuRegistry,
+                          WorkspaceCoordinator *workspaceCoordinator);
+  ~CommandManager();
+
+  void registerCommands();
+  void registerProviders();
+
+private:
+  CommandRegistry *commandRegistry;
+  WorkspaceCoordinator *workspaceCoordinator;
+  ContextMenuRegistry *contextMenuRegistry;
+};
+
+#endif

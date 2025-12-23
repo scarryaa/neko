@@ -28,6 +28,8 @@ qt_add_executable(neko
     src/features/main_window/controllers/workspace_controller.h
     src/features/main_window/controllers/workspace_coordinator.cpp
     src/features/main_window/controllers/workspace_coordinator.h
+    src/features/main_window/controllers/command_manager.cpp
+    src/features/main_window/controllers/command_manager.h
 
     src/features/title_bar/title_bar_widget.cpp
     src/features/title_bar/title_bar_widget.h

@@ -9,6 +9,7 @@
 #include "features/editor/gutter_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/controllers/app_state_controller.h"
+#include "features/main_window/controllers/command_manager.h"
 #include "features/main_window/controllers/workspace_controller.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
 #include "features/status_bar/status_bar_widget.h"
@@ -41,8 +42,6 @@ private:
 
   void setupKeyboardShortcuts();
   void applyTheme(const std::string &themeName);
-  void registerProviders();
-  void registerCommands();
 
   template <typename Slot>
   void addShortcut(QAction *action, const QKeySequence &sequence,
@@ -59,6 +58,7 @@ private:
   AppStateController *appStateController;
   CommandRegistry commandRegistry;
   ContextMenuRegistry contextMenuRegistry;
+  CommandManager *commandManager;
 
   QWidget *emptyStateWidget;
   QPushButton *emptyStateNewTabButton;
