@@ -9,6 +9,7 @@ pub struct Tab {
     title: String,
     is_pinned: bool,
     id: usize,
+    scroll_offsets: (i32, i32),
 }
 
 impl Tab {
@@ -20,6 +21,7 @@ impl Tab {
             title: "Untitled".to_string(),
             is_pinned: false,
             id,
+            scroll_offsets: (0, 0),
         }
     }
 
@@ -31,6 +33,7 @@ impl Tab {
             title: title.to_string(),
             is_pinned: false,
             id,
+            scroll_offsets: (0, 0),
         }
     }
 
@@ -67,6 +70,10 @@ impl Tab {
         self.editor.buffer().get_text() != self.original_content
     }
 
+    pub fn get_scroll_offsets(&self) -> (i32, i32) {
+        self.scroll_offsets
+    }
+
     // Setters
     pub fn set_title(&mut self, title: &str) {
         if title.is_empty() {
@@ -90,6 +97,10 @@ impl Tab {
 
     pub fn set_is_pinned(&mut self, new_is_pinned: bool) {
         self.is_pinned = new_is_pinned;
+    }
+
+    pub fn set_scroll_offsets(&mut self, new_offsets: (i32, i32)) {
+        self.scroll_offsets = new_offsets;
     }
 }
 

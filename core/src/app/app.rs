@@ -35,6 +35,17 @@ impl AppState {
         self.tabs.is_empty()
     }
 
+    pub fn get_tab_scroll_offsets(&self, id: usize) -> Result<(i32, i32), Error> {
+        if let Some(tab) = self.tabs.iter().find(|t| t.get_id() == id) {
+            Ok(tab.get_scroll_offsets())
+        } else {
+            Err(Error::new(
+                ErrorKind::NotFound,
+                "Tab with given id not found",
+            ))
+        }
+    }
+
     pub fn get_active_editor(&self) -> Option<&Editor> {
         if let Some(index) = self
             .tabs
@@ -322,6 +333,22 @@ impl AppState {
             }
 
             self.reorder_tabs_by_pin();
+            Ok(())
+        } else {
+            Err(Error::new(
+                ErrorKind::NotFound,
+                "Tab with given id not found",
+            ))
+        }
+    }
+
+    pub fn set_tab_scroll_offsets(
+        &mut self,
+        id: usize,
+        new_offsets: (i32, i32),
+    ) -> Result<(), Error> {
+        if let Some(tab) = self.tabs.iter_mut().find(|t| t.get_id() == id) {
+            tab.set_scroll_offsets(new_offsets);
             Ok(())
         } else {
             Err(Error::new(

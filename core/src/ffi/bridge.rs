@@ -37,6 +37,11 @@ pub mod ffi {
         depth: usize,
     }
 
+    struct ScrollOffsetFfi {
+        x: i32,
+        y: i32,
+    }
+
     struct ChangeSetFfi {
         mask: u32,
         line_count_before: u32,
@@ -147,6 +152,9 @@ pub mod ffi {
         pub(crate) fn get_close_left_tab_ids_wrapper(self: &AppState, id: usize) -> Vec<usize>;
         #[cxx_name = "get_close_right_tab_ids"]
         pub(crate) fn get_close_right_tab_ids_wrapper(self: &AppState, id: usize) -> Vec<usize>;
+        #[cxx_name = "get_tab_scroll_offsets"]
+        pub(crate) fn get_tab_scroll_offsets_wrapper(self: &AppState, id: usize)
+        -> ScrollOffsetFfi;
 
         pub(crate) fn new_tab(self: &mut AppState) -> usize;
         #[cxx_name = "close_tab"]
@@ -178,6 +186,12 @@ pub mod ffi {
             self: &mut AppState,
             id: usize,
             path: &str,
+        ) -> bool;
+        #[cxx_name = "set_tab_scroll_offsets"]
+        pub(crate) fn set_tab_scroll_offsets_wrapper(
+            self: &mut AppState,
+            id: usize,
+            new_offsets: ScrollOffsetFfi,
         ) -> bool;
 
         // ConfigManager

@@ -27,6 +27,7 @@ public:
   const QList<int> getCloseOtherTabIds(int id) const;
   const QList<int> getCloseLeftTabIds(int id) const;
   const QList<int> getCloseRightTabIds(int id) const;
+  const neko::ScrollOffsetFfi getTabScrollOffsets(int id) const;
 
   // Setters
   int addTab();
@@ -43,6 +44,7 @@ public:
   const bool saveTabWithId(int id) const;
   const bool saveTabWithIdAndSetPath(int id, const std::string &path) const;
   const QString getTabPath(int id) const;
+  void setTabScrollOffsets(int id, const neko::ScrollOffsetFfi &newOffsets);
 
 signals:
   void tabListChanged();

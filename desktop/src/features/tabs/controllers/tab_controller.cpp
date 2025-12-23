@@ -106,6 +106,10 @@ const QList<int> TabController::getCloseRightTabIds(int id) const {
   return ids;
 }
 
+const neko::ScrollOffsetFfi TabController::getTabScrollOffsets(int id) const {
+  return appState->get_tab_scroll_offsets(id);
+}
+
 int TabController::addTab() {
   if (!appState) {
     return -1;
@@ -255,4 +259,9 @@ const QString TabController::getTabPath(int id) const {
   const QString path = QString::fromUtf8(rawPath);
 
   return path;
+}
+
+void TabController::setTabScrollOffsets(
+    int id, const neko::ScrollOffsetFfi &newOffsets) {
+  appState->set_tab_scroll_offsets(id, newOffsets);
 }

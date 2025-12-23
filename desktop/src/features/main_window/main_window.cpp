@@ -174,8 +174,6 @@ void MainWindow::onFileSelected(const std::string &filePath,
     int newTabId = tabController->getActiveTabId();
     tabController->closeTab(newTabId);
 
-    removeTabScrollOffset(newTabId);
-
     updateTabBar();
   }
 }
@@ -525,15 +523,7 @@ void MainWindow::updateTabBar() {
   }
 }
 
-void MainWindow::removeTabScrollOffset(int closedId) {
-  tabScrollOffsets.erase(closedId);
-}
-
 void MainWindow::handleTabsClosed(QList<int> &closedIds) {
-  for (int id : closedIds) {
-    removeTabScrollOffset(id);
-  }
-
   int newTabCount = tabController->getTabCount();
   statusBarWidget->onTabClosed(newTabCount);
   switchToActiveTab();
@@ -588,14 +578,9 @@ void MainWindow::switchToActiveTab(bool shouldFocusEditor) {
 
     int currentId = tabController->getActiveTabId();
 
-    auto it = tabScrollOffsets.find(currentId);
-    if (it != tabScrollOffsets.end()) {
-      editorWidget->horizontalScrollBar()->setValue(it->second.x);
-      editorWidget->verticalScrollBar()->setValue(it->second.y);
-    } else {
-      editorWidget->horizontalScrollBar()->setValue(0);
-      editorWidget->verticalScrollBar()->setValue(0);
-    }
+    auto offsets = tabController->getTabScrollOffsets(currentId);
+    editorWidget->horizontalScrollBar()->setValue(offsets.x);
+    editorWidget->verticalScrollBar()->setValue(offsets.y);
 
     refreshStatusBarCursor();
 
@@ -891,11 +876,13 @@ void MainWindow::saveCurrentScrollState() {
     return;
   }
 
-  int currentId = tabController->getActiveTabId();
+  int activeId = tabController->getActiveTabId();
+  double x = editorWidget->horizontalScrollBar()->value();
+  double y = editorWidget->verticalScrollBar()->value();
 
-  tabScrollOffsets[currentId] =
-      ScrollOffset{editorWidget->horizontalScrollBar()->value(),
-                   editorWidget->verticalScrollBar()->value()};
+  neko::ScrollOffsetFfi newOffsets =
+      neko::ScrollOffsetFfi{static_cast<int32_t>(x), static_cast<int32_t>(y)};
+  tabController->setTabScrollOffsets(activeId, newOffsets);
 }
 
 void MainWindow::openConfig() {

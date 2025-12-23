@@ -33,6 +33,15 @@ impl From<Config> for ConfigSnapshotFfi {
     }
 }
 
+impl From<(i32, i32)> for ScrollOffsetFfi {
+    fn from(offset: (i32, i32)) -> Self {
+        ScrollOffsetFfi {
+            x: offset.0,
+            y: offset.1,
+        }
+    }
+}
+
 impl From<ChangeSet> for ChangeSetFfi {
     fn from(cs: ChangeSet) -> Self {
         Self {

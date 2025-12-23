@@ -71,6 +71,12 @@ impl AppState {
             .expect("Unable to get 'close right' tab ids")
     }
 
+    pub(crate) fn get_tab_scroll_offsets_wrapper(&self, id: usize) -> ScrollOffsetFfi {
+        self.get_tab_scroll_offsets(id)
+            .expect("Tried to get tab scroll offsets but failed")
+            .into()
+    }
+
     pub(crate) fn open_file_wrapper(&mut self, path: &str) -> bool {
         self.open_file(path).is_ok()
     }
@@ -117,6 +123,15 @@ impl AppState {
 
     pub(crate) fn save_tab_with_id_and_set_path_wrapper(&mut self, id: usize, path: &str) -> bool {
         self.save_tab_with_id_and_set_path(id, path).is_ok()
+    }
+
+    pub(crate) fn set_tab_scroll_offsets_wrapper(
+        &mut self,
+        id: usize,
+        new_offsets: ScrollOffsetFfi,
+    ) -> bool {
+        self.set_tab_scroll_offsets(id, (new_offsets.x, new_offsets.y))
+            .is_ok()
     }
 }
 

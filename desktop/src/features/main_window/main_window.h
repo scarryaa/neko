@@ -21,13 +21,11 @@
 #include "neko-core/src/ffi/bridge.rs.h"
 #include "utils/gui_utils.h"
 #include "utils/mac_utils.h"
-#include "utils/scroll_offset.h"
 #include <QMainWindow>
 #include <QPushButton>
 #include <QSplitter>
 #include <QVBoxLayout>
 #include <string>
-#include <unordered_map>
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -66,7 +64,6 @@ private:
   void refreshStatusBarCursor();
   SaveResult saveTab(int id, bool isSaveAs);
   void updateTabBar();
-  void removeTabScrollOffset(int closedId);
   void handleTabsClosed(QList<int> &closedIds);
   void onTabChanged(int id);
   void onTabUnpinRequested(int id);
@@ -115,8 +112,6 @@ private:
   StatusBarWidget *statusBarWidget;
   QPushButton *newTabButton;
   QSplitter *mainSplitter;
-
-  std::unordered_map<int, ScrollOffset> tabScrollOffsets;
 };
 
 #endif // MAIN_WINDOW_H
