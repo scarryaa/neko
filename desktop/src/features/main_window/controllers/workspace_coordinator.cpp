@@ -229,18 +229,27 @@ void WorkspaceCoordinator::bufferChanged() {
 
 CloseDecision
 WorkspaceCoordinator::showTabCloseConfirmationDialog(const QList<int> &ids) {
-  const auto snapshot = tabController->getTabsSnapshot();
-  int modifiedCount = 0;
+  if (ids.isEmpty())
+    return CloseDecision::DontSave;
 
+  const auto snapshot = tabController->getTabsSnapshot();
+
+  QSet<int> idSet;
+  idSet.reserve(ids.size());
+  for (int id : ids)
+    idSet.insert(id);
+
+  int modifiedCount = 0;
   for (const auto &t : snapshot.tabs) {
-    if (t.modified) {
+    const int tid = static_cast<int>(t.id);
+
+    if (idSet.contains(tid) && t.modified) {
       modifiedCount++;
     }
   }
 
-  if (modifiedCount == 0) {
+  if (modifiedCount == 0)
     return CloseDecision::DontSave;
-  }
 
   QMessageBox box(QMessageBox::Warning, tr("Close Tabs"),
                   tr("%1 tab%2 unsaved edits.")
@@ -260,6 +269,7 @@ WorkspaceCoordinator::showTabCloseConfirmationDialog(const QList<int> &ids) {
 
   if (box.clickedButton() == saveBtn)
     return CloseDecision::Save;
+
   if (box.clickedButton() == dontSaveBtn)
     return CloseDecision::DontSave;
 
