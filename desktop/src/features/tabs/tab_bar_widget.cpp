@@ -2,6 +2,9 @@
 
 #include <algorithm>
 
+// TODO(scarlet): Rework the tab update system to not rely on mass setting
+// all the tabs and have the TabBarWidget be in charge of mgmt/updates,
+// with each TabWidget in control of its repaints?
 TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
                            neko::ThemeManager &themeManager,
                            ContextMenuRegistry &contextMenuRegistry,

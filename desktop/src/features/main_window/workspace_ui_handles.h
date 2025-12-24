@@ -23,6 +23,7 @@ struct WorkspaceUiHandles {
   TitleBarWidget *titleBarWidget;
   QSplitter *mainSplitter;
   QPushButton *newTabButton;
+  QPushButton *emptyStateNewTabButton;
 };
 
 #endif

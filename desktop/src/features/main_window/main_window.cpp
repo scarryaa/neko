@@ -46,10 +46,11 @@ MainWindow::MainWindow(QWidget *parent)
   setupLayout();
 
   uiHandles = WorkspaceUiHandles{
-      editorWidget,    gutterWidget,         tabBarWidget,
-      tabBarContainer, emptyStateWidget,     fileExplorerWidget,
-      statusBarWidget, commandPaletteWidget, this->window(),
-      titleBarWidget,  mainSplitter,         newTabButton};
+      editorWidget,          gutterWidget,         tabBarWidget,
+      tabBarContainer,       emptyStateWidget,     fileExplorerWidget,
+      statusBarWidget,       commandPaletteWidget, this->window(),
+      titleBarWidget,        mainSplitter,         newTabButton,
+      emptyStateNewTabButton};
 
   workspaceCoordinator = new WorkspaceCoordinator(
       workspaceController, tabController, appStateController, editorController,
@@ -225,63 +226,9 @@ QSplitter *MainWindow::buildSplitter(QWidget *editorSideContainer) {
 }
 
 void MainWindow::connectSignals() {
-  // NewTabButton -> WorkspaceCoordinator
-  connect(newTabButton, &QPushButton::clicked, workspaceCoordinator,
-          &WorkspaceCoordinator::newTab);
-
-  // EmptyStateNewTabButton -> WorkspaceCoordinator
-  connect(emptyStateNewTabButton, &QPushButton::clicked, workspaceCoordinator,
-          &WorkspaceCoordinator::newTab);
-
-  // WorkspaceCoordinator -> MainWindow
-  connect(workspaceCoordinator, &WorkspaceCoordinator::themeChanged,
-          qtThemeManager, &ThemeManager::applyTheme);
-
-  // GutterWidget <-> EditorWidget
-  connect(gutterWidget->verticalScrollBar(), &QScrollBar::valueChanged,
-          editorWidget->verticalScrollBar(), &QScrollBar::setValue);
-  connect(editorWidget->verticalScrollBar(), &QScrollBar::valueChanged,
-          gutterWidget->verticalScrollBar(), &QScrollBar::setValue);
-  connect(editorWidget, &EditorWidget::fontSizeChanged, gutterWidget,
-          &GutterWidget::onEditorFontSizeChanged);
-
-  // FileExplorerWidget -> MainWindow
-  connect(fileExplorerWidget, &FileExplorerWidget::fileSelected,
-          workspaceCoordinator, &WorkspaceCoordinator::fileSelected);
-
-  // FileExplorerWidget <-> TitleBarWidget
-  connect(fileExplorerWidget, &FileExplorerWidget::directorySelected,
-          titleBarWidget, &TitleBarWidget::onDirChanged);
-
-  // TitleBarWidget -> FileExplorerWidget
-  connect(titleBarWidget, &TitleBarWidget::directorySelectionButtonPressed,
-          fileExplorerWidget, &FileExplorerWidget::directorySelectionRequested);
-
-  // EditorController -> MainWindow
-  connect(editorController, &EditorController::bufferChanged,
-          workspaceCoordinator, &WorkspaceCoordinator::bufferChanged);
-
-  // StatusBarWidget -> MainWindow
-  connect(statusBarWidget, &StatusBarWidget::fileExplorerToggled,
-          workspaceCoordinator, &WorkspaceCoordinator::fileExplorerToggled);
-  connect(workspaceCoordinator,
-          &WorkspaceCoordinator::onFileExplorerToggledViaShortcut,
-          statusBarWidget, &StatusBarWidget::onFileExplorerToggledExternally);
-  connect(statusBarWidget, &StatusBarWidget::cursorPositionClicked,
-          workspaceCoordinator, &WorkspaceCoordinator::cursorPositionClicked);
-
-  // CommandPalette -> MainWindow
-  connect(commandPaletteWidget, &CommandPaletteWidget::goToPositionRequested,
-          workspaceCoordinator,
-          &WorkspaceCoordinator::commandPaletteGoToPosition);
-  connect(commandPaletteWidget, &CommandPaletteWidget::commandRequested,
-          workspaceCoordinator, &WorkspaceCoordinator::commandPaletteCommand);
-
-  // EditorController -> StatusBarWidget
-  connect(editorController, &EditorController::cursorChanged, statusBarWidget,
-          &StatusBarWidget::onCursorPositionChanged);
-
-  // TODO(scarlet): Rework the tab update system to not rely on mass setting
-  // all the tabs and have the TabBarWidget be in charge of mgmt/updates,
-  // with each TabWidget in control of its repaints?
+  auto editorConnections = EditorConnections(uiHandles, editorController,
+                                             workspaceCoordinator, this);
+  auto mainWindowConnections = MainWindowConnections(
+      uiHandles, workspaceCoordinator, qtThemeManager, this);
+  auto fileExplorerConnections = FileExplorerConnections(uiHandles, this);
 }
