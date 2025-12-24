@@ -67,6 +67,11 @@ qt_add_executable(neko
     src/features/editor/editor_widget.h
     src/features/editor/gutter_widget.cpp
     src/features/editor/gutter_widget.h
+    src/features/editor/change_mask.h
+    src/features/editor/row_col.h
+    src/features/editor/row_col.h
+    src/features/editor/render/editor_render_utils.cpp
+    src/features/editor/render/editor_render_utils.h
 
     # Editor/Gutter Renderers
     src/features/editor/render/editor_renderer.cpp
@@ -119,9 +124,6 @@ qt_add_executable(neko
     src/features/context_menu/context_menu_frame.h
 
     # Utils
-    src/utils/change_mask.h
-    src/utils/editor_utils.cpp
-    src/utils/editor_utils.h
     src/utils/gui_utils.cpp
     src/utils/gui_utils.h
 

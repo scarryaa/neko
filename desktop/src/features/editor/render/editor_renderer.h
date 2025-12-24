@@ -1,8 +1,8 @@
 #ifndef EDITOR_RENDERER_H
 #define EDITOR_RENDERER_H
 
+#include "editor_render_utils.h"
 #include "render_state.h"
-#include "utils/editor_utils.h"
 #include <QPainter>
 #include <neko-core/src/ffi/bridge.rs.h>
 

@@ -4,7 +4,6 @@
 #include "controllers/editor_controller.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 #include "render/gutter_renderer.h"
-#include "utils/editor_utils.h"
 #include <QFont>
 #include <QFontMetricsF>
 #include <QPainter>

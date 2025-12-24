@@ -1,4 +1,4 @@
-#include "editor_utils.h"
+#include "editor_render_utils.h"
 
 double getLineTopY(size_t lineIndex, const ViewportContext &ctx) {
   return (static_cast<int>(lineIndex) * ctx.lineHeight) - ctx.verticalOffset;

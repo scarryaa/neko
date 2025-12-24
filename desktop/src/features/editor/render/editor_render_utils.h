@@ -1,5 +1,5 @@
-#ifndef EDITOR_UTILS_H
-#define EDITOR_UTILS_H
+#ifndef EDITOR_RENDER_UTILS_H
+#define EDITOR_RENDER_UTILS_H
 
 #include <QAbstractScrollArea>
 #include <QRectF>
@@ -21,4 +21,4 @@ double getLineBottomY(size_t lineIndex, const ViewportContext &ctx);
 QRectF getLineRect(size_t lineIndex, double x1Pos, double x2Pos,
                    const ViewportContext &ctx);
 
-#endif // EDITOR_UTILS_H
+#endif // EDITOR_RENDER_UTILS_H

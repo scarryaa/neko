@@ -1,5 +1,4 @@
 #include "editor_widget.h"
-#include "utils/editor_utils.h"
 #include "utils/gui_utils.h"
 
 EditorWidget::EditorWidget(EditorController *editorController,

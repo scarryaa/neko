@@ -4,7 +4,7 @@
 #include "controllers/editor_controller.h"
 #include "features/editor/render/editor_renderer.h"
 #include "neko-core/src/ffi/bridge.rs.h"
-#include "utils/row_col.h"
+#include "row_col.h"
 #include <QApplication>
 #include <QFont>
 #include <QFontMetricsF>
