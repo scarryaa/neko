@@ -48,7 +48,7 @@ private:
   static PaletteDivider *buildDivider(QWidget *parent,
                                       const QString &borderColor);
   static void setSpacerHeight(QSpacerItem *spacer, int height);
-  static void setVisibleIf(QWidget *widget, bool visible);
+  static void setVisibilityIfNotNull(QWidget *widget, bool visible);
   static const NavEntry *findNav(std::string_view key);
 
 public:
@@ -78,8 +78,6 @@ private:
     int commandHistoryIndex = 0;
     bool currentlyInHistory = false;
   };
-
-  enum class ApplySuggestionMode : uint8_t { FillOnly, FillAndRun };
 
   static constexpr std::string_view kLastJumpKey = "ls";
   static constexpr int kNavCount = 9;
@@ -128,7 +126,7 @@ private:
   bool handleCommandSuggestionNavigation(const QKeyEvent *event);
   bool selectNextCommandSuggestion();
   bool selectPreviousCommandSuggestion();
-  bool applyCurrentCommandSuggestion(ApplySuggestionMode mode);
+  bool applyCurrentCommandSuggestion();
   bool canHandleSuggestionNav(const QKeyEvent *event) const;
   [[nodiscard]] int clampSuggestionRow(int row) const;
   void setSuggestionRowClamped(int row);
