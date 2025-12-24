@@ -145,8 +145,8 @@ void CommandPaletteWidget::buildJumpPage() {
   layout->addWidget(jumpInput);
 
   // Divider
-  auto *divider = buildDivider(jumpPage, theme.borderColor);
-  layout->addWidget(divider);
+  jumpTopDivider = buildDivider(jumpPage, theme.borderColor);
+  layout->addWidget(jumpTopDivider);
 
   // Spacer
   layout->addItem(CommandPaletteWidget::buildSpacer(LABEL_TOP_SPACER_HEIGHT));
@@ -197,8 +197,8 @@ void CommandPaletteWidget::buildCommandPage() {
   layout->addWidget(commandInput);
 
   // Divider
-  auto *divider = buildDivider(commandPage, theme.borderColor);
-  layout->addWidget(divider);
+  commandTopDivider = buildDivider(commandPage, theme.borderColor);
+  layout->addWidget(commandTopDivider);
 
   // Suggestions
   auto *commandSuggestions = buildCommandSuggestionsList(commandPage, font);
@@ -393,6 +393,67 @@ void CommandPaletteWidget::setAndApplyTheme(
   }
 
   mainFrame->setAndApplyTheme({theme.backgroundColor, theme.borderColor});
+
+  // Input styles
+  const QString inputStyle =
+      QString(JUMP_INPUT_STYLE).arg(theme.foregroundColor);
+
+  if (jumpInput != nullptr) {
+    jumpInput->setStyleSheet(inputStyle);
+  }
+
+  if (commandInput != nullptr) {
+    commandInput->setStyleSheet(inputStyle);
+  }
+
+  // Suggestions list style
+  if (commandSuggestions != nullptr) {
+    commandSuggestions->setStyleSheet(QString(COMMAND_SUGGESTION_STYLE)
+                                          .arg(theme.foregroundColor,
+                                               theme.accentMutedColor,
+                                               theme.accentForegroundColor));
+  }
+
+  // Toggle button style
+  if (shortcutsToggle != nullptr) {
+    shortcutsToggle->setStyleSheet(
+        QString(SHORTCUTS_BUTTON_STYLE)
+            .arg(theme.foregroundColor, theme.foregroundVeryMutedColor));
+  }
+
+  // Dividers
+  auto applyDivider = [this](PaletteDivider *divider) {
+    if (divider == nullptr) {
+      return;
+    }
+
+    divider->setStyleSheet(
+        QString("background-color: %1;").arg(theme.borderColor));
+    divider->update();
+  };
+
+  applyDivider(jumpTopDivider);
+  applyDivider(commandTopDivider);
+  applyDivider(commandPaletteBottomDivider);
+
+  // Labels
+  if (currentLineLabel != nullptr) {
+    currentLineLabel->setStyleSheet(
+        QString(LABEL_STYLE).arg(theme.foregroundVeryMutedColor));
+  }
+  if (historyHint != nullptr) {
+    historyHint->setStyleSheet(
+        QString(LABEL_STYLE).arg(theme.foregroundVeryMutedColor) +
+        "padding-right: 12px;");
+  }
+
+  if (commandInput != nullptr) {
+    updateCommandSuggestions(commandInput->text());
+  }
+
+  if (jumpInput != nullptr) {
+    updateJumpUiFromState();
+  }
 
   update();
 }

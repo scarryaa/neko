@@ -150,6 +150,8 @@ private:
   QLineEdit *commandInput;
   QListWidget *commandSuggestions;
   PaletteDivider *commandPaletteBottomDivider;
+  PaletteDivider *commandTopDivider;
+  PaletteDivider *jumpTopDivider;
 
   JumpState jumpState;
   HistoryState historyState;

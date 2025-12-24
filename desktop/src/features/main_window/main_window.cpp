@@ -51,6 +51,7 @@ MainWindow::MainWindow(QWidget *parent)
               }});
   themeProvider = new ThemeProvider(&*themeManager, this);
 
+  applyTheme();
   setupWidgets(editor, fileTreeController, tabController);
   setupLayout();
 
@@ -72,16 +73,15 @@ MainWindow::MainWindow(QWidget *parent)
 
   MainWindow::registerCommands(commandManager);
   connectSignals();
-  applyTheme();
 
   qtShortcutsManager->setUpKeyboardShortcuts();
   workspaceCoordinator->applyInitialState();
+  themeProvider->reload();
 }
 
 void MainWindow::setupWidgets(neko::Editor *editor,
                               FileTreeController *fileTreeController,
                               TabController *tabController) {
-  themeProvider->reload();
   const auto &titleBarTheme = themeProvider->getTitleBarTheme();
   const auto &statusBarTheme = themeProvider->getStatusBarTheme();
   const auto &fileExplorerTheme = themeProvider->getFileExplorerTheme();

@@ -123,16 +123,14 @@ void ThemeProvider::refreshTabTheme() {
                               "tab.inactive", "tab.hover", "ui.accent",
                               "ui.background.hover", "ui.border");
 
-  TabTheme newTheme{
-      tabForegroundColor,
-      tabForegroundInactiveColor,
-      tabActiveColor,
-      tabInactiveColor,
-      tabHoverColor,
-      tabModifiedIndicatorColor,
-      tabCloseButtonHoverColor,
-      borderColor,
-  };
+  TabTheme newTheme{tabForegroundColor,
+                    tabForegroundInactiveColor,
+                    tabActiveColor,
+                    tabInactiveColor,
+                    tabHoverColor,
+                    tabModifiedIndicatorColor,
+                    tabCloseButtonHoverColor,
+                    borderColor};
 
   tabTheme = newTheme;
   emit tabThemeChanged(tabTheme);
