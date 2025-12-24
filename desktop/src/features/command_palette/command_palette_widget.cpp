@@ -778,8 +778,8 @@ void CommandPaletteWidget::updateJumpUiFromState() {
   }
 
   const int row0 = jumpState.currentRow;
-  const int col0 = std::clamp(jumpState.currentColumn, 0,
-                              std::max(0, jumpState.maxColumn - 1));
+  const int col0 =
+      std::clamp(jumpState.currentColumn, 0, std::max(1, jumpState.maxColumn));
 
   jumpInput->setPlaceholderText(QString("%1:%2").arg(row0 + 1).arg(col0 + 1));
 
