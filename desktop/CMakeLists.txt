@@ -54,6 +54,11 @@ qt_add_executable(neko
     src/features/main_window/connections/theme_connections.cpp
     src/features/main_window/connections/theme_connections.h
 
+    # Theming
+    src/theme/theme_provider.cpp
+    src/theme/theme_provider.h
+    src/theme/theme_types.h
+
     # Title Bar
     src/features/title_bar/title_bar_widget.cpp
     src/features/title_bar/title_bar_widget.h

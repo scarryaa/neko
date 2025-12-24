@@ -6,6 +6,7 @@
 #include "features/main_window/connections/theme_connections.h"
 #include "features/main_window/connections/workspace_connections.h"
 #include "features/main_window/controllers/shortcuts_manager.h"
+#include "theme/theme_provider.h"
 #include "utils/gui_utils.h"
 #include "utils/mac_utils.h"
 
@@ -48,6 +49,7 @@ MainWindow::MainWindow(QWidget *parent)
                 return workspaceCoordinator->showTabCloseConfirmationDialog(
                     ids);
               }});
+  themeProvider = new ThemeProvider(&*themeManager, this);
 
   setupWidgets(editor, fileTreeController, tabController);
   setupLayout();
@@ -80,8 +82,11 @@ MainWindow::MainWindow(QWidget *parent)
 void MainWindow::setupWidgets(neko::Editor *editor,
                               FileTreeController *fileTreeController,
                               TabController *tabController) {
+  themeProvider->reload();
+  auto titleBarTheme = themeProvider->getTitleBarTheme();
+
   emptyStateWidget = new QWidget(this);
-  titleBarWidget = new TitleBarWidget(*configManager, *themeManager, this);
+  titleBarWidget = new TitleBarWidget(*configManager, titleBarTheme, this);
   fileExplorerWidget = new FileExplorerWidget(
       fileTreeController, *configManager, *themeManager, this);
   commandPaletteWidget =
@@ -245,8 +250,8 @@ void MainWindow::connectSignals() {
   new EditorConnections(uiHandles, editorController, workspaceCoordinator,
                         this);
   new MainWindowConnections(uiHandles, workspaceCoordinator, qtThemeManager,
-                            this);
+                            themeProvider, this);
   new FileExplorerConnections(uiHandles, this);
   new WorkspaceConnections(uiHandles, workspaceCoordinator, this);
-  new ThemeConnections(uiHandles, qtThemeManager, this);
+  new ThemeConnections(uiHandles, qtThemeManager, themeProvider, this);
 }

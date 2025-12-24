@@ -1,6 +1,7 @@
 #include "title_bar_widget.h"
 #include "utils/gui_utils.h"
 #include <QFileInfo>
+#include <utility>
 
 double constexpr TitleBarWidget::getPlatformTitleBarLeftInset() {
 #if defined(Q_OS_MACOS)
@@ -18,10 +19,8 @@ QString TitleBarWidget::getDisplayNameForDir(const QString &path) {
 }
 
 TitleBarWidget::TitleBarWidget(neko::ConfigManager &configManager,
-                               neko::ThemeManager &themeManager,
-                               QWidget *parent)
-    : QWidget(parent), configManager(configManager),
-      themeManager(themeManager) {
+                               TitleBarTheme theme, QWidget *parent)
+    : QWidget(parent), m_theme(std::move(theme)), configManager(configManager) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   QFontMetrics fontMetrics(uiFont);
   int dynamicHeight =
@@ -31,7 +30,7 @@ TitleBarWidget::TitleBarWidget(neko::ConfigManager &configManager,
   setFont(uiFont);
   setFixedHeight(dynamicHeight);
   setupLayout();
-  applyTheme();
+  setAndApplyTheme(m_theme);
 }
 
 void TitleBarWidget::directoryChanged(const std::string &newDirectoryPath) {
@@ -46,24 +45,13 @@ void TitleBarWidget::setupLayout() {
           &TitleBarWidget::directorySelectionButtonPressed);
 
   auto *layout = new QHBoxLayout(this);
-  int leftMargin =
+  int leftContentInset =
       static_cast<int>(TitleBarWidget::getPlatformTitleBarLeftInset());
 
-  layout->setContentsMargins(leftMargin, VERTICAL_CONTENT_MARGIN,
-                             RIGHT_CONTENT_MARGIN, VERTICAL_CONTENT_MARGIN);
+  layout->setContentsMargins(leftContentInset, VERTICAL_CONTENT_INSET,
+                             RIGHT_CONTENT_INSET, VERTICAL_CONTENT_INSET);
   layout->addWidget(m_directorySelectionButton);
   layout->addStretch();
-}
-
-void TitleBarWidget::getThemeColors() {
-  auto [buttonForegroundColor, buttonHoverColor, buttonPressedColor,
-        backgroundColor, borderColor] =
-      UiUtils::getThemeColors(
-          themeManager, "titlebar.button.foreground", "titlebar.button.hover",
-          "titlebar.button.pressed", "ui.background", "ui.border");
-
-  m_themeColors = ThemeColors{buttonForegroundColor, buttonHoverColor,
-                              buttonPressedColor, backgroundColor, borderColor};
 }
 
 QString TitleBarWidget::getStyleSheet() {
@@ -75,12 +63,12 @@ QString TitleBarWidget::getStyleSheet() {
                  "}"
                  "QPushButton:hover { background-color: %2; }"
                  "QPushButton:pressed { background-color: %3; }")
-      .arg(m_themeColors.buttonTextColor, m_themeColors.buttonHoverColor,
-           m_themeColors.buttonPressColor);
+      .arg(m_theme.buttonForegroundColor, m_theme.buttonHoverColor,
+           m_theme.buttonPressColor);
 }
 
-void TitleBarWidget::applyTheme() {
-  getThemeColors();
+void TitleBarWidget::setAndApplyTheme(const TitleBarTheme &theme) {
+  m_theme = theme;
 
   if (m_directorySelectionButton != nullptr) {
     m_directorySelectionButton->setStyleSheet(getStyleSheet());
@@ -93,10 +81,10 @@ void TitleBarWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
 
   painter.setPen(Qt::NoPen);
-  painter.setBrush(m_themeColors.backgroundColor);
+  painter.setBrush(m_theme.backgroundColor);
   painter.drawRect(rect());
 
-  painter.setPen(m_themeColors.borderColor);
+  painter.setPen(m_theme.borderColor);
   painter.drawLine(0, height() - 1, width(), height() - 1);
 }
 

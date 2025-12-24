@@ -18,6 +18,7 @@
 #include "features/tabs/tab_bar_widget.h"
 #include "features/title_bar/title_bar_widget.h"
 #include "neko-core/src/ffi/bridge.rs.h"
+#include "theme/theme_provider.h"
 #include <QMainWindow>
 #include <QPushButton>
 #include <QSplitter>
@@ -53,6 +54,7 @@ private:
   CommandRegistry commandRegistry;
   ContextMenuRegistry contextMenuRegistry;
   ThemeManager *qtThemeManager;
+  ThemeProvider *themeProvider;
 
   QWidget *emptyStateWidget;
   QPushButton *emptyStateNewTabButton;

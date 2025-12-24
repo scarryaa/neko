@@ -3,7 +3,7 @@
 MainWindowConnections::MainWindowConnections(
     const WorkspaceUiHandles &uiHandles,
     WorkspaceCoordinator *workspaceCoordinator, ThemeManager *qtThemeManager,
-    QObject *parent)
+    ThemeProvider *themeProvider, QObject *parent)
     : QObject(parent) {
   // NewTabButton -> WorkspaceCoordinator
   connect(uiHandles.newTabButton, &QPushButton::clicked, workspaceCoordinator,
@@ -16,6 +16,8 @@ MainWindowConnections::MainWindowConnections(
   // WorkspaceCoordinator -> MainWindow
   connect(workspaceCoordinator, &WorkspaceCoordinator::themeChanged,
           qtThemeManager, &ThemeManager::applyTheme);
+  connect(workspaceCoordinator, &WorkspaceCoordinator::themeChanged,
+          themeProvider, &ThemeProvider::reload);
 
   // FileExplorerWidget -> MainWindow
   connect(uiHandles.fileExplorerWidget, &FileExplorerWidget::fileSelected,

@@ -1,11 +1,13 @@
 #include "theme_connections.h"
 
 ThemeConnections::ThemeConnections(const WorkspaceUiHandles &uiHandles,
-                                   ThemeManager *themeManager, QObject *parent)
+                                   ThemeManager *themeManager,
+                                   ThemeProvider *themeProvider,
+                                   QObject *parent)
     : QObject(parent) {
   // ThemeManager -> TitleBarWidget
-  connect(themeManager, &ThemeManager::themeChanged, uiHandles.titleBarWidget,
-          &TitleBarWidget::applyTheme);
+  connect(themeProvider, &ThemeProvider::titleBarThemeChanged,
+          uiHandles.titleBarWidget, &TitleBarWidget::setAndApplyTheme);
 
   // ThemeManager -> FileExplorerWidget
   connect(themeManager, &ThemeManager::themeChanged,

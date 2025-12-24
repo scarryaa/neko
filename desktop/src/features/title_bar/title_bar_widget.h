@@ -1,6 +1,7 @@
 #ifndef TITLE_BAR_WIDGET_H
 #define TITLE_BAR_WIDGET_H
 
+#include "theme/theme_types.h"
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QPainter>
@@ -16,18 +17,16 @@ class TitleBarWidget : public QWidget {
 
 public:
   explicit TitleBarWidget(neko::ConfigManager &configManager,
-                          neko::ThemeManager &themeManager,
-                          QWidget *parent = nullptr);
+                          TitleBarTheme theme, QWidget *parent = nullptr);
   ~TitleBarWidget() override = default;
 
-  void applyTheme();
-
-  // NOLINTNEXTLINE
-public slots:
-  void directoryChanged(const std::string &newDirectoryPath);
+  void setAndApplyTheme(const TitleBarTheme &theme);
 
 signals:
   void directorySelectionButtonPressed();
+
+public slots:
+  void directoryChanged(const std::string &newDirectoryPath);
 
 protected:
   void paintEvent(QPaintEvent *event) override;
@@ -36,34 +35,23 @@ protected:
   void mouseReleaseEvent(QMouseEvent *event) override;
 
 private:
-  struct ThemeColors {
-    QString buttonTextColor;
-    QString buttonPressColor;
-    QString buttonHoverColor;
-    QString backgroundColor;
-    QString borderColor;
-  };
-
   void setupLayout();
   static constexpr double getPlatformTitleBarLeftInset();
   static QString getDisplayNameForDir(const QString &path);
-  void getThemeColors();
   QString getStyleSheet();
 
-  neko::ThemeManager &themeManager;
   neko::ConfigManager &configManager;
+  TitleBarTheme m_theme;
+
   QPushButton *m_directorySelectionButton;
-  QPoint m_clickPos;
-  QString m_currentDir;
   bool m_isDragging = false;
   QPoint m_pressGlobalPos;
   QPoint m_windowStartPos;
-  ThemeColors m_themeColors;
 
   static double constexpr TOP_PADDING = 8.0;
   static double constexpr BOTTOM_PADDING = 8.0;
-  static double constexpr RIGHT_CONTENT_MARGIN = 10.0;
-  static double constexpr VERTICAL_CONTENT_MARGIN = 5.0;
+  static double constexpr RIGHT_CONTENT_INSET = 10.0;
+  static double constexpr VERTICAL_CONTENT_INSET = 5.0;
   static double constexpr MACOS_TRAFFIC_LIGHTS_INSET = 84.0;
   static double constexpr OTHER_PLATFORMS_TRAFFIC_LIGHTS_INSET = 10.0;
 };
