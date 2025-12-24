@@ -17,6 +17,7 @@ public:
 private:
   void applyNewTabButtonTheme(const NewTabButtonTheme &theme) const;
   void applySplitterTheme(const SplitterTheme &theme) const;
+  void applyEmptyStateTheme(const EmptyStateTheme &theme) const;
 
   WorkspaceUiHandles uiHandles;
 };

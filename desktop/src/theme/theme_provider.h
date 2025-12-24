@@ -23,6 +23,7 @@ public:
   [[nodiscard]] const ScrollBarTheme &getScrollBarTheme() const;
   [[nodiscard]] const NewTabButtonTheme &getNewTabButtonTheme() const;
   [[nodiscard]] const SplitterTheme &getSplitterTheme() const;
+  [[nodiscard]] const EmptyStateTheme &getEmptyStateTheme() const;
 
 signals:
   void titleBarThemeChanged(const TitleBarTheme &titleBarTheme);
@@ -37,6 +38,7 @@ signals:
   void scrollBarThemeChanged(const ScrollBarTheme &scrollBarTheme);
   void newTabButtonThemeChanged(const NewTabButtonTheme &theme);
   void splitterThemeChanged(const SplitterTheme &theme);
+  void emptyStateThemeChanged(const EmptyStateTheme &theme);
 
 public slots:
   void reload();
@@ -53,6 +55,7 @@ private:
   void refreshScrollBarTheme();
   void refreshNewTabButtonTheme();
   void refreshSplitterTheme();
+  void refreshEmptyStateTheme();
 
   neko::ThemeManager *themeManager;
 
@@ -67,6 +70,7 @@ private:
   ScrollBarTheme scrollBarTheme;
   NewTabButtonTheme newTabButtonTheme;
   SplitterTheme splitterTheme;
+  EmptyStateTheme emptyStateTheme;
 };
 
 #endif

@@ -33,6 +33,18 @@ const ScrollBarTheme &ThemeProvider::getScrollBarTheme() const {
   return scrollBarTheme;
 }
 
+const NewTabButtonTheme &ThemeProvider::getNewTabButtonTheme() const {
+  return newTabButtonTheme;
+}
+
+const SplitterTheme &ThemeProvider::getSplitterTheme() const {
+  return splitterTheme;
+}
+
+const EmptyStateTheme &ThemeProvider::getEmptyStateTheme() const {
+  return emptyStateTheme;
+}
+
 void ThemeProvider::reload() {
   if (themeManager == nullptr) {
     return;
@@ -49,6 +61,7 @@ void ThemeProvider::reload() {
   refreshStatusBarTheme();
   refreshNewTabButtonTheme();
   refreshSplitterTheme();
+  refreshEmptyStateTheme();
 }
 
 void ThemeProvider::refreshTitleBarTheme() {
@@ -210,4 +223,18 @@ void ThemeProvider::refreshSplitterTheme() {
 
   splitterTheme = newTheme;
   emit splitterThemeChanged(splitterTheme);
+}
+
+void ThemeProvider::refreshEmptyStateTheme() {
+  auto [backgroundColor, buttonBackgroundColor, foregroundColor, hoverColor,
+        borderColor] =
+      UiUtils::getThemeColors(*themeManager, "ui.background", "ui.accent.muted",
+                              "ui.foreground", "ui.background.hover",
+                              "ui.border");
+
+  EmptyStateTheme newTheme{backgroundColor, buttonBackgroundColor,
+                           foregroundColor, hoverColor, borderColor};
+
+  emptyStateTheme = newTheme;
+  emit emptyStateThemeChanged(emptyStateTheme);
 }

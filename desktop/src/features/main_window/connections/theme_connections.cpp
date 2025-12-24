@@ -43,6 +43,10 @@ ThemeConnections::ThemeConnections(const WorkspaceUiHandles &uiHandles,
   // ThemeProvider -> Splitter
   connect(themeProvider, &ThemeProvider::splitterThemeChanged, this,
           &ThemeConnections::applySplitterTheme);
+
+  // ThemeProvider -> EmptyStateWidget
+  connect(themeProvider, &ThemeProvider::emptyStateThemeChanged, this,
+          &ThemeConnections::applyEmptyStateTheme);
 }
 
 void ThemeConnections::applyNewTabButtonTheme(
@@ -74,12 +78,31 @@ void ThemeConnections::applySplitterTheme(const SplitterTheme &theme) const {
     return;
   }
 
-  const QString qss = QString("QSplitter::handle {"
-                              "  background-color: %1;"
-                              "  margin: 0px;"
-                              "}")
-                          .arg(theme.handleColor);
+  const QString styleSheet = QString("QSplitter::handle {"
+                                     "  background-color: %1;"
+                                     "  margin: 0px;"
+                                     "}")
+                                 .arg(theme.handleColor);
 
   uiHandles.mainSplitter->setHandleWidth(theme.handleWidth);
-  uiHandles.mainSplitter->setStyleSheet(qss);
+  uiHandles.mainSplitter->setStyleSheet(styleSheet);
+}
+
+// TODO(scarlet): Disable fade in on new theme
+void ThemeConnections::applyEmptyStateTheme(
+    const EmptyStateTheme &theme) const {
+  if (uiHandles.emptyStateWidget == nullptr) {
+    return;
+  }
+
+  // Container style
+  const QString styleSheet =
+      QString(
+          "QWidget { background-color: %1; }"
+          "QPushButton { background-color: %2; border-radius: 4px; color: %3; }"
+          "QPushButton:hover { background-color: %4; }")
+          .arg(theme.backgroundColor, theme.buttonBackgroundColor,
+               theme.buttonForegroundColor, theme.buttonHoverColor);
+
+  uiHandles.emptyStateWidget->setStyleSheet(styleSheet);
 }

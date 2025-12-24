@@ -153,19 +153,6 @@ QWidget *MainWindow::buildTabBarSection() {
 }
 
 QWidget *MainWindow::buildEmptyStateSection() {
-  QString accentMutedColor =
-      UiUtils::getThemeColor(*themeManager, "ui.accent.muted");
-  QString foregroundColor =
-      UiUtils::getThemeColor(*themeManager, "ui.foreground");
-  QString emptyStateBackgroundColor =
-      UiUtils::getThemeColor(*themeManager, "ui.background");
-
-  QString emptyStateStylesheet =
-      QString("QWidget { background-color: %1; }"
-              "QPushButton { background-color: %2; border-radius: 4px; color: "
-              "%3; }")
-          .arg(emptyStateBackgroundColor, accentMutedColor, foregroundColor);
-  emptyStateWidget->setStyleSheet(emptyStateStylesheet);
   auto *emptyLayout = new QVBoxLayout(emptyStateWidget);
   emptyLayout->setAlignment(Qt::AlignCenter);
 

@@ -8,6 +8,14 @@ struct ScrollBarTheme {
   QString thumbHoverColor;
 };
 
+struct EmptyStateTheme {
+  QString backgroundColor;
+  QString buttonBackgroundColor;
+  QString buttonForegroundColor;
+  QString buttonHoverColor;
+  QString borderColor;
+};
+
 struct NewTabButtonTheme {
   QString backgroundColor;
   QString foregroundColor;
