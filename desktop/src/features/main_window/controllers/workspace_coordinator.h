@@ -4,7 +4,7 @@
 #include "features/editor/controllers/editor_controller.h"
 #include "features/main_window/controllers/app_state_controller.h"
 #include "features/main_window/controllers/workspace_controller.h"
-#include "features/main_window/save_result.h"
+#include "features/main_window/interfaces/save_result.h"
 #include "features/main_window/workspace_ui_handles.h"
 #include "features/tabs/controllers/tab_controller.h"
 #include <QObject>

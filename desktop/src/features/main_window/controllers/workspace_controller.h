@@ -1,7 +1,7 @@
 #ifndef WORKSPACE_CONTROLLER_H
 #define WORKSPACE_CONTROLLER_H
 
-#include "features/main_window/hooks/workspace_ui.h"
+#include "features/main_window/interfaces/workspace_ui.h"
 #include "features/tabs/controllers/tab_controller.h"
 #include <QHash>
 

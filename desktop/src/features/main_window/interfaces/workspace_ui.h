@@ -1,7 +1,7 @@
 #ifndef WORKSPACE_UI_H
 #define WORKSPACE_UI_H
 
-#include "../close_decision.h"
+#include "close_decision.h"
 #include <QString>
 #include <functional>
 

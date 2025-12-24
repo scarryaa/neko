@@ -16,12 +16,19 @@ qt_add_executable(neko
     WIN32 MACOSX_BUNDLE
     src/main.cpp
 
+    # Main Window
     src/features/main_window/main_window.cpp
     src/features/main_window/main_window.h
-    src/features/main_window/close_decision.h
-    src/features/main_window/save_result.h
+
+    # UI Handles
     src/features/main_window/workspace_ui_handles.h
-    src/features/main_window/hooks/workspace_ui.h
+
+    # Main Window Interfaces
+    src/features/main_window/interfaces/workspace_ui.h
+    src/features/main_window/interfaces/close_decision.h
+    src/features/main_window/interfaces/save_result.h
+
+    # Main Window Controllers
     src/features/main_window/controllers/app_state_controller.cpp
     src/features/main_window/controllers/app_state_controller.h
     src/features/main_window/controllers/workspace_controller.cpp
@@ -34,6 +41,8 @@ qt_add_executable(neko
     src/features/main_window/controllers/shortcuts_manager.h
     src/features/main_window/controllers/theme_manager.cpp
     src/features/main_window/controllers/theme_manager.h
+
+    # Widget Connections
     src/features/main_window/connections/editor_connections.cpp
     src/features/main_window/connections/editor_connections.h
     src/features/main_window/connections/main_window_connections.cpp
@@ -41,37 +50,51 @@ qt_add_executable(neko
     src/features/main_window/connections/file_explorer_connections.cpp
     src/features/main_window/connections/file_explorer_connections.h
 
+    # Title Bar
     src/features/title_bar/title_bar_widget.cpp
     src/features/title_bar/title_bar_widget.h
 
+    # Status Bar
     src/features/status_bar/status_bar_widget.cpp
     src/features/status_bar/status_bar_widget.h
 
+    # Editor/Gutter
     src/features/editor/editor_widget.cpp
     src/features/editor/editor_widget.h
     src/features/editor/gutter_widget.cpp
     src/features/editor/gutter_widget.h
+
+    # Editor/Gutter Renderers
     src/features/editor/render/editor_renderer.cpp
     src/features/editor/render/editor_renderer.h
     src/features/editor/render/gutter_renderer.cpp
     src/features/editor/render/gutter_renderer.h
     src/features/editor/render/render_state.h
     src/features/editor/render/render_theme.h
+
+    # Editor Controller
     src/features/editor/controllers/editor_controller.cpp
     src/features/editor/controllers/editor_controller.h
 
+    # File Explorer
     src/features/file_explorer/file_explorer_widget.cpp
     src/features/file_explorer/file_explorer_widget.h
+
+    # File Explorer Controller
     src/features/file_explorer/controllers/file_tree_controller.cpp
     src/features/file_explorer/controllers/file_tree_controller.h
 
+    # Tabs
     src/features/tabs/tab_bar_widget.cpp
     src/features/tabs/tab_bar_widget.h
     src/features/tabs/tab_widget.cpp
     src/features/tabs/tab_widget.h
+
+    # Tab Controller
     src/features/tabs/controllers/tab_controller.cpp
     src/features/tabs/controllers/tab_controller.h
 
+    # Command Palette
     src/features/command_palette/command_palette_widget.cpp
     src/features/command_palette/command_palette_widget.h
     src/features/command_palette/palette_frame.cpp
@@ -79,6 +102,7 @@ qt_add_executable(neko
     src/features/command_palette/palette_divider.cpp
     src/features/command_palette/palette_divider.h
 
+    #Context Menu
     src/features/context_menu/context_menu_widget.cpp
     src/features/context_menu/context_menu_widget.h
     src/features/context_menu/context_menu_item_kind.h
@@ -90,6 +114,7 @@ qt_add_executable(neko
     src/features/context_menu/context_menu_frame.cpp
     src/features/context_menu/context_menu_frame.h
 
+    # Utils
     src/utils/change_mask.h
     src/utils/editor_utils.cpp
     src/utils/editor_utils.h
