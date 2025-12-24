@@ -201,12 +201,17 @@ void CommandPaletteWidget::buildCommandPage() {
   commandTopDivider = buildDivider(commandPage, theme.borderColor);
   layout->addWidget(commandTopDivider);
 
+  // Spacer (when suggestions are empty)
+  commandTopSpacer = buildSpacer(TOP_SPACER_HEIGHT);
+  layout->addSpacerItem(commandTopSpacer);
+
   // Suggestions
   auto *commandSuggestions = buildCommandSuggestionsList(commandPage, font);
   layout->addWidget(commandSuggestions);
 
   // Spacer
-  layout->addSpacerItem(buildSpacer(TOP_SPACER_HEIGHT));
+  commandBottomSpacer = buildSpacer(TOP_SPACER_HEIGHT);
+  layout->addSpacerItem(commandBottomSpacer);
 
   pages->addWidget(commandPage);
 }
@@ -998,11 +1003,25 @@ bool CommandPaletteWidget::handleCommandSuggestionNavigation(
 }
 
 void CommandPaletteWidget::updateCommandSuggestions(const QString &text) {
+  // TODO(scarlet): Clean this up
   if (commandSuggestions == nullptr) {
     if (commandPaletteBottomDivider != nullptr) {
       commandPaletteBottomDivider->hide();
     }
+
+    if (commandBottomSpacer != nullptr) {
+      commandBottomSpacer->changeSize(0, 0);
+    }
+
     return;
+  }
+
+  if (commandBottomSpacer != nullptr) {
+    commandBottomSpacer->changeSize(0, TOP_SPACER_HEIGHT);
+  }
+
+  if (commandTopSpacer != nullptr) {
+    commandTopSpacer->changeSize(0, 0);
   }
 
   commandSuggestions->clear();
@@ -1019,12 +1038,26 @@ void CommandPaletteWidget::updateCommandSuggestions(const QString &text) {
   const bool hasSuggestions = suggestionCount > 0;
 
   commandSuggestions->setVisible(hasSuggestions);
+
   if (commandPaletteBottomDivider != nullptr) {
     commandPaletteBottomDivider->setVisible(hasSuggestions);
   }
 
+  if (commandTopDivider != nullptr) {
+    commandTopDivider->setVisible(hasSuggestions);
+  }
+
   if (!hasSuggestions) {
     commandSuggestions->setFixedHeight(0);
+
+    if (commandBottomSpacer != nullptr) {
+      commandBottomSpacer->changeSize(0, 0);
+    }
+
+    if (commandTopSpacer != nullptr) {
+      commandTopSpacer->changeSize(0, TOP_SPACER_HEIGHT);
+    }
+
     return;
   }
 

@@ -152,6 +152,8 @@ private:
   PaletteDivider *commandPaletteBottomDivider;
   PaletteDivider *commandTopDivider;
   PaletteDivider *jumpTopDivider;
+  QSpacerItem *commandBottomSpacer;
+  QSpacerItem *commandTopSpacer;
 
   JumpState jumpState;
   HistoryState historyState;
