@@ -38,48 +38,48 @@ inline const std::array<CommandDef, 3> COMMANDS = {{
 }};
 
 namespace k {
-constexpr double TOP_OFFSET = 300.0;
-constexpr double SHADOW_X_OFFSET = 0.0;
-constexpr double SHADOW_Y_OFFSET = 5.0;
-constexpr double SHADOW_BLUR_RADIUS = 25.0;
-constexpr double CONTENT_MARGIN = 20.0; // Content margin for drop shadow
-constexpr double WIDTH = 800.0;
-constexpr int MIN_WIDTH = 360;
+constexpr double topOffset = 300.0;
+constexpr double shadowXOffset = 0.0;
+constexpr double shadowYOffset = 5.0;
+constexpr double shadowBlurRadius = 25.0;
+constexpr double contentMargin = 20.0; // Content margin for drop shadow
+constexpr double width = 800.0;
+constexpr double minWidth = 360;
 
-constexpr int TOP_SPACER_HEIGHT = 8;
-constexpr int LABEL_TOP_SPACER_HEIGHT = 4;
-constexpr int LABEL_BOTTOM_SPACER_HEIGHT = 12;
+constexpr int topSpacerHeight = 8;
+constexpr int labelTopSpacerHeight = 4;
+constexpr int labelBottomSpacerHeight = 12;
 
-constexpr qreal JUMP_FONT_SIZE = 20.0;
-constexpr qreal LABEL_FONT_SIZE = 18.0;
+constexpr qreal jumpFontSize = 20.0;
+constexpr qreal labelFontSize = 18.0;
 
-constexpr char HISTORY_HINT[] = "↑↓ History"; // NOLINT
-constexpr char COMMAND_PLACEHOLDER_TEXT[] =   // NOLINT
+constexpr char historyHint[] = "↑↓ History"; // NOLINT
+constexpr char commandPlaceholderText[] =    // NOLINT
     "Enter a command";
 
-constexpr int JUMP_HISTORY_LIMIT = 20;
-constexpr int COMMAND_HISTORY_LIMIT = 20;
-constexpr char SHORTCUTS_BUTTON_TEXT[] = "  Shortcuts"; // NOLINT
+constexpr int jumpHistoryLimit = 20;
+constexpr int commandHistoryLimit = 20;
+constexpr char shortcutsButtonText[] = "  Shortcuts"; // NOLINT
 
-constexpr double FRAME_LAYOUT_SPACING = 8.0;
-constexpr double DASH_LABEL_WIDTH_DIVIDER = 1.93;
-constexpr double CODE_LABEL_WIDTH_DIVIDER = 1.5;
-constexpr double COMMAND_ROW_HORIZONTAL_CONTENT_MARGIN = 16.0;
-constexpr double SHORTCUTS_ROW_SPACING = 6.0;
-constexpr double COMMAND_INPUT_WIDTH_DIVIDER = 1.25;
-constexpr double JUMP_INPUT_WIDTH_DIVIDER = 1.5;
+constexpr double frameLayoutSpacing = 8.0;
+constexpr double dashLabelWidthDivider = 1.93;
+constexpr double codeLabelWidthDivider = 1.5;
+constexpr double commandRowHorizontalContentMargin = 16.0;
+constexpr double shortcutsRowSpacing = 6.0;
+constexpr double commandInputWidthDivider = 1.25;
+constexpr double jumpInputWidthDivider = 1.5;
 
-constexpr char JUMP_INPUT_STYLE[] = // NOLINT
+constexpr char jumpInputStyle[] = // NOLINT
     "color: %1; border: 0px; background: transparent; padding-left: 12px; "
     "padding-right: 12px;";
-constexpr char LABEL_STYLE[] = // NOLINT
+constexpr char labelStyle[] = // NOLINT
     "color: %1; border: 0px; padding-left: 0px; padding-right: 0px;";
-constexpr char SHORTCUTS_BUTTON_STYLE[] = // NOLINT
+constexpr char shortcutsButtonStyle[] = // NOLINT
     "QToolButton { color: %1; border: none; background: transparent; "
     "padding-left: 16px; padding-right: 16px; }"
     "QToolButton:hover { color: %2; }";
 
-constexpr char COMMAND_SUGGESTION_STYLE[] = // NOLINT
+constexpr char commandSuggestionStyle[] = // NOLINT
     "QListWidget { background: transparent; border: none; padding-left: "
     "8px; "
     "padding-right: 8px; }"
@@ -165,8 +165,8 @@ void CommandPaletteWidget::setUpWindow() {
   setAttribute(Qt::WA_TranslucentBackground);
   setAutoFillBackground(false);
   installEventFilter(this);
-  setMinimumWidth(k::MIN_WIDTH);
-  setMaximumWidth(k::WIDTH);
+  setMinimumWidth(k::minWidth);
+  setMaximumWidth(k::width);
 }
 
 void CommandPaletteWidget::buildUi() {
@@ -175,20 +175,20 @@ void CommandPaletteWidget::buildUi() {
   mainFrame->setObjectName("commandPaletteFrame");
 
   auto *rootLayout = new QVBoxLayout(this);
-  rootLayout->setContentsMargins(k::CONTENT_MARGIN, k::CONTENT_MARGIN,
-                                 k::CONTENT_MARGIN, k::CONTENT_MARGIN);
+  rootLayout->setContentsMargins(k::contentMargin, k::contentMargin,
+                                 k::contentMargin, k::contentMargin);
   rootLayout->setSizeConstraint(QLayout::SetFixedSize);
   rootLayout->addWidget(mainFrame);
 
   frameLayout = new QVBoxLayout(mainFrame);
-  frameLayout->setSpacing(k::FRAME_LAYOUT_SPACING);
+  frameLayout->setSpacing(k::frameLayoutSpacing);
   frameLayout->setContentsMargins(0, 0, 0, 0);
   frameLayout->setAlignment(Qt::AlignTop);
 
   auto *shadow = new QGraphicsDropShadowEffect(this);
-  shadow->setBlurRadius(k::SHADOW_BLUR_RADIUS);
+  shadow->setBlurRadius(k::shadowBlurRadius);
   shadow->setColor(Qt::black);
-  shadow->setOffset(k::SHADOW_X_OFFSET, k::SHADOW_Y_OFFSET);
+  shadow->setOffset(k::shadowXOffset, k::shadowYOffset);
   mainFrame->setGraphicsEffect(shadow);
 
   shortcutsToggleShortcut =
@@ -226,7 +226,7 @@ void CommandPaletteWidget::connectSignals() {
   connect(jumpInput, &QLineEdit::textEdited, this,
           [this](const QString &) { resetJumpHistoryNavigation(); });
   connect(jumpInput, &QLineEdit::textChanged, this, [this](const QString &) {
-    updateHistoryHint(jumpInput, k::HISTORY_HINT);
+    updateHistoryHint(jumpInput, k::historyHint);
   });
 
   connect(commandInput, &QLineEdit::returnPressed, this,
@@ -235,7 +235,7 @@ void CommandPaletteWidget::connectSignals() {
           [this](const QString &) { resetCommandHistoryNavigation(); });
   connect(commandInput, &QLineEdit::textChanged, this,
           [this](const QString &text) {
-            updateHistoryHint(commandInput, k::HISTORY_HINT);
+            updateHistoryHint(commandInput, k::historyHint);
             updateCommandSuggestions(text);
           });
 
@@ -255,26 +255,26 @@ void CommandPaletteWidget::connectSignals() {
 void CommandPaletteWidget::buildJumpPage() {
   jumpPage = new QWidget(pages);
 
-  auto font = makeInterfaceFont(k::JUMP_FONT_SIZE);
+  auto font = makeInterfaceFont(k::jumpFontSize);
 
   auto *layout = new QVBoxLayout(jumpPage);
   layout->setContentsMargins(0, 0, 0, 0);
-  layout->setSpacing(k::FRAME_LAYOUT_SPACING);
+  layout->setSpacing(k::frameLayoutSpacing);
   layout->setAlignment(Qt::AlignTop);
 
   // Top spacer
-  layout->addItem(buildSpacer(k::TOP_SPACER_HEIGHT));
+  layout->addItem(buildSpacer(k::topSpacerHeight));
 
   // Jump input
   jumpInput = new QLineEdit(jumpPage);
   jumpInput->setFont(font);
   jumpInput->setStyleSheet(
-      QString(k::JUMP_INPUT_STYLE).arg(theme.foregroundColor));
+      QString(k::jumpInputStyle).arg(theme.foregroundColor));
   jumpInput->setClearButtonEnabled(false);
   jumpInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   jumpInput->installEventFilter(this);
   jumpInput->setMinimumWidth(
-      static_cast<int>(k::WIDTH / k::JUMP_INPUT_WIDTH_DIVIDER));
+      static_cast<int>(k::width / k::jumpInputWidthDivider));
   layout->addWidget(jumpInput);
 
   // Divider
@@ -282,8 +282,7 @@ void CommandPaletteWidget::buildJumpPage() {
   layout->addWidget(jumpTopDivider);
 
   // Spacer
-  layout->addItem(
-      CommandPaletteWidget::buildSpacer(k::LABEL_TOP_SPACER_HEIGHT));
+  layout->addItem(CommandPaletteWidget::buildSpacer(k::labelTopSpacerHeight));
 
   // Current line label
   currentLineLabel = buildCurrentLineLabel(jumpPage, font);
@@ -300,7 +299,7 @@ void CommandPaletteWidget::buildJumpPage() {
 
   // Bottom spacer
   layout->addItem(
-      CommandPaletteWidget::buildSpacer(k::LABEL_BOTTOM_SPACER_HEIGHT));
+      CommandPaletteWidget::buildSpacer(k::labelBottomSpacerHeight));
 
   pages->addWidget(jumpPage);
 }
@@ -308,26 +307,26 @@ void CommandPaletteWidget::buildJumpPage() {
 void CommandPaletteWidget::buildCommandPage() {
   commandPage = new QWidget(pages);
 
-  auto font = makeInterfaceFont(k::JUMP_FONT_SIZE);
+  auto font = makeInterfaceFont(k::jumpFontSize);
 
   auto *layout = new QVBoxLayout(commandPage);
   layout->setContentsMargins(0, 0, 0, 0);
-  layout->setSpacing(k::FRAME_LAYOUT_SPACING);
+  layout->setSpacing(k::frameLayoutSpacing);
 
   // Top spacer
-  layout->addItem(buildSpacer(k::TOP_SPACER_HEIGHT));
+  layout->addItem(buildSpacer(k::topSpacerHeight));
 
   // Command input
   commandInput = new QLineEdit(commandPage);
   commandInput->setFont(font);
-  const QString placeholderText = k::COMMAND_PLACEHOLDER_TEXT;
+  const QString placeholderText = k::commandPlaceholderText;
   commandInput->setPlaceholderText(placeholderText);
   commandInput->setStyleSheet(
-      QString(k::JUMP_INPUT_STYLE).arg(theme.foregroundColor));
+      QString(k::jumpInputStyle).arg(theme.foregroundColor));
   commandInput->setClearButtonEnabled(false);
   commandInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   commandInput->installEventFilter(this);
-  commandInput->setMinimumWidth(k::WIDTH / k::COMMAND_INPUT_WIDTH_DIVIDER);
+  commandInput->setMinimumWidth(k::width / k::commandInputWidthDivider);
   layout->addWidget(commandInput);
 
   // Divider
@@ -335,7 +334,7 @@ void CommandPaletteWidget::buildCommandPage() {
   layout->addWidget(commandTopDivider);
 
   // Spacer (when suggestions are empty)
-  commandTopSpacer = buildSpacer(k::TOP_SPACER_HEIGHT);
+  commandTopSpacer = buildSpacer(k::topSpacerHeight);
   layout->addSpacerItem(commandTopSpacer);
 
   // Suggestions
@@ -343,7 +342,7 @@ void CommandPaletteWidget::buildCommandPage() {
   layout->addWidget(commandSuggestions);
 
   // Spacer
-  commandBottomSpacer = buildSpacer(k::TOP_SPACER_HEIGHT);
+  commandBottomSpacer = buildSpacer(k::topSpacerHeight);
   layout->addSpacerItem(commandBottomSpacer);
 
   pages->addWidget(commandPage);
@@ -355,15 +354,15 @@ void CommandPaletteWidget::adjustPosition() {
   }
 
   const int availableWidth = std::max(
-      0, parentWidget()->width() - static_cast<int>(k::CONTENT_MARGIN * 2));
-  const int xPos = static_cast<int>((parentWidget()->width() - k::WIDTH) / 2.0);
-  const int yPos = static_cast<int>(k::TOP_OFFSET);
+      0, parentWidget()->width() - static_cast<int>(k::contentMargin * 2));
+  const int xPos = static_cast<int>((parentWidget()->width() - k::width) / 2.0);
+  const int yPos = static_cast<int>(k::topOffset);
 
   move(parentWidget()->mapToGlobal(QPoint(xPos, yPos)));
 }
 
 QWidget *CommandPaletteWidget::buildShortcutsContainer(QWidget *parent) {
-  const auto font = makeInterfaceFont(k::JUMP_FONT_SIZE);
+  const auto font = makeInterfaceFont(k::jumpFontSize);
 
   struct ShortcutRow {
     std::string_view code;
@@ -399,7 +398,7 @@ QWidget *CommandPaletteWidget::buildShortcutsContainer(QWidget *parent) {
   shortcutsLayout->setSpacing(2);
 
   const QString hintStyle =
-      QString(k::LABEL_STYLE).arg(theme.foregroundVeryMutedColor);
+      QString(k::labelStyle).arg(theme.foregroundVeryMutedColor);
   const auto createHintLabel = [&](const QString &text) {
     return UiUtils::createLabel(text, hintStyle, font, parent, false,
                                 QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -408,8 +407,8 @@ QWidget *CommandPaletteWidget::buildShortcutsContainer(QWidget *parent) {
   for (const auto &row : rows) {
     auto *rowWidget = new QWidget(shortcutsContainer);
     auto *rowLayout = new QHBoxLayout(rowWidget);
-    rowLayout->setContentsMargins(k::COMMAND_ROW_HORIZONTAL_CONTENT_MARGIN, 0,
-                                  k::COMMAND_ROW_HORIZONTAL_CONTENT_MARGIN, 0);
+    rowLayout->setContentsMargins(k::commandRowHorizontalContentMargin, 0,
+                                  k::commandRowHorizontalContentMargin, 0);
     rowLayout->setSpacing(4);
 
     const QString codeStr =
@@ -418,13 +417,13 @@ QWidget *CommandPaletteWidget::buildShortcutsContainer(QWidget *parent) {
         UiUtils::createLabel(codeStr, hintStyle, font, rowWidget, false,
                              QSizePolicy::Fixed, QSizePolicy::Fixed);
     codeLabel->setMinimumWidth(
-        static_cast<int>(codeColumnWidth / k::CODE_LABEL_WIDTH_DIVIDER));
+        static_cast<int>(codeColumnWidth / k::codeLabelWidthDivider));
 
     auto *dashLabel =
         UiUtils::createLabel("", hintStyle, font, rowWidget, false,
                              QSizePolicy::Fixed, QSizePolicy::Fixed);
     dashLabel->setMinimumWidth(
-        static_cast<int>(codeColumnWidth / k::DASH_LABEL_WIDTH_DIVIDER));
+        static_cast<int>(codeColumnWidth / k::dashLabelWidthDivider));
     auto *descLabel =
         UiUtils::createLabel(row.desc, hintStyle, font, rowWidget, false,
                              QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -440,23 +439,23 @@ QWidget *CommandPaletteWidget::buildShortcutsContainer(QWidget *parent) {
 }
 
 QWidget *CommandPaletteWidget::buildShortcutsRow(QWidget *parent) {
-  QFont font = makeInterfaceFont(k::JUMP_FONT_SIZE);
+  QFont font = makeInterfaceFont(k::jumpFontSize);
 
   auto *shortcutsRow = new QWidget(jumpPage);
 
   auto *shortcutsRowLayout = new QHBoxLayout(shortcutsRow);
   shortcutsRowLayout->setContentsMargins(0, 2, 0, 0);
-  shortcutsRowLayout->setSpacing(k::SHORTCUTS_ROW_SPACING);
+  shortcutsRowLayout->setSpacing(k::shortcutsRowSpacing);
 
   shortcutsToggle = new QToolButton(shortcutsRow);
-  shortcutsToggle->setText(k::SHORTCUTS_BUTTON_TEXT);
+  shortcutsToggle->setText(k::shortcutsButtonText);
   shortcutsToggle->setCheckable(true);
   shortcutsToggle->setChecked(showJumpShortcuts);
   shortcutsToggle->setArrowType(Qt::DownArrow);
   shortcutsToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
   shortcutsToggle->setFont(font);
   shortcutsToggle->setStyleSheet(
-      QString(k::SHORTCUTS_BUTTON_STYLE)
+      QString(k::shortcutsButtonStyle)
           .arg(theme.foregroundColor, theme.foregroundVeryMutedColor));
   shortcutsToggle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
@@ -469,7 +468,7 @@ QWidget *CommandPaletteWidget::buildShortcutsRow(QWidget *parent) {
     if (!shortcutText.isEmpty()) {
       auto *shortcutHint = UiUtils::createLabel(
           shortcutText,
-          QString(k::LABEL_STYLE).arg(theme.foregroundVeryMutedColor) +
+          QString(k::labelStyle).arg(theme.foregroundVeryMutedColor) +
               QString("padding-right: 12px;"),
           font, parent, false, QSizePolicy::Fixed, QSizePolicy::Fixed);
       shortcutHint->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -501,7 +500,7 @@ CommandPaletteWidget::buildCommandSuggestionsList(QWidget *parent,
   suggestions->setFocusPolicy(Qt::NoFocus);
 
   const QString suggestionStyle =
-      QString(k::COMMAND_SUGGESTION_STYLE)
+      QString(k::commandSuggestionStyle)
           .arg(theme.foregroundColor, theme.accentMutedColor,
                theme.accentForegroundColor);
   suggestions->setStyleSheet(suggestionStyle);
@@ -513,7 +512,7 @@ void CommandPaletteWidget::buildHistoryHint(QWidget *targetInput,
                                             const QFont &font) {
   historyHint = UiUtils::createLabel(
       "",
-      QString(k::LABEL_STYLE).arg(theme.foregroundVeryMutedColor) +
+      QString(k::labelStyle).arg(theme.foregroundVeryMutedColor) +
           "padding-right: 12px;",
       font, targetInput, false, QSizePolicy::Expanding, QSizePolicy::Preferred);
   historyHint->setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -540,7 +539,7 @@ void CommandPaletteWidget::setAndApplyTheme(
 
   // Input styles
   const QString inputStyle =
-      QString(k::JUMP_INPUT_STYLE).arg(theme.foregroundColor);
+      QString(k::jumpInputStyle).arg(theme.foregroundColor);
 
   if (jumpInput != nullptr) {
     jumpInput->setStyleSheet(inputStyle);
@@ -552,7 +551,7 @@ void CommandPaletteWidget::setAndApplyTheme(
 
   // Suggestions list style
   if (commandSuggestions != nullptr) {
-    commandSuggestions->setStyleSheet(QString(k::COMMAND_SUGGESTION_STYLE)
+    commandSuggestions->setStyleSheet(QString(k::commandSuggestionStyle)
                                           .arg(theme.foregroundColor,
                                                theme.accentMutedColor,
                                                theme.accentForegroundColor));
@@ -561,7 +560,7 @@ void CommandPaletteWidget::setAndApplyTheme(
   // Toggle button style
   if (shortcutsToggle != nullptr) {
     shortcutsToggle->setStyleSheet(
-        QString(k::SHORTCUTS_BUTTON_STYLE)
+        QString(k::shortcutsButtonStyle)
             .arg(theme.foregroundColor, theme.foregroundVeryMutedColor));
   }
 
@@ -583,7 +582,7 @@ void CommandPaletteWidget::setAndApplyTheme(
   // Labels
   if (currentLineLabel != nullptr) {
     const QString styleSheet =
-        QString(k::LABEL_STYLE).arg(theme.foregroundVeryMutedColor) +
+        QString(k::labelStyle).arg(theme.foregroundVeryMutedColor) +
         "padding-left: 12px";
 
     currentLineLabel->setStyleSheet(styleSheet);
@@ -591,7 +590,7 @@ void CommandPaletteWidget::setAndApplyTheme(
 
   if (historyHint != nullptr) {
     historyHint->setStyleSheet(
-        QString(k::LABEL_STYLE).arg(theme.foregroundVeryMutedColor) +
+        QString(k::labelStyle).arg(theme.foregroundVeryMutedColor) +
         "padding-right: 12px;");
   }
 
@@ -667,9 +666,9 @@ bool CommandPaletteWidget::eventFilter(QObject *obj, QEvent *event) {
 
   if (event->type() == QEvent::Resize) {
     if (obj == jumpInput) {
-      updateHistoryHint(jumpInput, k::HISTORY_HINT);
+      updateHistoryHint(jumpInput, k::historyHint);
     } else if (obj == commandInput) {
-      updateHistoryHint(commandInput, k::HISTORY_HINT);
+      updateHistoryHint(commandInput, k::historyHint);
     }
   }
 
@@ -894,9 +893,9 @@ QFont CommandPaletteWidget::makeInterfaceFont(const qreal pointSize) const {
 
 QLabel *CommandPaletteWidget::buildCurrentLineLabel(QWidget *parent,
                                                     QFont font) const {
-  font.setPointSizeF(k::LABEL_FONT_SIZE);
+  font.setPointSizeF(k::labelFontSize);
   const QString styleSheet =
-      QString(k::LABEL_STYLE).arg(theme.foregroundVeryMutedColor);
+      QString(k::labelStyle).arg(theme.foregroundVeryMutedColor);
   auto *label =
       UiUtils::createLabel("", styleSheet + "padding-left: 12px;", font, parent,
                            false, QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -963,7 +962,7 @@ void CommandPaletteWidget::saveJumpHistoryEntry(const QString &entry) {
   if (historyState.jumpHistory.isEmpty() ||
       historyState.jumpHistory.back() != entry) {
     historyState.jumpHistory.append(entry);
-    if (historyState.jumpHistory.size() > k::JUMP_HISTORY_LIMIT) {
+    if (historyState.jumpHistory.size() > k::jumpHistoryLimit) {
       historyState.jumpHistory.removeFirst();
     }
   }
@@ -1050,7 +1049,7 @@ void CommandPaletteWidget::saveCommandHistoryEntry(const QString &entry) {
   if (historyState.commandHistory.isEmpty() ||
       historyState.commandHistory.back() != entry) {
     historyState.commandHistory.append(entry);
-    if (historyState.commandHistory.size() > k::COMMAND_HISTORY_LIMIT) {
+    if (historyState.commandHistory.size() > k::commandHistoryLimit) {
       historyState.commandHistory.removeFirst();
     }
   }
@@ -1145,7 +1144,7 @@ void CommandPaletteWidget::updateCommandSuggestions(const QString &text) {
     return;
   }
 
-  setSpacerHeight(commandBottomSpacer, k::TOP_SPACER_HEIGHT);
+  setSpacerHeight(commandBottomSpacer, k::topSpacerHeight);
   setSpacerHeight(commandTopSpacer, 0);
 
   commandSuggestions->clear();
@@ -1167,7 +1166,7 @@ void CommandPaletteWidget::updateCommandSuggestions(const QString &text) {
   if (!hasSuggestions) {
     commandSuggestions->setFixedHeight(0);
     setSpacerHeight(commandBottomSpacer, 0);
-    setSpacerHeight(commandTopSpacer, k::TOP_SPACER_HEIGHT);
+    setSpacerHeight(commandTopSpacer, k::topSpacerHeight);
     return;
   }
 
