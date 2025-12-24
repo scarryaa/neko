@@ -44,6 +44,8 @@ private:
   QWidget *buildEmptyStateSection();
   QWidget *buildEditorSection(QWidget *emptyState);
   QSplitter *buildSplitter(QWidget *editorSideContainer);
+  static void registerCommands(CommandManager *commandManager);
+  void applyTheme();
   void connectSignals();
 
   rust::Box<neko::AppState> appState;

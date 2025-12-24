@@ -12,8 +12,6 @@ MainWindow::MainWindow(QWidget *parent)
       themeManager(neko::new_theme_manager()),
       configManager(neko::new_config_manager()),
       shortcutsManager(neko::new_shortcuts_manager()) {
-  qRegisterMetaType<TabContext>("TabContext");
-
   setupMacOSTitleBar(this);
   setAttribute(Qt::WA_NativeWindow);
   setAttribute(Qt::WA_LayoutOnEntireRect);
@@ -62,14 +60,9 @@ MainWindow::MainWindow(QWidget *parent)
                            tabController, &uiHandles, this);
   qtThemeManager = new ThemeManager(&*themeManager, &uiHandles, this);
 
-  commandManager->registerProviders();
-  commandManager->registerCommands();
+  MainWindow::registerCommands(commandManager);
   connectSignals();
-
-  auto snapshot = configManager->get_config_snapshot();
-  auto currentTheme = snapshot.current_theme;
-  qtThemeManager->applyTheme(std::string(currentTheme.c_str()));
-  update();
+  applyTheme();
 
   qtShortcutsManager->setUpKeyboardShortcuts();
   workspaceCoordinator->applyInitialState();
@@ -225,10 +218,24 @@ QSplitter *MainWindow::buildSplitter(QWidget *editorSideContainer) {
   return splitter;
 }
 
+void MainWindow::registerCommands(CommandManager *commandManager) {
+  qRegisterMetaType<TabContext>("TabContext");
+
+  commandManager->registerProviders();
+  commandManager->registerCommands();
+}
+
+void MainWindow::applyTheme() {
+  auto snapshot = configManager->get_config_snapshot();
+  auto currentTheme = snapshot.current_theme;
+  qtThemeManager->applyTheme(std::string(currentTheme.c_str()));
+  update();
+}
+
 void MainWindow::connectSignals() {
-  auto editorConnections = EditorConnections(uiHandles, editorController,
-                                             workspaceCoordinator, this);
-  auto mainWindowConnections = MainWindowConnections(
-      uiHandles, workspaceCoordinator, qtThemeManager, this);
-  auto fileExplorerConnections = FileExplorerConnections(uiHandles, this);
+  new EditorConnections(uiHandles, editorController, workspaceCoordinator,
+                        this);
+  new MainWindowConnections(uiHandles, workspaceCoordinator, qtThemeManager,
+                            this);
+  new FileExplorerConnections(uiHandles, this);
 }
