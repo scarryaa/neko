@@ -40,6 +40,7 @@ void CommandPaletteWidget::setUpWindow() {
 void CommandPaletteWidget::buildUi() {
   mainFrame =
       new PaletteFrame({theme.backgroundColor, theme.borderColor}, this);
+  mainFrame->setObjectName("commandPaletteFrame");
 
   auto *rootLayout = new QVBoxLayout(this);
   rootLayout->setContentsMargins(CONTENT_MARGIN, CONTENT_MARGIN, CONTENT_MARGIN,
@@ -383,7 +384,8 @@ void CommandPaletteWidget::setAndApplyTheme(
 
   const QString stylesheet =
       "CommandPaletteWidget { background: transparent; border: none; "
-      "} QFrame{ border-radius: 12px; background: %1; border: 2px "
+      "} #commandPaletteFrame { border-radius: 12px; background: %1; border: "
+      "2px "
       "solid %2; }";
   setStyleSheet(stylesheet.arg(theme.backgroundColor, theme.borderColor));
 
@@ -438,9 +440,13 @@ void CommandPaletteWidget::setAndApplyTheme(
 
   // Labels
   if (currentLineLabel != nullptr) {
-    currentLineLabel->setStyleSheet(
-        QString(LABEL_STYLE).arg(theme.foregroundVeryMutedColor));
+    const QString styleSheet =
+        QString(LABEL_STYLE).arg(theme.foregroundVeryMutedColor) +
+        "padding-left: 12px";
+
+    currentLineLabel->setStyleSheet(styleSheet);
   }
+
   if (historyHint != nullptr) {
     historyHint->setStyleSheet(
         QString(LABEL_STYLE).arg(theme.foregroundVeryMutedColor) +
