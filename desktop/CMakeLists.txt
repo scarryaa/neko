@@ -115,6 +115,7 @@ qt_add_executable(neko
     src/features/command_palette/palette_divider.h
     src/features/command_palette/current_size_stacked_widget.cpp
     src/features/command_palette/current_size_stacked_widget.h
+    src/features/command_palette/command_palette_mode.h
 
     #Context Menu
     src/features/context_menu/context_menu_widget.cpp

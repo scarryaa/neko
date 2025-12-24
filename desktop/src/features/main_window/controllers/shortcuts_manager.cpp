@@ -1,4 +1,5 @@
 #include "shortcuts_manager.h"
+#include "features/command_palette/command_palette_mode.h"
 
 ShortcutsManager::ShortcutsManager(QWidget *actionOwner,
                                    neko::ShortcutsManager *nekoShortcutsManager,
@@ -206,8 +207,10 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
   addShortcut(showCommandPalette,
               seqFor("CommandPalette::Show",
                      QKeySequence(Qt::ControlModifier | Qt::Key_P)),
-              Qt::WindowShortcut,
-              [this]() { uiHandles->commandPaletteWidget->showPalette(); });
+              Qt::WindowShortcut, [this]() {
+                uiHandles->commandPaletteWidget->showPalette(
+                    CommandPaletteMode::Command, {});
+              });
 }
 
 template <typename Slot>

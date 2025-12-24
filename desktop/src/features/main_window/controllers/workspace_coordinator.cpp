@@ -1,4 +1,5 @@
 #include "workspace_coordinator.h"
+#include "features/command_palette/command_palette_mode.h"
 
 WorkspaceCoordinator::WorkspaceCoordinator(
     WorkspaceController *workspaceController, TabController *tabController,
@@ -52,9 +53,16 @@ void WorkspaceCoordinator::cursorPositionClicked() {
   auto lastLineMaxCol =
       std::max<size_t>(1, editorController->getLineLength(lineCount - 1));
 
-  uiHandles->commandPaletteWidget->jumpToRowColumn(
-      static_cast<int>(cursor.row), static_cast<int>(cursor.col),
-      static_cast<int>(maxCol), lineCount, static_cast<int>(lastLineMaxCol));
+  uiHandles->commandPaletteWidget->showPalette(
+      CommandPaletteMode::Jump,
+      {
+          .maxLineCount = lineCount,
+          .maxColumn = static_cast<int>(maxCol),
+          .lastLineMaxColumn = static_cast<int>(lastLineMaxCol),
+          .maxRow = lineCount,
+          .currentRow = static_cast<int>(cursor.row),
+          .currentColumn = static_cast<int>(cursor.col),
+      });
 }
 
 void WorkspaceCoordinator::commandPaletteGoToPosition(int row, int col) {
