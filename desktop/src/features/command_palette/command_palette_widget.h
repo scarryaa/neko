@@ -14,6 +14,7 @@
 #include <QListWidget>
 #include <QMouseEvent>
 #include <QShortcut>
+#include <QStackedWidget>
 #include <QStringList>
 #include <QStyle>
 #include <QToolButton>
@@ -32,8 +33,8 @@ public:
 
   void setAndApplyTheme(const CommandPaletteTheme &newTheme);
   void showPalette();
-  void jumpToRowColumn(int currentRow = 0, int currentCol = 0, int maxCol = 1,
-                       int lineCount = 1, int lastLineMaxCol = 1);
+  void jumpToRowColumn(int currentRow, int currentColumn, int maxColumn,
+                       int lineCount, int lastMaxColumn);
 
 signals:
   void goToPositionRequested(int row, int col);
@@ -60,14 +61,19 @@ private:
     NavFn fn;
   };
 
+  void setUpWindow();
   void connectSignals();
-  void clearContent();
+  void buildUi();
+  void buildJumpPage();
+  void buildCommandPage();
+  void updateJumpUiFromState();
+
+  QWidget *buildShortcutsContainer(QWidget *parent);
+  QWidget *buildShortcutsRow(QWidget *parent);
+
   void adjustPosition();
   void prepareJumpState(int currentRow, int currentCol, int maxCol,
                         int lineCount, int lastLineMaxCol);
-  void buildJumpContent(int currentRow, int currentCol, int maxCol,
-                        int lineCount, int lastLineMaxCol);
-  void buildCommandPalette();
   void emitCommandRequestFromInput();
   void emitJumpRequestFromInput();
   void jumpToLineStart();
@@ -83,20 +89,21 @@ private:
 
   [[nodiscard]] PaletteColors loadPaletteColors() const;
   [[nodiscard]] QFont makeInterfaceFont(qreal pointSize) const;
-  void addSpacer(int height);
-  PaletteDivider *addDivider(const QString &borderColor);
-  void addJumpInputRow(int clampedRow, int clampedCol,
-                       const PaletteColors &paletteColors, QFont &font);
-  void addCommandInputRow(const PaletteColors &paletteColors, QFont &font);
-  void addCommandSuggestionsList(const PaletteColors &paletteColors,
-                                 const QFont &font);
-  void addCurrentLineLabel(int clampedRow, int clampedCol,
-                           const PaletteColors &paletteColors, QFont font);
-  void addShortcutsSection(const PaletteColors &paletteColors,
-                           const QFont &font);
+  static QSpacerItem *buildSpacer(int height);
+  static PaletteDivider *buildDivider(QWidget *parent,
+                                      const QString &borderColor);
+  QListWidget *buildCommandSuggestionsList(QWidget *parent,
+                                           const PaletteColors &paletteColors,
+                                           const QFont &font);
+  static QLabel *buildCurrentLineLabel(QWidget *parent,
+                                       const PaletteColors &paletteColors,
+                                       QFont font);
+  void buildShortcutsSection(QLayout *parentLayout,
+                             const PaletteColors &paletteColors,
+                             const QFont &font);
   void updateHistoryHint(QWidget *targetInput, const QString &placeholder);
-  void createHistoryHint(QWidget *targetInput,
-                         const PaletteColors &paletteColors, const QFont &font);
+  void buildHistoryHint(QWidget *targetInput,
+                        const PaletteColors &paletteColors, const QFont &font);
   void saveCommandHistoryEntry(const QString &entry);
   void saveJumpHistoryEntry(const QString &entry);
   void resetJumpHistoryNavigation();
@@ -110,12 +117,16 @@ private:
 
   CommandPaletteTheme theme;
 
+  QStackedWidget *pages;
+  PaletteFrame *mainFrame;
+  QVBoxLayout *frameLayout;
+  QWidget *commandPage;
+  QWidget *jumpPage;
+  QLabel *currentLineLabel;
   QWidget *parent;
   QWidget *shortcutsContainer;
   QToolButton *shortcutsToggle;
   QShortcut *shortcutsToggleShortcut;
-  PaletteFrame *mainFrame;
-  QVBoxLayout *frameLayout;
   QLabel *historyHint;
   QLineEdit *jumpInput;
   QLineEdit *commandInput;
@@ -165,7 +176,8 @@ private:
       "QToolButton:hover { color: %2; }";
 
   static constexpr char COMMAND_SUGGESTION_STYLE[] = // NOLINT
-      "QListWidget { background: transparent; border: none; padding-left: 8px; "
+      "QListWidget { background: transparent; border: none; padding-left: "
+      "8px; "
       "padding-right: 8px; }"
       "QListWidget::item { padding: 6px 8px; color: %1; border-radius: 6px; }"
       "QListWidget::item:selected { background: %2; color: %3; }";

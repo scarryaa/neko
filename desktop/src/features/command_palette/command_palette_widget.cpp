@@ -1,5 +1,6 @@
 #import "command_palette_widget.h"
-
+#include "current_size_stacked_widget.h"
+#include "features/command_palette/palette_divider.h"
 #include "utils/gui_utils.h"
 
 CommandPaletteWidget::CommandPaletteWidget(const CommandPaletteTheme &theme,
@@ -7,6 +8,13 @@ CommandPaletteWidget::CommandPaletteWidget(const CommandPaletteTheme &theme,
                                            QWidget *parent)
     : QWidget(parent), parent(parent), theme(theme),
       configManager(configManager) {
+  setUpWindow();
+  buildUi();
+  connectSignals();
+  setAndApplyTheme(theme);
+}
+
+void CommandPaletteWidget::setUpWindow() {
   setWindowFlags(Qt::Popup | Qt::FramelessWindowHint |
                  Qt::WindowStaysOnTopHint | Qt::NoDropShadowWindowHint);
   setAttribute(Qt::WA_TranslucentBackground);
@@ -14,7 +22,50 @@ CommandPaletteWidget::CommandPaletteWidget(const CommandPaletteTheme &theme,
   installEventFilter(this);
   setMinimumWidth(MIN_WIDTH);
   setMaximumWidth(WIDTH);
+}
 
+void CommandPaletteWidget::connectSignals() {
+  connect(shortcutsToggleShortcut, &QShortcut::activated, this, [this]() {
+    if (shortcutsToggle) {
+      shortcutsToggle->toggle();
+    }
+  });
+
+  connect(shortcutsToggle, &QToolButton::toggled, this,
+          [this](bool checked) { adjustShortcutsAfterToggle(checked); });
+
+  connect(jumpInput, &QLineEdit::returnPressed, this,
+          &CommandPaletteWidget::emitJumpRequestFromInput);
+  connect(jumpInput, &QLineEdit::textEdited, this,
+          [this](const QString &) { resetJumpHistoryNavigation(); });
+  connect(jumpInput, &QLineEdit::textChanged, this, [this](const QString &) {
+    updateHistoryHint(jumpInput, HISTORY_HINT);
+  });
+
+  connect(commandInput, &QLineEdit::returnPressed, this,
+          &CommandPaletteWidget::emitCommandRequestFromInput);
+  connect(commandInput, &QLineEdit::textEdited, this,
+          [this](const QString &) { resetCommandHistoryNavigation(); });
+  connect(commandInput, &QLineEdit::textChanged, this,
+          [this](const QString &text) {
+            updateHistoryHint(commandInput, HISTORY_HINT);
+            updateCommandSuggestions(text);
+          });
+
+  connect(commandSuggestions, &QListWidget::itemClicked, this,
+          [this](QListWidgetItem *item) {
+            if (!item || !commandInput) {
+              return;
+            }
+
+            commandInput->setText(item->text());
+            commandInput->setCursorPosition(
+                static_cast<int>(commandInput->text().length()));
+            emitCommandRequestFromInput();
+          });
+}
+
+void CommandPaletteWidget::buildUi() {
   mainFrame =
       new PaletteFrame({theme.backgroundColor, theme.borderColor}, this);
 
@@ -33,47 +84,149 @@ CommandPaletteWidget::CommandPaletteWidget(const CommandPaletteTheme &theme,
   shadow->setBlurRadius(SHADOW_BLUR_RADIUS);
   shadow->setColor(Qt::black);
   shadow->setOffset(SHADOW_X_OFFSET, SHADOW_Y_OFFSET);
-
   mainFrame->setGraphicsEffect(shadow);
 
   shortcutsToggleShortcut =
       new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_S), this);
   shortcutsToggleShortcut->setContext(Qt::WidgetWithChildrenShortcut);
-  connect(shortcutsToggleShortcut, &QShortcut::activated, this, [this]() {
-    if (shortcutsToggle) {
-      shortcutsToggle->toggle();
-    }
+
+  pages = new CurrentSizeStackedWidget(mainFrame);
+  frameLayout->addWidget(pages);
+
+  connect(pages, &QStackedWidget::currentChanged, this, [this] {
+    pages->updateGeometry();
+    mainFrame->updateGeometry();
+    this->adjustSize();
+    adjustPosition();
   });
 
-  setAndApplyTheme(theme);
+  buildCommandPage();
+  buildJumpPage();
+
+  pages->setCurrentWidget(commandPage);
+}
+
+void CommandPaletteWidget::buildJumpPage() {
+  jumpPage = new QWidget(pages);
+
+  const auto colors = loadPaletteColors();
+  auto font = makeInterfaceFont(JUMP_FONT_SIZE);
+
+  auto *layout = new QVBoxLayout(jumpPage);
+  layout->setContentsMargins(0, 0, 0, 0);
+  layout->setSpacing(FRAME_LAYOUT_SPACING);
+  layout->setAlignment(Qt::AlignTop);
+
+  // Top spacer
+  layout->addItem(buildSpacer(TOP_SPACER_HEIGHT));
+
+  // Jump input
+  jumpInput = new QLineEdit(jumpPage);
+  jumpInput->setFont(font);
+  jumpInput->setStyleSheet(QString(JUMP_INPUT_STYLE).arg(colors.foreground));
+  jumpInput->setClearButtonEnabled(false);
+  jumpInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  jumpInput->installEventFilter(this);
+  jumpInput->setMinimumWidth(
+      static_cast<int>(WIDTH / JUMP_INPUT_WIDTH_DIVIDER));
+  layout->addWidget(jumpInput);
+
+  // Divider
+  auto *divider = buildDivider(jumpPage, colors.border);
+  layout->addWidget(divider);
+
+  // Spacer
+  layout->addItem(CommandPaletteWidget::buildSpacer(LABEL_TOP_SPACER_HEIGHT));
+
+  // Current line label
+  currentLineLabel = buildCurrentLineLabel(jumpPage, colors, font);
+  layout->addWidget(currentLineLabel);
+
+  // Shortcuts header row
+  auto *shortcutsRow = buildShortcutsRow(jumpPage);
+  layout->addWidget(shortcutsRow);
+
+  // Shortcuts container
+  shortcutsContainer = buildShortcutsContainer(jumpPage);
+  layout->addWidget(shortcutsContainer);
+  shortcutsContainer->setVisible(showJumpShortcuts);
+
+  // Bottom spacer
+  layout->addItem(
+      CommandPaletteWidget::buildSpacer(LABEL_BOTTOM_SPACER_HEIGHT));
+
+  pages->addWidget(jumpPage);
+}
+
+void CommandPaletteWidget::buildCommandPage() {
+  commandPage = new QWidget(pages);
+
+  const auto colors = loadPaletteColors();
+  auto font = makeInterfaceFont(JUMP_FONT_SIZE);
+
+  auto *layout = new QVBoxLayout(commandPage);
+  layout->setContentsMargins(0, 0, 0, 0);
+  layout->setSpacing(FRAME_LAYOUT_SPACING);
+
+  // Top spacer
+  layout->addItem(buildSpacer(TOP_SPACER_HEIGHT));
+
+  // Command input
+  commandInput = new QLineEdit(commandPage);
+  commandInput->setFont(font);
+  const QString placeholderText = COMMAND_PLACEHOLDER_TEXT;
+  commandInput->setPlaceholderText(placeholderText);
+  commandInput->setStyleSheet(QString(JUMP_INPUT_STYLE).arg(colors.foreground));
+  commandInput->setClearButtonEnabled(false);
+  commandInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  commandInput->installEventFilter(this);
+  commandInput->setMinimumWidth(WIDTH / COMMAND_INPUT_WIDTH_DIVIDER);
+  layout->addWidget(commandInput);
+
+  // Divider
+  auto *divider = buildDivider(commandPage, colors.border);
+  layout->addWidget(divider);
+
+  // Suggestions
+  auto *commandSuggestions =
+      buildCommandSuggestionsList(commandPage, colors, font);
+  layout->addWidget(commandSuggestions);
+
+  // Spacer
+  layout->addSpacerItem(buildSpacer(TOP_SPACER_HEIGHT));
+
+  pages->addWidget(commandPage);
+}
+
+void CommandPaletteWidget::updateJumpUiFromState() {
+  if ((jumpInput == nullptr) || (currentLineLabel == nullptr)) {
+    return;
+  }
+
+  const int row0 = currentRow;
+  const int col0 = std::clamp(currentColumn, 0, std::max(0, maxColumn - 1));
+
+  jumpInput->setPlaceholderText(QString("%1:%2").arg(row0 + 1).arg(col0 + 1));
+
+  currentLineLabel->setText(QString("Current line: %1 of %2 (column %3)")
+                                .arg(row0 + 1)
+                                .arg(maxLineCount)
+                                .arg(col0 + 1));
 }
 
 void CommandPaletteWidget::setAndApplyTheme(
     const CommandPaletteTheme &newTheme) {
   theme = newTheme;
 
-  const auto backgroundColor = theme.backgroundColor;
-  const auto borderColor = theme.borderColor;
-  const auto shadowColor = theme.shadowColor;
-
   const QString stylesheet =
       "CommandPaletteWidget { background: transparent; border: none; "
       "} QFrame{ border-radius: 12px; background: %1; border: 2px "
       "solid %2; }";
-  setStyleSheet(stylesheet.arg(backgroundColor, borderColor));
+  setStyleSheet(stylesheet.arg(theme.backgroundColor, theme.borderColor));
 
   if (auto *shadow = qobject_cast<QGraphicsDropShadowEffect *>(
           mainFrame->graphicsEffect())) {
-    shadow->setColor(shadowColor);
-  }
-
-  if (isVisible()) {
-    if (currentMode == Mode::GoToPosition) {
-      buildJumpContent(currentRow, currentColumn, maxColumn, maxLineCount,
-                       lastLineMaxColumn);
-    } else {
-      buildCommandPalette();
-    }
+    shadow->setColor(theme.shadowColor);
   }
 
   mainFrame->setAndApplyTheme({theme.backgroundColor, theme.borderColor});
@@ -82,23 +235,32 @@ void CommandPaletteWidget::setAndApplyTheme(
 }
 
 void CommandPaletteWidget::showPalette() {
-  buildCommandPalette();
+  currentMode = Mode::None;
+  pages->setCurrentWidget(commandPage);
+
+  resetCommandHistoryNavigation();
+  commandInput->setText("");
+
+  updateCommandSuggestions(commandInput->text());
   show();
 
-  if (commandInput != nullptr) {
-    commandInput->setFocus();
-  }
+  commandInput->setFocus();
 }
 
-void CommandPaletteWidget::jumpToRowColumn(int currentRow, int currentCol,
-                                           int maxCol, int lineCount,
-                                           int lastLineMaxCol) {
-  buildJumpContent(currentRow, currentCol, maxCol, lineCount, lastLineMaxCol);
+void CommandPaletteWidget::jumpToRowColumn(int currentRow, int currentColumn,
+                                           int maxColumn, int lineCount,
+                                           int lastMaxColumn) {
+  prepareJumpState(currentRow, currentColumn, maxColumn, lineCount,
+                   lastMaxColumn);
+  updateJumpUiFromState();
+
+  resetJumpHistoryNavigation();
+  jumpInput->setText("");
+
+  pages->setCurrentWidget(jumpPage);
   show();
 
-  if (jumpInput != nullptr) {
-    jumpInput->setFocus();
-  }
+  jumpInput->setFocus();
 }
 
 void CommandPaletteWidget::showEvent(QShowEvent *event) {
@@ -152,30 +314,6 @@ bool CommandPaletteWidget::eventFilter(QObject *obj, QEvent *event) {
   return QWidget::eventFilter(obj, event);
 }
 
-void CommandPaletteWidget::clearContent() {
-  if (frameLayout == nullptr) {
-    return;
-  }
-
-  while (frameLayout->count() != 0) {
-    const QLayoutItem *item = frameLayout->takeAt(0);
-    if (QWidget *widget = item->widget()) {
-      widget->deleteLater();
-    }
-
-    delete item;
-  }
-
-  commandInput = nullptr;
-  jumpInput = nullptr;
-  historyHint = nullptr;
-  shortcutsContainer = nullptr;
-  shortcutsToggle = nullptr;
-  commandSuggestions = nullptr;
-  commandPaletteBottomDivider = nullptr;
-  currentMode = Mode::None;
-}
-
 void CommandPaletteWidget::adjustPosition() {
   if (parentWidget() == nullptr) {
     return;
@@ -183,8 +321,6 @@ void CommandPaletteWidget::adjustPosition() {
 
   const int availableWidth = std::max(
       0, parentWidget()->width() - static_cast<int>(CONTENT_MARGIN * 2));
-  setFixedWidth(WIDTH);
-
   const int xPos = static_cast<int>((parentWidget()->width() - WIDTH) / 2.0);
   const int yPos = static_cast<int>(TOP_OFFSET);
 
@@ -203,58 +339,6 @@ void CommandPaletteWidget::prepareJumpState(const int currentRow,
   maxRow = std::max(1, lineCount);
   this->currentRow = std::clamp(currentRow, 0, maxLineCount - 1);
   this->currentColumn = std::clamp(currentCol, 0, maxCol);
-}
-
-void CommandPaletteWidget::buildJumpContent(const int currentRow,
-                                            const int currentCol,
-                                            const int maxCol,
-                                            const int lineCount,
-                                            const int lastLineMaxCol) {
-  clearContent();
-
-  prepareJumpState(currentRow, currentCol, maxCol, lineCount, lastLineMaxCol);
-
-  const auto paletteColors = loadPaletteColors();
-  QFont baseFont = makeInterfaceFont(JUMP_FONT_SIZE);
-
-  const int clampedRow = this->currentRow;
-  const int clampedCol = std::clamp(currentCol, 0, maxColumn - 1);
-
-  addSpacer(TOP_SPACER_HEIGHT);
-  addJumpInputRow(clampedRow, clampedCol, paletteColors, baseFont);
-  addDivider(paletteColors.border);
-  addSpacer(LABEL_TOP_SPACER_HEIGHT);
-  addCurrentLineLabel(clampedRow, clampedCol, paletteColors, baseFont);
-  addShortcutsSection(paletteColors, baseFont);
-  addSpacer(LABEL_BOTTOM_SPACER_HEIGHT);
-
-  connect(shortcutsToggle, &QToolButton::toggled, this,
-          [this](bool checked) { adjustShortcutsAfterToggle(checked); });
-
-  connect(jumpInput, &QLineEdit::returnPressed, this,
-          &CommandPaletteWidget::emitJumpRequestFromInput);
-  resetJumpHistoryNavigation();
-  adjustSize();
-  adjustPosition();
-}
-
-void CommandPaletteWidget::buildCommandPalette() {
-  clearContent();
-
-  const auto paletteColors = loadPaletteColors();
-  QFont baseFont = makeInterfaceFont(JUMP_FONT_SIZE);
-
-  addSpacer(TOP_SPACER_HEIGHT);
-  addCommandInputRow(paletteColors, baseFont);
-  addCommandSuggestionsList(paletteColors, baseFont);
-  addSpacer(TOP_SPACER_HEIGHT);
-
-  connect(commandInput, &QLineEdit::returnPressed, this,
-          &CommandPaletteWidget::emitCommandRequestFromInput);
-  resetCommandHistoryNavigation();
-  updateCommandSuggestions(commandInput->text());
-  adjustSize();
-  adjustPosition();
 }
 
 void CommandPaletteWidget::emitCommandRequestFromInput() {
@@ -333,6 +417,7 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
   close();
 }
 
+// TODO(scarlet): Consolidate these?
 void CommandPaletteWidget::jumpToLineStart() {
   emit goToPositionRequested(currentRow, 0);
   close();
@@ -427,89 +512,23 @@ QFont CommandPaletteWidget::makeInterfaceFont(const qreal pointSize) const {
   return font;
 }
 
-void CommandPaletteWidget::addSpacer(const int height) {
-  if (frameLayout == nullptr) {
-    return;
-  }
-
-  frameLayout->addItem(
-      new QSpacerItem(0, height, QSizePolicy::Minimum, QSizePolicy::Fixed));
+QSpacerItem *CommandPaletteWidget::buildSpacer(const int height) {
+  return new QSpacerItem(0, height, QSizePolicy::Minimum, QSizePolicy::Fixed);
 }
 
-PaletteDivider *CommandPaletteWidget::addDivider(const QString &borderColor) {
-  auto *divider = new PaletteDivider(borderColor, mainFrame);
+PaletteDivider *CommandPaletteWidget::buildDivider(QWidget *parent,
+                                                   const QString &borderColor) {
+  auto *divider = new PaletteDivider(borderColor, parent);
   divider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   divider->setFixedHeight(1);
   divider->setStyleSheet(QString("background-color: %1;").arg(borderColor));
-  frameLayout->addWidget(divider);
 
   return divider;
 }
 
-void CommandPaletteWidget::addJumpInputRow(const int clampedRow,
-                                           const int clampedCol,
-                                           const PaletteColors &paletteColors,
-                                           QFont &font) {
-  font.setPointSizeF(JUMP_FONT_SIZE);
-
-  jumpInput = new QLineEdit(mainFrame);
-  jumpInput->setFont(font);
-  const QString displayPos =
-      QString("%1:%2").arg(clampedRow + 1).arg(clampedCol + 1);
-  jumpInput->setPlaceholderText(displayPos);
-  jumpInput->setStyleSheet(
-      QString(JUMP_INPUT_STYLE).arg(paletteColors.foreground));
-  jumpInput->setClearButtonEnabled(false);
-  jumpInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  jumpInput->installEventFilter(this);
-  jumpInput->setMinimumWidth(
-      static_cast<int>(WIDTH / JUMP_INPUT_WIDTH_DIVIDER));
-
-  connect(jumpInput, &QLineEdit::textEdited, this,
-          [this](const QString &) { resetJumpHistoryNavigation(); });
-  connect(jumpInput, &QLineEdit::textChanged, this, [this](const QString &) {
-    updateHistoryHint(jumpInput, HISTORY_HINT);
-  });
-
-  createHistoryHint(jumpInput, paletteColors, font);
-  updateHistoryHint(jumpInput, HISTORY_HINT);
-
-  frameLayout->addWidget(jumpInput);
-}
-
-void CommandPaletteWidget::addCommandInputRow(
-    const PaletteColors &paletteColors, QFont &font) {
-  font.setPointSizeF(JUMP_FONT_SIZE);
-
-  commandInput = new QLineEdit(mainFrame);
-  commandInput->setFont(font);
-  const QString placeholderText = COMMAND_PLACEHOLDER_TEXT;
-  commandInput->setPlaceholderText(placeholderText);
-  commandInput->setStyleSheet(
-      QString(JUMP_INPUT_STYLE).arg(paletteColors.foreground));
-  commandInput->setClearButtonEnabled(false);
-  commandInput->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  commandInput->installEventFilter(this);
-  commandInput->setMinimumWidth(WIDTH / COMMAND_INPUT_WIDTH_DIVIDER);
-
-  connect(commandInput, &QLineEdit::textEdited, this,
-          [this](const QString &) { resetCommandHistoryNavigation(); });
-  connect(commandInput, &QLineEdit::textChanged, this,
-          [this](const QString &text) {
-            updateHistoryHint(commandInput, HISTORY_HINT);
-            updateCommandSuggestions(text);
-          });
-
-  createHistoryHint(commandInput, paletteColors, font);
-  updateHistoryHint(commandInput, HISTORY_HINT);
-
-  frameLayout->addWidget(commandInput);
-  commandPaletteBottomDivider = addDivider(paletteColors.border);
-}
-
-void CommandPaletteWidget::addCommandSuggestionsList(
-    const PaletteColors &paletteColors, const QFont &font) {
-  commandSuggestions = new QListWidget(mainFrame);
+QListWidget *CommandPaletteWidget::buildCommandSuggestionsList(
+    QWidget *parent, const PaletteColors &paletteColors, const QFont &font) {
+  commandSuggestions = new QListWidget(parent);
   commandSuggestions->setFont(font);
   commandSuggestions->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   commandSuggestions->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -525,39 +544,66 @@ void CommandPaletteWidget::addCommandSuggestionsList(
                paletteColors.accentForeground);
   commandSuggestions->setStyleSheet(suggestionStyle);
 
-  connect(commandSuggestions, &QListWidget::itemClicked, this,
-          [this](QListWidgetItem *item) {
-            if (!item || !commandInput) {
-              return;
-            }
-
-            commandInput->setText(item->text());
-            commandInput->setCursorPosition(
-                static_cast<int>(commandInput->text().length()));
-            emitCommandRequestFromInput();
-          });
-
-  frameLayout->addWidget(commandSuggestions);
+  return commandSuggestions;
 }
 
-void CommandPaletteWidget::addCurrentLineLabel(
-    const int clampedRow, const int clampedCol,
-    const PaletteColors &paletteColors, QFont font) {
+QLabel *CommandPaletteWidget::buildCurrentLineLabel(
+    QWidget *parent, const PaletteColors &paletteColors, QFont font) {
   font.setPointSizeF(LABEL_FONT_SIZE);
-  const QString styleSheet = QString(LABEL_STYLE).arg(paletteColors.foreground);
+  const QString styleSheet =
+      QString(LABEL_STYLE).arg(paletteColors.foregroundVeryMuted);
   auto *label =
-      UiUtils::createLabel(QString("Current line: %1 of %2 (column %3)")
-                               .arg(clampedRow + 1)
-                               .arg(maxLineCount)
-                               .arg(clampedCol + 1),
-                           styleSheet + "padding-left: 12px;", font, mainFrame,
+      UiUtils::createLabel("", styleSheet + "padding-left: 12px;", font, parent,
                            false, QSizePolicy::Fixed, QSizePolicy::Fixed);
-  frameLayout->addWidget(label);
+
+  return label;
 }
 
-void CommandPaletteWidget::addShortcutsSection(
-    const PaletteColors &paletteColors, const QFont &font) {
-  const QFont &shortcutFont = font;
+QWidget *CommandPaletteWidget::buildShortcutsRow(QWidget *parent) {
+  const auto colors = loadPaletteColors();
+  QFont font = makeInterfaceFont(JUMP_FONT_SIZE);
+
+  auto *shortcutsRow = new QWidget(jumpPage);
+
+  auto *shortcutsRowLayout = new QHBoxLayout(shortcutsRow);
+  shortcutsRowLayout->setContentsMargins(0, 2, 0, 0);
+  shortcutsRowLayout->setSpacing(SHORTCUTS_ROW_SPACING);
+
+  shortcutsToggle = new QToolButton(shortcutsRow);
+  shortcutsToggle->setText(SHORTCUTS_BUTTON_TEXT);
+  shortcutsToggle->setCheckable(true);
+  shortcutsToggle->setChecked(showJumpShortcuts);
+  shortcutsToggle->setArrowType(Qt::DownArrow);
+  shortcutsToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+  shortcutsToggle->setFont(font);
+  shortcutsToggle->setStyleSheet(
+      QString(SHORTCUTS_BUTTON_STYLE)
+          .arg(colors.foreground, colors.foregroundVeryMuted));
+  shortcutsToggle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+  shortcutsRowLayout->addWidget(shortcutsToggle);
+
+  if (shortcutsToggleShortcut != nullptr) {
+    const QString shortcutText =
+        shortcutsToggleShortcut->key().toString(QKeySequence::NativeText);
+
+    if (!shortcutText.isEmpty()) {
+      auto *shortcutHint = UiUtils::createLabel(
+          shortcutText,
+          QString(LABEL_STYLE).arg(colors.foregroundVeryMuted) +
+              QString("padding-right: 12px;"),
+          font, parent, false, QSizePolicy::Fixed, QSizePolicy::Fixed);
+      shortcutHint->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+      shortcutsRowLayout->addWidget(shortcutHint);
+    }
+  }
+
+  return shortcutsRow;
+}
+
+QWidget *CommandPaletteWidget::buildShortcutsContainer(QWidget *parent) {
+  const auto colors = loadPaletteColors();
+  const auto font = makeInterfaceFont(JUMP_FONT_SIZE);
 
   struct ShortcutRow {
     const char *code;
@@ -577,56 +623,23 @@ void CommandPaletteWidget::addShortcutsSection(
       {NAV[8].key.data(), "last jumped-to position"}, // NOLINT
   };
 
-  const QFontMetrics metrics(shortcutFont);
-  int codeColWidth = 0;
+  const QFontMetrics fontMetrics(font);
+  int codeColumnWidth = 0;
   for (const auto &row : rows) {
-    codeColWidth = std::max(codeColWidth, metrics.horizontalAdvance(row.code));
+    codeColumnWidth =
+        std::max(codeColumnWidth, fontMetrics.horizontalAdvance(row.code));
   }
-  codeColWidth += metrics.horizontalAdvance("  ");
+  codeColumnWidth += fontMetrics.horizontalAdvance("  ");
 
-  auto *shortcutsRow = new QWidget(mainFrame);
-  auto *shortcutsRowLayout = new QHBoxLayout(shortcutsRow);
-  shortcutsRowLayout->setContentsMargins(0, 2, 0, 0);
-  shortcutsRowLayout->setSpacing(SHORTCUTS_ROW_SPACING);
-
-  shortcutsToggle = new QToolButton(mainFrame);
-  shortcutsToggle->setText(SHORTCUTS_BUTTON_TEXT);
-  shortcutsToggle->setCheckable(true);
-  shortcutsToggle->setChecked(showJumpShortcuts);
-  shortcutsToggle->setArrowType(Qt::DownArrow);
-  shortcutsToggle->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
-  shortcutsToggle->setFont(shortcutFont);
-  shortcutsToggle->setStyleSheet(
-      QString(SHORTCUTS_BUTTON_STYLE)
-          .arg(paletteColors.foreground, paletteColors.foregroundVeryMuted));
-  shortcutsToggle->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  shortcutsRowLayout->addWidget(shortcutsToggle);
-
-  if (shortcutsToggleShortcut != nullptr) {
-    const QString shortcutText =
-        shortcutsToggleShortcut->key().toString(QKeySequence::NativeText);
-    if (!shortcutText.isEmpty()) {
-      auto *shortcutHint = UiUtils::createLabel(
-          shortcutText,
-          QString(LABEL_STYLE).arg(paletteColors.foregroundVeryMuted) +
-              QString("padding-right: 12px;"),
-          shortcutFont, mainFrame, false, QSizePolicy::Fixed,
-          QSizePolicy::Fixed);
-      shortcutHint->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
-      shortcutsRowLayout->addWidget(shortcutHint);
-    }
-  }
-  frameLayout->addWidget(shortcutsRow);
-
-  shortcutsContainer = new QWidget(mainFrame);
+  shortcutsContainer = new QWidget(parent);
   auto *shortcutsLayout = new QVBoxLayout(shortcutsContainer);
   shortcutsLayout->setContentsMargins(4, 0, 4, 0);
   shortcutsLayout->setSpacing(2);
 
   const QString hintStyle =
-      QString(LABEL_STYLE).arg(paletteColors.foregroundVeryMuted);
+      QString(LABEL_STYLE).arg(colors.foregroundVeryMuted);
   const auto createHintLabel = [&](const QString &text) {
-    return UiUtils::createLabel(text, hintStyle, shortcutFont, mainFrame, false,
+    return UiUtils::createLabel(text, hintStyle, font, parent, false,
                                 QSizePolicy::Fixed, QSizePolicy::Fixed);
   };
 
@@ -638,19 +651,19 @@ void CommandPaletteWidget::addShortcutsSection(
     rowLayout->setSpacing(4);
 
     auto *codeLabel =
-        UiUtils::createLabel(row.code, hintStyle, shortcutFont, rowWidget,
-                             false, QSizePolicy::Fixed, QSizePolicy::Fixed);
+        UiUtils::createLabel(row.code, hintStyle, font, rowWidget, false,
+                             QSizePolicy::Fixed, QSizePolicy::Fixed);
     codeLabel->setMinimumWidth(
-        static_cast<int>(codeColWidth / CODE_LABEL_WIDTH_DIVIDER));
+        static_cast<int>(codeColumnWidth / CODE_LABEL_WIDTH_DIVIDER));
 
     auto *dashLabel =
-        UiUtils::createLabel("", hintStyle, shortcutFont, rowWidget, false,
+        UiUtils::createLabel("", hintStyle, font, rowWidget, false,
                              QSizePolicy::Fixed, QSizePolicy::Fixed);
     dashLabel->setMinimumWidth(
-        static_cast<int>(codeColWidth / DASH_LABEL_WIDTH_DIVIDER));
+        static_cast<int>(codeColumnWidth / DASH_LABEL_WIDTH_DIVIDER));
     auto *descLabel =
-        UiUtils::createLabel(row.desc, hintStyle, shortcutFont, rowWidget,
-                             false, QSizePolicy::Fixed, QSizePolicy::Fixed);
+        UiUtils::createLabel(row.desc, hintStyle, font, rowWidget, false,
+                             QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     rowLayout->addWidget(codeLabel);
     rowLayout->addWidget(dashLabel);
@@ -659,7 +672,14 @@ void CommandPaletteWidget::addShortcutsSection(
     shortcutsLayout->addWidget(rowWidget);
   }
 
-  frameLayout->addWidget(shortcutsContainer);
+  return shortcutsContainer;
+}
+
+void CommandPaletteWidget::buildShortcutsSection(
+    QLayout *parentLayout, const PaletteColors &paletteColors,
+    const QFont &font) {
+
+  parentLayout->addWidget(shortcutsContainer);
   adjustShortcutsAfterToggle(showJumpShortcuts);
 }
 
@@ -676,9 +696,9 @@ void CommandPaletteWidget::updateHistoryHint(QWidget *targetInput,
   historyHint->setGeometry(targetInput->rect().adjusted(0, 0, 0, 0));
 }
 
-void CommandPaletteWidget::createHistoryHint(QWidget *targetInput,
-                                             const PaletteColors &paletteColors,
-                                             const QFont &font) {
+void CommandPaletteWidget::buildHistoryHint(QWidget *targetInput,
+                                            const PaletteColors &paletteColors,
+                                            const QFont &font) {
   historyHint = UiUtils::createLabel(
       "",
       QString(LABEL_STYLE).arg(paletteColors.foregroundVeryMuted) +
