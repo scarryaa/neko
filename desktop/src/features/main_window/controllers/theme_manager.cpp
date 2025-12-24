@@ -4,22 +4,7 @@
 ThemeManager::ThemeManager(neko::ThemeManager *nekoThemeManager,
                            const WorkspaceUiHandles *uiHandles, QObject *parent)
     : nekoThemeManager(nekoThemeManager), uiHandles(uiHandles),
-      QObject(parent) {
-  connect(this, &ThemeManager::themeChanged, uiHandles->titleBarWidget,
-          &TitleBarWidget::applyTheme);
-  connect(this, &ThemeManager::themeChanged, uiHandles->fileExplorerWidget,
-          &FileExplorerWidget::applyTheme);
-  connect(this, &ThemeManager::themeChanged, uiHandles->editorWidget,
-          &EditorWidget::applyTheme);
-  connect(this, &ThemeManager::themeChanged, uiHandles->gutterWidget,
-          &GutterWidget::applyTheme);
-  connect(this, &ThemeManager::themeChanged, uiHandles->statusBarWidget,
-          &StatusBarWidget::applyTheme);
-  connect(this, &ThemeManager::themeChanged, uiHandles->tabBarWidget,
-          &TabBarWidget::applyTheme);
-  connect(this, &ThemeManager::themeChanged, uiHandles->commandPaletteWidget,
-          &CommandPaletteWidget::applyTheme);
-}
+      QObject(parent) {}
 
 void ThemeManager::applyTheme(const std::string &themeName) {
   if (themeName.empty()) {

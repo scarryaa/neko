@@ -16,22 +16,6 @@ WorkspaceCoordinator::WorkspaceCoordinator(
   connect(tabController, &TabController::activeTabChanged, this,
           &WorkspaceCoordinator::refreshUiForActiveTab);
 
-  // WorkspaceCoordinator -> TabBarWidget
-  connect(uiHandles->tabBarWidget, &TabBarWidget::tabCloseRequested, this,
-          &WorkspaceCoordinator::closeTab);
-  connect(uiHandles->tabBarWidget, &TabBarWidget::currentChanged, this,
-          &WorkspaceCoordinator::tabChanged);
-  connect(uiHandles->tabBarWidget, &TabBarWidget::tabPinnedChanged, this,
-          &WorkspaceCoordinator::tabChanged);
-  connect(uiHandles->tabBarWidget, &TabBarWidget::tabUnpinRequested, this,
-          &WorkspaceCoordinator::tabUnpinned);
-  connect(uiHandles->tabBarWidget, &TabBarWidget::newTabRequested, this,
-          &WorkspaceCoordinator::newTab);
-
-  // WorkspaceCoordinator -> EditorWidget
-  connect(uiHandles->editorWidget, &EditorWidget::newTabRequested, this,
-          &WorkspaceCoordinator::newTab);
-
   neko::Editor &activeEditor = appStateController->getActiveEditorMut();
   setActiveEditor(&activeEditor);
 }

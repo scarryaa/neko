@@ -81,6 +81,7 @@ private:
                  rust::Vec<neko::FileNodeSnapshot>);
   void drawFile(QPainter *painter, double xPos, double yPos,
                 const neko::FileNodeSnapshot &node);
+  void connectSignals();
 
   void loadDirectory(const std::string &path);
 

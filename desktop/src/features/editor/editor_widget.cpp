@@ -28,16 +28,6 @@ EditorWidget::EditorWidget(EditorController *editorController,
           &EditorWidget::redraw);
   connect(horizontalScrollBar(), &QScrollBar::valueChanged, this,
           &EditorWidget::redraw);
-
-  // EditorController -> EditorWidget connections
-  connect(editorController, &EditorController::bufferChanged, this,
-          &EditorWidget::onBufferChanged);
-  connect(editorController, &EditorController::cursorChanged, this,
-          &EditorWidget::onCursorChanged);
-  connect(editorController, &EditorController::selectionChanged, this,
-          &EditorWidget::onSelectionChanged);
-  connect(editorController, &EditorController::viewportChanged, this,
-          &EditorWidget::onViewportChanged);
 }
 
 void EditorWidget::applyTheme() {

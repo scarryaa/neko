@@ -49,6 +49,10 @@ qt_add_executable(neko
     src/features/main_window/connections/main_window_connections.h
     src/features/main_window/connections/file_explorer_connections.cpp
     src/features/main_window/connections/file_explorer_connections.h
+    src/features/main_window/connections/workspace_connections.cpp
+    src/features/main_window/connections/workspace_connections.h
+    src/features/main_window/connections/theme_connections.cpp
+    src/features/main_window/connections/theme_connections.h
 
     # Title Bar
     src/features/title_bar/title_bar_widget.cpp

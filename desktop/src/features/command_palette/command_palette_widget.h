@@ -59,6 +59,7 @@ private:
     NavFn fn;
   };
 
+  void connectSignals();
   void clearContent();
   void adjustPosition();
   void prepareJumpState(int currentRow, int currentCol, int maxCol,

@@ -3,6 +3,8 @@
 #include "features/main_window/connections/editor_connections.h"
 #include "features/main_window/connections/file_explorer_connections.h"
 #include "features/main_window/connections/main_window_connections.h"
+#include "features/main_window/connections/theme_connections.h"
+#include "features/main_window/connections/workspace_connections.h"
 #include "features/main_window/controllers/shortcuts_manager.h"
 #include "utils/gui_utils.h"
 #include "utils/mac_utils.h"
@@ -245,4 +247,6 @@ void MainWindow::connectSignals() {
   new MainWindowConnections(uiHandles, workspaceCoordinator, qtThemeManager,
                             this);
   new FileExplorerConnections(uiHandles, this);
+  new WorkspaceConnections(uiHandles, workspaceCoordinator, this);
+  new ThemeConnections(uiHandles, qtThemeManager, this);
 }

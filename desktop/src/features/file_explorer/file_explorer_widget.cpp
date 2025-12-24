@@ -21,12 +21,16 @@ FileExplorerWidget::FileExplorerWidget(FileTreeController *fileTreeController,
   layout->addWidget(directorySelectionButton, 0, Qt::AlignCenter);
   setLayout(layout);
 
+  connectSignals();
+}
+
+void FileExplorerWidget::connectSignals() {
   connect(directorySelectionButton, &QPushButton::clicked, this,
-          [this]() { directorySelectionRequested(); });
+          &FileExplorerWidget::directorySelectionRequested);
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
-          [this]() { redraw(); });
+          &FileExplorerWidget::redraw);
   connect(horizontalScrollBar(), &QScrollBar::valueChanged, this,
-          [this]() { redraw(); });
+          &FileExplorerWidget::redraw);
 }
 
 void FileExplorerWidget::initialize(const std::string &path) {

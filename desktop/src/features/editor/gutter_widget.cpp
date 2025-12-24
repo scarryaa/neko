@@ -22,18 +22,6 @@ GutterWidget::GutterWidget(EditorController *editorController,
           &GutterWidget::redraw);
   connect(horizontalScrollBar(), &QScrollBar::valueChanged, this,
           &GutterWidget::redraw);
-
-  // EditorController -> GutterWidget connections
-  connect(editorController, &EditorController::lineCountChanged, this,
-          &GutterWidget::onEditorLineCountChanged);
-  connect(editorController, &EditorController::bufferChanged, this,
-          &GutterWidget::onBufferChanged);
-  connect(editorController, &EditorController::cursorChanged, this,
-          &GutterWidget::onCursorChanged);
-  connect(editorController, &EditorController::selectionChanged, this,
-          &GutterWidget::onSelectionChanged);
-  connect(editorController, &EditorController::viewportChanged, this,
-          &GutterWidget::onViewportChanged);
 }
 
 void GutterWidget::redraw() const { viewport()->update(); }
