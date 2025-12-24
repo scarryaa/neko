@@ -67,9 +67,11 @@ void TabBarWidget::setAndApplyTheme(const TabBarTheme &newTheme) {
 }
 
 void TabBarWidget::setAndApplyTabTheme(const TabTheme &newTheme) {
+  tabTheme = newTheme;
+
   for (auto *tab : tabs) {
     if (tab != nullptr) {
-      tab->setAndApplyTheme(newTheme);
+      tab->setAndApplyTheme(tabTheme);
     }
   }
 }
