@@ -1,17 +1,21 @@
 #include "tab_bar_widget.h"
+
 #include "features/context_menu/providers/tab_context.h"
+#include "theme/theme_types.h"
 #include "utils/gui_utils.h"
 
 // TODO(scarlet): Rework the tab update system to not rely on mass setting
 // all the tabs and have the TabBarWidget be in charge of mgmt/updates,
 // with each TabWidget in control of its repaints?
 TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
-                           neko::ThemeManager &themeManager,
+                           const TabBarTheme &tabBarTheme,
+                           const TabTheme &tabTheme,
                            ContextMenuRegistry &contextMenuRegistry,
                            CommandRegistry &commandRegistry,
                            TabController *tabController, QWidget *parent)
     : QScrollArea(parent), configManager(configManager),
-      themeManager(themeManager), contextMenuRegistry(contextMenuRegistry),
+      tabBarTheme(tabBarTheme), tabTheme(tabTheme),
+      contextMenuRegistry(contextMenuRegistry),
       commandRegistry(commandRegistry), tabController(tabController) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
@@ -43,27 +47,29 @@ TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
 
   currentTabId = 0;
   registerCommands();
-  viewport()->update();
 
-  applyTheme();
+  setAndApplyTheme(tabBarTheme);
 }
 
-void TabBarWidget::applyTheme() {
-  auto backgroundColor =
-      UiUtils::getThemeColor(themeManager, "tab_bar.background");
-  auto indicatorColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+void TabBarWidget::setAndApplyTheme(const TabBarTheme &newTheme) {
+  tabBarTheme = newTheme;
 
   viewport()->setStyleSheet(UiUtils::getScrollBarStylesheet(
-      themeManager, "QWidget", backgroundColor,
-      QString("border-bottom: 1px solid %1")
-          .arg(UiUtils::getThemeColor(themeManager, "ui.border"))));
+      tabBarTheme.scrollBarTheme.thumbColor,
+      tabBarTheme.scrollBarTheme.thumbHoverColor, "QWidget",
+      tabBarTheme.backgroundColor,
+      QString("border-bottom: 1px solid %1").arg(tabBarTheme.borderColor)));
 
   dropIndicator->setStyleSheet(
-      QString("background-color: %1;").arg(indicatorColor));
+      QString("background-color: %1;").arg(tabBarTheme.indicatorColor));
 
+  viewport()->update();
+}
+
+void TabBarWidget::setAndApplyTabTheme(const TabTheme &newTheme) {
   for (auto *tab : tabs) {
     if (tab != nullptr) {
-      tab->update();
+      tab->setAndApplyTheme(newTheme);
     }
   }
 }
@@ -93,7 +99,7 @@ void TabBarWidget::setTabs(const QStringList &titles, const QStringList &paths,
     const bool modified = tab.modified;
 
     auto *tabWidget = new TabWidget(
-        title, path, tabIndex, tabId, pinned, configManager, themeManager,
+        title, path, tabIndex, tabId, pinned, configManager, tabTheme,
         contextMenuRegistry, commandRegistry,
         [this]() -> int {
           const auto snapshot = tabController->getTabsSnapshot();

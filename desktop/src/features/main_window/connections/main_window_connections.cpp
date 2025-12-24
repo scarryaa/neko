@@ -2,8 +2,8 @@
 
 MainWindowConnections::MainWindowConnections(
     const WorkspaceUiHandles &uiHandles,
-    WorkspaceCoordinator *workspaceCoordinator, ThemeManager *qtThemeManager,
-    ThemeProvider *themeProvider, QObject *parent)
+    WorkspaceCoordinator *workspaceCoordinator, ThemeProvider *themeProvider,
+    QObject *parent)
     : QObject(parent) {
   // NewTabButton -> WorkspaceCoordinator
   connect(uiHandles.newTabButton, &QPushButton::clicked, workspaceCoordinator,
@@ -14,8 +14,6 @@ MainWindowConnections::MainWindowConnections(
           workspaceCoordinator, &WorkspaceCoordinator::newTab);
 
   // WorkspaceCoordinator -> MainWindow
-  connect(workspaceCoordinator, &WorkspaceCoordinator::themeChanged,
-          qtThemeManager, &ThemeManager::applyTheme);
   connect(workspaceCoordinator, &WorkspaceCoordinator::themeChanged,
           themeProvider, &ThemeProvider::reload);
 

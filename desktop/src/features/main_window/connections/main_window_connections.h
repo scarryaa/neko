@@ -1,7 +1,6 @@
 #ifndef MAIN_WINDOW_CONNECTIONS_H
 #define MAIN_WINDOW_CONNECTIONS_H
 
-#include "features/main_window/controllers/theme_manager.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
 #include "features/main_window/workspace_ui_handles.h"
 #include "theme/theme_provider.h"
@@ -13,7 +12,6 @@ class MainWindowConnections : public QObject {
 public:
   explicit MainWindowConnections(const WorkspaceUiHandles &uiHandles,
                                  WorkspaceCoordinator *workspaceCoordinator,
-                                 ThemeManager *qtThemeManager,
                                  ThemeProvider *themeProvider,
                                  QObject *parent = nullptr);
 

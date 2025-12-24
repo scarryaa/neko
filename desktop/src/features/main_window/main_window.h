@@ -10,7 +10,6 @@
 #include "features/file_explorer/controllers/file_tree_controller.h"
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/controllers/command_manager.h"
-#include "features/main_window/controllers/theme_manager.h"
 #include "features/main_window/controllers/workspace_controller.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
 #include "features/status_bar/status_bar_widget.h"
@@ -53,7 +52,6 @@ private:
   WorkspaceController *workspaceController;
   CommandRegistry commandRegistry;
   ContextMenuRegistry contextMenuRegistry;
-  ThemeManager *qtThemeManager;
   ThemeProvider *themeProvider;
 
   QWidget *emptyStateWidget;

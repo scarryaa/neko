@@ -6,6 +6,7 @@
 #include "features/tabs/controllers/tab_controller.h"
 #include "features/tabs/tab_widget.h"
 #include "neko-core/src/ffi/bridge.rs.h"
+#include "theme/theme_types.h"
 #include <QClipboard>
 #include <QDragEnterEvent>
 #include <QDragLeaveEvent>
@@ -27,14 +28,16 @@ class TabBarWidget : public QScrollArea {
 
 public:
   explicit TabBarWidget(neko::ConfigManager &configManager,
-                        neko::ThemeManager &themeManager,
+                        const TabBarTheme &tabBarTheme,
+                        const TabTheme &tabTheme,
                         ContextMenuRegistry &contextMenuRegistry,
                         CommandRegistry &commandRegistry,
                         TabController *tabController,
                         QWidget *parent = nullptr);
   ~TabBarWidget() override = default;
 
-  void applyTheme();
+  void setAndApplyTheme(const TabBarTheme &newTheme);
+  void setAndApplyTabTheme(const TabTheme &newTheme);
   void setTabs(const QStringList &titles, const QStringList &paths,
                const QList<bool> &modifiedStates,
                const QList<bool> &pinnedStates);
@@ -66,13 +69,15 @@ private:
   ContextMenuRegistry &contextMenuRegistry;
   CommandRegistry &commandRegistry;
   neko::ConfigManager &configManager;
-  neko::ThemeManager &themeManager;
   QPushButton *newTabButton;
   QWidget *containerWidget;
   QWidget *dropIndicator;
   QHBoxLayout *layout;
   QList<TabWidget *> tabs;
   int currentTabId;
+
+  TabBarTheme tabBarTheme;
+  TabTheme tabTheme;
 
   static double constexpr TOP_PADDING = 8.0;
   static double constexpr BOTTOM_PADDING = 8.0;

@@ -1,7 +1,6 @@
 #include "title_bar_widget.h"
 #include "utils/gui_utils.h"
 #include <QFileInfo>
-#include <utility>
 
 double constexpr TitleBarWidget::getPlatformTitleBarLeftInset() {
 #if defined(Q_OS_MACOS)
@@ -19,8 +18,8 @@ QString TitleBarWidget::getDisplayNameForDir(const QString &path) {
 }
 
 TitleBarWidget::TitleBarWidget(neko::ConfigManager &configManager,
-                               TitleBarTheme theme, QWidget *parent)
-    : QWidget(parent), m_theme(std::move(theme)), configManager(configManager) {
+                               const TitleBarTheme &theme, QWidget *parent)
+    : QWidget(parent), m_theme(theme), configManager(configManager) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   QFontMetrics fontMetrics(uiFont);
   int dynamicHeight =

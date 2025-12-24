@@ -4,10 +4,10 @@
 
 GutterWidget::GutterWidget(EditorController *editorController,
                            neko::ConfigManager &configManager,
-                           neko::ThemeManager &themeManager, QWidget *parent)
+                           const GutterTheme &theme, QWidget *parent)
     : QScrollArea(parent), editorController(editorController),
       configManager(configManager), renderer(new GutterRenderer()),
-      themeManager(themeManager),
+      theme(theme),
       font(UiUtils::loadFont(configManager, neko::FontType::Editor)),
       fontMetrics(font) {
   setFocusPolicy(Qt::NoFocus);
@@ -16,7 +16,7 @@ GutterWidget::GutterWidget(EditorController *editorController,
   setFrameShape(QFrame::NoFrame);
   setAutoFillBackground(false);
 
-  applyTheme();
+  setAndApplyTheme(theme);
 
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
           &GutterWidget::redraw);
@@ -26,11 +26,12 @@ GutterWidget::GutterWidget(EditorController *editorController,
 
 void GutterWidget::redraw() const { viewport()->update(); }
 
-void GutterWidget::applyTheme() {
-  const QString bgHex =
-      UiUtils::getThemeColor(themeManager, "editor.gutter.background", "black");
+void GutterWidget::setAndApplyTheme(const GutterTheme &newTheme) {
+  theme = newTheme;
 
-  setStyleSheet(QString("GutterWidget { background: %1; }").arg(bgHex));
+  setStyleSheet(
+      QString("GutterWidget { background: %1; }").arg(theme.backgroundColor));
+
   redraw();
 }
 
@@ -95,13 +96,10 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
   const double fontDescent = fontMetrics.descent();
   const bool hasFocus = this->hasFocus();
 
-  const QString textColor =
-      UiUtils::getThemeColor(themeManager, "editor.gutter.foreground");
-  const QString accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
-  const QString highlightColor =
-      UiUtils::getThemeColor(themeManager, "editor.highlight");
-  const QString activeLineTextColor =
-      UiUtils::getThemeColor(themeManager, "editor.gutter.foreground.active");
+  const QString textColor = theme.foregroundColor;
+  const QString accentColor = theme.accentColor;
+  const QString highlightColor = theme.highlightColor;
+  const QString activeLineTextColor = theme.foregroundActiveColor;
 
   const RenderTheme theme = {textColor, activeLineTextColor, accentColor,
                              highlightColor};

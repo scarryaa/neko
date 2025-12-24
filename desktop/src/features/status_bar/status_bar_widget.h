@@ -3,6 +3,7 @@
 
 #include "features/editor/controllers/editor_controller.h"
 #include "neko-core/src/ffi/bridge.rs.h"
+#include "theme/theme_types.h"
 #include <QApplication>
 #include <QHBoxLayout>
 #include <QIcon>
@@ -18,11 +19,11 @@ class StatusBarWidget : public QWidget {
 public:
   explicit StatusBarWidget(EditorController *editorController,
                            neko::ConfigManager &configManager,
-                           neko::ThemeManager &themeManager,
+                           const StatusBarTheme &theme,
                            QWidget *parent = nullptr);
   ~StatusBarWidget() override = default;
 
-  void applyTheme();
+  void setAndApplyTheme(const StatusBarTheme &newTheme);
   void updateCursorPosition(int row, int col, int numberOfCursors);
   void showCursorPositionInfo();
 
@@ -43,11 +44,12 @@ private:
   void onCursorPositionClicked();
 
   EditorController *editorController;
-  neko::ThemeManager &themeManager;
   neko::ConfigManager &configManager;
   double m_height;
   QPushButton *fileExplorerToggleButton;
   QPushButton *cursorPosition;
+
+  StatusBarTheme theme;
 
   static double constexpr ICON_SIZE = 18.0;
   static double constexpr HORIZONTAL_CONTENT_MARGIN = 10.0;

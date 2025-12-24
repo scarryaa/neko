@@ -1,11 +1,10 @@
 #include "features/context_menu/context_menu_widget.h"
 #include "utils/gui_utils.h"
 
-ContextMenuWidget::ContextMenuWidget(neko::ThemeManager *themeManager,
+ContextMenuWidget::ContextMenuWidget(const ContextMenuTheme &theme,
                                      neko::ConfigManager *configManager,
                                      QWidget *parent)
-    : QWidget(parent), themeManager(themeManager),
-      configManager(configManager) {
+    : QWidget(parent), theme(theme), configManager(configManager) {
   setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint |
                  Qt::NoDropShadowWindowHint);
   setAttribute(Qt::WA_DeleteOnClose);
@@ -18,14 +17,14 @@ ContextMenuWidget::ContextMenuWidget(neko::ThemeManager *themeManager,
   setMouseTracking(true);
   setAutoFillBackground(false);
 
-  const auto shadowColor =
-      UiUtils::getThemeColor(*themeManager, "command_palette.shadow");
+  const auto shadowColor = theme.shadowColor;
   auto *shadow = new QGraphicsDropShadowEffect(this);
   shadow->setBlurRadius(SHADOW_BLUR_RADIUS);
   shadow->setColor(shadowColor);
   shadow->setOffset(SHADOW_X_OFFSET, SHADOW_Y_OFFSET);
 
-  mainFrame = new ContextMenuFrame(*themeManager, this);
+  mainFrame =
+      new ContextMenuFrame({theme.backgroundColor, theme.borderColor}, this);
   mainFrame->setGraphicsEffect(shadow);
 
   auto *rootLayout = new QVBoxLayout(this);
@@ -39,22 +38,14 @@ ContextMenuWidget::ContextMenuWidget(neko::ThemeManager *themeManager,
                              CONTENT_MARGIN);
   layout->setSpacing(4);
 
-  const auto borderColor =
-      UiUtils::getThemeColor(*themeManager, "context_menu.border");
-  const auto labelColor =
-      UiUtils::getThemeColor(*themeManager, "context_menu.label");
-  const auto labelDisabledColor =
-      UiUtils::getThemeColor(*themeManager, "context_menu.label.disabled");
-  const auto shortcutColor =
-      UiUtils::getThemeColor(*themeManager, "context_menu.shortcut");
-  const auto shortcutDisabledColor =
-      UiUtils::getThemeColor(*themeManager, "context_menu.shortcut.disabled");
-  const auto hoverColor =
-      UiUtils::getThemeColor(*themeManager, "context_menu.button.hover");
-  const auto accentMutedColor =
-      UiUtils::getThemeColor(*themeManager, "ui.accent.muted");
-  const auto accentForegroundColor =
-      UiUtils::getThemeColor(*themeManager, "ui.accent.foreground");
+  const auto borderColor = theme.borderColor;
+  const auto labelColor = theme.labelColor;
+  const auto labelDisabledColor = theme.labelDisabledColor;
+  const auto shortcutColor = theme.shortcutColor;
+  const auto shortcutDisabledColor = theme.shortcutDisabledColor;
+  const auto hoverColor = theme.hoverColor;
+  const auto accentMutedColor = theme.accentMutedColor;
+  const auto accentForegroundColor = theme.accentForegroundColor;
 
   QString styleSheet = QString(
       "QToolButton#ContextMenuItem { color: %2; background: transparent;"

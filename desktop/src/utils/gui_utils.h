@@ -30,7 +30,8 @@ QFont loadFont(neko::ConfigManager &manager, neko::FontType type);
 void setFontSize(neko::ConfigManager &manager, neko::FontType type,
                  double newFontSize);
 
-QString getScrollBarStylesheet(neko::ThemeManager &themeManager,
+QString getScrollBarStylesheet(const QString &scrollbarThumbColor,
+                               const QString &scrollbarThumbHoverColor,
                                const QString &widgetName,
                                const QString &bgColor,
                                const QString &additions = nullptr);

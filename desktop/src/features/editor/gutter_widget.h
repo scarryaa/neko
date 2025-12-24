@@ -4,6 +4,7 @@
 #include "controllers/editor_controller.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 #include "render/gutter_renderer.h"
+#include "theme/theme_types.h"
 #include <QFont>
 #include <QFontMetricsF>
 #include <QPainter>
@@ -23,12 +24,11 @@ class GutterWidget : public QScrollArea {
 public:
   explicit GutterWidget(EditorController *editorController,
                         neko::ConfigManager &configManager,
-                        neko::ThemeManager &themeManager,
-                        QWidget *parent = nullptr);
+                        const GutterTheme &theme, QWidget *parent = nullptr);
   ~GutterWidget() override = default;
 
   void redraw() const;
-  void applyTheme();
+  void setAndApplyTheme(const GutterTheme &newTheme);
   void updateDimensions();
   void setEditorController(EditorController *newEditorController);
 
@@ -56,7 +56,8 @@ private:
   void increaseFontSize();
   void resetFontSize();
 
-  neko::ThemeManager &themeManager;
+  GutterTheme theme;
+
   neko::ConfigManager &configManager;
   EditorController *editorController;
   GutterRenderer *renderer;

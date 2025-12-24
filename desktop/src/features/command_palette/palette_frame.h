@@ -9,16 +9,24 @@
 class PaletteFrame : public QFrame {
   Q_OBJECT
 
+private:
+  struct PaletteFrameTheme {
+    QString backgroundColor;
+    QString borderColor;
+  };
+
 public:
-  explicit PaletteFrame(neko::ThemeManager &themeManager,
+  explicit PaletteFrame(const PaletteFrameTheme &theme,
                         QWidget *parent = nullptr);
   ~PaletteFrame() override = default;
+
+  void setAndApplyTheme(const PaletteFrameTheme &newTheme);
 
 protected:
   void paintEvent(QPaintEvent *event) override;
 
 private:
-  neko::ThemeManager &themeManager;
+  PaletteFrameTheme theme;
 };
 
 #endif // PALETTE_FRAME_H

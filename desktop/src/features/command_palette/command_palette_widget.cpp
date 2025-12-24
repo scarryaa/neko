@@ -1,10 +1,11 @@
 #import "command_palette_widget.h"
+
 #include "utils/gui_utils.h"
 
-CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
+CommandPaletteWidget::CommandPaletteWidget(const CommandPaletteTheme &theme,
                                            neko::ConfigManager &configManager,
                                            QWidget *parent)
-    : QWidget(parent), parent(parent), themeManager(themeManager),
+    : QWidget(parent), parent(parent), theme(theme),
       configManager(configManager) {
   setWindowFlags(Qt::Popup | Qt::FramelessWindowHint |
                  Qt::WindowStaysOnTopHint | Qt::NoDropShadowWindowHint);
@@ -14,7 +15,8 @@ CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
   setMinimumWidth(MIN_WIDTH);
   setMaximumWidth(WIDTH);
 
-  mainFrame = new PaletteFrame(themeManager, this);
+  mainFrame =
+      new PaletteFrame({theme.backgroundColor, theme.borderColor}, this);
 
   auto *rootLayout = new QVBoxLayout(this);
   rootLayout->setContentsMargins(CONTENT_MARGIN, CONTENT_MARGIN, CONTENT_MARGIN,
@@ -43,16 +45,16 @@ CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
     }
   });
 
-  applyTheme();
+  setAndApplyTheme(theme);
 }
 
-void CommandPaletteWidget::applyTheme() {
-  const auto backgroundColor =
-      UiUtils::getThemeColor(themeManager, "command_palette.background");
-  const auto borderColor =
-      UiUtils::getThemeColor(themeManager, "command_palette.border");
-  const auto shadowColor =
-      UiUtils::getThemeColor(themeManager, "command_palette.shadow");
+void CommandPaletteWidget::setAndApplyTheme(
+    const CommandPaletteTheme &newTheme) {
+  theme = newTheme;
+
+  const auto backgroundColor = theme.backgroundColor;
+  const auto borderColor = theme.borderColor;
+  const auto shadowColor = theme.shadowColor;
 
   const QString stylesheet =
       "CommandPaletteWidget { background: transparent; border: none; "
@@ -73,6 +75,10 @@ void CommandPaletteWidget::applyTheme() {
       buildCommandPalette();
     }
   }
+
+  mainFrame->setAndApplyTheme({theme.backgroundColor, theme.borderColor});
+
+  update();
 }
 
 void CommandPaletteWidget::showPalette() {
@@ -405,17 +411,13 @@ void CommandPaletteWidget::adjustShortcutsAfterToggle(const bool checked) {
 
 CommandPaletteWidget::PaletteColors
 CommandPaletteWidget::loadPaletteColors() const {
+  // TODO(scarlet): Refactor this
   PaletteColors paletteColors{};
-  paletteColors.foreground =
-      UiUtils::getThemeColor(themeManager, "ui.foreground");
-  paletteColors.foregroundVeryMuted =
-      UiUtils::getThemeColor(themeManager, "ui.foreground.very_muted");
-  paletteColors.border =
-      UiUtils::getThemeColor(themeManager, "command_palette.border");
-  paletteColors.accent =
-      UiUtils::getThemeColor(themeManager, "ui.accent.muted");
-  paletteColors.accentForeground =
-      UiUtils::getThemeColor(themeManager, "ui.accent.foreground");
+  paletteColors.foreground = theme.foregroundColor;
+  paletteColors.foregroundVeryMuted = theme.foregroundVeryMutedColor;
+  paletteColors.border = theme.borderColor;
+  paletteColors.accent = theme.accentMutedColor;
+  paletteColors.accentForeground = theme.accentForegroundColor;
   return paletteColors;
 }
 

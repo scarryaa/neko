@@ -1,9 +1,8 @@
 #include "context_menu_frame.h"
-#include "utils/gui_utils.h"
 
-ContextMenuFrame::ContextMenuFrame(neko::ThemeManager &themeManager,
+ContextMenuFrame::ContextMenuFrame(const ContextMenuFrameTheme &theme,
                                    QWidget *parent)
-    : QFrame(parent), themeManager(themeManager) {
+    : QFrame(parent) {
   setAutoFillBackground(false);
   setAttribute(Qt::WA_TranslucentBackground);
 }
@@ -12,10 +11,8 @@ void ContextMenuFrame::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing, true);
 
-  const QColor fill =
-      UiUtils::getThemeColor(themeManager, "context_menu.background");
-  const QColor stroke =
-      UiUtils::getThemeColor(themeManager, "context_menu.border");
+  const QColor fill = theme.backgroundColor;
+  const QColor stroke = theme.borderColor;
 
   QPainterPath path;
   const constexpr qreal radius = 12.0;

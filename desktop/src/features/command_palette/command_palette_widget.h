@@ -3,6 +3,7 @@
 
 #include "features/command_palette/palette_divider.h"
 #include "features/command_palette/palette_frame.h"
+#include "theme/theme_types.h"
 #include <QDialog>
 #include <QEvent>
 #include <QFrame>
@@ -24,12 +25,12 @@ class CommandPaletteWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit CommandPaletteWidget(neko::ThemeManager &themeManager,
+  explicit CommandPaletteWidget(const CommandPaletteTheme &theme,
                                 neko::ConfigManager &configManager,
                                 QWidget *parent = nullptr);
   ~CommandPaletteWidget() override = default;
 
-  void applyTheme();
+  void setAndApplyTheme(const CommandPaletteTheme &newTheme);
   void showPalette();
   void jumpToRowColumn(int currentRow = 0, int currentCol = 0, int maxCol = 1,
                        int lineCount = 1, int lastLineMaxCol = 1);
@@ -105,8 +106,9 @@ private:
   bool handleCommandSuggestionNavigation(const QKeyEvent *event);
   void updateCommandSuggestions(const QString &text);
 
-  neko::ThemeManager &themeManager;
   neko::ConfigManager &configManager;
+
+  CommandPaletteTheme theme;
 
   QWidget *parent;
   QWidget *shortcutsContainer;

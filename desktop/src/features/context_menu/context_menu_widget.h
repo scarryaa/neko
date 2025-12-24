@@ -3,6 +3,7 @@
 
 #include "features/context_menu/context_menu_frame.h"
 #include "features/context_menu/context_menu_item.h"
+#include "theme/theme_types.h"
 #include <QApplication>
 #include <QFrame>
 #include <QGraphicsDropShadowEffect>
@@ -18,7 +19,7 @@ class ContextMenuWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit ContextMenuWidget(neko::ThemeManager *themeManager,
+  explicit ContextMenuWidget(const ContextMenuTheme &theme,
                              neko::ConfigManager *configManager,
                              QWidget *parent = nullptr);
   ~ContextMenuWidget() override = default;
@@ -36,9 +37,10 @@ protected:
 private:
   void clearRows();
 
+  ContextMenuTheme theme;
+
   ContextMenuFrame *mainFrame;
   neko::ConfigManager *configManager;
-  neko::ThemeManager *themeManager;
   QVBoxLayout *layout;
 
   static constexpr double SHADOW_X_OFFSET = 0.0;

@@ -78,14 +78,11 @@ void UiUtils::setFontSize(neko::ConfigManager &manager, neko::FontType type,
   manager.apply_config_snapshot(snapshot);
 }
 
-QString UiUtils::getScrollBarStylesheet(neko::ThemeManager &themeManager,
+QString UiUtils::getScrollBarStylesheet(const QString &scrollbarThumbColor,
+                                        const QString &scrollbarThumbHoverColor,
                                         const QString &widgetName,
                                         const QString &bgColor,
                                         const QString &additions) {
-  auto scrollbarThumbColor = themeManager.get_color("ui.scrollbar.thumb");
-  auto scrollbarThumbHoverColor =
-      themeManager.get_color("ui.scrollbar.thumb.hover");
-
   QString stylesheet =
       QString("QAbstractScrollArea::corner { background: transparent; }"
               "QScrollBar:vertical { background: transparent; width: 12px; "

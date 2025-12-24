@@ -9,8 +9,14 @@
 class ContextMenuFrame : public QFrame {
   Q_OBJECT
 
+private:
+  struct ContextMenuFrameTheme {
+    QString backgroundColor;
+    QString borderColor;
+  };
+
 public:
-  explicit ContextMenuFrame(neko::ThemeManager &themeManager,
+  explicit ContextMenuFrame(const ContextMenuFrameTheme &theme,
                             QWidget *parent = nullptr);
   ~ContextMenuFrame() override = default;
 
@@ -18,7 +24,7 @@ protected:
   void paintEvent(QPaintEvent *event) override;
 
 private:
-  neko::ThemeManager &themeManager;
+  ContextMenuFrameTheme theme;
 };
 
 #endif // CONTEXT_MENU_FRAME_H

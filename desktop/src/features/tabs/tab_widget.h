@@ -5,6 +5,7 @@
 #include "features/context_menu/context_menu_registry.h"
 #include "features/context_menu/context_menu_widget.h"
 #include "neko-core/src/ffi/bridge.rs.h"
+#include "theme/theme_types.h"
 #include <QApplication>
 #include <QDrag>
 #include <QIcon>
@@ -22,7 +23,7 @@ public:
 
   explicit TabWidget(const QString &title, QString path, int index, int tabId,
                      bool isPinned, neko::ConfigManager &configManager,
-                     neko::ThemeManager &themeManager,
+                     const TabTheme &theme,
                      ContextMenuRegistry &contextMenuRegistry,
                      CommandRegistry &commandRegistry,
                      GetTabCountFn getTabCount, QWidget *parent = nullptr);
@@ -33,6 +34,7 @@ public:
   void setIsPinned(bool isPinned);
   [[nodiscard]] bool getIsPinned() const;
   [[nodiscard]] int getId() const;
+  void setAndApplyTheme(const TabTheme &newTheme);
 
 signals:
   void clicked();
@@ -61,7 +63,6 @@ private:
   CommandRegistry &commandRegistry;
   ContextMenuWidget *contextMenuWidget;
   neko::ConfigManager &configManager;
-  neko::ThemeManager &themeManager;
   QString title;
   QString path;
   bool isModified = false;
@@ -74,6 +75,8 @@ private:
   bool dragEligible = false;
   bool dragInProgress = false;
   QPoint dragStartPosition;
+
+  TabTheme theme;
 
   static constexpr int LEFT_PADDING_PX = 12;
 

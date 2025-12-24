@@ -3,10 +3,9 @@
 
 StatusBarWidget::StatusBarWidget(EditorController *editorController,
                                  neko::ConfigManager &configManager,
-                                 neko::ThemeManager &themeManager,
-                                 QWidget *parent)
+                                 const StatusBarTheme &theme, QWidget *parent)
     : QWidget(parent), configManager(configManager),
-      editorController(editorController), themeManager(themeManager) {
+      editorController(editorController), theme(theme) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 
@@ -42,20 +41,18 @@ StatusBarWidget::StatusBarWidget(EditorController *editorController,
   layout->addWidget(cursorPosition);
   layout->addStretch();
 
-  applyTheme();
+  setAndApplyTheme(theme);
 }
 
-void StatusBarWidget::applyTheme() {
-  QString btnText = UiUtils::getThemeColor(
-      themeManager, "titlebar.button.foreground", "#a0a0a0");
-  QString btnHover =
-      UiUtils::getThemeColor(themeManager, "titlebar.button.hover", "#131313");
-  QString btnPress = UiUtils::getThemeColor(
-      themeManager, "titlebar.button.pressed", "#222222");
+void StatusBarWidget::setAndApplyTheme(const StatusBarTheme &newTheme) {
+  theme = newTheme;
 
-  QColor greyColor =
-      UiUtils::getThemeColor(themeManager, "ui.foreground.muted");
-  QColor accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+  QString btnText = theme.buttonForegroundColor;
+  QString btnHover = theme.buttonHoverColor;
+  QString btnPress = theme.buttonPressColor;
+
+  QColor greyColor = theme.foregroundMutedColor;
+  QColor accentColor = theme.accentColor;
   QSize iconSize(ICON_SIZE, ICON_SIZE);
 
   QIcon baseIcon =
@@ -148,12 +145,12 @@ void StatusBarWidget::onFileExplorerToggledExternally(bool isOpen) {
 void StatusBarWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
 
-  painter.setBrush(UiUtils::getThemeColor(themeManager, "ui.background"));
+  painter.setBrush(theme.backgroundColor);
   painter.setPen(Qt::NoPen);
 
   painter.drawRect(QRectF(QPointF(0, 0), QPointF(width(), height())));
 
-  painter.setPen(UiUtils::getThemeColor(themeManager, "ui.border"));
+  painter.setPen(theme.borderColor);
   painter.drawLine(QPointF(0, 0), QPointF(width(), 0));
 }
 

@@ -3,6 +3,7 @@
 
 #include "features/file_explorer/controllers/file_tree_controller.h"
 #include "neko-core/src/ffi/bridge.rs.h"
+#include "theme/theme_types.h"
 #include <QApplication>
 #include <QClipboard>
 #include <QColor>
@@ -50,13 +51,13 @@ class FileExplorerWidget : public QScrollArea {
 public:
   explicit FileExplorerWidget(FileTreeController *fileTreeController,
                               neko::ConfigManager &configManager,
-                              neko::ThemeManager &themeManager,
+                              const FileExplorerTheme &theme,
                               QWidget *parent = nullptr);
   ~FileExplorerWidget() override = default;
 
   void initialize(const std::string &path);
   void loadSavedDir();
-  void applyTheme();
+  void setAndApplyTheme(const FileExplorerTheme &newTheme);
   void showItem(const QString &path);
 
 protected:
@@ -116,8 +117,9 @@ private:
 
   FileTreeController *fileTreeController;
   neko::ConfigManager &configManager;
-  neko::ThemeManager &themeManager;
   QPushButton *directorySelectionButton;
+
+  FileExplorerTheme theme;
   QFont font;
   QFontMetricsF fontMetrics;
   bool focusReceivedFromMouse = false;

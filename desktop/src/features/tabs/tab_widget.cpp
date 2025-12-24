@@ -1,15 +1,16 @@
 #include "tab_widget.h"
 #include "features/context_menu/providers/tab_context.h"
 #include "utils/gui_utils.h"
+#include <utility>
 
 // NOLINTNEXTLINE
 TabWidget::TabWidget(const QString &title, QString path, int index, int tabId,
                      bool isPinned, neko::ConfigManager &configManager,
-                     neko::ThemeManager &themeManager,
+                     const TabTheme &theme,
                      ContextMenuRegistry &contextMenuRegistry,
                      CommandRegistry &commandRegistry,
                      GetTabCountFn getTabCount, QWidget *parent)
-    : QWidget(parent), configManager(configManager), themeManager(themeManager),
+    : QWidget(parent), configManager(configManager), theme(theme),
       contextMenuRegistry(contextMenuRegistry),
       commandRegistry(commandRegistry), title(title), path(std::move(path)),
       isPinned(isPinned), index(index), tabId(tabId), isActive(false),
@@ -29,6 +30,7 @@ TabWidget::TabWidget(const QString &title, QString path, int index, int tabId,
   double titleWidth = measureText(title);
   setMinimumWidth(LEFT_PADDING_PX + static_cast<int>(titleWidth) +
                   MIN_RIGHT_EXTRA_PX);
+  setAndApplyTheme(theme);
 }
 
 void TabWidget::setActive(bool active) {
@@ -55,15 +57,13 @@ void TabWidget::paintEvent(QPaintEvent *event) {
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setFont(font());
 
-  QString borderColor = UiUtils::getThemeColor(themeManager, "ui.border");
-  QString bgColor = UiUtils::getThemeColor(themeManager, "tab.inactive");
-  QString hoverColor = UiUtils::getThemeColor(themeManager, "tab.hover");
-  QString activeColor = UiUtils::getThemeColor(themeManager, "tab.active");
-  QString foregroundColor =
-      UiUtils::getThemeColor(themeManager, "ui.foreground");
-  QString foregroundMutedColor =
-      UiUtils::getThemeColor(themeManager, "ui.foreground.muted");
-  QString modifiedColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+  QString borderColor = theme.borderColor;
+  QString bgColor = theme.tabInactiveColor;
+  QString hoverColor = theme.tabHoverColor;
+  QString activeColor = theme.tabActiveColor;
+  QString foregroundColor = theme.tabForegroundColor;
+  QString foregroundMutedColor = theme.tabForegroundInactiveColor;
+  QString modifiedColor = theme.tabModifiedIndicatorColor;
 
   // Background
   if (isActive) {
@@ -100,8 +100,7 @@ void TabWidget::paintEvent(QPaintEvent *event) {
   const QRect cRect = closeRect();
   if (isCloseHovered) {
     painter.setPen(Qt::NoPen);
-    auto closeHoverColor =
-        UiUtils::getThemeColor(themeManager, "ui.background.hover");
+    auto closeHoverColor = theme.tabCloseButtonHoverColor;
     painter.setBrush(closeHoverColor);
     painter.drawRoundedRect(closeHitRect(), 4, 4);
   }
@@ -273,7 +272,7 @@ void TabWidget::contextMenuEvent(QContextMenuEvent *event) {
   const QVariant variant = QVariant::fromValue(ctx);
   const auto items = contextMenuRegistry.build("tab", variant);
 
-  auto *menu = new ContextMenuWidget(&themeManager, &configManager, this);
+  auto *menu = new ContextMenuWidget({}, &configManager, this);
   menu->setItems(items);
 
   connect(menu, &ContextMenuWidget::actionTriggered, this,
@@ -283,4 +282,10 @@ void TabWidget::contextMenuEvent(QContextMenuEvent *event) {
 
   menu->showMenu(event->globalPos());
   event->accept();
+}
+
+void TabWidget::setAndApplyTheme(const TabTheme &newTheme) {
+  theme = newTheme;
+
+  update();
 }

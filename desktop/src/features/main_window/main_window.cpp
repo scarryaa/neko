@@ -69,7 +69,6 @@ MainWindow::MainWindow(QWidget *parent)
   auto *qtShortcutsManager =
       new ShortcutsManager(this, &*shortcutsManager, workspaceCoordinator,
                            tabController, &uiHandles, this);
-  qtThemeManager = new ThemeManager(&*themeManager, &uiHandles, this);
 
   MainWindow::registerCommands(commandManager);
   connectSignals();
@@ -83,24 +82,31 @@ void MainWindow::setupWidgets(neko::Editor *editor,
                               FileTreeController *fileTreeController,
                               TabController *tabController) {
   themeProvider->reload();
-  auto titleBarTheme = themeProvider->getTitleBarTheme();
+  const auto &titleBarTheme = themeProvider->getTitleBarTheme();
+  const auto &statusBarTheme = themeProvider->getStatusBarTheme();
+  const auto &fileExplorerTheme = themeProvider->getFileExplorerTheme();
+  const auto &commandPaletteTheme = themeProvider->getCommandPaletteTheme();
+  const auto &editorTheme = themeProvider->getEditorTheme();
+  const auto &gutterTheme = themeProvider->getGutterTheme();
+  const auto &tabBarTheme = themeProvider->getTabBarTheme();
+  const auto &tabTheme = themeProvider->getTabTheme();
 
   emptyStateWidget = new QWidget(this);
   titleBarWidget = new TitleBarWidget(*configManager, titleBarTheme, this);
   fileExplorerWidget = new FileExplorerWidget(
-      fileTreeController, *configManager, *themeManager, this);
+      fileTreeController, *configManager, fileExplorerTheme, this);
   commandPaletteWidget =
-      new CommandPaletteWidget(*themeManager, *configManager, this);
+      new CommandPaletteWidget(commandPaletteTheme, *configManager, this);
   editorWidget =
-      new EditorWidget(editorController, *configManager, *themeManager, this);
+      new EditorWidget(editorController, *configManager, editorTheme, this);
   gutterWidget =
-      new GutterWidget(editorController, *configManager, *themeManager, this);
+      new GutterWidget(editorController, *configManager, gutterTheme, this);
   statusBarWidget = new StatusBarWidget(editorController, *configManager,
-                                        *themeManager, this);
+                                        statusBarTheme, this);
   tabBarContainer = new QWidget(this);
-  tabBarWidget =
-      new TabBarWidget(*configManager, *themeManager, contextMenuRegistry,
-                       commandRegistry, tabController, tabBarContainer);
+  tabBarWidget = new TabBarWidget(*configManager, tabBarTheme, tabTheme,
+                                  contextMenuRegistry, commandRegistry,
+                                  tabController, tabBarContainer);
 }
 
 void MainWindow::setupLayout() {
@@ -242,16 +248,17 @@ void MainWindow::registerCommands(CommandManager *commandManager) {
 void MainWindow::applyTheme() {
   auto snapshot = configManager->get_config_snapshot();
   auto currentTheme = snapshot.current_theme;
-  qtThemeManager->applyTheme(std::string(currentTheme.c_str()));
+
+  themeProvider->reload();
   update();
 }
 
 void MainWindow::connectSignals() {
   new EditorConnections(uiHandles, editorController, workspaceCoordinator,
                         this);
-  new MainWindowConnections(uiHandles, workspaceCoordinator, qtThemeManager,
-                            themeProvider, this);
+  new MainWindowConnections(uiHandles, workspaceCoordinator, themeProvider,
+                            this);
   new FileExplorerConnections(uiHandles, this);
   new WorkspaceConnections(uiHandles, workspaceCoordinator, this);
-  new ThemeConnections(uiHandles, qtThemeManager, themeProvider, this);
+  new ThemeConnections(uiHandles, themeProvider, this);
 }

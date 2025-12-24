@@ -3,10 +3,10 @@
 
 EditorWidget::EditorWidget(EditorController *editorController,
                            neko::ConfigManager &configManager,
-                           neko::ThemeManager &themeManager, QWidget *parent)
+                           const EditorTheme &theme, QWidget *parent)
     : QScrollArea(parent), editorController(editorController),
       renderer(new EditorRenderer()), configManager(configManager),
-      themeManager(themeManager),
+      theme(theme),
       font(UiUtils::loadFont(configManager, neko::FontType::Editor)),
       fontMetrics(font) {
   setFocusPolicy(Qt::StrongFocus);
@@ -21,7 +21,7 @@ EditorWidget::EditorWidget(EditorController *editorController,
   connect(&suppressDblTimer, &QTimer::timeout, this,
           [this] { suppressNextDouble = false; });
 
-  applyTheme();
+  setAndApplyTheme(theme);
 
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
           &EditorWidget::redraw);
@@ -29,12 +29,13 @@ EditorWidget::EditorWidget(EditorController *editorController,
           &EditorWidget::redraw);
 }
 
-void EditorWidget::applyTheme() {
-  const QString bgHex =
-      UiUtils::getThemeColor(themeManager, "editor.background", "#000000");
+void EditorWidget::setAndApplyTheme(const EditorTheme &newTheme) {
+  theme = newTheme;
 
-  setStyleSheet(
-      UiUtils::getScrollBarStylesheet(themeManager, "EditorWidget", bgHex));
+  setStyleSheet(UiUtils::getScrollBarStylesheet(
+      theme.scrollBarTheme.thumbColor, theme.scrollBarTheme.thumbHoverColor,
+      "EditorWidget", theme.backgroundColor));
+
   redraw();
 }
 
@@ -384,11 +385,9 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
   const double fontDescent = fontMetrics.descent();
   const bool hasFocus = this->hasFocus();
 
-  const QString textColor =
-      UiUtils::getThemeColor(themeManager, "editor.foreground");
-  const QString accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
-  const QString highlightColor =
-      UiUtils::getThemeColor(themeManager, "editor.highlight");
+  const QString textColor = theme.foregroundColor;
+  const QString accentColor = theme.accentColor;
+  const QString highlightColor = theme.highlightColor;
 
   const RenderTheme theme = {textColor, textColor, accentColor, highlightColor};
 

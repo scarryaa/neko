@@ -3,10 +3,10 @@
 
 FileExplorerWidget::FileExplorerWidget(FileTreeController *fileTreeController,
                                        neko::ConfigManager &configManager,
-                                       neko::ThemeManager &themeManager,
+                                       const FileExplorerTheme &theme,
                                        QWidget *parent)
     : QScrollArea(parent), fileTreeController(fileTreeController),
-      configManager(configManager), themeManager(themeManager),
+      configManager(configManager), theme(theme),
       font(UiUtils::loadFont(configManager, neko::FontType::FileExplorer)),
       fontMetrics(font) {
   setFocusPolicy(Qt::StrongFocus);
@@ -15,7 +15,7 @@ FileExplorerWidget::FileExplorerWidget(FileTreeController *fileTreeController,
 
   directorySelectionButton = new QPushButton("Select a directory");
 
-  applyTheme();
+  setAndApplyTheme(theme);
 
   auto *layout = new QVBoxLayout();
   layout->addWidget(directorySelectionButton, 0, Qt::AlignCenter);
@@ -51,20 +51,18 @@ void FileExplorerWidget::loadSavedDir() {
   }
 }
 
-void FileExplorerWidget::applyTheme() {
-  auto backgroundColor =
-      UiUtils::getThemeColor(themeManager, "file_explorer.background");
+void FileExplorerWidget::setAndApplyTheme(const FileExplorerTheme &newTheme) {
+  theme = newTheme;
+
   setStyleSheet(UiUtils::getScrollBarStylesheet(
-      themeManager, "FileExplorerWidget", backgroundColor));
+      theme.scrollBarTheme.thumbColor, theme.scrollBarTheme.thumbHoverColor,
+      "FileExplorerWidget", theme.backgroundColor));
 
   if (directorySelectionButton != nullptr) {
-    QString buttonBg = UiUtils::getThemeColor(themeManager, "ui.accent");
-    QString buttonHover =
-        UiUtils::getThemeColor(themeManager, "ui.accent.hover");
-    QString buttonPressed =
-        UiUtils::getThemeColor(themeManager, "ui.accent.pressed");
-    QString buttonText =
-        UiUtils::getThemeColor(themeManager, "ui.accent.foreground");
+    QString buttonBg = theme.buttonBackgroundColor;
+    QString buttonHover = theme.buttonHoverColor;
+    QString buttonPressed = theme.buttonPressColor;
+    QString buttonText = theme.buttonForegroundColor;
 
     directorySelectionButton->setStyleSheet(
         QString("QPushButton { background-color: %1; color: %2; border-radius: "
@@ -284,11 +282,11 @@ void FileExplorerWidget::drawFile(QPainter *painter, double xPos, double yPos,
   double lineHeight = fontMetrics.height();
   double horizontalOffset = horizontalScrollBar()->value();
 
-  auto accentColor = UiUtils::getThemeColor(themeManager, "ui.accent");
+  auto accentColor = theme.selectionColor;
   auto selectionColor = QColor(accentColor);
   selectionColor.setAlpha(SELECTION_ALPHA);
 
-  auto fileTextColor = UiUtils::getThemeColor(themeManager, "ui.foreground");
+  auto fileTextColor = theme.fileForegroundColor;
 
   // Selection background
   if (node.is_selected) {
@@ -341,8 +339,7 @@ void FileExplorerWidget::drawFile(QPainter *painter, double xPos, double yPos,
   // Draw text after icon
   double textX = iconX + iconSize + 4;
   if (node.is_hidden) {
-    QString foregroundVeryMuted =
-        UiUtils::getThemeColor(themeManager, "ui.foreground.very_muted");
+    QString foregroundVeryMuted = theme.fileHiddenColor;
     painter->setBrush(foregroundVeryMuted);
     painter->setPen(foregroundVeryMuted);
   } else {

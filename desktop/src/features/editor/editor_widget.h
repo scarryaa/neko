@@ -5,6 +5,7 @@
 #include "features/editor/render/editor_renderer.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 #include "row_col.h"
+#include "theme/theme_types.h"
 #include <QApplication>
 #include <QFont>
 #include <QFontMetricsF>
@@ -31,11 +32,10 @@ class EditorWidget : public QScrollArea {
 public:
   explicit EditorWidget(EditorController *editorController,
                         neko::ConfigManager &configManager,
-                        neko::ThemeManager &themeManager,
-                        QWidget *parent = nullptr);
+                        const EditorTheme &theme, QWidget *parent = nullptr);
   ~EditorWidget() override = default;
 
-  void applyTheme();
+  void setAndApplyTheme(const EditorTheme &newTheme);
   void redraw() const;
   void updateDimensions();
   void setEditorController(EditorController *newEditorController);
@@ -74,8 +74,9 @@ private:
   void scrollToCursor();
   [[nodiscard]] double measureWidth() const;
 
+  EditorTheme theme;
+
   neko::ConfigManager &configManager;
-  neko::ThemeManager &themeManager;
   EditorController *editorController;
   EditorRenderer *renderer;
   QFont font;
