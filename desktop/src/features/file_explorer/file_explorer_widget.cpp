@@ -1,5 +1,5 @@
 #include "file_explorer_widget.h"
-#include <neko-core/src/ffi/bridge.rs.h>
+#include "utils/gui_utils.h"
 
 FileExplorerWidget::FileExplorerWidget(FileTreeController *fileTreeController,
                                        neko::ConfigManager &configManager,

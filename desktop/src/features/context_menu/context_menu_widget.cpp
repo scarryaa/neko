@@ -1,4 +1,5 @@
 #include "features/context_menu/context_menu_widget.h"
+#include "utils/gui_utils.h"
 
 ContextMenuWidget::ContextMenuWidget(neko::ThemeManager *themeManager,
                                      neko::ConfigManager *configManager,

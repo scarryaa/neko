@@ -3,7 +3,6 @@
 
 #include "features/context_menu/context_menu_frame.h"
 #include "features/context_menu/context_menu_item.h"
-#include "utils/gui_utils.h"
 #include <QApplication>
 #include <QFrame>
 #include <QGraphicsDropShadowEffect>

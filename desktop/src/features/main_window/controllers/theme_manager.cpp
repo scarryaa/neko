@@ -1,4 +1,5 @@
 #include "theme_manager.h"
+#include "utils/gui_utils.h"
 
 ThemeManager::ThemeManager(neko::ThemeManager *nekoThemeManager,
                            const WorkspaceUiHandles *uiHandles, QObject *parent)

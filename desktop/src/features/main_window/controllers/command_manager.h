@@ -2,7 +2,6 @@
 #define COMMAND_MANAGER_H
 
 #include "features/context_menu/command_registry.h"
-#include "features/context_menu/providers/tab_context.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
 #include <QApplication>
 

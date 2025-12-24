@@ -1,4 +1,5 @@
 #import "command_palette_widget.h"
+#include "utils/gui_utils.h"
 
 CommandPaletteWidget::CommandPaletteWidget(neko::ThemeManager &themeManager,
                                            neko::ConfigManager &configManager,

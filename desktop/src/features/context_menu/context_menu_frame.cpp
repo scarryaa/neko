@@ -1,4 +1,5 @@
 #include "context_menu_frame.h"
+#include "utils/gui_utils.h"
 
 ContextMenuFrame::ContextMenuFrame(neko::ThemeManager &themeManager,
                                    QWidget *parent)

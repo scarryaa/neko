@@ -1,7 +1,6 @@
 #ifndef TITLE_BAR_WIDGET_H
 #define TITLE_BAR_WIDGET_H
 
-#include "utils/gui_utils.h"
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QPainter>

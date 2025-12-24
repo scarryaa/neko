@@ -3,7 +3,6 @@
 
 #include "features/command_palette/palette_divider.h"
 #include "features/command_palette/palette_frame.h"
-#include "utils/gui_utils.h"
 #include <QDialog>
 #include <QEvent>
 #include <QFrame>

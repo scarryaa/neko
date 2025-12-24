@@ -4,9 +4,7 @@
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
 #include "features/context_menu/context_menu_widget.h"
-#include "features/context_menu/providers/tab_context.h"
 #include "neko-core/src/ffi/bridge.rs.h"
-#include "utils/gui_utils.h"
 #include <QApplication>
 #include <QDrag>
 #include <QIcon>

@@ -3,7 +3,6 @@
 
 #include "features/editor/controllers/editor_controller.h"
 #include "neko-core/src/ffi/bridge.rs.h"
-#include "utils/gui_utils.h"
 #include <QApplication>
 #include <QHBoxLayout>
 #include <QIcon>

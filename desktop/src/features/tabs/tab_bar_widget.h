@@ -6,7 +6,6 @@
 #include "features/tabs/controllers/tab_controller.h"
 #include "features/tabs/tab_widget.h"
 #include "neko-core/src/ffi/bridge.rs.h"
-#include "utils/gui_utils.h"
 #include <QClipboard>
 #include <QDragEnterEvent>
 #include <QDragLeaveEvent>

@@ -9,11 +9,7 @@
 #include "features/editor/gutter_widget.h"
 #include "features/file_explorer/controllers/file_tree_controller.h"
 #include "features/file_explorer/file_explorer_widget.h"
-#include "features/main_window/connections/editor_connections.h"
-#include "features/main_window/connections/file_explorer_connections.h"
-#include "features/main_window/connections/main_window_connections.h"
 #include "features/main_window/controllers/command_manager.h"
-#include "features/main_window/controllers/shortcuts_manager.h"
 #include "features/main_window/controllers/theme_manager.h"
 #include "features/main_window/controllers/workspace_controller.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
@@ -22,7 +18,6 @@
 #include "features/tabs/tab_bar_widget.h"
 #include "features/title_bar/title_bar_widget.h"
 #include "neko-core/src/ffi/bridge.rs.h"
-#include "utils/mac_utils.h"
 #include <QMainWindow>
 #include <QPushButton>
 #include <QSplitter>

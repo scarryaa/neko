@@ -1,7 +1,6 @@
 #ifndef EDITOR_CONTROLLER_H
 #define EDITOR_CONTROLLER_H
 
-#include "utils/change_mask.h"
 #include <QApplication>
 #include <QClipboard>
 #include <QObject>

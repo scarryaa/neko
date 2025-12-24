@@ -3,7 +3,6 @@
 
 #include "features/file_explorer/controllers/file_tree_controller.h"
 #include "neko-core/src/ffi/bridge.rs.h"
-#include "utils/gui_utils.h"
 #include <QApplication>
 #include <QClipboard>
 #include <QColor>

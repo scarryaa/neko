@@ -1,7 +1,5 @@
 #include "workspace_controller.h"
 
-#include <utility>
-
 WorkspaceController::WorkspaceController(TabController *tabController,
                                          WorkspaceUi workspaceUi)
     : tabController(tabController), workspaceUi(std::move(workspaceUi)) {}

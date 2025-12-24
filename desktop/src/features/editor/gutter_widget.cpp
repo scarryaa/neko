@@ -1,4 +1,6 @@
 #include "gutter_widget.h"
+#include "features/editor/render/render_state.h"
+#include "utils/gui_utils.h"
 
 GutterWidget::GutterWidget(EditorController *editorController,
                            neko::ConfigManager &configManager,

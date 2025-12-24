@@ -1,4 +1,5 @@
 #include "command_manager.h"
+#include "features/context_menu/providers/tab_context.h"
 
 CommandManager::CommandManager(CommandRegistry *commandRegistry,
                                ContextMenuRegistry *contextMenuRegistry,

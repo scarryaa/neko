@@ -1,7 +1,6 @@
 #ifndef PALETTE_FRAME_H
 #define PALETTE_FRAME_H
 
-#include "utils/gui_utils.h"
 #include <QFrame>
 #include <QPainter>
 #include <QPainterPath>

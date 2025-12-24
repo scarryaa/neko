@@ -1,4 +1,5 @@
 #include "status_bar_widget.h"
+#include "utils/gui_utils.h"
 
 StatusBarWidget::StatusBarWidget(EditorController *editorController,
                                  neko::ConfigManager &configManager,

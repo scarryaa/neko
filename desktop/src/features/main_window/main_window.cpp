@@ -1,4 +1,11 @@
 #include "main_window.h"
+#include "features/context_menu/providers/tab_context.h"
+#include "features/main_window/connections/editor_connections.h"
+#include "features/main_window/connections/file_explorer_connections.h"
+#include "features/main_window/connections/main_window_connections.h"
+#include "features/main_window/controllers/shortcuts_manager.h"
+#include "utils/gui_utils.h"
+#include "utils/mac_utils.h"
 
 Q_DECLARE_METATYPE(TabContext);
 

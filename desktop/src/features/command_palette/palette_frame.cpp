@@ -1,4 +1,5 @@
 #include "palette_frame.h"
+#include "utils/gui_utils.h"
 
 PaletteFrame::PaletteFrame(neko::ThemeManager &themeManager, QWidget *parent)
     : QFrame(parent), themeManager(themeManager) {

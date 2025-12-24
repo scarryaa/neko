@@ -1,4 +1,5 @@
 #include "editor_controller.h"
+#include "utils/change_mask.h"
 
 EditorController::EditorController(neko::Editor *editor) : editor(editor) {}
 

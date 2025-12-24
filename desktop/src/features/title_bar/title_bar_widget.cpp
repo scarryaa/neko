@@ -1,4 +1,5 @@
 #include "title_bar_widget.h"
+#include "utils/gui_utils.h"
 
 TitleBarWidget::TitleBarWidget(neko::ConfigManager &configManager,
                                neko::ThemeManager &themeManager,

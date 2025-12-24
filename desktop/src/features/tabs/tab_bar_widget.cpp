@@ -1,6 +1,6 @@
 #include "tab_bar_widget.h"
-
-#include <algorithm>
+#include "features/context_menu/providers/tab_context.h"
+#include "utils/gui_utils.h"
 
 // TODO(scarlet): Rework the tab update system to not rely on mass setting
 // all the tabs and have the TabBarWidget be in charge of mgmt/updates,

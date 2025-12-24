@@ -1,4 +1,4 @@
-#include "features/main_window/controllers/app_state_controller.h"
+#include "app_state_controller.h"
 
 AppStateController::AppStateController(neko::AppState *appState)
     : appState(appState) {}

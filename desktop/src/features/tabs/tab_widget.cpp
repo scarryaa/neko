@@ -1,7 +1,6 @@
 #include "tab_widget.h"
+#include "features/context_menu/providers/tab_context.h"
 #include "utils/gui_utils.h"
-
-#include <utility>
 
 // NOLINTNEXTLINE
 TabWidget::TabWidget(const QString &title, QString path, int index, int tabId,
