@@ -248,6 +248,7 @@ void MainWindow::registerCommands(CommandManager *commandManager) {
 void MainWindow::applyTheme() {
   auto snapshot = configManager->get_config_snapshot();
   auto currentTheme = snapshot.current_theme;
+  themeManager->set_theme(currentTheme);
 
   themeProvider->reload();
   update();
