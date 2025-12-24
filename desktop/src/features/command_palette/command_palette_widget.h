@@ -79,6 +79,8 @@ private:
     bool currentlyInHistory = false;
   };
 
+  enum class ApplySuggestionMode : uint8_t { FillOnly, FillAndRun };
+
   static constexpr std::string_view kLastJumpKey = "ls";
   static constexpr int kNavCount = 9;
   static const std::array<NavEntry, kNavCount> &navTable();
@@ -124,6 +126,12 @@ private:
   bool handleCommandHistoryNavigation(const QKeyEvent *event);
   void saveCommandHistoryEntry(const QString &entry);
   bool handleCommandSuggestionNavigation(const QKeyEvent *event);
+  bool selectNextCommandSuggestion();
+  bool selectPreviousCommandSuggestion();
+  bool applyCurrentCommandSuggestion(ApplySuggestionMode mode);
+  bool canHandleSuggestionNav(const QKeyEvent *event) const;
+  [[nodiscard]] int clampSuggestionRow(int row) const;
+  void setSuggestionRowClamped(int row);
   void updateCommandSuggestions(const QString &text);
   void resetCommandHistoryNavigation();
 

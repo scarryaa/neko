@@ -1057,82 +1057,129 @@ void CommandPaletteWidget::saveCommandHistoryEntry(const QString &entry) {
   resetCommandHistoryNavigation();
 }
 
-// TODO(scarlet): Break this up into smaller fns
 bool CommandPaletteWidget::handleCommandSuggestionNavigation(
     const QKeyEvent *event) {
-  if ((commandInput == nullptr) || (commandSuggestions == nullptr) ||
-      !commandSuggestions->isVisible() || commandSuggestions->count() == 0) {
+  if (!canHandleSuggestionNav(event)) {
+    return false;
+  }
+
+  const int key = event->key();
+
+  // If in command history, ignore up/down arrows
+  if (historyState.currentlyInHistory &&
+      (key == Qt::Key_Up || key == Qt::Key_Down)) {
+    return false;
+  }
+
+  // Allow up arrow to exit suggestions and enter history
+  if (key == Qt::Key_Up && commandSuggestions->currentRow() <= 0 &&
+      !historyState.commandHistory.empty()) {
+    commandSuggestions->clearSelection();
+    commandSuggestions->setCurrentRow(-1);
+    return false;
+  }
+
+  switch (key) {
+  case Qt::Key_Down:
+    return selectNextCommandSuggestion();
+  case Qt::Key_Up:
+    return selectPreviousCommandSuggestion();
+  case Qt::Key_Tab:
+    return applyCurrentCommandSuggestion(ApplySuggestionMode::FillOnly);
+  case Qt::Key_Return:
+  case Qt::Key_Enter:
+    return applyCurrentCommandSuggestion(ApplySuggestionMode::FillAndRun);
+  default:
+    return false;
+  }
+}
+
+bool CommandPaletteWidget::selectNextCommandSuggestion() {
+  if (commandSuggestions == nullptr) {
+    return false;
+  }
+
+  const int currentRow = commandSuggestions->currentRow();
+  const int next = (currentRow < 0) ? 0 : (currentRow + 1);
+
+  setSuggestionRowClamped(next);
+  return true;
+}
+
+bool CommandPaletteWidget::selectPreviousCommandSuggestion() {
+  if (commandSuggestions == nullptr) {
+    return false;
+  }
+
+  const int currentRow = commandSuggestions->currentRow();
+  const int prev = (currentRow <= 0) ? 0 : (currentRow - 1);
+
+  setSuggestionRowClamped(prev);
+  return true;
+}
+
+bool CommandPaletteWidget::applyCurrentCommandSuggestion(
+    ApplySuggestionMode mode) {
+  if ((commandSuggestions == nullptr) || (commandInput == nullptr)) {
+    return false;
+  }
+
+  QListWidgetItem *currentItem = commandSuggestions->currentItem();
+
+  if ((currentItem == nullptr) && commandSuggestions->count() > 0) {
+    commandSuggestions->setCurrentRow(0);
+    currentItem = commandSuggestions->item(0);
+  }
+
+  if (currentItem == nullptr) {
+    return false;
+  }
+
+  commandInput->setText(currentItem->text());
+  commandInput->setCursorPosition(
+      static_cast<int>(commandInput->text().length()));
+
+  commandSuggestions->clearSelection();
+  commandSuggestions->setCurrentRow(-1);
+
+  if (mode == ApplySuggestionMode::FillAndRun) {
+    emitCommandRequestFromInput();
+  }
+
+  return true;
+}
+
+bool CommandPaletteWidget::canHandleSuggestionNav(
+    const QKeyEvent *event) const {
+  if ((event == nullptr) || (commandInput == nullptr) ||
+      (commandSuggestions == nullptr)) {
+    return false;
+  }
+
+  if (!commandSuggestions->isVisible() || commandSuggestions->count() == 0) {
     return false;
   }
 
   const Qt::KeyboardModifiers mods =
       event->modifiers() &
       static_cast<Qt::KeyboardModifier>(~Qt::KeypadModifier);
-  if (mods != Qt::NoModifier) {
-    return false;
+
+  return mods == Qt::NoModifier;
+}
+
+int CommandPaletteWidget::clampSuggestionRow(int row) const {
+  const int numberOfSuggestions =
+      (commandSuggestions != nullptr) ? commandSuggestions->count() : 0;
+
+  if (numberOfSuggestions <= 0) {
+    return 0;
   }
 
-  if (historyState.currentlyInHistory &&
-      (event->key() == Qt::Key_Up || event->key() == Qt::Key_Down)) {
-    return false;
-  }
+  return std::clamp(row, 0, numberOfSuggestions - 1);
+}
 
-  if (event->key() == Qt::Key_Up && commandSuggestions->currentRow() <= 0 &&
-      !historyState.commandHistory.empty()) {
-    // Clear selection and enable entering command history
-    commandSuggestions->clearSelection();
-    commandSuggestions->setCurrentRow(-1);
-    return false;
-  }
-
-  const auto clampRow = [&](int row) {
-    if (commandSuggestions->count() == 0) {
-      return 0;
-    }
-
-    return std::clamp(row, 0, commandSuggestions->count() - 1);
-  };
-
-  if (event->key() == Qt::Key_Down) {
-    int nextRow = commandSuggestions->currentRow();
-    nextRow = nextRow < 0 ? 0 : nextRow + 1;
-    commandSuggestions->setCurrentRow(clampRow(nextRow));
-    return true;
-  }
-
-  if (event->key() == Qt::Key_Up) {
-    int prevRow = commandSuggestions->currentRow();
-    prevRow = prevRow <= 0 ? 0 : prevRow - 1;
-    commandSuggestions->setCurrentRow(clampRow(prevRow));
-    return true;
-  }
-
-  if (event->key() == Qt::Key_Tab || event->key() == Qt::Key_Return ||
-      event->key() == Qt::Key_Enter) {
-    const QListWidgetItem *current = commandSuggestions->currentItem();
-    if ((current == nullptr) && commandSuggestions->count() > 0) {
-      commandSuggestions->setCurrentRow(0);
-      current = commandSuggestions->item(0);
-    }
-
-    if (current != nullptr) {
-      commandInput->setText(current->text());
-      commandInput->setCursorPosition(
-          static_cast<int>(commandInput->text().length()));
-      commandSuggestions->clearSelection();
-      commandSuggestions->setCurrentRow(-1);
-      if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
-        emitCommandRequestFromInput();
-        return true;
-      }
-    }
-
-    if (event->key() == Qt::Key_Tab) {
-      return true;
-    }
-  }
-
-  return false;
+void CommandPaletteWidget::setSuggestionRowClamped(int row) {
+  commandSuggestions->setCurrentRow(clampSuggestionRow(row));
 }
 
 void CommandPaletteWidget::updateCommandSuggestions(const QString &text) {
