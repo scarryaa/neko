@@ -113,14 +113,6 @@ QString UiUtils::getScrollBarStylesheet(neko::ThemeManager &themeManager,
   return stylesheet;
 }
 
-double UiUtils::getTitleBarContentMargin() {
-#if defined(Q_OS_MACOS)
-  return MACOS_TRAFFIC_LIGHTS_MARGIN;
-#else
-  return 10;
-#endif
-}
-
 QIcon UiUtils::createColorizedIcon(const QIcon &originalIcon,
                                    const QColor &color, const QSize &size) {
   QPixmap pixmap = originalIcon.pixmap(size);

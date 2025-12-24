@@ -5,7 +5,7 @@ FileExplorerConnections::FileExplorerConnections(
     : QObject(parent) {
   // FileExplorerWidget -> TitleBarWidget
   connect(uiHandles.fileExplorerWidget, &FileExplorerWidget::directorySelected,
-          uiHandles.titleBarWidget, &TitleBarWidget::onDirChanged);
+          uiHandles.titleBarWidget, &TitleBarWidget::directoryChanged);
 
   // TitleBarWidget -> FileExplorerWidget
   connect(uiHandles.titleBarWidget,
