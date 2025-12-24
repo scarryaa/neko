@@ -759,16 +759,12 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
   bool okRow = false;
   bool okCol = true;
 
-  const auto storeEntry = [this](const QString &entry) {
-    saveJumpHistoryEntry(entry);
-  };
-
   // TODO(scarlet): Allow aliases?
   const QString &value = text;
 
   if (const auto *entry = findNav(text.toStdString())) {
     if (entry->key != kLastJumpKey) {
-      storeEntry(text);
+      saveJumpHistoryEntry(text);
     }
 
     (this->*(entry->fn))();
@@ -787,7 +783,7 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
   row = std::clamp(row, 1, effectiveMaxLine);
   col = std::max(1, col);
 
-  storeEntry(text);
+  saveJumpHistoryEntry(text);
   emit goToPositionRequested(row - 1, col - 1);
   close();
 }
@@ -840,46 +836,39 @@ void CommandPaletteWidget::adjustShortcutsAfterToggle(const bool checked) {
   this->adjustSize();
 }
 
-// TODO(scarlet): Consolidate these?
-void CommandPaletteWidget::jumpToLineStart() {
-  emit goToPositionRequested(jumpState.currentRow, 0);
+void CommandPaletteWidget::processJumpAndClose(int row, int column) {
+  emit goToPositionRequested(row, column);
   close();
+}
+
+void CommandPaletteWidget::jumpToLineStart() {
+  processJumpAndClose(jumpState.currentRow, 0);
 }
 
 void CommandPaletteWidget::jumpToLineEnd() {
-  emit goToPositionRequested(jumpState.currentRow, jumpState.maxColumn);
-  close();
+  processJumpAndClose(jumpState.currentRow, jumpState.maxColumn);
 }
 
 void CommandPaletteWidget::jumpToLineMiddle() {
-  emit goToPositionRequested(jumpState.currentRow, jumpState.maxColumn / 2);
-  close();
+  processJumpAndClose(jumpState.currentRow, jumpState.maxColumn / 2);
 }
 
-void CommandPaletteWidget::jumpToDocumentStart() {
-  emit goToPositionRequested(0, 0);
-  close();
-}
+void CommandPaletteWidget::jumpToDocumentStart() { processJumpAndClose(0, 0); }
 
 void CommandPaletteWidget::jumpToDocumentMiddle() {
-  emit goToPositionRequested(jumpState.maxRow / 2, jumpState.currentColumn);
-  close();
+  processJumpAndClose(jumpState.maxRow / 2, jumpState.currentColumn);
 }
 
 void CommandPaletteWidget::jumpToDocumentQuarter() {
-  emit goToPositionRequested(jumpState.maxRow / 4, jumpState.currentColumn);
-  close();
+  processJumpAndClose(jumpState.maxRow / 4, jumpState.currentColumn);
 }
 
 void CommandPaletteWidget::jumpToDocumentThreeQuarters() {
-  emit goToPositionRequested((jumpState.maxRow / 4) * 3,
-                             jumpState.currentColumn);
-  close();
+  processJumpAndClose((jumpState.maxRow / 4) * 3, jumpState.currentColumn);
 }
 
 void CommandPaletteWidget::jumpToDocumentEnd() {
-  emit goToPositionRequested(jumpState.maxRow, jumpState.lastLineMaxColumn);
-  close();
+  processJumpAndClose(jumpState.maxRow, jumpState.lastLineMaxColumn);
 }
 
 void CommandPaletteWidget::jumpToLastTarget() {
@@ -925,11 +914,7 @@ QLabel *CommandPaletteWidget::buildCurrentLineLabel(QWidget *parent,
 }
 
 bool CommandPaletteWidget::handleJumpHistoryNavigation(const QKeyEvent *event) {
-  if (jumpInput == nullptr) {
-    return false;
-  }
-
-  if (historyState.jumpHistory.isEmpty()) {
+  if (jumpInput == nullptr || historyState.jumpHistory.isEmpty()) {
     return false;
   }
 
@@ -937,12 +922,15 @@ bool CommandPaletteWidget::handleJumpHistoryNavigation(const QKeyEvent *event) {
     if (index >= 0 && index < historyState.jumpHistory.size()) {
       jumpInput->setText(historyState.jumpHistory.at(index));
     } else {
+      // Restore saved input before entering history
       jumpInput->setText(historyState.jumpInputDraft);
     }
+
     jumpInput->setCursorPosition(static_cast<int>(jumpInput->text().length()));
   };
 
   if (event->key() == Qt::Key_Up) {
+    // Save input if entering history
     if (historyState.jumpHistoryIndex == historyState.jumpHistory.size()) {
       historyState.jumpInputDraft = jumpInput->text();
     }
@@ -950,18 +938,16 @@ bool CommandPaletteWidget::handleJumpHistoryNavigation(const QKeyEvent *event) {
     historyState.jumpHistoryIndex =
         std::max(0, historyState.jumpHistoryIndex - 1);
     applyHistoryEntry(historyState.jumpHistoryIndex);
+
     return true;
   }
 
   if (event->key() == Qt::Key_Down) {
-    if (historyState.jumpHistoryIndex == historyState.jumpHistory.size()) {
-      historyState.jumpInputDraft = jumpInput->text();
-    }
-
     historyState.jumpHistoryIndex =
         std::min(historyState.jumpHistoryIndex + 1,
                  static_cast<int>(historyState.jumpHistory.size()));
     applyHistoryEntry(historyState.jumpHistoryIndex);
+
     return true;
   }
 

@@ -105,6 +105,7 @@ private:
                         int lineCount, int lastLineMaxCol);
   void adjustShortcutsAfterToggle(bool checked);
 
+  void processJumpAndClose(int row, int column);
   void jumpToLineStart();
   void jumpToLineEnd();
   void jumpToLineMiddle();
