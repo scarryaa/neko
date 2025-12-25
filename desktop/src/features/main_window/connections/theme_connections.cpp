@@ -11,10 +11,11 @@
 #include <QPushButton>
 #include <QSplitter>
 
-ThemeConnections::ThemeConnections(const WorkspaceUiHandles &uiHandles,
-                                   ThemeProvider *themeProvider,
+ThemeConnections::ThemeConnections(const ThemeConnectionsProps &props,
                                    QObject *parent)
-    : QObject(parent), uiHandles(uiHandles) {
+    : QObject(parent), uiHandles(props.uiHandles) {
+  auto *themeProvider = props.themeProvider;
+
   // ThemeProvider -> TitleBarWidget
   connect(themeProvider, &ThemeProvider::titleBarThemeChanged,
           uiHandles.titleBarWidget, &TitleBarWidget::setAndApplyTheme);

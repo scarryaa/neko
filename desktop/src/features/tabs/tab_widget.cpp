@@ -2,7 +2,6 @@
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
 #include "features/context_menu/context_menu_widget.h"
-#include "theme/theme_provider.h"
 #include "utils/gui_utils.h"
 #include <QApplication>
 #include <QByteArray>
@@ -18,18 +17,14 @@
 #include <QPixmap>
 #include <QSize>
 #include <QVariant>
-#include <utility>
 
-TabWidget::TabWidget(const QString &title, QString path, int index, int tabId,
-                     bool isPinned, neko::ConfigManager &configManager,
-                     ThemeProvider *themeProvider, const TabTheme &theme,
-                     ContextMenuRegistry &contextMenuRegistry,
-                     CommandRegistry &commandRegistry, QWidget *parent)
-    : QWidget(parent), configManager(configManager),
-      themeProvider(themeProvider), theme(theme),
-      contextMenuRegistry(contextMenuRegistry),
-      commandRegistry(commandRegistry), title(title), path(std::move(path)),
-      isPinned(isPinned), index(index), tabId(tabId), isActive(false) {
+TabWidget::TabWidget(const TabProps &props, QWidget *parent)
+    : QWidget(parent), configManager(*props.configManager),
+      themeProvider(props.themeProvider), theme(props.theme),
+      contextMenuRegistry(*props.contextMenuRegistry),
+      commandRegistry(*props.commandRegistry), title(props.title),
+      path(props.path), isPinned(props.isPinned), index(props.index),
+      tabId(props.tabId), isActive(false) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 
@@ -304,7 +299,8 @@ void TabWidget::contextMenuEvent(QContextMenuEvent *event) {
   const QVariant variant = QVariant::fromValue(ctx);
   const auto items = contextMenuRegistry.build("tab", variant);
 
-  auto *menu = new ContextMenuWidget(themeProvider, &configManager, this);
+  auto *menu = new ContextMenuWidget(
+      {.themeProvider = themeProvider, .configManager = &configManager}, this);
   menu->setItems(items);
 
   connect(menu, &ContextMenuWidget::actionTriggered, this,

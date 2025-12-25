@@ -19,14 +19,12 @@
 #include <QScrollBar>
 
 WorkspaceCoordinator::WorkspaceCoordinator(
-    WorkspaceController *workspaceController, TabController *tabController,
-    AppStateController *appStateController, EditorController *editorController,
-    neko::ConfigManager *configManager, neko::ThemeManager *themeManager,
-    const WorkspaceUiHandles *uiHandles, QObject *parent)
-    : workspaceController(workspaceController), tabController(tabController),
-      appStateController(appStateController),
-      editorController(editorController), uiHandles(uiHandles),
-      configManager(configManager), themeManager(themeManager),
+    const WorkspaceCoordinatorProps &props, QObject *parent)
+    : workspaceController(props.workspaceController),
+      tabController(props.tabController),
+      appStateController(props.appStateController),
+      editorController(props.editorController), uiHandles(props.uiHandles),
+      configManager(props.configManager), themeManager(props.themeManager),
       QObject(parent) {
   // TabController -> WorkspaceCoordinator
   connect(tabController, &TabController::tabListChanged, this,
@@ -36,7 +34,6 @@ WorkspaceCoordinator::WorkspaceCoordinator(
 
   neko::Editor &activeEditor = appStateController->getActiveEditorMut();
   setActiveEditor(&activeEditor);
-  applyInitialState();
 }
 
 void WorkspaceCoordinator::fileExplorerToggled() {

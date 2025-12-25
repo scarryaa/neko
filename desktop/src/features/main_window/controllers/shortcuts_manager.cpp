@@ -7,15 +7,13 @@
 #include "features/tabs/controllers/tab_controller.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 
-ShortcutsManager::ShortcutsManager(QWidget *actionOwner,
-                                   neko::ShortcutsManager *nekoShortcutsManager,
-                                   WorkspaceCoordinator *workspaceCoordinator,
-                                   TabController *tabController,
-                                   const WorkspaceUiHandles *uiHandles,
+ShortcutsManager::ShortcutsManager(const ShortcutsManagerProps &props,
                                    QObject *parent)
-    : actionOwner(actionOwner), nekoShortcutsManager(nekoShortcutsManager),
-      workspaceCoordinator(workspaceCoordinator), tabController(tabController),
-      uiHandles(uiHandles), QObject(parent) {
+    : actionOwner(props.actionOwner),
+      nekoShortcutsManager(props.shortcutsManager),
+      workspaceCoordinator(props.workspaceCoordinator),
+      tabController(props.tabController), uiHandles(props.uiHandles),
+      QObject(parent) {
   setUpKeyboardShortcuts();
 }
 

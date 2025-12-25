@@ -1,8 +1,8 @@
 #include "file_tree_controller.h"
 
-FileTreeController::FileTreeController(neko::FileTree *fileTree,
+FileTreeController::FileTreeController(const FileTreeControllerProps &props,
                                        QObject *parent)
-    : QObject(parent), fileTree(fileTree) {}
+    : QObject(parent), fileTree(props.fileTree) {}
 
 neko::FileTreeSnapshot FileTreeController::getTreeSnapshot() {
   return fileTree->get_tree_snapshot();

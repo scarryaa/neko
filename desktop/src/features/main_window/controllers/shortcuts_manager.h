@@ -15,11 +15,15 @@ class ShortcutsManager : public QObject {
   Q_OBJECT
 
 public:
-  explicit ShortcutsManager(QWidget *actionOwner,
-                            neko::ShortcutsManager *nekoShortcutsManager,
-                            WorkspaceCoordinator *workspaceCoordinator,
-                            TabController *tabController,
-                            const WorkspaceUiHandles *uiHandles,
+  struct ShortcutsManagerProps {
+    QWidget *actionOwner;
+    neko::ShortcutsManager *shortcutsManager;
+    WorkspaceCoordinator *workspaceCoordinator;
+    TabController *tabController;
+    const WorkspaceUiHandles *uiHandles;
+  };
+
+  explicit ShortcutsManager(const ShortcutsManagerProps &props,
                             QObject *parent = nullptr);
   ~ShortcutsManager() override = default;
 

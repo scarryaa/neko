@@ -9,7 +9,12 @@ class TabController;
 
 class WorkspaceController {
 public:
-  WorkspaceController(TabController *tabController, WorkspaceUi workspaceUi);
+  struct WorkspaceControllerProps {
+    TabController *tabController;
+    WorkspaceUi workspaceUi;
+  };
+
+  explicit WorkspaceController(const WorkspaceControllerProps &props);
   ~WorkspaceController() = default;
 
   QList<int> closeLeft(int tabId, bool forceClose);

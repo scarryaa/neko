@@ -11,8 +11,12 @@ class ThemeConnections : public QObject {
   Q_OBJECT
 
 public:
-  explicit ThemeConnections(const WorkspaceUiHandles &uiHandles,
-                            ThemeProvider *themeProvider,
+  struct ThemeConnectionsProps {
+    const WorkspaceUiHandles &uiHandles;
+    ThemeProvider *themeProvider;
+  };
+
+  explicit ThemeConnections(const ThemeConnectionsProps &props,
                             QObject *parent = nullptr);
   ~ThemeConnections() override = default;
 

@@ -11,9 +11,13 @@ class EditorConnections : public QObject {
   Q_OBJECT
 
 public:
-  explicit EditorConnections(const WorkspaceUiHandles &uiHandles,
-                             EditorController *editorController,
-                             WorkspaceCoordinator *workspaceCoordinator,
+  struct EditorConnectionsProps {
+    const WorkspaceUiHandles &uiHandles;
+    EditorController *editorController;
+    WorkspaceCoordinator *workspaceCoordinator;
+  };
+
+  explicit EditorConnections(const EditorConnectionsProps &props,
                              QObject *parent = nullptr);
   ~EditorConnections() override = default;
 };

@@ -9,7 +9,11 @@ class ThemeProvider : public QObject {
   Q_OBJECT
 
 public:
-  explicit ThemeProvider(neko::ThemeManager *themeManager,
+  struct ThemeProviderProps {
+    neko::ThemeManager *themeManager;
+  };
+
+  explicit ThemeProvider(const ThemeProviderProps &props,
                          QObject *parent = nullptr);
 
   [[nodiscard]] const TitleBarTheme &getTitleBarTheme() const;

@@ -120,9 +120,18 @@ void TabBarWidget::setTabs(const QStringList &titles, const QStringList &paths,
     const bool pinned = tab.pinned;
     const bool modified = tab.modified;
 
-    auto *tabWidget = new TabWidget(title, path, tabIndex, tabId, pinned,
-                                    configManager, themeProvider, tabTheme,
-                                    contextMenuRegistry, commandRegistry, this);
+    auto *tabWidget =
+        new TabWidget({.title = title,
+                       .path = path,
+                       .index = tabIndex,
+                       .tabId = tabId,
+                       .isPinned = pinned,
+                       .configManager = &configManager,
+                       .themeProvider = themeProvider,
+                       .theme = tabTheme,
+                       .contextMenuRegistry = &contextMenuRegistry,
+                       .commandRegistry = &commandRegistry},
+                      this);
     tabWidget->setModified(modified);
     tabWidget->setIsPinned(pinned);
 

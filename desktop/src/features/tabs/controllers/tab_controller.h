@@ -10,7 +10,11 @@ class TabController : public QObject {
   Q_OBJECT
 
 public:
-  explicit TabController(neko::AppState *appState);
+  struct TabControllerProps {
+    neko::AppState *appState;
+  };
+
+  explicit TabController(const TabControllerProps &props);
   ~TabController() override = default;
 
   // Getters

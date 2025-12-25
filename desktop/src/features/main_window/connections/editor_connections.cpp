@@ -7,11 +7,13 @@
 #include "features/status_bar/status_bar_widget.h"
 #include <QScrollBar>
 
-EditorConnections::EditorConnections(const WorkspaceUiHandles &uiHandles,
-                                     EditorController *editorController,
-                                     WorkspaceCoordinator *workspaceCoordinator,
+EditorConnections::EditorConnections(const EditorConnectionsProps &props,
                                      QObject *parent)
     : QObject(parent) {
+  auto uiHandles = props.uiHandles;
+  auto *workspaceCoordinator = props.workspaceCoordinator;
+  auto *editorController = props.editorController;
+
   // GutterWidget <-> EditorWidget
   connect(uiHandles.gutterWidget->verticalScrollBar(),
           &QScrollBar::valueChanged,

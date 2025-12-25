@@ -17,13 +17,17 @@ class WorkspaceCoordinator : public QObject {
   Q_OBJECT
 
 public:
-  explicit WorkspaceCoordinator(WorkspaceController *workspaceController,
-                                TabController *tabController,
-                                AppStateController *appStateController,
-                                EditorController *editorController,
-                                neko::ConfigManager *configManager,
-                                neko::ThemeManager *themeManager,
-                                const WorkspaceUiHandles *uiHandles,
+  struct WorkspaceCoordinatorProps {
+    WorkspaceController *workspaceController;
+    TabController *tabController;
+    AppStateController *appStateController;
+    EditorController *editorController;
+    neko::ConfigManager *configManager;
+    neko::ThemeManager *themeManager;
+    const WorkspaceUiHandles *uiHandles;
+  };
+
+  explicit WorkspaceCoordinator(const WorkspaceCoordinatorProps &props,
                                 QObject *parent = nullptr);
   ~WorkspaceCoordinator() override = default;
 

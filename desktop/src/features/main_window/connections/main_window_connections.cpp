@@ -8,10 +8,12 @@
 #include <QPushButton>
 
 MainWindowConnections::MainWindowConnections(
-    const WorkspaceUiHandles &uiHandles,
-    WorkspaceCoordinator *workspaceCoordinator, ThemeProvider *themeProvider,
-    QObject *parent)
+    const MainWindowConnectionsProps &props, QObject *parent)
     : QObject(parent) {
+  auto uiHandles = props.uiHandles;
+  auto *workspaceCoordinator = props.workspaceCoordinator;
+  auto *themeProvider = props.themeProvider;
+
   // NewTabButton -> WorkspaceCoordinator
   connect(uiHandles.newTabButton, &QPushButton::clicked, workspaceCoordinator,
           &WorkspaceCoordinator::newTab);

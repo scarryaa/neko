@@ -4,9 +4,8 @@
 #include <QHash>
 #include <QString>
 
-WorkspaceController::WorkspaceController(TabController *tabController,
-                                         WorkspaceUi workspaceUi)
-    : tabController(tabController), workspaceUi(std::move(workspaceUi)) {}
+WorkspaceController::WorkspaceController(const WorkspaceControllerProps &props)
+    : tabController(props.tabController), workspaceUi(props.workspaceUi) {}
 
 QList<int> WorkspaceController::closeLeft(int tabId, bool forceClose) {
   auto ids = tabController->getCloseLeftTabIds(tabId);

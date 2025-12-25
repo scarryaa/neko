@@ -16,8 +16,12 @@ private:
     QString borderColor;
   };
 
+  struct PaletteFrameProps {
+    const PaletteFrameTheme &theme;
+  };
+
 public:
-  explicit PaletteFrame(const PaletteFrameTheme &theme,
+  explicit PaletteFrame(const PaletteFrameProps &props,
                         QWidget *parent = nullptr);
   ~PaletteFrame() override = default;
 

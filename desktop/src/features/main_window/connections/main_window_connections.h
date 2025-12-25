@@ -11,9 +11,13 @@ class MainWindowConnections : public QObject {
   Q_OBJECT
 
 public:
-  explicit MainWindowConnections(const WorkspaceUiHandles &uiHandles,
-                                 WorkspaceCoordinator *workspaceCoordinator,
-                                 ThemeProvider *themeProvider,
+  struct MainWindowConnectionsProps {
+    const WorkspaceUiHandles &uiHandles;
+    WorkspaceCoordinator *workspaceCoordinator;
+    ThemeProvider *themeProvider;
+  };
+
+  explicit MainWindowConnections(const MainWindowConnectionsProps &props,
                                  QObject *parent = nullptr);
 
   ~MainWindowConnections() override = default;

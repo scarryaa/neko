@@ -23,11 +23,10 @@ static constexpr double contentMargin = 6.0;
 static constexpr double marginAdjustmentDivisor = 1.5;
 } // namespace k
 
-ContextMenuWidget::ContextMenuWidget(ThemeProvider *themeProvider,
-                                     neko::ConfigManager *configManager,
+ContextMenuWidget::ContextMenuWidget(const ContextMenuProps &props,
                                      QWidget *parent)
-    : QWidget(parent), configManager(configManager),
-      themeProvider(themeProvider) {
+    : QWidget(parent), configManager(props.configManager),
+      themeProvider(props.themeProvider) {
   setWindowFlags(Qt::Popup | Qt::FramelessWindowHint |
                  Qt::WindowStaysOnTopHint | Qt::NoDropShadowWindowHint);
   setAttribute(Qt::WA_DeleteOnClose);
@@ -41,7 +40,9 @@ ContextMenuWidget::ContextMenuWidget(ThemeProvider *themeProvider,
   setAutoFillBackground(false);
 
   mainFrame =
-      new ContextMenuFrame({theme.backgroundColor, theme.borderColor}, this);
+      new ContextMenuFrame({.theme = {.backgroundColor = theme.backgroundColor,
+                                      .borderColor = theme.borderColor}},
+                           this);
 
   auto *rootLayout = new QVBoxLayout(this);
   rootLayout->setContentsMargins(k::shadowContentMargin, k::shadowContentMargin,

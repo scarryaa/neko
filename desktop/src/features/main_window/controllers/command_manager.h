@@ -13,10 +13,14 @@ QT_FWD(QString, QVariant);
 
 class CommandManager {
 public:
-  explicit CommandManager(CommandRegistry *commandRegistry,
-                          ContextMenuRegistry *contextMenuRegistry,
-                          WorkspaceCoordinator *workspaceCoordinator,
-                          AppStateController *appStateController);
+  struct CommandManagerProps {
+    CommandRegistry *commandRegistry;
+    ContextMenuRegistry *contextMenuRegistry;
+    WorkspaceCoordinator *workspaceCoordinator;
+    AppStateController *appStateController;
+  };
+
+  explicit CommandManager(const CommandManagerProps &props);
   ~CommandManager() = default;
 
   void registerCommands();

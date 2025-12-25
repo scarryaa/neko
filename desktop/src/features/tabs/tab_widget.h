@@ -20,12 +20,20 @@ class TabWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit TabWidget(const QString &title, QString path, int index, int tabId,
-                     bool isPinned, neko::ConfigManager &configManager,
-                     ThemeProvider *themeProvider, const TabTheme &theme,
-                     ContextMenuRegistry &contextMenuRegistry,
-                     CommandRegistry &commandRegistry,
-                     QWidget *parent = nullptr);
+  struct TabProps {
+    QString title;
+    QString path;
+    int index;
+    int tabId;
+    bool isPinned;
+    neko::ConfigManager *configManager;
+    ThemeProvider *themeProvider;
+    TabTheme theme;
+    ContextMenuRegistry *contextMenuRegistry;
+    CommandRegistry *commandRegistry;
+  };
+
+  explicit TabWidget(const TabProps &props, QWidget *parent = nullptr);
   ~TabWidget() override = default;
 
   void setActive(bool active);

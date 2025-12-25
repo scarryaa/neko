@@ -8,7 +8,11 @@ class FileTreeController : public QObject {
   Q_OBJECT
 
 public:
-  explicit FileTreeController(neko::FileTree *fileTree,
+  struct FileTreeControllerProps {
+    neko::FileTree *fileTree;
+  };
+
+  explicit FileTreeController(const FileTreeControllerProps &props,
                               QObject *parent = nullptr);
   ~FileTreeController() override = default;
 

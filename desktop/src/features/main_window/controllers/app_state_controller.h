@@ -9,7 +9,11 @@ class AppStateController : public QObject {
   Q_OBJECT
 
 public:
-  explicit AppStateController(neko::AppState *appState);
+  struct AppStateControllerProps {
+    neko::AppState *appState;
+  };
+
+  explicit AppStateController(const AppStateControllerProps &props);
   ~AppStateController() override = default;
 
   bool openFile(const std::string &path);

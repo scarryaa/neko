@@ -19,8 +19,12 @@ class ContextMenuWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit ContextMenuWidget(ThemeProvider *themeProvider,
-                             neko::ConfigManager *configManager,
+  struct ContextMenuProps {
+    ThemeProvider *themeProvider;
+    neko::ConfigManager *configManager;
+  };
+
+  explicit ContextMenuWidget(const ContextMenuProps &props,
                              QWidget *parent = nullptr);
   ~ContextMenuWidget() override;
 

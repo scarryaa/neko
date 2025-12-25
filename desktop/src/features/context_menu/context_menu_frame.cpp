@@ -6,9 +6,9 @@ namespace k {
 static const constexpr qreal radius = 12.0;
 }
 
-ContextMenuFrame::ContextMenuFrame(const ContextMenuFrameTheme &theme,
+ContextMenuFrame::ContextMenuFrame(const ContextMenuFrameProps &props,
                                    QWidget *parent)
-    : QFrame(parent) {
+    : QFrame(parent), theme(props.theme) {
   setObjectName("ContextMenuFrame");
   setFrameShape(QFrame::NoFrame);
   setAutoFillBackground(false);

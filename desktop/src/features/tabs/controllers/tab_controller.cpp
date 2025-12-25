@@ -1,7 +1,8 @@
 #include "tab_controller.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 
-TabController::TabController(neko::AppState *appState) : appState(appState) {}
+TabController::TabController(const TabControllerProps &props)
+    : appState(props.appState) {}
 
 neko::TabsSnapshot TabController::getTabsSnapshot() {
   return appState->get_tabs_snapshot();

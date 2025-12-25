@@ -54,28 +54,28 @@ MainWindow::MainWindow(QWidget *parent)
   commandRegistry = CommandRegistry();
   contextMenuRegistry = ContextMenuRegistry();
 
-  auto *appStateController = new AppStateController(&*appState);
+  auto *appStateController = new AppStateController({.appState = &*appState});
 
   neko::Editor *editor = &appStateController->getActiveEditorMut();
-  editorController = new EditorController(editor);
+  editorController = new EditorController({.editor = editor});
 
-  auto *tabController = new TabController(&*appState);
+  auto *tabController = new TabController({.appState = &*appState});
 
   workspaceController = new WorkspaceController(
-      tabController,
-      WorkspaceUi{
-          .promptSaveAsPath =
-              [this](int tabId) {
-                return QFileDialog::getSaveFileName(this, tr("Save As"),
-                                                    QDir::homePath());
-              },
-          .confirmCloseTabs =
-              [this](const QList<int> &ids) {
-                return workspaceCoordinator->showTabCloseConfirmationDialog(
-                    ids);
-              }});
+      {.tabController = tabController,
+       .workspaceUi = WorkspaceUi{
+           .promptSaveAsPath =
+               [this](int tabId) {
+                 return QFileDialog::getSaveFileName(this, tr("Save As"),
+                                                     QDir::homePath());
+               },
+           .confirmCloseTabs =
+               [this](const QList<int> &ids) {
+                 return workspaceCoordinator->showTabCloseConfirmationDialog(
+                     ids);
+               }}});
 
-  themeProvider = new ThemeProvider(&*themeManager, this);
+  themeProvider = new ThemeProvider({.themeManager = &*themeManager}, this);
   coreServices = CoreServices{&*configManager,      &*themeManager,
                               themeProvider,        &commandRegistry,
                               &contextMenuRegistry, tabController,
@@ -93,16 +93,34 @@ MainWindow::MainWindow(QWidget *parent)
       emptyStateNewTabButton};
 
   workspaceCoordinator = new WorkspaceCoordinator(
-      workspaceController, tabController, appStateController, editorController,
-      &*configManager, &*themeManager, &uiHandles, this);
+      {
+          .workspaceController = workspaceController,
+          .tabController = tabController,
+          .appStateController = appStateController,
+          .editorController = editorController,
+          .configManager = &*configManager,
+          .themeManager = &*themeManager,
+          .uiHandles = &uiHandles,
+      },
+      this);
   coreServices.workspaceCoordinator = workspaceCoordinator;
 
-  auto *commandManager =
-      new CommandManager(&commandRegistry, &contextMenuRegistry,
-                         workspaceCoordinator, appStateController);
-  auto *qtShortcutsManager =
-      new ShortcutsManager(this, &*shortcutsManager, workspaceCoordinator,
-                           tabController, &uiHandles, this);
+  auto *commandManager = new CommandManager(CommandManager::CommandManagerProps{
+      .commandRegistry = &commandRegistry,
+      .contextMenuRegistry = &contextMenuRegistry,
+      .workspaceCoordinator = workspaceCoordinator,
+      .appStateController = appStateController,
+  });
+
+  auto *qtShortcutsManager = new ShortcutsManager(
+      {
+          .actionOwner = this,
+          .shortcutsManager = &*shortcutsManager,
+          .workspaceCoordinator = workspaceCoordinator,
+          .tabController = tabController,
+          .uiHandles = &uiHandles,
+      },
+      this);
 
   connectSignals();
 
@@ -123,7 +141,8 @@ void MainWindow::setupWidgets(neko::Editor *editor,
   const auto &tabTheme = themeProvider->getTabTheme();
 
   neko::FileTree *fileTree = &appStateController->getFileTreeMut();
-  auto *fileTreeController = new FileTreeController(fileTree, this);
+  auto *fileTreeController =
+      new FileTreeController({.fileTree = fileTree}, this);
 
   emptyStateWidget = new QWidget(this);
   titleBarWidget = new TitleBarWidget(
@@ -284,11 +303,18 @@ void MainWindow::applyTheme() {
 }
 
 void MainWindow::connectSignals() {
-  new EditorConnections(uiHandles, editorController, workspaceCoordinator,
+  new EditorConnections({.uiHandles = uiHandles,
+                         .editorController = editorController,
+                         .workspaceCoordinator = workspaceCoordinator},
                         this);
-  new MainWindowConnections(uiHandles, workspaceCoordinator, themeProvider,
+  new MainWindowConnections({.uiHandles = uiHandles,
+                             .workspaceCoordinator = workspaceCoordinator,
+                             .themeProvider = themeProvider},
                             this);
-  new FileExplorerConnections(uiHandles, this);
-  new WorkspaceConnections(uiHandles, workspaceCoordinator, this);
-  new ThemeConnections(uiHandles, themeProvider, this);
+  new FileExplorerConnections({.uiHandles = uiHandles}, this);
+  new WorkspaceConnections(
+      {.uiHandles = uiHandles, .workspaceCoordinator = workspaceCoordinator},
+      this);
+  new ThemeConnections({.uiHandles = uiHandles, .themeProvider = themeProvider},
+                       this);
 }

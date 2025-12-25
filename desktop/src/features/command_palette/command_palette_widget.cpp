@@ -136,7 +136,7 @@ QSpacerItem *CommandPaletteWidget::buildSpacer(const int height) {
 
 PaletteDivider *CommandPaletteWidget::buildDivider(QWidget *parent,
                                                    const QString &borderColor) {
-  auto *divider = new PaletteDivider(borderColor, parent);
+  auto *divider = new PaletteDivider({.color = borderColor}, parent);
   divider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   divider->setFixedHeight(1);
   divider->setStyleSheet(QString("background-color: %1;").arg(borderColor));
@@ -191,7 +191,9 @@ void CommandPaletteWidget::setUpWindow() {
 
 void CommandPaletteWidget::buildUi() {
   mainFrame =
-      new PaletteFrame({theme.backgroundColor, theme.borderColor}, this);
+      new PaletteFrame({.theme = {.backgroundColor = theme.backgroundColor,
+                                  .borderColor = theme.borderColor}},
+                       this);
   mainFrame->setObjectName("commandPaletteFrame");
 
   auto *rootLayout = new QVBoxLayout(this);

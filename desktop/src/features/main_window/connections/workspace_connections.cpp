@@ -5,9 +5,11 @@
 #include "features/tabs/tab_bar_widget.h"
 
 WorkspaceConnections::WorkspaceConnections(
-    const WorkspaceUiHandles &uiHandles,
-    WorkspaceCoordinator *workspaceCoordinator, QObject *parent)
+    const WorkspaceConnectionsProps &props, QObject *parent)
     : QObject(parent) {
+  auto uiHandles = props.uiHandles;
+  auto *workspaceCoordinator = props.workspaceCoordinator;
+
   // WorkspaceCoordinator -> TabBarWidget
   connect(uiHandles.tabBarWidget, &TabBarWidget::tabCloseRequested,
           workspaceCoordinator, &WorkspaceCoordinator::closeTab);

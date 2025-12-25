@@ -9,7 +9,11 @@ class FileExplorerConnections : public QObject {
   Q_OBJECT
 
 public:
-  explicit FileExplorerConnections(const WorkspaceUiHandles &uiHandles,
+  struct FileExplorerConnectionsProps {
+    const WorkspaceUiHandles &uiHandles;
+  };
+
+  explicit FileExplorerConnections(const FileExplorerConnectionsProps &props,
                                    QObject *parent = nullptr);
   ~FileExplorerConnections() override = default;
 };

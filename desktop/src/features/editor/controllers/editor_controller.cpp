@@ -4,7 +4,8 @@
 #include <QApplication>
 #include <QClipboard>
 
-EditorController::EditorController(neko::Editor *editor) : editor(editor) {}
+EditorController::EditorController(const EditorControllerProps &props)
+    : editor(props.editor) {}
 
 bool EditorController::isEmpty() const { return editor->buffer_is_empty(); }
 

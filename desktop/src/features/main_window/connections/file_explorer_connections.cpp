@@ -4,8 +4,10 @@
 #include "features/title_bar/title_bar_widget.h"
 
 FileExplorerConnections::FileExplorerConnections(
-    const WorkspaceUiHandles &uiHandles, QObject *parent)
+    const FileExplorerConnectionsProps &props, QObject *parent)
     : QObject(parent) {
+  auto uiHandles = props.uiHandles;
+
   // FileExplorerWidget -> TitleBarWidget
   connect(uiHandles.fileExplorerWidget, &FileExplorerWidget::directorySelected,
           uiHandles.titleBarWidget, &TitleBarWidget::directoryChanged);

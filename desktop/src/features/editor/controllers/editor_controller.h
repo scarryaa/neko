@@ -10,7 +10,11 @@ class EditorController : public QObject {
   Q_OBJECT
 
 public:
-  explicit EditorController(neko::Editor *editor);
+  struct EditorControllerProps {
+    neko::Editor *editor;
+  };
+
+  explicit EditorController(const EditorControllerProps &props);
   ~EditorController() override = default;
 
   // Getters

@@ -1,10 +1,9 @@
 #include "theme/theme_provider.h"
-#include "neko-core/src/ffi/bridge.rs.h"
 #include "theme/theme_types.h"
 #include "utils/gui_utils.h"
 
-ThemeProvider::ThemeProvider(neko::ThemeManager *themeManager, QObject *parent)
-    : QObject(parent), themeManager(themeManager) {}
+ThemeProvider::ThemeProvider(const ThemeProviderProps &props, QObject *parent)
+    : QObject(parent), themeManager(props.themeManager) {}
 
 const TitleBarTheme &ThemeProvider::getTitleBarTheme() const {
   return titleBarTheme;

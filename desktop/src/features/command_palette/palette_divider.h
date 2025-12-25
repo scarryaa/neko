@@ -11,7 +11,12 @@ class PaletteDivider : public QWidget {
   Q_OBJECT
 
 public:
-  explicit PaletteDivider(const QColor &color, QWidget *parent = nullptr);
+  struct PaletteDividerProps {
+    const QColor &color;
+  };
+
+  explicit PaletteDivider(const PaletteDividerProps &props,
+                          QWidget *parent = nullptr);
   ~PaletteDivider() override = default;
 
 protected:

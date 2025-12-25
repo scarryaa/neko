@@ -2,8 +2,8 @@
 #include <QPainter>
 #include <QPainterPath>
 
-PaletteFrame::PaletteFrame(const PaletteFrameTheme &theme, QWidget *parent)
-    : QFrame(parent), theme(theme) {
+PaletteFrame::PaletteFrame(const PaletteFrameProps &props, QWidget *parent)
+    : QFrame(parent), theme(props.theme) {
   setFrameShape(QFrame::NoFrame);
   setLineWidth(0);
   setMidLineWidth(0);

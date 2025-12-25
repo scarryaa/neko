@@ -14,8 +14,12 @@ private:
     QString borderColor;
   };
 
+  struct ContextMenuFrameProps {
+    const ContextMenuFrameTheme &theme;
+  };
+
 public:
-  explicit ContextMenuFrame(const ContextMenuFrameTheme &theme,
+  explicit ContextMenuFrame(const ContextMenuFrameProps &props,
                             QWidget *parent = nullptr);
   ~ContextMenuFrame() override = default;
 

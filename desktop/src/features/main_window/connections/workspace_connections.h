@@ -10,8 +10,12 @@ class WorkspaceConnections : public QObject {
   Q_OBJECT
 
 public:
-  explicit WorkspaceConnections(const WorkspaceUiHandles &uiHandles,
-                                WorkspaceCoordinator *workspaceCoordinator,
+  struct WorkspaceConnectionsProps {
+    WorkspaceUiHandles &uiHandles;
+    WorkspaceCoordinator *workspaceCoordinator;
+  };
+
+  explicit WorkspaceConnections(const WorkspaceConnectionsProps &props,
                                 QObject *parent = nullptr);
   ~WorkspaceConnections() override = default;
 };

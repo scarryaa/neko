@@ -1,8 +1,8 @@
 #include "app_state_controller.h"
 #include <neko-core/src/ffi/bridge.rs.h>
 
-AppStateController::AppStateController(neko::AppState *appState)
-    : appState(appState) {}
+AppStateController::AppStateController(const AppStateControllerProps &props)
+    : appState(props.appState) {}
 
 bool AppStateController::openFile(const std::string &path) {
   return appState->open_file(path);

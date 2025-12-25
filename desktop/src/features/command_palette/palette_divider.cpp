@@ -1,8 +1,9 @@
 #include "palette_divider.h"
 #include <QPainter>
 
-PaletteDivider::PaletteDivider(const QColor &color, QWidget *parent)
-    : QWidget(parent), color(color) {
+PaletteDivider::PaletteDivider(const PaletteDividerProps &props,
+                               QWidget *parent)
+    : QWidget(parent), color(props.color) {
   setFixedHeight(1);
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   setAttribute(Qt::WA_TranslucentBackground);
