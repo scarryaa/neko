@@ -3,8 +3,13 @@
 #include "utils/gui_utils.h"
 #include <QGraphicsDropShadowEffect>
 #include <QLabel>
+#include <QPointer>
 #include <QToolButton>
 #include <QVBoxLayout>
+
+namespace g {
+QPointer<ContextMenuWidget> currentMenu;
+}
 
 namespace k {
 static constexpr double shadowXOffset = 0.0;
@@ -52,6 +57,14 @@ ContextMenuWidget::ContextMenuWidget(ThemeProvider *themeProvider,
   connectSignals();
 }
 
+ContextMenuWidget::~ContextMenuWidget() {
+  if (g::currentMenu == this) {
+    g::currentMenu = nullptr;
+  }
+
+  qApp->removeEventFilter(this);
+}
+
 void ContextMenuWidget::connectSignals() {
   connect(themeProvider, &ThemeProvider::contextMenuThemeChanged, this,
           &ContextMenuWidget::setAndApplyTheme);
@@ -95,6 +108,13 @@ void ContextMenuWidget::setAndApplyTheme(const ContextMenuTheme &newTheme) {
 }
 
 void ContextMenuWidget::showMenu(const QPoint &position) {
+  // Close any previously open menu
+  if (g::currentMenu && g::currentMenu != this) {
+    g::currentMenu->close();
+  }
+
+  g::currentMenu = this;
+
   const int margin = static_cast<int>(k::shadowContentMargin);
   move(position - QPoint(margin / 2, margin / 2));
   show();
@@ -171,19 +191,23 @@ void ContextMenuWidget::setItems(const QVector<ContextMenuItem> &items) {
 }
 
 bool ContextMenuWidget::eventFilter(QObject *watched, QEvent *event) {
-  if (event->type() == QEvent::MouseButtonPress) {
-    const QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+  switch (event->type()) {
+  case QEvent::MouseButtonPress: {
+    const auto *mouseEvent = static_cast<QMouseEvent *>(event);
     const QPoint globalPos = mouseEvent->globalPosition().toPoint();
 
     if (!geometry().contains(globalPos)) {
       close();
       return true;
     }
-  } else if (event->type() == QEvent::ApplicationDeactivate) {
+
+    break;
+  }
+  case QEvent::ApplicationDeactivate:
     close();
     return false;
-  } else if (event->type() == QEvent::Close) {
-    qApp->removeEventFilter(this);
+  default:
+    break;
   }
 
   return QWidget::eventFilter(watched, event);

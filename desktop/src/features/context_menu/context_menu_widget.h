@@ -22,7 +22,7 @@ public:
   explicit ContextMenuWidget(ThemeProvider *themeProvider,
                              neko::ConfigManager *configManager,
                              QWidget *parent = nullptr);
-  ~ContextMenuWidget() override = default;
+  ~ContextMenuWidget() override;
 
   void setItems(const QVector<ContextMenuItem> &items);
   void showMenu(const QPoint &position);

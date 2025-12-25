@@ -72,9 +72,9 @@ void CommandManager::registerProviders() {
     items.push_back({ContextMenuItemKind::Separator});
 
     items.push_back({ContextMenuItemKind::Action, "tab.closeLeft",
-                     "Close Tabs to the Left", "", "", true});
+                     "Close Tabs to the Left", "", "", ctx.canCloseOthers});
     items.push_back({ContextMenuItemKind::Action, "tab.closeRight",
-                     "Close Tabs to the Right", "", "", true});
+                     "Close Tabs to the Right", "", "", ctx.canCloseOthers});
 
     items.push_back({ContextMenuItemKind::Separator});
 
