@@ -1,6 +1,7 @@
 #include "features/context_menu/context_menu_widget.h"
 #include "theme/theme_provider.h"
 #include "utils/gui_utils.h"
+#include "utils/mac_utils.h"
 #include <QGraphicsDropShadowEffect>
 #include <QLabel>
 #include <QPointer>
@@ -106,6 +107,14 @@ void ContextMenuWidget::setAndApplyTheme(const ContextMenuTheme &newTheme) {
                     .arg(theme.shortcutDisabledColor));
 
   update();
+}
+
+void ContextMenuWidget::showEvent(QShowEvent *event) {
+  QWidget::showEvent(event);
+
+#ifdef Q_OS_MAC
+  disableWindowAnimation(static_cast<QWidget *>(this));
+#endif
 }
 
 void ContextMenuWidget::showMenu(const QPoint &position) {

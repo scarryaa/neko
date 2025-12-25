@@ -5,6 +5,7 @@
 #include "features/command_palette/palette_frame.h"
 #include "theme/theme_types.h"
 #include "utils/gui_utils.h"
+#include "utils/mac_utils.h"
 #include <QDialog>
 #include <QEvent>
 #include <QFrame>
@@ -661,6 +662,10 @@ void CommandPaletteWidget::showEvent(QShowEvent *event) {
 
   adjustPosition();
   QWidget::showEvent(event);
+
+#ifdef Q_OS_MAC
+  disableWindowAnimation(static_cast<QWidget *>(this));
+#endif
 }
 
 bool CommandPaletteWidget::eventFilter(QObject *obj, QEvent *event) {
