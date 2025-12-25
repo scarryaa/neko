@@ -15,8 +15,12 @@ class TitleBarWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit TitleBarWidget(neko::ConfigManager &configManager,
-                          const TitleBarTheme &theme,
+  struct TitleBarProps {
+    neko::ConfigManager *configManager;
+    TitleBarTheme theme;
+  };
+
+  explicit TitleBarWidget(const TitleBarProps &props,
                           QWidget *parent = nullptr);
   ~TitleBarWidget() override = default;
 

@@ -25,9 +25,9 @@ QString TitleBarWidget::getDisplayNameForDir(const QString &path) {
   return fileName.isEmpty() ? path : fileName;
 }
 
-TitleBarWidget::TitleBarWidget(neko::ConfigManager &configManager,
-                               const TitleBarTheme &theme, QWidget *parent)
-    : QWidget(parent), m_theme(theme), configManager(configManager) {
+TitleBarWidget::TitleBarWidget(const TitleBarProps &props, QWidget *parent)
+    : QWidget(parent), m_theme(props.theme),
+      configManager(*props.configManager) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   QFontMetrics fontMetrics(uiFont);
   int dynamicHeight =

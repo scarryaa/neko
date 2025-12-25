@@ -18,9 +18,13 @@ class GutterWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit GutterWidget(EditorController *editorController,
-                        neko::ConfigManager &configManager,
-                        const GutterTheme &theme, QWidget *parent = nullptr);
+  struct GutterProps {
+    EditorController *editorController;
+    neko::ConfigManager *configManager;
+    GutterTheme theme;
+  };
+
+  explicit GutterWidget(const GutterProps &props, QWidget *parent = nullptr);
   ~GutterWidget() override = default;
 
   void redraw() const;

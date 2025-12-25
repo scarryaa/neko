@@ -15,11 +15,9 @@
 #include <QStyle>
 #include <QStyleOption>
 
-StatusBarWidget::StatusBarWidget(EditorController *editorController,
-                                 neko::ConfigManager &configManager,
-                                 const StatusBarTheme &theme, QWidget *parent)
-    : QWidget(parent), configManager(configManager),
-      editorController(editorController), theme(theme) {
+StatusBarWidget::StatusBarWidget(const StatusBarProps &props, QWidget *parent)
+    : QWidget(parent), configManager(*props.configManager),
+      editorController(props.editorController), theme(props.theme) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 

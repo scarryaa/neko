@@ -20,9 +20,13 @@ class EditorWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit EditorWidget(EditorController *editorController,
-                        neko::ConfigManager &configManager,
-                        const EditorTheme &theme, QWidget *parent = nullptr);
+  struct EditorProps {
+    EditorController *editorController;
+    neko::ConfigManager *configManager;
+    EditorTheme theme;
+  };
+
+  explicit EditorWidget(const EditorProps &props, QWidget *parent = nullptr);
   ~EditorWidget() override = default;
 
   void setAndApplyTheme(const EditorTheme &newTheme);

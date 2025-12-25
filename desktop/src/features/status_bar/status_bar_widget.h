@@ -15,9 +15,13 @@ class StatusBarWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit StatusBarWidget(EditorController *editorController,
-                           neko::ConfigManager &configManager,
-                           const StatusBarTheme &theme,
+  struct StatusBarProps {
+    EditorController *editorController;
+    neko::ConfigManager *configManager;
+    StatusBarTheme theme;
+  };
+
+  explicit StatusBarWidget(const StatusBarProps &props,
                            QWidget *parent = nullptr);
   ~StatusBarWidget() override = default;
 

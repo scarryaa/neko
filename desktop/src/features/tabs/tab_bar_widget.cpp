@@ -32,17 +32,13 @@
 // TODO(scarlet): Rework the tab update system to not rely on mass setting
 // all the tabs and have the TabBarWidget be in charge of mgmt/updates,
 // with each TabWidget in control of its repaints?
-TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
-                           const TabBarTheme &tabBarTheme,
-                           const TabTheme &tabTheme,
-                           ThemeProvider *themeProvider,
-                           ContextMenuRegistry &contextMenuRegistry,
-                           CommandRegistry &commandRegistry,
-                           TabController *tabController, QWidget *parent)
-    : QScrollArea(parent), configManager(configManager),
-      tabBarTheme(tabBarTheme), tabTheme(tabTheme),
-      themeProvider(themeProvider), contextMenuRegistry(contextMenuRegistry),
-      commandRegistry(commandRegistry), tabController(tabController) {
+TabBarWidget::TabBarWidget(const TabBarProps &props, QWidget *parent)
+    : QScrollArea(parent), configManager(*props.configManager),
+      tabBarTheme(props.theme), tabTheme(props.tabTheme),
+      themeProvider(props.themeProvider),
+      contextMenuRegistry(*props.contextMenuRegistry),
+      commandRegistry(*props.commandRegistry),
+      tabController(props.tabController) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 

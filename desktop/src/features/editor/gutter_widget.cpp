@@ -7,12 +7,10 @@
 #include <QStringList>
 #include <QWheelEvent>
 
-GutterWidget::GutterWidget(EditorController *editorController,
-                           neko::ConfigManager &configManager,
-                           const GutterTheme &theme, QWidget *parent)
-    : QScrollArea(parent), editorController(editorController),
-      configManager(configManager), renderer(new GutterRenderer()),
-      theme(theme),
+GutterWidget::GutterWidget(const GutterProps &props, QWidget *parent)
+    : QScrollArea(parent), editorController(props.editorController),
+      configManager(*props.configManager), renderer(new GutterRenderer()),
+      theme(props.theme),
       font(UiUtils::loadFont(configManager, neko::FontType::Editor)),
       fontMetrics(font) {
   setFocusPolicy(Qt::NoFocus);

@@ -16,9 +16,13 @@ class FileExplorerWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit FileExplorerWidget(FileTreeController *fileTreeController,
-                              neko::ConfigManager &configManager,
-                              const FileExplorerTheme &theme,
+  struct FileExplorerProps {
+    FileTreeController *fileTreeController;
+    neko::ConfigManager &configManager;
+    FileExplorerTheme theme;
+  };
+
+  explicit FileExplorerWidget(const FileExplorerProps &props,
                               QWidget *parent = nullptr);
   ~FileExplorerWidget() override = default;
 

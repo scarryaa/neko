@@ -59,9 +59,6 @@ MainWindow::MainWindow(QWidget *parent)
   neko::Editor *editor = &appStateController->getActiveEditorMut();
   editorController = new EditorController(editor);
 
-  neko::FileTree *fileTree = &appStateController->getFileTreeMut();
-  auto *fileTreeController = new FileTreeController(fileTree, this);
-
   auto *tabController = new TabController(&*appState);
 
   workspaceController = new WorkspaceController(
@@ -79,9 +76,13 @@ MainWindow::MainWindow(QWidget *parent)
               }});
 
   themeProvider = new ThemeProvider(&*themeManager, this);
+  coreServices = CoreServices{&*configManager,      &*themeManager,
+                              themeProvider,        &commandRegistry,
+                              &contextMenuRegistry, tabController,
+                              workspaceController,  nullptr};
 
   applyTheme();
-  setupWidgets(editor, fileTreeController, tabController);
+  setupWidgets(editor, tabController, appStateController);
   setupLayout();
 
   uiHandles = WorkspaceUiHandles{
@@ -94,6 +95,7 @@ MainWindow::MainWindow(QWidget *parent)
   workspaceCoordinator = new WorkspaceCoordinator(
       workspaceController, tabController, appStateController, editorController,
       &*configManager, &*themeManager, &uiHandles, this);
+  coreServices.workspaceCoordinator = workspaceCoordinator;
 
   auto *commandManager =
       new CommandManager(&commandRegistry, &contextMenuRegistry,
@@ -103,12 +105,14 @@ MainWindow::MainWindow(QWidget *parent)
                            tabController, &uiHandles, this);
 
   connectSignals();
+
+  workspaceCoordinator->applyInitialState();
   themeProvider->reload();
 }
 
 void MainWindow::setupWidgets(neko::Editor *editor,
-                              FileTreeController *fileTreeController,
-                              TabController *tabController) {
+                              TabController *tabController,
+                              AppStateController *appStateController) {
   const auto &titleBarTheme = themeProvider->getTitleBarTheme();
   const auto &statusBarTheme = themeProvider->getStatusBarTheme();
   const auto &fileExplorerTheme = themeProvider->getFileExplorerTheme();
@@ -118,22 +122,40 @@ void MainWindow::setupWidgets(neko::Editor *editor,
   const auto &tabBarTheme = themeProvider->getTabBarTheme();
   const auto &tabTheme = themeProvider->getTabTheme();
 
+  neko::FileTree *fileTree = &appStateController->getFileTreeMut();
+  auto *fileTreeController = new FileTreeController(fileTree, this);
+
   emptyStateWidget = new QWidget(this);
-  titleBarWidget = new TitleBarWidget(*configManager, titleBarTheme, this);
-  fileExplorerWidget = new FileExplorerWidget(
-      fileTreeController, *configManager, fileExplorerTheme, this);
-  commandPaletteWidget =
-      new CommandPaletteWidget(commandPaletteTheme, *configManager, this);
-  editorWidget =
-      new EditorWidget(editorController, *configManager, editorTheme, this);
-  gutterWidget =
-      new GutterWidget(editorController, *configManager, gutterTheme, this);
-  statusBarWidget = new StatusBarWidget(editorController, *configManager,
-                                        statusBarTheme, this);
+  titleBarWidget = new TitleBarWidget(
+      {.configManager = &*configManager, .theme = titleBarTheme}, this);
+  fileExplorerWidget =
+      new FileExplorerWidget({.fileTreeController = fileTreeController,
+                              .configManager = *configManager,
+                              .theme = fileExplorerTheme},
+                             this);
+  commandPaletteWidget = new CommandPaletteWidget(
+      {.configManager = &*configManager, .theme = commandPaletteTheme}, this);
+  editorWidget = new EditorWidget({.editorController = editorController,
+                                   .configManager = &*configManager,
+                                   .theme = editorTheme},
+                                  this);
+  gutterWidget = new GutterWidget({.editorController = editorController,
+                                   .configManager = &*configManager,
+                                   .theme = gutterTheme},
+                                  this);
+  statusBarWidget = new StatusBarWidget({.editorController = editorController,
+                                         .configManager = &*configManager,
+                                         .theme = statusBarTheme},
+                                        this);
   tabBarContainer = new QWidget(this);
-  tabBarWidget = new TabBarWidget(
-      *configManager, tabBarTheme, tabTheme, themeProvider, contextMenuRegistry,
-      commandRegistry, tabController, tabBarContainer);
+  tabBarWidget = new TabBarWidget({.configManager = &*configManager,
+                                   .theme = tabBarTheme,
+                                   .tabTheme = tabTheme,
+                                   .themeProvider = themeProvider,
+                                   .contextMenuRegistry = &contextMenuRegistry,
+                                   .commandRegistry = &commandRegistry,
+                                   .tabController = tabController},
+                                  tabBarContainer);
 }
 
 void MainWindow::setupLayout() {

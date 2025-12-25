@@ -27,6 +27,7 @@ qt_add_executable(neko
     src/features/main_window/interfaces/workspace_ui.h
     src/features/main_window/interfaces/close_decision.h
     src/features/main_window/interfaces/save_result.h
+    src/features/main_window/interfaces/core_services.h
 
     # Main Window Controllers
     src/features/main_window/controllers/app_state_controller.cpp

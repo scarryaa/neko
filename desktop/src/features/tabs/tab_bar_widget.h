@@ -21,13 +21,17 @@ class TabBarWidget : public QScrollArea {
   Q_OBJECT
 
 public:
-  explicit TabBarWidget(neko::ConfigManager &configManager,
-                        const TabBarTheme &tabBarTheme,
-                        const TabTheme &tabTheme, ThemeProvider *themeProvider,
-                        ContextMenuRegistry &contextMenuRegistry,
-                        CommandRegistry &commandRegistry,
-                        TabController *tabController,
-                        QWidget *parent = nullptr);
+  struct TabBarProps {
+    neko::ConfigManager *configManager;
+    TabBarTheme theme;
+    TabTheme tabTheme;
+    ThemeProvider *themeProvider;
+    ContextMenuRegistry *contextMenuRegistry;
+    CommandRegistry *commandRegistry;
+    TabController *tabController;
+  };
+
+  explicit TabBarWidget(const TabBarProps &props, QWidget *parent = nullptr);
   ~TabBarWidget() override = default;
 
   void setAndApplyTheme(const TabBarTheme &newTheme);

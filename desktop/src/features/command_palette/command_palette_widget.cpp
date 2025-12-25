@@ -170,10 +170,9 @@ CommandPaletteWidget::findNav(std::string_view key) {
   return nullptr;
 }
 
-CommandPaletteWidget::CommandPaletteWidget(const CommandPaletteTheme &theme,
-                                           neko::ConfigManager &configManager,
+CommandPaletteWidget::CommandPaletteWidget(const CommandPaletteProps &props,
                                            QWidget *parent)
-    : QWidget(parent), theme(theme), configManager(configManager) {
+    : QWidget(parent), theme(props.theme), configManager(*props.configManager) {
   setUpWindow();
   buildUi();
   connectSignals();

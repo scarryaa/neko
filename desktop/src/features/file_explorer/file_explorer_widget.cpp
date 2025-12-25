@@ -1,4 +1,5 @@
 #include "file_explorer_widget.h"
+#include "features/file_explorer/controllers/file_tree_controller.h"
 #include "utils/gui_utils.h"
 #include <QApplication>
 #include <QClipboard>
@@ -30,12 +31,10 @@
 #include <QWheelEvent>
 #include <QtDebug>
 
-FileExplorerWidget::FileExplorerWidget(FileTreeController *fileTreeController,
-                                       neko::ConfigManager &configManager,
-                                       const FileExplorerTheme &theme,
+FileExplorerWidget::FileExplorerWidget(const FileExplorerProps &props,
                                        QWidget *parent)
-    : QScrollArea(parent), fileTreeController(fileTreeController),
-      configManager(configManager), theme(theme),
+    : QScrollArea(parent), fileTreeController(props.fileTreeController),
+      configManager(props.configManager), theme(props.theme),
       font(UiUtils::loadFont(configManager, neko::FontType::FileExplorer)),
       fontMetrics(font) {
   setFocusPolicy(Qt::StrongFocus);

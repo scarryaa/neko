@@ -2,6 +2,7 @@
 #define COMMAND_PALETTE_WIDGET_H
 
 #include "features/command_palette/command_palette_mode.h"
+#include "features/main_window/interfaces/core_services.h"
 #include "theme/theme_types.h"
 #include "types/qt_types_fwd.h"
 #include <QStringList>
@@ -45,8 +46,12 @@ private:
   static const NavEntry *findNav(std::string_view key);
 
 public:
-  explicit CommandPaletteWidget(const CommandPaletteTheme &theme,
-                                neko::ConfigManager &configManager,
+  struct CommandPaletteProps {
+    neko::ConfigManager *configManager;
+    CommandPaletteTheme theme;
+  };
+
+  explicit CommandPaletteWidget(const CommandPaletteProps &props,
                                 QWidget *parent = nullptr);
   ~CommandPaletteWidget() override = default;
 

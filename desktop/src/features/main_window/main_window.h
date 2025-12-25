@@ -13,11 +13,12 @@ class GutterWidget;
 class EditorWidget;
 class CommandPaletteWidget;
 class FileExplorerWidget;
-class FileTreeController;
 class TabController;
+class AppStateController;
 
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
+#include "features/main_window/interfaces/core_services.h"
 #include "types/qt_types_fwd.h"
 #include "workspace_ui_handles.h"
 #include <QMainWindow>
@@ -33,9 +34,8 @@ public:
   ~MainWindow() override = default;
 
 private:
-  void setupWidgets(neko::Editor *editor,
-                    FileTreeController *fileTreeController,
-                    TabController *tabController);
+  void setupWidgets(neko::Editor *editor, TabController *tabController,
+                    AppStateController *appStateController);
   void setupLayout();
   QWidget *buildTabBarSection();
   QWidget *buildEmptyStateSection();
@@ -54,6 +54,8 @@ private:
   CommandRegistry commandRegistry;
   ContextMenuRegistry contextMenuRegistry;
   ThemeProvider *themeProvider;
+
+  CoreServices coreServices;
 
   QWidget *emptyStateWidget;
   QPushButton *emptyStateNewTabButton;

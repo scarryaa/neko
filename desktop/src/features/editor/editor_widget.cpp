@@ -6,12 +6,10 @@
 #include <QScrollBar>
 #include <QTextLine>
 
-EditorWidget::EditorWidget(EditorController *editorController,
-                           neko::ConfigManager &configManager,
-                           const EditorTheme &theme, QWidget *parent)
-    : QScrollArea(parent), editorController(editorController),
-      renderer(new EditorRenderer()), configManager(configManager),
-      theme(theme),
+EditorWidget::EditorWidget(const EditorProps &props, QWidget *parent)
+    : QScrollArea(parent), editorController(props.editorController),
+      renderer(new EditorRenderer()), configManager(*props.configManager),
+      theme(props.theme),
       font(UiUtils::loadFont(configManager, neko::FontType::Editor)),
       fontMetrics(font) {
   setFocusPolicy(Qt::StrongFocus);
