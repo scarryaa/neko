@@ -413,7 +413,6 @@ void WorkspaceCoordinator::applyInitialState() {
     uiHandles->fileExplorerWidget->hide();
   }
 
-  uiHandles->fileExplorerWidget->loadSavedDir();
   editorController->refresh();
   uiHandles->editorWidget->setFocus();
 }

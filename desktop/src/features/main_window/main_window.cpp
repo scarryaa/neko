@@ -140,16 +140,21 @@ void MainWindow::setupWidgets(neko::Editor *editor,
   const auto &tabBarTheme = themeProvider->getTabBarTheme();
   const auto &tabTheme = themeProvider->getTabTheme();
 
+  // TODO(scarlet): Create a font manager later?
+  QFont uiFont = UiUtils::loadFont(*configManager, neko::FontType::Interface);
+  QFont fileExplorerFont =
+      UiUtils::loadFont(*configManager, neko::FontType::FileExplorer);
+
   neko::FileTree *fileTree = &appStateController->getFileTreeMut();
   auto *fileTreeController =
       new FileTreeController({.fileTree = fileTree}, this);
 
   emptyStateWidget = new QWidget(this);
-  titleBarWidget = new TitleBarWidget(
-      {.configManager = &*configManager, .theme = titleBarTheme}, this);
+  titleBarWidget =
+      new TitleBarWidget({.font = uiFont, .theme = titleBarTheme}, this);
   fileExplorerWidget =
       new FileExplorerWidget({.fileTreeController = fileTreeController,
-                              .configManager = *configManager,
+                              .font = fileExplorerFont,
                               .theme = fileExplorerTheme},
                              this);
   commandPaletteWidget = new CommandPaletteWidget(
@@ -311,7 +316,8 @@ void MainWindow::connectSignals() {
                              .workspaceCoordinator = workspaceCoordinator,
                              .themeProvider = themeProvider},
                             this);
-  new FileExplorerConnections({.uiHandles = uiHandles}, this);
+  new FileExplorerConnections(
+      {.uiHandles = uiHandles, .configManager = &*configManager}, this);
   new WorkspaceConnections(
       {.uiHandles = uiHandles, .workspaceCoordinator = workspaceCoordinator},
       this);

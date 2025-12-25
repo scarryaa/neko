@@ -16,7 +16,7 @@ class TitleBarWidget : public QWidget {
 
 public:
   struct TitleBarProps {
-    neko::ConfigManager *configManager;
+    QFont font;
     TitleBarTheme theme;
   };
 
@@ -44,8 +44,8 @@ private:
   static QString getDisplayNameForDir(const QString &path);
   QString getStyleSheet();
 
-  neko::ConfigManager &configManager;
   TitleBarTheme m_theme;
+  QFont m_font;
 
   QPushButton *m_directorySelectionButton;
   bool m_isDragging = false;

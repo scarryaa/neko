@@ -26,15 +26,13 @@ QString TitleBarWidget::getDisplayNameForDir(const QString &path) {
 }
 
 TitleBarWidget::TitleBarWidget(const TitleBarProps &props, QWidget *parent)
-    : QWidget(parent), m_theme(props.theme),
-      configManager(*props.configManager) {
-  QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
-  QFontMetrics fontMetrics(uiFont);
+    : QWidget(parent), m_theme(props.theme), m_font(props.font) {
+  QFontMetrics fontMetrics(m_font);
   int dynamicHeight =
       static_cast<int>(fontMetrics.height() + TOP_PADDING + BOTTOM_PADDING);
 
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  setFont(uiFont);
+  setFont(m_font);
   setFixedHeight(dynamicHeight);
   setupLayout();
   setAndApplyTheme(m_theme);

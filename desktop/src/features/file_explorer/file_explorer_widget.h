@@ -3,7 +3,6 @@
 
 #include "features/file_explorer/controllers/file_tree_controller.h"
 #include "theme/theme_types.h"
-#include "types/ffi_types_fwd.h"
 #include "types/qt_types_fwd.h"
 #include <QFont>
 #include <QFontMetricsF>
@@ -18,7 +17,7 @@ class FileExplorerWidget : public QScrollArea {
 public:
   struct FileExplorerProps {
     FileTreeController *fileTreeController;
-    neko::ConfigManager &configManager;
+    QFont font;
     FileExplorerTheme theme;
   };
 
@@ -27,7 +26,6 @@ public:
   ~FileExplorerWidget() override = default;
 
   void initialize(const std::string &path);
-  void loadSavedDir();
   void setAndApplyTheme(const FileExplorerTheme &newTheme);
   void showItem();
 
@@ -41,11 +39,14 @@ protected:
   void focusOutEvent(QFocusEvent *event) override;
 
 signals:
-  void directorySelected(std::string path);
   void fileSelected(std::string path, bool shouldFocusEditor = true);
+  void fontSizeChanged(double newSize);
+  void directoryPersistRequested(const std::string &path);
+  void directorySelected(const std::string &path);
 
 public slots:
   void directorySelectionRequested();
+  void loadSavedDirectory(const std::string &path);
 
 private:
   void redraw();
@@ -87,7 +88,6 @@ private:
   int convertMousePositionToRow(double yPos);
 
   FileTreeController *fileTreeController;
-  neko::ConfigManager &configManager;
   QPushButton *directorySelectionButton;
 
   FileExplorerTheme theme;

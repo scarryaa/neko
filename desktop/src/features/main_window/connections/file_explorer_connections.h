@@ -3,6 +3,7 @@
 
 class WorkspaceUiHandles;
 
+#include "types/ffi_types_fwd.h"
 #include <QObject>
 
 class FileExplorerConnections : public QObject {
@@ -11,11 +12,15 @@ class FileExplorerConnections : public QObject {
 public:
   struct FileExplorerConnectionsProps {
     const WorkspaceUiHandles &uiHandles;
+    neko::ConfigManager *configManager;
   };
 
   explicit FileExplorerConnections(const FileExplorerConnectionsProps &props,
                                    QObject *parent = nullptr);
   ~FileExplorerConnections() override = default;
+
+signals:
+  void savedDirectoryLoaded(const std::string &newSavedDir);
 };
 
 #endif

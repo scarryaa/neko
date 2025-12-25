@@ -34,9 +34,7 @@
 FileExplorerWidget::FileExplorerWidget(const FileExplorerProps &props,
                                        QWidget *parent)
     : QScrollArea(parent), fileTreeController(props.fileTreeController),
-      configManager(props.configManager), theme(props.theme),
-      font(UiUtils::loadFont(configManager, neko::FontType::FileExplorer)),
-      fontMetrics(font) {
+      font(props.font), theme(props.theme), fontMetrics(font) {
   setFocusPolicy(Qt::StrongFocus);
   setFrameShape(QFrame::NoFrame);
   setAutoFillBackground(false);
@@ -67,16 +65,11 @@ void FileExplorerWidget::initialize(const std::string &path) {
   loadDirectory(path);
 }
 
-void FileExplorerWidget::loadSavedDir() {
-  auto snapshot = configManager.get_config_snapshot();
-  auto rawPath = snapshot.file_explorer_directory;
-  bool maybeRoot = snapshot.file_explorer_directory_present;
-  QString savedDir = QString::fromUtf8(rawPath);
+void FileExplorerWidget::loadSavedDirectory(const std::string &path) {
+  QString savedDir = QString::fromUtf8(path);
 
-  if (!savedDir.isEmpty() && maybeRoot) {
-    initialize(savedDir.toStdString());
-    directorySelectionButton->hide();
-  }
+  initialize(savedDir.toStdString());
+  directorySelectionButton->hide();
 }
 
 void FileExplorerWidget::setAndApplyTheme(const FileExplorerTheme &newTheme) {
@@ -260,18 +253,18 @@ void FileExplorerWidget::focusOutEvent(QFocusEvent *event) {
 }
 
 void FileExplorerWidget::directorySelectionRequested() {
+  // TODO(scarlet): Move dialog out of widget
   QString dir = QFileDialog::getExistingDirectory(
       this, "Select a directory", QDir::homePath(),
       QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 
   if (!dir.isEmpty()) {
-    initialize(dir.toStdString());
+    std::string path = dir.toStdString();
+    initialize(path);
     directorySelectionButton->hide();
 
-    auto snapshot = configManager.get_config_snapshot();
-    snapshot.file_explorer_directory_present = true;
-    snapshot.file_explorer_directory = dir.toStdString();
-    configManager.apply_config_snapshot(snapshot);
+    emit directorySelected(path);
+    emit directoryPersistRequested(path);
   }
 }
 
@@ -439,8 +432,7 @@ void FileExplorerWidget::setFontSize(double newFontSize) {
   fontMetrics = QFontMetricsF(font);
 
   redraw();
-  UiUtils::setFontSize(configManager, neko::FontType::FileExplorer,
-                       newFontSize);
+  emit fontSizeChanged(newFontSize);
 }
 
 void FileExplorerWidget::handleEnter() {
