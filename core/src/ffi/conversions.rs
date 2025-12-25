@@ -1,6 +1,9 @@
+use std::path::PathBuf;
+
 use super::bridge::ffi::*;
 use crate::{
     Command, CommandResult, Config, Cursor, UiIntent,
+    commands::tab::{TabCommandState, TabContext},
     text::{ChangeSet, cursor_manager::AddCursorDirection},
 };
 
@@ -160,6 +163,36 @@ impl From<CommandResultFfi> for CommandResult {
                 .into_iter()
                 .map(UiIntent::from)
                 .collect(),
+        }
+    }
+}
+
+impl From<TabCommandState> for TabCommandStateFfi {
+    fn from(command_state: TabCommandState) -> Self {
+        Self {
+            can_close: command_state.can_close,
+            can_close_others: command_state.can_close_others,
+            can_close_left: command_state.can_close_left,
+            can_close_right: command_state.can_close_right,
+            can_copy_path: command_state.can_copy_path,
+            can_reveal: command_state.can_reveal,
+            is_pinned: command_state.is_pinned,
+        }
+    }
+}
+
+impl From<TabContextFfi> for TabContext {
+    fn from(ctx: TabContextFfi) -> Self {
+        TabContext {
+            id: ctx.id as usize,
+            is_pinned: ctx.is_pinned,
+            is_modified: ctx.is_modified,
+            file_path: if ctx.file_path_present && !ctx.file_path.is_empty() {
+                Some(PathBuf::from(ctx.file_path))
+            } else {
+                None
+            },
+            tab_count: ctx.tab_count as usize,
         }
     }
 }

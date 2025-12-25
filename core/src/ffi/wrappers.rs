@@ -1,7 +1,13 @@
 use super::bridge::ffi::*;
 use crate::{
-    AppState, Editor, FileTree, ShortcutsManager, app::Tab, commands::execute_command,
-    config::ConfigManager, theme::ThemeManager,
+    AppState, Editor, FileTree, ShortcutsManager,
+    app::Tab,
+    commands::{
+        execute_command,
+        tab::{run_tab_command, tab_command_state},
+    },
+    config::ConfigManager,
+    theme::ThemeManager,
 };
 use std::path::PathBuf;
 
@@ -502,4 +508,28 @@ pub(crate) fn execute_command_wrapper(
 
 pub(crate) fn new_command(kind: CommandKindFfi, argument: String) -> CommandFfi {
     CommandFfi { kind, argument }
+}
+
+// Tab commands
+pub(crate) fn get_tab_command_state(app_state: &AppState, id: u64) -> TabCommandStateFfi {
+    match tab_command_state(app_state, id as usize) {
+        Ok(state) => state.into(),
+        Err(_) => TabCommandStateFfi {
+            can_close: false,
+            can_close_others: false,
+            can_close_left: false,
+            can_close_right: false,
+            can_copy_path: false,
+            can_reveal: false,
+            is_pinned: false,
+        },
+    }
+}
+
+pub(crate) fn run_tab_command_wrapper(
+    app_state: &mut AppState,
+    id: &str,
+    ctx: TabContextFfi,
+) -> bool {
+    run_tab_command(app_state, id, &ctx.into()).is_ok()
 }

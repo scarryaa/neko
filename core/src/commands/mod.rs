@@ -1,3 +1,5 @@
+pub mod tab;
+
 use std::{fmt::Display, str::FromStr};
 
 use crate::{config::ConfigManager, theme::ThemeManager};

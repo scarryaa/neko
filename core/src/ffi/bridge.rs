@@ -136,6 +136,25 @@ pub mod ffi {
         pub nodes: Vec<FileNodeSnapshot>,
     }
 
+    struct TabContextFfi {
+        id: u64,
+        is_pinned: bool,
+        is_modified: bool,
+        file_path_present: bool,
+        file_path: String,
+        tab_count: u32,
+    }
+
+    struct TabCommandStateFfi {
+        can_close: bool,
+        can_close_others: bool,
+        can_close_left: bool,
+        can_close_right: bool,
+        can_copy_path: bool,
+        can_reveal: bool,
+        is_pinned: bool,
+    }
+
     extern "Rust" {
         type AppState;
         type ConfigManager;
@@ -350,5 +369,14 @@ pub mod ffi {
             theme: &mut ThemeManager,
         ) -> CommandResultFfi;
         pub(crate) fn new_command(kind: CommandKindFfi, argument: String) -> CommandFfi;
+
+        // Tab commands
+        pub(crate) fn get_tab_command_state(app_state: &AppState, id: u64) -> TabCommandStateFfi;
+        #[cxx_name = "run_tab_command"]
+        pub(crate) fn run_tab_command_wrapper(
+            app_state: &mut AppState,
+            id: &str,
+            ctx: TabContextFfi,
+        ) -> bool;
     }
 }

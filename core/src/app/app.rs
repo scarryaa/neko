@@ -446,6 +446,18 @@ impl AppState {
         self.tabs = new_tabs;
     }
 
+    pub fn reveal_in_file_tree(&mut self, path: &str) {
+        if self.file_tree.root_path.as_os_str().is_empty() {
+            return;
+        }
+
+        // Expand ancestors so the file becomes visible
+        self.file_tree.set_expanded(path);
+
+        // Mark it as current
+        self.file_tree.set_current(path);
+    }
+
     // Utility
     fn get_next_tab_id(&mut self) -> usize {
         let id = self.next_tab_id;
