@@ -1,5 +1,6 @@
 #include "theme/theme_provider.h"
 #include "neko-core/src/ffi/bridge.rs.h"
+#include "theme/theme_types.h"
 #include "utils/gui_utils.h"
 
 ThemeProvider::ThemeProvider(neko::ThemeManager *themeManager, QObject *parent)
@@ -45,6 +46,10 @@ const EmptyStateTheme &ThemeProvider::getEmptyStateTheme() const {
   return emptyStateTheme;
 }
 
+const ContextMenuTheme &ThemeProvider::getContextMenuTheme() const {
+  return contextMenuTheme;
+}
+
 void ThemeProvider::reload() {
   if (themeManager == nullptr) {
     return;
@@ -62,6 +67,7 @@ void ThemeProvider::reload() {
   refreshNewTabButtonTheme();
   refreshSplitterTheme();
   refreshEmptyStateTheme();
+  refreshContextMenuTheme();
 }
 
 void ThemeProvider::refreshTitleBarTheme() {
@@ -202,6 +208,29 @@ void ThemeProvider::refreshScrollBarTheme() {
 
   scrollBarTheme = newTheme;
   emit scrollBarThemeChanged(scrollBarTheme);
+}
+
+void ThemeProvider::refreshContextMenuTheme() {
+  auto [backgroundColor, borderColor, labelColor, labelDisabledColor,
+        shortcutColor, shortcutDisabledColor, hoverColor, accentMutedColor,
+        accentForegroundColor, shadowColor] =
+
+      UiUtils::getThemeColors(
+          *themeManager, "context_menu.background", "context_menu.border",
+          "context_menu.label", "context_menu.label.disabled",
+          "context_menu.shortcut", "context_menu.shortcut.disabled",
+          "context_menu.button.hover", "ui.accent.muted",
+          "ui.accent.foreground", "context_menu.shadow");
+
+  ContextMenuTheme newTheme{
+      backgroundColor,    borderColor,      labelColor,
+      labelDisabledColor, shortcutColor,    shortcutDisabledColor,
+      hoverColor,         accentMutedColor, accentForegroundColor,
+      shadowColor,
+  };
+
+  contextMenuTheme = newTheme;
+  emit contextMenuThemeChanged(contextMenuTheme);
 }
 
 void ThemeProvider::refreshNewTabButtonTheme() {

@@ -68,6 +68,9 @@ void CommandManager::registerProviders() {
                      "Ctrl+W", "", true});
     items.push_back({ContextMenuItemKind::Action, "tab.closeOthers",
                      "Close Others", "", "", ctx.canCloseOthers});
+
+    items.push_back({ContextMenuItemKind::Separator});
+
     items.push_back({ContextMenuItemKind::Action, "tab.closeLeft",
                      "Close Tabs to the Left", "", "", true});
     items.push_back({ContextMenuItemKind::Action, "tab.closeRight",

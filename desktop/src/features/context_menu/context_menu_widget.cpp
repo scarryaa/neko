@@ -1,4 +1,5 @@
 #include "features/context_menu/context_menu_widget.h"
+#include "theme/theme_provider.h"
 #include "utils/gui_utils.h"
 #include <QGraphicsDropShadowEffect>
 #include <QLabel>
@@ -15,15 +16,16 @@ static constexpr double minWidth = 200.0;
 static constexpr double contentMargin = 6.0;
 } // namespace k
 
-ContextMenuWidget::ContextMenuWidget(const ContextMenuTheme &theme,
+ContextMenuWidget::ContextMenuWidget(ThemeProvider *themeProvider,
                                      neko::ConfigManager *configManager,
                                      QWidget *parent)
-    : QWidget(parent), theme(theme), configManager(configManager) {
+    : QWidget(parent), configManager(configManager),
+      themeProvider(themeProvider) {
   setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint |
                  Qt::NoDropShadowWindowHint);
   setAttribute(Qt::WA_DeleteOnClose);
   setAttribute(Qt::WA_ShowWithoutActivating);
-  setAttribute(Qt::WA_StyledBackground, true);
+  setAttribute(Qt::WA_StyledBackground, false);
   setAttribute(Qt::WA_TranslucentBackground);
   setFocusPolicy(Qt::StrongFocus);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
@@ -31,15 +33,8 @@ ContextMenuWidget::ContextMenuWidget(const ContextMenuTheme &theme,
   setMouseTracking(true);
   setAutoFillBackground(false);
 
-  const auto shadowColor = theme.shadowColor;
-  auto *shadow = new QGraphicsDropShadowEffect(this);
-  shadow->setBlurRadius(k::shadowBlurRadius);
-  shadow->setColor(shadowColor);
-  shadow->setOffset(k::shadowXOffset, k::shadowYOffset);
-
   mainFrame =
       new ContextMenuFrame({theme.backgroundColor, theme.borderColor}, this);
-  mainFrame->setGraphicsEffect(shadow);
 
   auto *rootLayout = new QVBoxLayout(this);
   rootLayout->setContentsMargins(k::shadowContentMargin, k::shadowContentMargin,
@@ -53,33 +48,50 @@ ContextMenuWidget::ContextMenuWidget(const ContextMenuTheme &theme,
                              k::contentMargin, k::contentMargin);
   layout->setSpacing(4);
 
-  const auto borderColor = theme.borderColor;
-  const auto labelColor = theme.labelColor;
-  const auto labelDisabledColor = theme.labelDisabledColor;
-  const auto shortcutColor = theme.shortcutColor;
-  const auto shortcutDisabledColor = theme.shortcutDisabledColor;
-  const auto hoverColor = theme.hoverColor;
-  const auto accentMutedColor = theme.accentMutedColor;
-  const auto accentForegroundColor = theme.accentForegroundColor;
+  setAndApplyTheme(themeProvider->getContextMenuTheme());
+  connectSignals();
+}
+
+void ContextMenuWidget::connectSignals() {
+  connect(themeProvider, &ThemeProvider::contextMenuThemeChanged, this,
+          &ContextMenuWidget::setAndApplyTheme);
+}
+
+void ContextMenuWidget::setAndApplyTheme(const ContextMenuTheme &newTheme) {
+  theme = newTheme;
+  mainFrame->setAndApplyTheme({theme.backgroundColor, theme.borderColor});
+
+  auto *shadow = new QGraphicsDropShadowEffect(this);
+  shadow->setBlurRadius(k::shadowBlurRadius);
+  shadow->setColor(theme.shadowColor);
+  shadow->setOffset(k::shadowXOffset, k::shadowYOffset);
+  mainFrame->setGraphicsEffect(shadow);
 
   QString styleSheet = QString(
-      "QToolButton#ContextMenuItem { color: %2; background: transparent;"
-      "border: none; padding: 8px 14px; text-align: left; border-radius: 6px; "
+      "QToolButton#ContextMenuItem { color: %3; background: transparent;"
+      "border: 0px; padding: 8px 14px; text-align: left; border-radius: 6px; "
       "}"
-      "QToolButton#ContextMenuItem:hover { background: %3;}"
-      "QToolButton#ContextMenuItem:pressed { background: %3;}"
-      "QToolButton#ContextMenuItem:disabled { color: %6; }"
-      "QFrame#ContextMenuSeparator { background: %1; border: none; margin:"
+      "#ContextMenuItem:hover { background: %2; }"
+      "#ContextMenuItem:pressed { background: %2;}"
+      "#ContextMenuItem:disabled { color: %4; }"
+      "#ContextMenuSeparator { background: %1; border: 0px; margin:"
       "0px; }"
-      "QLabel#ContextMenuLabel { color: %7; padding: 0px 6px; }"
-      "QLabel#ContextMenuLabel:disabled { color: %8; padding: 0px 6px; }"
-      "QLabel#ContextMenuShortcutLabel { color: %9; padding: 0px 6px; }"
-      "QLabel#ContextMenuShortcutLabel:disabled { color: %10; padding: 0px "
+      "#ContextMenuLabel { color: %3; padding: 0px 6px; background: "
+      "transparent; border: 0px; }"
+      "#ContextMenuLabel:disabled { color: %4; padding: 0px 6px; }"
+      "#ContextMenuShortcutLabel { color: %5; padding: 0px 6px; background: "
+      "transparent; border: 0px; }"
+      "#ContextMenuShortcutLabel:disabled { color: %6; padding: 0px "
       "6px; }");
 
-  setStyleSheet(styleSheet.arg(
-      borderColor, labelColor, hoverColor, labelDisabledColor, labelColor,
-      labelDisabledColor, shortcutColor, shortcutDisabledColor));
+  setStyleSheet(styleSheet.arg(theme.borderColor)
+                    .arg(theme.hoverColor)
+                    .arg(theme.labelColor)
+                    .arg(theme.labelDisabledColor)
+                    .arg(theme.shortcutColor)
+                    .arg(theme.shortcutDisabledColor));
+
+  update();
 }
 
 void ContextMenuWidget::showMenu(const QPoint &position) {

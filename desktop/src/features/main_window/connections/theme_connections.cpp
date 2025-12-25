@@ -1,5 +1,6 @@
 #include "theme_connections.h"
 #include "features/command_palette/command_palette_widget.h"
+#include "features/context_menu/context_menu_widget.h"
 #include "features/editor/editor_widget.h"
 #include "features/editor/gutter_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"

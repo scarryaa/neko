@@ -83,6 +83,7 @@ impl Theme {
             "context_menu.shortcut"            => "#5a5a5a",
             "context_menu.shortcut.disabled"   => "#b0b0b0",
             "context_menu.button.hover"        => "#dadada",
+            "context_menu.shadow"              => "#33000000",
 
             // UI
             "ui.background"          => "#f5f5f5",
@@ -155,6 +156,7 @@ impl Theme {
             "context_menu.shortcut"            => "#a4a4a4",
             "context_menu.shortcut.disabled"   => "#4f4f4f",
             "context_menu.button.hover"        => "#2c2c2c",
+            "context_menu.shadow"              => "#66000000",
 
             // UI
             "ui.background"           => "#000000",

@@ -24,6 +24,7 @@ public:
   [[nodiscard]] const NewTabButtonTheme &getNewTabButtonTheme() const;
   [[nodiscard]] const SplitterTheme &getSplitterTheme() const;
   [[nodiscard]] const EmptyStateTheme &getEmptyStateTheme() const;
+  [[nodiscard]] const ContextMenuTheme &getContextMenuTheme() const;
 
 signals:
   void titleBarThemeChanged(const TitleBarTheme &titleBarTheme);
@@ -35,6 +36,7 @@ signals:
   void tabThemeChanged(const TabTheme &tabTheme);
   void
   commandPaletteThemeChanged(const CommandPaletteTheme &commandPaletteTheme);
+  void contextMenuThemeChanged(const ContextMenuTheme &contextMenuTheme);
   void scrollBarThemeChanged(const ScrollBarTheme &scrollBarTheme);
   void newTabButtonThemeChanged(const NewTabButtonTheme &theme);
   void splitterThemeChanged(const SplitterTheme &theme);
@@ -52,6 +54,7 @@ private:
   void refreshEditorTheme();
   void refreshGutterTheme();
   void refreshStatusBarTheme();
+  void refreshContextMenuTheme();
   void refreshScrollBarTheme();
   void refreshNewTabButtonTheme();
   void refreshSplitterTheme();
@@ -68,6 +71,7 @@ private:
   GutterTheme gutterTheme;
   StatusBarTheme statusBarTheme;
   ScrollBarTheme scrollBarTheme;
+  ContextMenuTheme contextMenuTheme;
   NewTabButtonTheme newTabButtonTheme;
   SplitterTheme splitterTheme;
   EmptyStateTheme emptyStateTheme;

@@ -11,19 +11,22 @@
 #include <QVector>
 #include <QWidget>
 
+class ThemeProvider;
+
 QT_FWD(QVBoxLayout, QEvent, QKeyEvent)
 
 class ContextMenuWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit ContextMenuWidget(const ContextMenuTheme &theme,
+  explicit ContextMenuWidget(ThemeProvider *themeProvider,
                              neko::ConfigManager *configManager,
                              QWidget *parent = nullptr);
   ~ContextMenuWidget() override = default;
 
   void setItems(const QVector<ContextMenuItem> &items);
   void showMenu(const QPoint &position);
+  void setAndApplyTheme(const ContextMenuTheme &newTheme);
 
 signals:
   void actionTriggered(const QString &actionId);
@@ -33,10 +36,12 @@ protected:
   void keyPressEvent(QKeyEvent *event) override;
 
 private:
+  void connectSignals();
   void clearRows();
 
   ContextMenuTheme theme;
 
+  ThemeProvider *themeProvider;
   ContextMenuFrame *mainFrame;
   neko::ConfigManager *configManager;
   QVBoxLayout *layout;

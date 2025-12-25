@@ -132,9 +132,9 @@ void MainWindow::setupWidgets(neko::Editor *editor,
   statusBarWidget = new StatusBarWidget(editorController, *configManager,
                                         statusBarTheme, this);
   tabBarContainer = new QWidget(this);
-  tabBarWidget = new TabBarWidget(*configManager, tabBarTheme, tabTheme,
-                                  contextMenuRegistry, commandRegistry,
-                                  tabController, tabBarContainer);
+  tabBarWidget = new TabBarWidget(
+      *configManager, tabBarTheme, tabTheme, themeProvider, contextMenuRegistry,
+      commandRegistry, tabController, tabBarContainer);
 }
 
 void MainWindow::setupLayout() {

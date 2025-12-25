@@ -9,8 +9,17 @@ static const constexpr qreal radius = 12.0;
 ContextMenuFrame::ContextMenuFrame(const ContextMenuFrameTheme &theme,
                                    QWidget *parent)
     : QFrame(parent) {
+
+  setObjectName("ContextMenuFrame");
+  setFrameShape(QFrame::NoFrame);
   setAutoFillBackground(false);
+  setAttribute(Qt::WA_StyledBackground, false);
   setAttribute(Qt::WA_TranslucentBackground);
+}
+
+void ContextMenuFrame::setAndApplyTheme(const ContextMenuFrameTheme &newTheme) {
+  theme = newTheme;
+  update();
 }
 
 void ContextMenuFrame::paintEvent(QPaintEvent *event) {

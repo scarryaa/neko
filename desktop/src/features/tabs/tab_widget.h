@@ -4,6 +4,7 @@
 class CommandRegistry;
 class ContextMenuRegistry;
 class ContextMenuWidget;
+class ThemeProvider;
 
 #include "theme/theme_types.h"
 #include "types/ffi_types_fwd.h"
@@ -23,7 +24,7 @@ public:
 
   explicit TabWidget(const QString &title, QString path, int index, int tabId,
                      bool isPinned, neko::ConfigManager &configManager,
-                     const TabTheme &theme,
+                     ThemeProvider *themeProvider, const TabTheme &theme,
                      ContextMenuRegistry &contextMenuRegistry,
                      CommandRegistry &commandRegistry,
                      GetTabCountFn getTabCount, QWidget *parent = nullptr);
@@ -63,6 +64,7 @@ private:
   CommandRegistry &commandRegistry;
   ContextMenuWidget *contextMenuWidget;
   neko::ConfigManager &configManager;
+  ThemeProvider *themeProvider;
   QString title;
   QString path;
   bool isModified = false;

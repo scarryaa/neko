@@ -5,6 +5,7 @@ class CommandRegistry;
 class ContextMenuRegistry;
 class TabController;
 class TabWidget;
+class ThemeProvider;
 
 #include "theme/theme_types.h"
 #include "types/ffi_types_fwd.h"
@@ -22,7 +23,7 @@ class TabBarWidget : public QScrollArea {
 public:
   explicit TabBarWidget(neko::ConfigManager &configManager,
                         const TabBarTheme &tabBarTheme,
-                        const TabTheme &tabTheme,
+                        const TabTheme &tabTheme, ThemeProvider *themeProvider,
                         ContextMenuRegistry &contextMenuRegistry,
                         CommandRegistry &commandRegistry,
                         TabController *tabController,
@@ -58,6 +59,7 @@ private:
   void updateTabAppearance();
   void registerCommands();
 
+  ThemeProvider *themeProvider;
   TabController *tabController;
   ContextMenuRegistry &contextMenuRegistry;
   CommandRegistry &commandRegistry;

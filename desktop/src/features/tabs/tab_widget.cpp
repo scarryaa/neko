@@ -3,6 +3,7 @@
 #include "features/context_menu/context_menu_registry.h"
 #include "features/context_menu/context_menu_widget.h"
 #include "features/context_menu/providers/tab_context.h"
+#include "theme/theme_provider.h"
 #include "utils/gui_utils.h"
 #include <QApplication>
 #include <QByteArray>
@@ -23,11 +24,12 @@
 // NOLINTNEXTLINE
 TabWidget::TabWidget(const QString &title, QString path, int index, int tabId,
                      bool isPinned, neko::ConfigManager &configManager,
-                     const TabTheme &theme,
+                     ThemeProvider *themeProvider, const TabTheme &theme,
                      ContextMenuRegistry &contextMenuRegistry,
                      CommandRegistry &commandRegistry,
                      GetTabCountFn getTabCount, QWidget *parent)
-    : QWidget(parent), configManager(configManager), theme(theme),
+    : QWidget(parent), configManager(configManager),
+      themeProvider(themeProvider), theme(theme),
       contextMenuRegistry(contextMenuRegistry),
       commandRegistry(commandRegistry), title(title), path(std::move(path)),
       isPinned(isPinned), index(index), tabId(tabId), isActive(false),
@@ -288,8 +290,8 @@ void TabWidget::contextMenuEvent(QContextMenuEvent *event) {
 
   const QVariant variant = QVariant::fromValue(ctx);
   const auto items = contextMenuRegistry.build("tab", variant);
+  auto *menu = new ContextMenuWidget(themeProvider, &configManager, this);
 
-  auto *menu = new ContextMenuWidget({}, &configManager, this);
   menu->setItems(items);
 
   connect(menu, &ContextMenuWidget::actionTriggered, this,

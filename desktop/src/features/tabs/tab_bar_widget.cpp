@@ -5,6 +5,7 @@
 #include "features/tabs/controllers/tab_controller.h"
 #include "features/tabs/tab_widget.h"
 #include "neko-core/src/ffi/bridge.rs.h"
+#include "theme/theme_provider.h"
 #include "theme/theme_types.h"
 #include "utils/gui_utils.h"
 #include <QByteArray>
@@ -35,12 +36,13 @@
 TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
                            const TabBarTheme &tabBarTheme,
                            const TabTheme &tabTheme,
+                           ThemeProvider *themeProvider,
                            ContextMenuRegistry &contextMenuRegistry,
                            CommandRegistry &commandRegistry,
                            TabController *tabController, QWidget *parent)
     : QScrollArea(parent), configManager(configManager),
       tabBarTheme(tabBarTheme), tabTheme(tabTheme),
-      contextMenuRegistry(contextMenuRegistry),
+      themeProvider(themeProvider), contextMenuRegistry(contextMenuRegistry),
       commandRegistry(commandRegistry), tabController(tabController) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
@@ -126,8 +128,8 @@ void TabBarWidget::setTabs(const QStringList &titles, const QStringList &paths,
     const bool modified = tab.modified;
 
     auto *tabWidget = new TabWidget(
-        title, path, tabIndex, tabId, pinned, configManager, tabTheme,
-        contextMenuRegistry, commandRegistry,
+        title, path, tabIndex, tabId, pinned, configManager, themeProvider,
+        tabTheme, contextMenuRegistry, commandRegistry,
         [this]() -> int {
           const auto snapshot = tabController->getTabsSnapshot();
           return static_cast<int>(snapshot.tabs.size());

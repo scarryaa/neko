@@ -19,6 +19,8 @@ public:
                             QWidget *parent = nullptr);
   ~ContextMenuFrame() override = default;
 
+  void setAndApplyTheme(const ContextMenuFrameTheme &newTheme);
+
 protected:
   void paintEvent(QPaintEvent *event) override;
 
