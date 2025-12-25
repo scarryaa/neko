@@ -209,7 +209,10 @@ bool ContextMenuWidget::eventFilter(QObject *watched, QEvent *event) {
     const auto *mouseEvent = static_cast<QMouseEvent *>(event);
     const QPoint globalPos = mouseEvent->globalPosition().toPoint();
 
-    if (!geometry().contains(globalPos)) {
+    const int margin = static_cast<int>(k::shadowContentMargin);
+    QRect clickableArea = geometry().adjusted(margin, margin, -margin, -margin);
+
+    if (!clickableArea.contains(globalPos)) {
       close();
       return true;
     }
