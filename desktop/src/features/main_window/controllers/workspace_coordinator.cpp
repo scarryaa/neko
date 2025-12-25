@@ -13,7 +13,7 @@
 #include "features/tabs/tab_bar_widget.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 #include <QApplication>
-#include <QCLipboard>
+#include <QClipboard>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QScrollBar>
@@ -39,16 +39,11 @@ WorkspaceCoordinator::WorkspaceCoordinator(
 }
 
 void WorkspaceCoordinator::fileExplorerToggled() {
-  bool isOpen = uiHandles->fileExplorerWidget->isHidden();
-
-  if (isOpen) {
-    uiHandles->fileExplorerWidget->show();
-  } else {
-    uiHandles->fileExplorerWidget->hide();
-  }
+  const bool shouldShow = uiHandles->fileExplorerWidget->isHidden();
+  uiHandles->fileExplorerWidget->setVisible(shouldShow);
 
   auto snapshot = configManager->get_config_snapshot();
-  snapshot.file_explorer_shown = isOpen;
+  snapshot.file_explorer_shown = shouldShow;
   configManager->apply_config_snapshot(snapshot);
 }
 
@@ -180,6 +175,31 @@ void WorkspaceCoordinator::openConfig() {
   }
 }
 
+void WorkspaceCoordinator::handleTabCommand(const std::string &commandId,
+                                            const neko::TabContextFfi &ctx,
+                                            bool forceClose) {
+  if (commandId.empty()) {
+    return;
+  }
+  const int tabId = static_cast<int>(ctx.id);
+
+  if (commandId == "tab.close") {
+    closeTab(tabId, forceClose);
+  } else if (commandId == "tab.closeOthers") {
+    closeOtherTabs(tabId, forceClose);
+  } else if (commandId == "tab.closeLeft") {
+    closeLeftTabs(tabId, forceClose);
+  } else if (commandId == "tab.closeRight") {
+    closeRightTabs(tabId, forceClose);
+  } else if (commandId == "tab.copyPath") {
+    tabCopyPath(tabId);
+  } else if (commandId == "tab.reveal") {
+    tabReveal("tab.reveal", ctx);
+  } else if (commandId == "tab.pin") {
+    tabTogglePin(tabId, ctx.is_pinned);
+  }
+}
+
 void WorkspaceCoordinator::tabCopyPath(int tabId) {
   const auto snapshot = tabController->getTabsSnapshot();
   QString path = QString();
@@ -208,7 +228,6 @@ void WorkspaceCoordinator::tabTogglePin(int tabId, bool tabIsPinned) {
   emit tabChanged(tabId);
 }
 
-// TODO(scarlet): Collapse context menu helpers into one 'run' command
 void WorkspaceCoordinator::tabReveal(const std::string &commandId,
                                      const neko::TabContextFfi &ctx) {
   if (commandId.empty()) {

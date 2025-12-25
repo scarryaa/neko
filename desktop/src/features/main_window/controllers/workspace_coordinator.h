@@ -27,40 +27,44 @@ public:
                                 QObject *parent = nullptr);
   ~WorkspaceCoordinator() override = default;
 
-  void fileSelected(const std::string &path, bool focusEditor);
+  void handleTabCommand(const std::string &commandId,
+                        const neko::TabContextFfi &ctx, bool forceClose);
+  CloseDecision showTabCloseConfirmationDialog(const QList<int> &ids);
+  SaveResult saveTab(int tabId, bool isSaveAs);
+
   void fileSaved(bool saveAs);
 
+  void applyInitialState();
+
+  // NOLINTNEXTLINE(readability-redundant-access-specifiers)
+public slots:
+  void bufferChanged();
+
   void fileExplorerToggled();
+  void fileSelected(const std::string &path, bool focusEditor);
+  void openConfig();
+
   void cursorPositionClicked();
   void commandPaletteGoToPosition(int row, int col);
   void commandPaletteCommand(const QString &command);
 
-  void openConfig();
-
-  void tabCopyPath(int tabId);
-  void tabTogglePin(int tabId, bool tabIsPinned);
-  void tabReveal(const std::string &commandId, const neko::TabContextFfi &ctx);
   void newTab();
+  void closeTab(int tabId, bool forceClose);
   void tabChanged(int tabId);
   void tabUnpinned(int tabId);
-
-  void bufferChanged();
-
-  CloseDecision showTabCloseConfirmationDialog(const QList<int> &ids);
-  SaveResult saveTab(int tabId, bool isSaveAs);
-
-  void closeTab(int tabId, bool forceClose);
-  void closeLeftTabs(int tabId, bool forceClose);
-  void closeRightTabs(int tabId, bool forceClose);
-  void closeOtherTabs(int tabId, bool forceClose);
-
-  void applyInitialState();
 
 signals:
   void onFileExplorerToggledViaShortcut(bool isOpen);
   void themeChanged(const std::string &themeName);
 
 private:
+  void tabCopyPath(int tabId);
+  void tabTogglePin(int tabId, bool tabIsPinned);
+  void tabReveal(const std::string &commandId, const neko::TabContextFfi &ctx);
+  void closeLeftTabs(int tabId, bool forceClose);
+  void closeRightTabs(int tabId, bool forceClose);
+  void closeOtherTabs(int tabId, bool forceClose);
+
   void saveScrollOffsetsForActiveTab();
   void restoreScrollOffsetsForActiveTab();
   void refreshUiForActiveTab(bool focusEditor);

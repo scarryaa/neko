@@ -26,7 +26,7 @@ EditorConnections::EditorConnections(const WorkspaceUiHandles &uiHandles,
   connect(editorController, &EditorController::cursorChanged,
           uiHandles.statusBarWidget, &StatusBarWidget::onCursorPositionChanged);
 
-  // EditorController -> MainWindow
+  // EditorController -> WorkspaceCoordinator
   connect(editorController, &EditorController::bufferChanged,
           workspaceCoordinator, &WorkspaceCoordinator::bufferChanged);
 

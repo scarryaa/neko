@@ -34,47 +34,6 @@ const TabCommandSpec tabCommandSpecs[] = {
     {"tab.copyPath", "Copy Path", "", "", TabCommandGroup::Path},
     {"tab.reveal", "Reveal in Explorer", "", "", TabCommandGroup::Path},
 };
-
-using TabCommandHandler =
-    std::function<void(WorkspaceCoordinator &workspaceCoordinator,
-                       const neko::TabContextFfi &ctx, bool shiftHeld)>;
-const std::map<std::string, TabCommandHandler> tabCommandsMap{
-    {"tab.close",
-     [](WorkspaceCoordinator &workspaceCoordinator,
-        const neko::TabContextFfi &ctx, bool shiftHeld) {
-       workspaceCoordinator.closeTab(static_cast<int>(ctx.id), shiftHeld);
-     }},
-    {"tab.closeOthers",
-     [](WorkspaceCoordinator &workSpaceCoordinator,
-        const neko::TabContextFfi &ctx, bool shiftHeld) {
-       workSpaceCoordinator.closeOtherTabs(static_cast<int>(ctx.id), shiftHeld);
-     }},
-    {"tab.closeLeft",
-     [](WorkspaceCoordinator &workSpaceCoordinator,
-        const neko::TabContextFfi &ctx, bool shiftHeld) {
-       workSpaceCoordinator.closeLeftTabs(static_cast<int>(ctx.id), shiftHeld);
-     }},
-    {"tab.closeRight",
-     [](WorkspaceCoordinator &workSpaceCoordinator,
-        const neko::TabContextFfi &ctx, bool shiftHeld) {
-       workSpaceCoordinator.closeRightTabs(static_cast<int>(ctx.id), shiftHeld);
-     }},
-    {"tab.copyPath",
-     [](WorkspaceCoordinator &workSpaceCoordinator,
-        const neko::TabContextFfi &ctx, bool shiftHeld) {
-       workSpaceCoordinator.tabCopyPath(static_cast<int>(ctx.id));
-     }},
-    {"tab.reveal",
-     [](WorkspaceCoordinator &workSpaceCoordinator,
-        const neko::TabContextFfi &ctx,
-        bool shiftHeld) { workSpaceCoordinator.tabReveal("tab.reveal", ctx); }},
-    {"tab.pin",
-     [](WorkspaceCoordinator &workSpaceCoordinator,
-        const neko::TabContextFfi &ctx, bool shiftHeld) {
-       workSpaceCoordinator.tabTogglePin(static_cast<int>(ctx.id),
-                                         ctx.is_pinned);
-     }},
-};
 } // namespace k
 
 inline void addItem(QVector<ContextMenuItem> &items, ContextMenuItemKind kind,
@@ -203,14 +162,9 @@ void CommandManager::registerProviders() {
 void CommandManager::handleTabCommand(const QString &commandId,
                                       const QVariant &variant) {
   const auto ctx = variant.value<neko::TabContextFfi>();
-  const bool shiftPressed =
+  const bool shiftHeld =
       QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier);
-  const auto foundCommand = k::tabCommandsMap.find(commandId.toStdString());
 
-  // Command not found
-  if (foundCommand == k::tabCommandsMap.end()) {
-    return;
-  }
-
-  foundCommand->second(*workspaceCoordinator, ctx, shiftPressed);
+  workspaceCoordinator->handleTabCommand(commandId.toStdString(), ctx,
+                                         shiftHeld);
 }
