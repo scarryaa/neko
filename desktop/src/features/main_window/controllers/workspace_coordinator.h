@@ -60,6 +60,7 @@ public slots:
 signals:
   void onFileExplorerToggledViaShortcut(bool isOpen);
   void themeChanged(const std::string &themeName);
+  void tabRevealedInFileExplorer();
 
 private:
   void tabCopyPath(int tabId);

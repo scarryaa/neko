@@ -27,7 +27,6 @@ public:
 
   void initialize(const std::string &path);
   void setAndApplyTheme(const FileExplorerTheme &newTheme);
-  void showItem();
 
 protected:
   void keyPressEvent(QKeyEvent *event) override;
@@ -47,6 +46,7 @@ signals:
 public slots:
   void directorySelectionRequested();
   void loadSavedDirectory(const std::string &path);
+  void itemRevealRequested();
 
 private:
   void redraw();

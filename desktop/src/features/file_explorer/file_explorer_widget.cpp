@@ -96,10 +96,18 @@ void FileExplorerWidget::setAndApplyTheme(const FileExplorerTheme &newTheme) {
   redraw();
 }
 
-void FileExplorerWidget::showItem() {
-  // TODO(scarlet): Scroll to revealed item
-  // TODO(scarlet): Open file explorer if not already open
-  // TODO(scarlet): Make connect this via signals instead?
+void FileExplorerWidget::itemRevealRequested() {
+  auto snapshot = fileTreeController->getTreeSnapshot();
+  int index = 0;
+  for (auto &node : snapshot.nodes) {
+    if (node.is_current) {
+      break;
+    }
+
+    index++;
+  }
+
+  scrollToNode(index);
   redraw();
   setFocus();
 }

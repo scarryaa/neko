@@ -22,7 +22,7 @@ MainWindowConnections::MainWindowConnections(
   connect(uiHandles.emptyStateNewTabButton, &QPushButton::clicked,
           workspaceCoordinator, &WorkspaceCoordinator::newTab);
 
-  // WorkspaceCoordinator -> MainWindow
+  // WorkspaceCoordinator -> ThemeProvider
   connect(workspaceCoordinator, &WorkspaceCoordinator::themeChanged,
           themeProvider, &ThemeProvider::reload);
 
@@ -39,6 +39,11 @@ MainWindowConnections::MainWindowConnections(
           &StatusBarWidget::onFileExplorerToggledExternally);
   connect(uiHandles.statusBarWidget, &StatusBarWidget::cursorPositionClicked,
           workspaceCoordinator, &WorkspaceCoordinator::cursorPositionClicked);
+
+  // WorkspaceCoordinator -> FileExplorerWidget
+  connect(
+      workspaceCoordinator, &WorkspaceCoordinator::tabRevealedInFileExplorer,
+      uiHandles.fileExplorerWidget, &FileExplorerWidget::itemRevealRequested);
 
   // CommandPalette -> MainWindow
   connect(uiHandles.commandPaletteWidget,

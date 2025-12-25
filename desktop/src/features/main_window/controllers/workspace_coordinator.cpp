@@ -233,7 +233,14 @@ void WorkspaceCoordinator::tabReveal(const std::string &commandId,
   }
 
   appStateController->runTabCommand(commandId, ctx);
-  uiHandles->fileExplorerWidget->showItem();
+
+  // Show file Explorer if hidden
+  if (uiHandles->fileExplorerWidget->isHidden()) {
+    fileExplorerToggled();
+    emit onFileExplorerToggledViaShortcut(
+        !uiHandles->fileExplorerWidget->isHidden());
+  }
+  emit tabRevealedInFileExplorer();
 }
 
 void WorkspaceCoordinator::newTab() {
