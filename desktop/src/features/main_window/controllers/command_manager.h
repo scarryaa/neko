@@ -6,7 +6,10 @@ class ContextMenuRegistry;
 class WorkspaceCoordinator;
 class AppStateController;
 
+#include "types/qt_types_fwd.h"
 #include <QApplication>
+
+QT_FWD(QString, QVariant);
 
 class CommandManager {
 public:
@@ -18,6 +21,8 @@ public:
 
   void registerCommands();
   void registerProviders();
+
+  void handleTabCommand(const QString &commandId, const QVariant &variant);
 
 private:
   CommandRegistry *commandRegistry;

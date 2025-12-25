@@ -38,6 +38,7 @@ public:
   void openConfig();
 
   void tabCopyPath(int tabId);
+  void tabTogglePin(int tabId, bool tabIsPinned);
   void tabReveal(const std::string &commandId, const neko::TabContextFfi &ctx);
   void newTab();
   void tabChanged(int tabId);

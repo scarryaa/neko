@@ -20,14 +20,12 @@ class TabWidget : public QWidget {
   Q_OBJECT
 
 public:
-  using GetTabCountFn = std::function<int()>;
-
   explicit TabWidget(const QString &title, QString path, int index, int tabId,
                      bool isPinned, neko::ConfigManager &configManager,
                      ThemeProvider *themeProvider, const TabTheme &theme,
                      ContextMenuRegistry &contextMenuRegistry,
                      CommandRegistry &commandRegistry,
-                     GetTabCountFn getTabCount, QWidget *parent = nullptr);
+                     QWidget *parent = nullptr);
   ~TabWidget() override = default;
 
   void setActive(bool active);
@@ -38,9 +36,9 @@ public:
   void setAndApplyTheme(const TabTheme &newTheme);
 
 signals:
-  void clicked();
-  void closeRequested(bool bypassConfirmation);
-  void unpinRequested();
+  void clicked(int tabId);
+  void closeRequested(int tabId, bool bypassConfirmation);
+  void unpinRequested(int tabId);
 
 protected:
   void paintEvent(QPaintEvent *event) override;
@@ -59,7 +57,6 @@ private:
   [[nodiscard]] QRect titleRect() const;
   [[nodiscard]] QRect modifiedRect() const;
 
-  GetTabCountFn getTabCount_;
   ContextMenuRegistry &contextMenuRegistry;
   CommandRegistry &commandRegistry;
   ContextMenuWidget *contextMenuWidget;

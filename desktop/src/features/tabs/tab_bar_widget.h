@@ -43,7 +43,6 @@ signals:
   void currentChanged(int tabId);
   void tabCloseRequested(int tabId, bool bypassConfirmation = false);
   void newTabRequested();
-  void tabPinnedChanged(int tabId);
   void tabUnpinRequested(int tabId);
 
 protected:
@@ -57,7 +56,6 @@ private:
   [[nodiscard]] int dropIndexForPosition(const QPoint &pos) const;
   void updateDropIndicator(int index);
   void updateTabAppearance();
-  void registerCommands();
 
   ThemeProvider *themeProvider;
   TabController *tabController;

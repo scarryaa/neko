@@ -196,6 +196,18 @@ void WorkspaceCoordinator::tabCopyPath(int tabId) {
   QApplication::clipboard()->setText(path);
 }
 
+void WorkspaceCoordinator::tabTogglePin(int tabId, bool tabIsPinned) {
+  tabController->setActiveTab(tabId);
+
+  if (tabIsPinned) {
+    tabController->unpinTab(tabId);
+  } else {
+    tabController->pinTab(tabId);
+  }
+
+  emit tabChanged(tabId);
+}
+
 // TODO(scarlet): Collapse context menu helpers into one 'run' command
 void WorkspaceCoordinator::tabReveal(const std::string &commandId,
                                      const neko::TabContextFfi &ctx) {

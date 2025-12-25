@@ -70,9 +70,7 @@ TabBarWidget::TabBarWidget(neko::ConfigManager &configManager,
   dropIndicator = new QWidget(containerWidget);
   dropIndicator->setFixedWidth(2);
   dropIndicator->setVisible(false);
-
   currentTabId = 0;
-  registerCommands();
 
   setAndApplyTheme(tabBarTheme);
 }
@@ -126,27 +124,20 @@ void TabBarWidget::setTabs(const QStringList &titles, const QStringList &paths,
     const bool pinned = tab.pinned;
     const bool modified = tab.modified;
 
-    auto *tabWidget = new TabWidget(
-        title, path, tabIndex, tabId, pinned, configManager, themeProvider,
-        tabTheme, contextMenuRegistry, commandRegistry,
-        [this]() -> int {
-          const auto snapshot = tabController->getTabsSnapshot();
-          return static_cast<int>(snapshot.tabs.size());
-        },
-        this);
+    auto *tabWidget = new TabWidget(title, path, tabIndex, tabId, pinned,
+                                    configManager, themeProvider, tabTheme,
+                                    contextMenuRegistry, commandRegistry, this);
     tabWidget->setModified(modified);
     tabWidget->setIsPinned(pinned);
 
-    connect(tabWidget, &TabWidget::clicked, this, [this, tabId]() {
+    connect(tabWidget, &TabWidget::clicked, this, [this](int tabId) {
       setCurrentId(tabId);
       emit currentChanged(tabId);
     });
     connect(tabWidget, &TabWidget::closeRequested, this,
-            [this, tabId](bool bypassConfirmation) {
-              emit tabCloseRequested(tabId, bypassConfirmation);
-            });
+            &TabBarWidget::tabCloseRequested);
     connect(tabWidget, &TabWidget::unpinRequested, this,
-            [this, tabId]() { emit tabUnpinRequested(tabId); });
+            &TabBarWidget::tabUnpinRequested);
 
     layout->addWidget(tabWidget);
     tabs.append(tabWidget);
@@ -335,27 +326,4 @@ void TabBarWidget::updateTabAppearance() {
     tabs[index]->setActive(tab.id == currentTabId);
     index++;
   }
-}
-
-void TabBarWidget::registerCommands() {
-  // TODO(scarlet): Centralize these
-  commandRegistry.registerCommand(
-      "tab.copyPath", [this](const QVariant &variant) {
-        auto ctx = variant.value<neko::TabContextFfi>();
-        QGuiApplication::clipboard()->setText(ctx.file_path.c_str());
-      });
-  commandRegistry.registerCommand("tab.pin", [this](const QVariant &variant) {
-    auto ctx = variant.value<neko::TabContextFfi>();
-    auto tabId = static_cast<int>(ctx.id);
-
-    tabController->setActiveTab(tabId);
-    if (ctx.is_pinned) {
-      tabController->unpinTab(tabId);
-    } else {
-      tabController->pinTab(tabId);
-    }
-
-    const auto snapshot = tabController->getTabsSnapshot();
-    emit tabPinnedChanged(static_cast<int>(snapshot.active_id));
-  });
 }

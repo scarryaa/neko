@@ -24,14 +24,12 @@ TabWidget::TabWidget(const QString &title, QString path, int index, int tabId,
                      bool isPinned, neko::ConfigManager &configManager,
                      ThemeProvider *themeProvider, const TabTheme &theme,
                      ContextMenuRegistry &contextMenuRegistry,
-                     CommandRegistry &commandRegistry,
-                     GetTabCountFn getTabCount, QWidget *parent)
+                     CommandRegistry &commandRegistry, QWidget *parent)
     : QWidget(parent), configManager(configManager),
       themeProvider(themeProvider), theme(theme),
       contextMenuRegistry(contextMenuRegistry),
       commandRegistry(commandRegistry), title(title), path(std::move(path)),
-      isPinned(isPinned), index(index), tabId(tabId), isActive(false),
-      getTabCount_(std::move(getTabCount)) {
+      isPinned(isPinned), index(index), tabId(tabId), isActive(false) {
   QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
   setFont(uiFont);
 
@@ -183,9 +181,9 @@ void TabWidget::mousePressEvent(QMouseEvent *event) {
       dragInProgress = false;
 
       if (isPinned) {
-        emit unpinRequested();
+        emit unpinRequested(tabId);
       } else {
-        emit closeRequested(shiftPressed);
+        emit closeRequested(tabId, shiftPressed);
       }
       return;
     }
@@ -201,7 +199,7 @@ void TabWidget::mousePressEvent(QMouseEvent *event) {
     dragInProgress = false;
 
     if (!isPinned) {
-      emit closeRequested(shiftPressed);
+      emit closeRequested(tabId, shiftPressed);
     }
   }
 }
@@ -239,7 +237,7 @@ void TabWidget::mouseMoveEvent(QMouseEvent *event) {
 
 void TabWidget::mouseReleaseEvent(QMouseEvent *event) {
   if (event->button() == Qt::LeftButton && dragEligible && !dragInProgress) {
-    emit clicked();
+    emit clicked(tabId);
   }
 
   dragEligible = false;
@@ -301,13 +299,8 @@ QRect TabWidget::modifiedRect() const {
 }
 
 void TabWidget::contextMenuEvent(QContextMenuEvent *event) {
-  neko::TabContextFfi ctx{};
-  ctx.id = static_cast<std::uint64_t>(tabId);
-  ctx.is_pinned = isPinned;
-  ctx.is_modified = isModified;
-  ctx.file_path_present = !path.isEmpty();
-  ctx.file_path = path.toStdString();
-
+  neko::TabContextFfi ctx{static_cast<uint64_t>(tabId), isPinned, isModified,
+                          !path.isEmpty(), path.toStdString()};
   const QVariant variant = QVariant::fromValue(ctx);
   const auto items = contextMenuRegistry.build("tab", variant);
 
