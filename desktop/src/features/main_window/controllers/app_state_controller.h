@@ -14,6 +14,11 @@ public:
   bool openFile(const std::string &path);
   [[nodiscard]] neko::Editor &getActiveEditorMut() const;
   [[nodiscard]] neko::FileTree &getFileTreeMut() const;
+  [[nodiscard]] neko::TabCommandStateFfi
+  getTabCommandState(const neko::TabContextFfi &ctx) const;
+
+  void runTabCommand(const std::string &commandId,
+                     const neko::TabContextFfi &ctx);
 
 private:
   neko::AppState *appState;

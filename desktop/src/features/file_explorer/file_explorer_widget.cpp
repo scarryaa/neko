@@ -104,16 +104,11 @@ void FileExplorerWidget::setAndApplyTheme(const FileExplorerTheme &newTheme) {
   redraw();
 }
 
-void FileExplorerWidget::showItem(const QString &path) {
-  QFileInfo info(path);
-
-  QString parentDir = info.absolutePath();
-
-  std::string itemPath = path.toStdString();
-  std::string parentPath = parentDir.toStdString();
-
-  fileTreeController->setExpanded(parentPath);
-  fileTreeController->setCurrent(itemPath);
+void FileExplorerWidget::showItem() {
+  // TODO(scarlet): Scroll to revealed item
+  // TODO(scarlet): Open file explorer if not already open
+  // TODO(scarlet): Make connect this via signals instead?
+  redraw();
   setFocus();
 }
 

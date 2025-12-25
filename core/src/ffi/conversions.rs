@@ -192,7 +192,6 @@ impl From<TabContextFfi> for TabContext {
             } else {
                 None
             },
-            tab_count: ctx.tab_count as usize,
         }
     }
 }

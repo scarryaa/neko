@@ -3,7 +3,6 @@
 #include "features/command_palette/command_palette_widget.h"
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
-#include "features/context_menu/providers/tab_context.h"
 #include "features/editor/controllers/editor_controller.h"
 #include "features/editor/editor_widget.h"
 #include "features/editor/gutter_widget.h"
@@ -38,7 +37,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-Q_DECLARE_METATYPE(TabContext);
+Q_DECLARE_METATYPE(neko::TabContextFfi);
 
 // TODO(scarlet): StatusBar signals/tab inform and MainWindow editor ref
 // are messy and need to be cleaned up. Also consider "rearchitecting"
@@ -93,8 +92,9 @@ MainWindow::MainWindow(QWidget *parent)
   workspaceCoordinator = new WorkspaceCoordinator(
       workspaceController, tabController, appStateController, editorController,
       &*configManager, &*themeManager, &uiHandles, this);
-  auto *commandManager = new CommandManager(
-      &commandRegistry, &contextMenuRegistry, workspaceCoordinator);
+  auto *commandManager =
+      new CommandManager(&commandRegistry, &contextMenuRegistry,
+                         workspaceCoordinator, appStateController);
   auto *qtShortcutsManager =
       new ShortcutsManager(this, &*shortcutsManager, workspaceCoordinator,
                            tabController, &uiHandles, this);
@@ -254,7 +254,7 @@ QSplitter *MainWindow::buildSplitter(QWidget *editorSideContainer) {
 }
 
 void MainWindow::registerCommands(CommandManager *commandManager) {
-  qRegisterMetaType<TabContext>("TabContext");
+  qRegisterMetaType<neko::TabContextFfi>("TabContext");
 
   commandManager->registerProviders();
   commandManager->registerCommands();

@@ -1,97 +1,109 @@
 #include "command_manager.h"
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
-#include "features/context_menu/providers/tab_context.h"
+#include "features/main_window/controllers/app_state_controller.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
+#include "neko-core/src/ffi/bridge.rs.h"
 
 CommandManager::CommandManager(CommandRegistry *commandRegistry,
                                ContextMenuRegistry *contextMenuRegistry,
-                               WorkspaceCoordinator *workspaceCoordinator)
+                               WorkspaceCoordinator *workspaceCoordinator,
+                               AppStateController *appStateController)
     : commandRegistry(commandRegistry),
       contextMenuRegistry(contextMenuRegistry),
-      workspaceCoordinator(workspaceCoordinator) {}
+      workspaceCoordinator(workspaceCoordinator),
+      appStateController(appStateController) {}
 
 void CommandManager::registerCommands() {
   // TODO(scarlet): Clean this up
   commandRegistry->registerCommand(
       "tab.close", [this](const QVariant &variant) {
-        auto ctx = variant.value<TabContext>();
+        auto ctx = variant.value<neko::TabContextFfi>();
         auto shiftPressed = QApplication::keyboardModifiers().testFlag(
             Qt::KeyboardModifier::ShiftModifier);
 
-        workspaceCoordinator->closeTab(ctx.tabId, shiftPressed);
+        auto tabId = static_cast<int>(ctx.id);
+        workspaceCoordinator->closeTab(tabId, shiftPressed);
       });
   commandRegistry->registerCommand(
       "tab.closeOthers", [this](const QVariant &variant) {
-        auto ctx = variant.value<TabContext>();
+        auto ctx = variant.value<neko::TabContextFfi>();
         auto shiftPressed = QApplication::keyboardModifiers().testFlag(
             Qt::KeyboardModifier::ShiftModifier);
 
-        workspaceCoordinator->closeOtherTabs(ctx.tabId, shiftPressed);
+        auto tabId = static_cast<int>(ctx.id);
+        workspaceCoordinator->closeOtherTabs(tabId, shiftPressed);
       });
   commandRegistry->registerCommand(
       "tab.closeLeft", [this](const QVariant &variant) {
-        auto ctx = variant.value<TabContext>();
+        auto ctx = variant.value<neko::TabContextFfi>();
         auto shiftPressed = QApplication::keyboardModifiers().testFlag(
             Qt::KeyboardModifier::ShiftModifier);
 
-        workspaceCoordinator->closeLeftTabs(ctx.tabId, shiftPressed);
+        auto tabId = static_cast<int>(ctx.id);
+        workspaceCoordinator->closeLeftTabs(tabId, shiftPressed);
       });
   commandRegistry->registerCommand(
       "tab.closeRight", [this](const QVariant &variant) {
-        auto ctx = variant.value<TabContext>();
+        auto ctx = variant.value<neko::TabContextFfi>();
         auto shiftPressed = QApplication::keyboardModifiers().testFlag(
             Qt::KeyboardModifier::ShiftModifier);
 
-        workspaceCoordinator->closeRightTabs(ctx.tabId, shiftPressed);
+        auto tabId = static_cast<int>(ctx.id);
+        workspaceCoordinator->closeRightTabs(tabId, shiftPressed);
       });
   commandRegistry->registerCommand(
       "tab.copyPath", [this](const QVariant &variant) {
-        auto ctx = variant.value<TabContext>();
-        workspaceCoordinator->tabCopyPath(ctx.tabId);
+        auto ctx = variant.value<neko::TabContextFfi>();
+
+        auto tabId = static_cast<int>(ctx.id);
+        workspaceCoordinator->tabCopyPath(tabId);
       });
-  commandRegistry->registerCommand("tab.reveal",
-                                   [this](const QVariant &variant) {
-                                     auto ctx = variant.value<TabContext>();
-                                     workspaceCoordinator->tabReveal(ctx.tabId);
-                                   });
+  commandRegistry->registerCommand(
+      "tab.reveal", [this](const QVariant &variant) {
+        auto ctx = variant.value<neko::TabContextFfi>();
+
+        workspaceCoordinator->tabReveal("tab.reveal", ctx);
+      });
 }
 
 void CommandManager::registerProviders() {
   // TODO(scarlet): Centralize this
-  contextMenuRegistry->registerProvider("tab", [](const QVariant &variant) {
-    const auto ctx = variant.value<TabContext>();
+  // TODO(scarlet): Populate by pulling available commands from rust
+  contextMenuRegistry->registerProvider("tab", [this](const QVariant &variant) {
+    const auto ctx = variant.value<neko::TabContextFfi>();
+    auto state = appStateController->getTabCommandState(ctx);
 
     QVector<ContextMenuItem> items;
 
     items.push_back({ContextMenuItemKind::Action, "tab.close", "Close",
-                     "Ctrl+W", "", true});
+                     "Ctrl+W", "", state.can_close});
     items.push_back({ContextMenuItemKind::Action, "tab.closeOthers",
-                     "Close Others", "", "", ctx.canCloseOthers});
+                     "Close Others", "", "", state.can_close_others});
 
     items.push_back({ContextMenuItemKind::Separator});
 
-    items.push_back({ContextMenuItemKind::Action, "tab.closeLeft",
-                     "Close Tabs to the Left", "", "", ctx.canCloseOthers});
+    items.push_back({ContextMenuItemKind::Action, "tab.closeLeft", "Close Left",
+                     "", "", state.can_close_left});
     items.push_back({ContextMenuItemKind::Action, "tab.closeRight",
-                     "Close Tabs to the Right", "", "", ctx.canCloseOthers});
+                     "Close Right", "", "", state.can_close_right});
 
     items.push_back({ContextMenuItemKind::Separator});
 
     ContextMenuItem pin;
     pin.kind = ContextMenuItemKind::Action;
     pin.id = "tab.pin";
-    pin.label = ctx.isPinned ? "Unpin" : "Pin";
+    pin.label = ctx.is_pinned ? "Unpin" : "Pin";
     pin.enabled = true;
-    pin.checked = ctx.isPinned;
+    pin.checked = state.is_pinned;
     items.push_back(pin);
 
     items.push_back({ContextMenuItemKind::Separator});
 
     items.push_back({ContextMenuItemKind::Action, "tab.copyPath", "Copy Path",
-                     "", "", !ctx.filePath.isEmpty()});
+                     "", "", state.can_copy_path});
     items.push_back({ContextMenuItemKind::Action, "tab.reveal",
-                     "Reveal in Explorer", "", "", !ctx.filePath.isEmpty()});
+                     "Reveal in Explorer", "", "", state.can_reveal});
 
     return items;
   });

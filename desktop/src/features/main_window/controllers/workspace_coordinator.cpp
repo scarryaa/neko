@@ -196,20 +196,15 @@ void WorkspaceCoordinator::tabCopyPath(int tabId) {
   QApplication::clipboard()->setText(path);
 }
 
-void WorkspaceCoordinator::tabReveal(int tabId) {
-  const auto snapshot = tabController->getTabsSnapshot();
-  QString path = QString();
-  for (const auto &tab : snapshot.tabs) {
-    if (tab.id == tabId) {
-      path = QString::fromUtf8(tab.path);
-    }
-  }
-
-  if (path.isEmpty()) {
+// TODO(scarlet): Collapse context menu helpers into one 'run' command
+void WorkspaceCoordinator::tabReveal(const std::string &commandId,
+                                     const neko::TabContextFfi &ctx) {
+  if (commandId.empty()) {
     return;
   }
 
-  uiHandles->fileExplorerWidget->showItem(path);
+  appStateController->runTabCommand(commandId, ctx);
+  uiHandles->fileExplorerWidget->showItem();
 }
 
 void WorkspaceCoordinator::newTab() {

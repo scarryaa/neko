@@ -4,6 +4,7 @@
 class CommandRegistry;
 class ContextMenuRegistry;
 class WorkspaceCoordinator;
+class AppStateController;
 
 #include <QApplication>
 
@@ -11,7 +12,8 @@ class CommandManager {
 public:
   explicit CommandManager(CommandRegistry *commandRegistry,
                           ContextMenuRegistry *contextMenuRegistry,
-                          WorkspaceCoordinator *workspaceCoordinator);
+                          WorkspaceCoordinator *workspaceCoordinator,
+                          AppStateController *appStateController);
   ~CommandManager() = default;
 
   void registerCommands();
@@ -21,6 +23,7 @@ private:
   CommandRegistry *commandRegistry;
   WorkspaceCoordinator *workspaceCoordinator;
   ContextMenuRegistry *contextMenuRegistry;
+  AppStateController *appStateController;
 };
 
 #endif

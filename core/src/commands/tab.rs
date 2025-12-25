@@ -48,7 +48,6 @@ pub struct TabContext {
     pub is_pinned: bool,
     pub is_modified: bool,
     pub file_path: Option<PathBuf>,
-    pub tab_count: usize,
 }
 
 pub struct TabCommandState {

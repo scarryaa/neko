@@ -25,7 +25,7 @@ public:
   void initialize(const std::string &path);
   void loadSavedDir();
   void setAndApplyTheme(const FileExplorerTheme &newTheme);
-  void showItem(const QString &path);
+  void showItem();
 
 protected:
   void keyPressEvent(QKeyEvent *event) override;

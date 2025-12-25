@@ -16,6 +16,9 @@ class ThemeManager;
 class ScrollOffsetFfi;
 class TabsSnapshot;
 
+class TabContextFfi;
+class TabCommandStateFfi;
+
 enum class AddCursorDirectionKind : uint8_t;
 } // namespace neko
 

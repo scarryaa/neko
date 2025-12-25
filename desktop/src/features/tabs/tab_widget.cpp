@@ -2,7 +2,6 @@
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
 #include "features/context_menu/context_menu_widget.h"
-#include "features/context_menu/providers/tab_context.h"
 #include "theme/theme_provider.h"
 #include "utils/gui_utils.h"
 #include <QApplication>
@@ -302,12 +301,12 @@ QRect TabWidget::modifiedRect() const {
 }
 
 void TabWidget::contextMenuEvent(QContextMenuEvent *event) {
-  TabContext ctx{};
-  ctx.tabId = tabId;
-  ctx.isPinned = isPinned;
-  ctx.isModified = isModified;
-  ctx.filePath = path;
-  ctx.canCloseOthers = getTabCount_() > 1;
+  neko::TabContextFfi ctx{};
+  ctx.id = static_cast<std::uint64_t>(tabId);
+  ctx.is_pinned = isPinned;
+  ctx.is_modified = isModified;
+  ctx.file_path_present = !path.isEmpty();
+  ctx.file_path = path.toStdString();
 
   const QVariant variant = QVariant::fromValue(ctx);
   const auto items = contextMenuRegistry.build("tab", variant);

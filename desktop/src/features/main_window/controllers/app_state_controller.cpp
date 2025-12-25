@@ -15,3 +15,13 @@ neko::Editor &AppStateController::getActiveEditorMut() const {
 neko::FileTree &AppStateController::getFileTreeMut() const {
   return appState->get_file_tree_mut();
 }
+
+neko::TabCommandStateFfi
+AppStateController::getTabCommandState(const neko::TabContextFfi &ctx) const {
+  return neko::get_tab_command_state(*appState, ctx.id);
+}
+
+void AppStateController::runTabCommand(const std::string &commandId,
+                                       const neko::TabContextFfi &ctx) {
+  neko::run_tab_command(*appState, commandId, ctx);
+}

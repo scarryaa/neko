@@ -142,7 +142,6 @@ pub mod ffi {
         is_modified: bool,
         file_path_present: bool,
         file_path: String,
-        tab_count: u32,
     }
 
     struct TabCommandStateFfi {

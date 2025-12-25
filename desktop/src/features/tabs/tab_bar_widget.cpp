@@ -1,7 +1,6 @@
 #include "tab_bar_widget.h"
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
-#include "features/context_menu/providers/tab_context.h"
 #include "features/tabs/controllers/tab_controller.h"
 #include "features/tabs/tab_widget.h"
 #include "neko-core/src/ffi/bridge.rs.h"
@@ -342,17 +341,18 @@ void TabBarWidget::registerCommands() {
   // TODO(scarlet): Centralize these
   commandRegistry.registerCommand(
       "tab.copyPath", [this](const QVariant &variant) {
-        auto ctx = variant.value<TabContext>();
-        QGuiApplication::clipboard()->setText(ctx.filePath);
+        auto ctx = variant.value<neko::TabContextFfi>();
+        QGuiApplication::clipboard()->setText(ctx.file_path.c_str());
       });
   commandRegistry.registerCommand("tab.pin", [this](const QVariant &variant) {
-    auto ctx = variant.value<TabContext>();
+    auto ctx = variant.value<neko::TabContextFfi>();
+    auto tabId = static_cast<int>(ctx.id);
 
-    tabController->setActiveTab(ctx.tabId);
-    if (ctx.isPinned) {
-      tabController->unpinTab(ctx.tabId);
+    tabController->setActiveTab(tabId);
+    if (ctx.is_pinned) {
+      tabController->unpinTab(tabId);
     } else {
-      tabController->pinTab(ctx.tabId);
+      tabController->pinTab(tabId);
     }
 
     const auto snapshot = tabController->getTabsSnapshot();
