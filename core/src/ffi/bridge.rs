@@ -154,6 +154,10 @@ pub mod ffi {
         is_pinned: bool,
     }
 
+    struct TabCommandFfi {
+        id: String,
+    }
+
     extern "Rust" {
         type AppState;
         type ConfigManager;
@@ -377,5 +381,7 @@ pub mod ffi {
             id: &str,
             ctx: TabContextFfi,
         ) -> bool;
+        #[cxx_name = "get_available_tab_commands"]
+        pub(crate) fn get_available_tab_commands_wrapper() -> Vec<TabCommandFfi>;
     }
 }

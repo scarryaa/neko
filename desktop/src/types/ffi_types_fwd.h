@@ -16,6 +16,7 @@ class ThemeManager;
 class ScrollOffsetFfi;
 class TabsSnapshot;
 
+class TabCommandFfi;
 class TabContextFfi;
 class TabCommandStateFfi;
 

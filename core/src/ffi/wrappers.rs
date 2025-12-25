@@ -4,7 +4,7 @@ use crate::{
     app::Tab,
     commands::{
         execute_command,
-        tab::{run_tab_command, tab_command_state},
+        tab::{get_available_tab_commands, run_tab_command, tab_command_state},
     },
     config::ConfigManager,
     theme::ThemeManager,
@@ -532,4 +532,17 @@ pub(crate) fn run_tab_command_wrapper(
     ctx: TabContextFfi,
 ) -> bool {
     run_tab_command(app_state, id, &ctx.into()).is_ok()
+}
+
+pub fn get_available_tab_commands_wrapper() -> Vec<TabCommandFfi> {
+    let Ok(commands) = get_available_tab_commands() else {
+        return Vec::new();
+    };
+
+    commands
+        .into_iter()
+        .map(|cmd| TabCommandFfi {
+            id: cmd.as_str().to_string(),
+        })
+        .collect()
 }

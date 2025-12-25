@@ -1,6 +1,7 @@
 use crate::AppState;
 use std::{path::PathBuf, str::FromStr};
 
+#[derive(Clone)]
 pub enum TabCommand {
     Close,
     CloseOthers,
@@ -22,6 +23,18 @@ impl TabCommand {
             TabCommand::Reveal => "tab.reveal",
             TabCommand::Pin => "tab.pin",
         }
+    }
+
+    pub fn all() -> &'static [TabCommand] {
+        &[
+            TabCommand::Close,
+            TabCommand::CloseOthers,
+            TabCommand::CloseLeft,
+            TabCommand::CloseRight,
+            TabCommand::CopyPath,
+            TabCommand::Reveal,
+            TabCommand::Pin,
+        ]
     }
 }
 
@@ -118,4 +131,8 @@ pub fn run_tab_command(
     }
 
     Ok(())
+}
+
+pub fn get_available_tab_commands() -> std::io::Result<Vec<TabCommand>> {
+    Ok(TabCommand::all().to_vec())
 }

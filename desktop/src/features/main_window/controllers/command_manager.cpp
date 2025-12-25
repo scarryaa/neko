@@ -4,6 +4,68 @@
 #include "features/main_window/controllers/app_state_controller.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
 #include "neko-core/src/ffi/bridge.rs.h"
+#include <cstdint>
+#include <map>
+
+namespace {
+enum class TabCommandGroup : uint8_t {
+  ClosePrimary = 0,
+  CloseSides = 1,
+  Pin = 2,
+  Path = 3,
+};
+
+struct TabCommandSpec {
+  const char *id;
+  const char *label;
+  const char *shortcut;
+  const char *iconKey;
+  TabCommandGroup group;
+};
+
+namespace k {
+// NOLINTNEXTLINE
+const TabCommandSpec tabCommandSpecs[] = {
+    {"tab.close", "Close", "Ctrl+W", "", TabCommandGroup::ClosePrimary},
+    {"tab.closeOthers", "Close Others", "", "", TabCommandGroup::ClosePrimary},
+    {"tab.closeLeft", "Close Left", "", "", TabCommandGroup::CloseSides},
+    {"tab.closeRight", "Close Right", "", "", TabCommandGroup::CloseSides},
+    {"tab.pin", "Pin", "", "", TabCommandGroup::Pin},
+    {"tab.copyPath", "Copy Path", "", "", TabCommandGroup::Path},
+    {"tab.reveal", "Reveal in Explorer", "", "", TabCommandGroup::Path},
+};
+} // namespace k
+
+inline void addItem(QVector<ContextMenuItem> &items, ContextMenuItemKind kind,
+                    const QString &commandId, const QString &label,
+                    const QString &shortcut, const QString &iconKey,
+                    bool enabled = true, bool visible = true,
+                    bool checked = false) {
+  items.push_back(
+      {kind, commandId, label, shortcut, iconKey, enabled, visible, checked});
+}
+
+inline void addSeparatorIfNotEmpty(QVector<ContextMenuItem> &items) {
+  if (!items.isEmpty()) {
+    items.push_back({ContextMenuItemKind::Separator});
+  }
+}
+
+inline bool isTabCommandEnabled(const std::string &commandId,
+                                const neko::TabCommandStateFfi state) {
+  std::map<std::string, bool> enabledMap{
+      {"tab.close", state.can_close && !state.is_pinned},
+      {"tab.closeOthers", state.can_close_others},
+      {"tab.closeLeft", state.can_close_left},
+      {"tab.closeRight", state.can_close_right},
+      {"tab.copyPath", state.can_copy_path},
+      {"tab.reveal", state.can_reveal},
+      {"tab.pin", true},
+  };
+
+  return enabledMap[commandId];
+};
+} // namespace
 
 CommandManager::CommandManager(CommandRegistry *commandRegistry,
                                ContextMenuRegistry *contextMenuRegistry,
@@ -69,41 +131,47 @@ void CommandManager::registerCommands() {
 
 void CommandManager::registerProviders() {
   // TODO(scarlet): Centralize this
-  // TODO(scarlet): Populate by pulling available commands from rust
   contextMenuRegistry->registerProvider("tab", [this](const QVariant &variant) {
-    const auto ctx = variant.value<neko::TabContextFfi>();
-    auto state = appStateController->getTabCommandState(ctx);
+    auto availableCommands = AppStateController::getAvailableTabCommands();
 
+    const auto ctx = variant.value<neko::TabContextFfi>();
+    const auto state = appStateController->getTabCommandState(ctx);
     QVector<ContextMenuItem> items;
 
-    items.push_back({ContextMenuItemKind::Action, "tab.close", "Close",
-                     "Ctrl+W", "", state.can_close});
-    items.push_back({ContextMenuItemKind::Action, "tab.closeOthers",
-                     "Close Others", "", "", state.can_close_others});
+    QSet<QString> availableIds;
+    for (auto &command : availableCommands) {
+      availableIds.insert(QString::fromStdString(command.id.c_str()));
+    }
 
-    items.push_back({ContextMenuItemKind::Separator});
+    bool firstItem = true;
+    std::optional<TabCommandGroup> lastGroup;
 
-    items.push_back({ContextMenuItemKind::Action, "tab.closeLeft", "Close Left",
-                     "", "", state.can_close_left});
-    items.push_back({ContextMenuItemKind::Action, "tab.closeRight",
-                     "Close Right", "", "", state.can_close_right});
+    for (const auto &commandSpec : k::tabCommandSpecs) {
+      const QString commandId = QString::fromUtf8(commandSpec.id);
+      if (!availableIds.contains(commandId)) {
+        continue;
+      }
 
-    items.push_back({ContextMenuItemKind::Separator});
+      // Insert separators when changing groups
+      if (!firstItem) {
+        if (!lastGroup.has_value() || commandSpec.group != lastGroup.value()) {
+          addSeparatorIfNotEmpty(items);
+        }
+      }
 
-    ContextMenuItem pin;
-    pin.kind = ContextMenuItemKind::Action;
-    pin.id = "tab.pin";
-    pin.label = ctx.is_pinned ? "Unpin" : "Pin";
-    pin.enabled = true;
-    pin.checked = state.is_pinned;
-    items.push_back(pin);
+      firstItem = false;
+      lastGroup = commandSpec.group;
 
-    items.push_back({ContextMenuItemKind::Separator});
+      bool enabled = isTabCommandEnabled(commandId.toStdString(), state);
+      bool checked = commandId == "tab.pin" ? state.is_pinned : false;
+      const auto &pinLabel = state.is_pinned ? "Unpin" : "Pin";
 
-    items.push_back({ContextMenuItemKind::Action, "tab.copyPath", "Copy Path",
-                     "", "", state.can_copy_path});
-    items.push_back({ContextMenuItemKind::Action, "tab.reveal",
-                     "Reveal in Explorer", "", "", state.can_reveal});
+      addItem(items, ContextMenuItemKind::Action, commandId,
+              QString::fromUtf8(commandId == "tab.pin" ? pinLabel
+                                                       : commandSpec.label),
+              QString::fromUtf8(commandSpec.shortcut),
+              QString::fromUtf8(commandSpec.iconKey), enabled, true, checked);
+    }
 
     return items;
   });
