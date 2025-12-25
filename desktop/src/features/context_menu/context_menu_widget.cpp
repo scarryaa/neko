@@ -19,6 +19,7 @@ static constexpr double shadowContentMargin =
     20.0; // Content margin for drop shadow
 static constexpr double minWidth = 200.0;
 static constexpr double contentMargin = 6.0;
+static constexpr double marginAdjustmentDivisor = 1.5;
 } // namespace k
 
 ContextMenuWidget::ContextMenuWidget(ThemeProvider *themeProvider,
@@ -26,8 +27,8 @@ ContextMenuWidget::ContextMenuWidget(ThemeProvider *themeProvider,
                                      QWidget *parent)
     : QWidget(parent), configManager(configManager),
       themeProvider(themeProvider) {
-  setWindowFlags(Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint |
-                 Qt::NoDropShadowWindowHint);
+  setWindowFlags(Qt::Popup | Qt::FramelessWindowHint |
+                 Qt::WindowStaysOnTopHint | Qt::NoDropShadowWindowHint);
   setAttribute(Qt::WA_DeleteOnClose);
   setAttribute(Qt::WA_ShowWithoutActivating);
   setAttribute(Qt::WA_StyledBackground, false);
@@ -116,7 +117,10 @@ void ContextMenuWidget::showMenu(const QPoint &position) {
   g::currentMenu = this;
 
   const int margin = static_cast<int>(k::shadowContentMargin);
-  move(position - QPoint(margin / 2, margin / 2));
+  // Adjust for shadow margin
+  int adjustedMargin = static_cast<int>(margin / k::marginAdjustmentDivisor);
+
+  move(position - QPoint(adjustedMargin, adjustedMargin));
   show();
   setFocus(Qt::PopupFocusReason);
 
