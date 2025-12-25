@@ -1,6 +1,11 @@
 #include "gutter_widget.h"
-#include "features/editor/render/render_state.h"
+#include "features/editor/controllers/editor_controller.h"
 #include "utils/gui_utils.h"
+#include <QPainter>
+#include <QScrollBar>
+#include <QString>
+#include <QStringList>
+#include <QWheelEvent>
 
 GutterWidget::GutterWidget(EditorController *editorController,
                            neko::ConfigManager &configManager,

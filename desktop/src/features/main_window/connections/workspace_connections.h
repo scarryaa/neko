@@ -1,8 +1,9 @@
 #ifndef WORKSPACE_CONNECTIONS_H
 #define WORKSPACE_CONNECTIONS_H
 
-#include "features/main_window/controllers/workspace_coordinator.h"
-#include "features/main_window/workspace_ui_handles.h"
+class WorkspaceUiHandles;
+class WorkspaceCoordinator;
+
 #include <QObject>
 
 class WorkspaceConnections : public QObject {

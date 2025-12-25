@@ -1,4 +1,8 @@
 #include "workspace_controller.h"
+#include "features/tabs/controllers/tab_controller.h"
+#include "neko-core/src/ffi/bridge.rs.h"
+#include <QHash>
+#include <QString>
 
 WorkspaceController::WorkspaceController(TabController *tabController,
                                          WorkspaceUi workspaceUi)

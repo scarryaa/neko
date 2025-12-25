@@ -1,4 +1,5 @@
 #include "palette_divider.h"
+#include <QPainter>
 
 PaletteDivider::PaletteDivider(const QColor &color, QWidget *parent)
     : QWidget(parent), color(color) {

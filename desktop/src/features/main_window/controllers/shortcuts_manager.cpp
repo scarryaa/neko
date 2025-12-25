@@ -1,5 +1,11 @@
 #include "shortcuts_manager.h"
-#include "features/command_palette/command_palette_mode.h"
+#include "features/command_palette/command_palette_widget.h"
+#include "features/editor/editor_widget.h"
+#include "features/file_explorer/file_explorer_widget.h"
+#include "features/main_window/controllers/workspace_coordinator.h"
+#include "features/main_window/workspace_ui_handles.h"
+#include "features/tabs/controllers/tab_controller.h"
+#include "neko-core/src/ffi/bridge.rs.h"
 
 ShortcutsManager::ShortcutsManager(QWidget *actionOwner,
                                    neko::ShortcutsManager *nekoShortcutsManager,

@@ -2,48 +2,15 @@
 #define FILE_EXPLORER_WIDGET_H
 
 #include "features/file_explorer/controllers/file_tree_controller.h"
-#include "neko-core/src/ffi/bridge.rs.h"
 #include "theme/theme_types.h"
-#include <QApplication>
-#include <QClipboard>
-#include <QColor>
-#include <QDir>
-#include <QFile>
-#include <QFileDialog>
-#include <QFileInfo>
-#include <QFocusEvent>
+#include "types/ffi_types_fwd.h"
+#include "types/qt_types_fwd.h"
 #include <QFont>
 #include <QFontMetricsF>
-#include <QIcon>
-#include <QKeyEvent>
-#include <QMessageBox>
-#include <QMimeData>
-#include <QMouseEvent>
-#include <QPainter>
-#include <QPixmap>
-#include <QPointF>
-#include <QPushButton>
-#include <QRectF>
-#include <QResizeEvent>
 #include <QScrollArea>
-#include <QScrollBar>
-#include <QSize>
-#include <QString>
-#include <QStringList>
-#include <QStyle>
-#include <QUrl>
-#include <QVBoxLayout>
-#include <QWheelEvent>
-#include <QtDebug>
 
-struct FileTree;
-class QFocusEvent;
-class QKeyEvent;
-class QMouseEvent;
-class QPaintEvent;
-class QPushButton;
-class QResizeEvent;
-class QWheelEvent;
+QT_FWD(QFocusEvent, QKeyEvent, QMouseEvent, QPaintEvent, QPushButton,
+       QResizeEvent, QWheelEvent, QPainter, QString);
 
 class FileExplorerWidget : public QScrollArea {
   Q_OBJECT

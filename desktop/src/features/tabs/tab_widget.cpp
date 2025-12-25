@@ -1,6 +1,23 @@
 #include "tab_widget.h"
+#include "features/context_menu/command_registry.h"
+#include "features/context_menu/context_menu_registry.h"
+#include "features/context_menu/context_menu_widget.h"
 #include "features/context_menu/providers/tab_context.h"
 #include "utils/gui_utils.h"
+#include <QApplication>
+#include <QByteArray>
+#include <QColor>
+#include <QDrag>
+#include <QFont>
+#include <QFontMetrics>
+#include <QIcon>
+#include <QMimeData>
+#include <QPaintEvent>
+#include <QPainter>
+#include <QPen>
+#include <QPixmap>
+#include <QSize>
+#include <QVariant>
 #include <utility>
 
 // NOLINTNEXTLINE

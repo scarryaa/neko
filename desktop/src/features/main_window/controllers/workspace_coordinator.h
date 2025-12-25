@@ -1,12 +1,16 @@
 #ifndef WORKSPACE_COORDINATOR_H
 #define WORKSPACE_COORDINATOR_H
 
-#include "features/editor/controllers/editor_controller.h"
-#include "features/main_window/controllers/app_state_controller.h"
-#include "features/main_window/controllers/workspace_controller.h"
+class TabController;
+class WorkspaceController;
+class AppStateController;
+class WorkspaceUiHandles;
+class EditorController;
+
+#include "features/main_window/interfaces/close_decision.h"
 #include "features/main_window/interfaces/save_result.h"
-#include "features/main_window/workspace_ui_handles.h"
-#include "features/tabs/controllers/tab_controller.h"
+#include "types/ffi_types_fwd.h"
+#include <QList>
 #include <QObject>
 
 class WorkspaceCoordinator : public QObject {

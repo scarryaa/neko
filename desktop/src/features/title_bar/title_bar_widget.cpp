@@ -1,6 +1,14 @@
 #include "title_bar_widget.h"
 #include "utils/gui_utils.h"
 #include <QFileInfo>
+#include <QFont>
+#include <QFontMetrics>
+#include <QHBoxLayout>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QPen>
+#include <QPushButton>
+#include <QSizePolicy>
 
 double constexpr TitleBarWidget::getPlatformTitleBarLeftInset() {
 #if defined(Q_OS_MACOS)

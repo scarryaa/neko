@@ -1,5 +1,10 @@
 #include "editor_widget.h"
 #include "utils/gui_utils.h"
+#include <QApplication>
+#include <QMouseEvent>
+#include <QPainter>
+#include <QScrollBar>
+#include <QTextLine>
 
 EditorWidget::EditorWidget(EditorController *editorController,
                            neko::ConfigManager &configManager,

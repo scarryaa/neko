@@ -1,10 +1,11 @@
 #ifndef PALETTE_FRAME_H
 #define PALETTE_FRAME_H
 
+#include "types/qt_types_fwd.h"
 #include <QFrame>
-#include <QPainter>
-#include <QPainterPath>
-#include <neko-core/src/ffi/bridge.rs.h>
+#include <QString>
+
+QT_FWD(QPaintEvent)
 
 class PaletteFrame : public QFrame {
   Q_OBJECT

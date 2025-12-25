@@ -2,8 +2,8 @@
 #define THEME_PROVIDER_H
 
 #include "theme/theme_types.h"
+#include "types/ffi_types_fwd.h"
 #include <QObject>
-#include <neko-core/src/ffi/bridge.rs.h>
 
 class ThemeProvider : public QObject {
   Q_OBJECT

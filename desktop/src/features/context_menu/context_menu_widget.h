@@ -4,16 +4,14 @@
 #include "features/context_menu/context_menu_frame.h"
 #include "features/context_menu/context_menu_item.h"
 #include "theme/theme_types.h"
-#include <QApplication>
-#include <QFrame>
-#include <QGraphicsDropShadowEffect>
-#include <QKeyEvent>
-#include <QMouseEvent>
-#include <QPainter>
-#include <QToolButton>
-#include <QVBoxLayout>
+#include "types/ffi_types_fwd.h"
+#include "types/qt_types_fwd.h"
+#include <QPoint>
+#include <QString>
+#include <QVector>
 #include <QWidget>
-#include <neko-core/src/ffi/bridge.rs.h>
+
+QT_FWD(QVBoxLayout, QEvent, QKeyEvent)
 
 class ContextMenuWidget : public QWidget {
   Q_OBJECT
@@ -42,14 +40,6 @@ private:
   ContextMenuFrame *mainFrame;
   neko::ConfigManager *configManager;
   QVBoxLayout *layout;
-
-  static constexpr double SHADOW_X_OFFSET = 0.0;
-  static constexpr double SHADOW_Y_OFFSET = 5.0;
-  static constexpr double SHADOW_BLUR_RADIUS = 25.0;
-  static constexpr double SHADOW_CONTENT_MARGIN =
-      20.0; // Content margin for drop shadow
-  static constexpr double MIN_WIDTH = 200.0;
-  static constexpr double CONTENT_MARGIN = 6.0;
 };
 
 #endif

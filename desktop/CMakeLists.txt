@@ -133,6 +133,10 @@ qt_add_executable(neko
     src/utils/gui_utils.cpp
     src/utils/gui_utils.h
 
+    # Forward declarations
+    src/types/ffi_types_fwd.h
+    src/types/qt_types_fwd.h
+
     ${PLATFORM_SRCS}
 )
 

@@ -1,8 +1,8 @@
 #ifndef APP_STATE_CONTROLLER_H
 #define APP_STATE_CONTROLLER_H
 
+#include "types/ffi_types_fwd.h"
 #include <QObject>
-#include <neko-core/src/ffi/bridge.rs.h>
 
 class AppStateController : public QObject {
   Q_OBJECT

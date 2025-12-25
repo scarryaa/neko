@@ -1,4 +1,6 @@
 #include "palette_frame.h"
+#include <QPainter>
+#include <QPainterPath>
 
 PaletteFrame::PaletteFrame(const PaletteFrameTheme &theme, QWidget *parent)
     : QFrame(parent), theme(theme) {

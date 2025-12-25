@@ -1,8 +1,11 @@
 #ifndef PALETTE_DIVIDER_H
 #define PALETTE_DIVIDER_H
 
-#include <QPainter>
+#include "types/qt_types_fwd.h"
+#include <QColor>
 #include <QWidget>
+
+QT_FWD(QPaintEvent)
 
 class PaletteDivider : public QWidget {
   Q_OBJECT

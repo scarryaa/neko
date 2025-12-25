@@ -1,5 +1,8 @@
 #include "command_manager.h"
+#include "features/context_menu/command_registry.h"
+#include "features/context_menu/context_menu_registry.h"
 #include "features/context_menu/providers/tab_context.h"
+#include "features/main_window/controllers/workspace_coordinator.h"
 
 CommandManager::CommandManager(CommandRegistry *commandRegistry,
                                ContextMenuRegistry *contextMenuRegistry,

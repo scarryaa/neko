@@ -2,15 +2,13 @@
 #define UI_UTILS_H
 
 #include "neko-core/src/ffi/bridge.rs.h"
-#include <QApplication>
-#include <QColor>
+#include "types/qt_types_fwd.h"
 #include <QFont>
-#include <QFontDatabase>
 #include <QIcon>
-#include <QLabel>
-#include <QPainter>
-#include <QSize>
+#include <QSizePolicy>
 #include <QString>
+
+QT_FWD(QLabel, QColor, QSize, QWidget)
 
 namespace UiUtils {
 QString getConfigString(neko::ConfigManager *manager,

@@ -1,9 +1,10 @@
 #ifndef MAIN_WINDOW_CONNECTIONS_H
 #define MAIN_WINDOW_CONNECTIONS_H
 
-#include "features/main_window/controllers/workspace_coordinator.h"
-#include "features/main_window/workspace_ui_handles.h"
-#include "theme/theme_provider.h"
+class WorkspaceCoordinator;
+class WorkspaceUiHandles;
+class ThemeProvider;
+
 #include <QObject>
 
 class MainWindowConnections : public QObject {

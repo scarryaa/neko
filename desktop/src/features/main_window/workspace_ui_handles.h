@@ -1,14 +1,17 @@
 #ifndef WORKSPACE_UI_HANDLES_H
 #define WORKSPACE_UI_HANDLES_H
 
-#include "features/command_palette/command_palette_widget.h"
-#include "features/editor/editor_widget.h"
-#include "features/editor/gutter_widget.h"
-#include "features/file_explorer/file_explorer_widget.h"
-#include "features/status_bar/status_bar_widget.h"
-#include "features/tabs/tab_bar_widget.h"
-#include "features/title_bar/title_bar_widget.h"
-#include <QSplitter>
+class EditorWidget;
+class GutterWidget;
+class TabBarWidget;
+class FileExplorerWidget;
+class StatusBarWidget;
+class CommandPaletteWidget;
+class TitleBarWidget;
+
+#include "types/qt_types_fwd.h"
+
+QT_FWD(QSplitter, QPushButton, QWidget)
 
 struct WorkspaceUiHandles {
   EditorWidget *editorWidget;

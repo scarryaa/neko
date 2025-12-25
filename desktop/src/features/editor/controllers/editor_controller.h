@@ -1,12 +1,10 @@
 #ifndef EDITOR_CONTROLLER_H
 #define EDITOR_CONTROLLER_H
 
-#include <QApplication>
-#include <QClipboard>
+#include "types/ffi_types_fwd.h"
 #include <QObject>
 #include <QString>
 #include <QStringList>
-#include <neko-core/src/ffi/bridge.rs.h>
 
 class EditorController : public QObject {
   Q_OBJECT

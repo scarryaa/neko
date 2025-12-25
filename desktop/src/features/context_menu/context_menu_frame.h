@@ -2,9 +2,8 @@
 #define CONTEXT_MENU_FRAME_H
 
 #include <QFrame>
-#include <QPainter>
-#include <QPainterPath>
-#include <neko-core/src/ffi/bridge.rs.h>
+#include <QPaintEvent>
+#include <QString>
 
 class ContextMenuFrame : public QFrame {
   Q_OBJECT

@@ -1,4 +1,5 @@
 #include "editor_renderer.h"
+#include <QPainter>
 
 void EditorRenderer::paint(QPainter &painter, const RenderState &state,
                            const ViewportContext &ctx) {

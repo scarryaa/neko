@@ -2,6 +2,8 @@
 #define COMMAND_REGISTRY_H
 
 #include <QHash>
+#include <QString>
+#include <QVariant>
 
 class CommandRegistry {
 public:

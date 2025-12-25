@@ -1,4 +1,11 @@
 #include "main_window_connections.h"
+#include "features/command_palette/command_palette_widget.h"
+#include "features/file_explorer/file_explorer_widget.h"
+#include "features/main_window/controllers/workspace_coordinator.h"
+#include "features/main_window/workspace_ui_handles.h"
+#include "features/status_bar/status_bar_widget.h"
+#include "theme/theme_provider.h"
+#include <QPushButton>
 
 MainWindowConnections::MainWindowConnections(
     const WorkspaceUiHandles &uiHandles,

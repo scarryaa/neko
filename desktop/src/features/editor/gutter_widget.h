@@ -1,22 +1,18 @@
 #ifndef GUTTER_WIDGET_H
 #define GUTTER_WIDGET_H
 
-#include "controllers/editor_controller.h"
-#include "neko-core/src/ffi/bridge.rs.h"
 #include "render/gutter_renderer.h"
 #include "theme/theme_types.h"
+#include "types/ffi_types_fwd.h"
+#include "types/qt_types_fwd.h"
 #include <QFont>
 #include <QFontMetricsF>
-#include <QPainter>
 #include <QScrollArea>
-#include <QScrollBar>
 #include <QSize>
-#include <QString>
-#include <QStringList>
-#include <QWheelEvent>
 
-class QPaintEvent;
-class QWheelEvent;
+QT_FWD(QWheelEvent, QPaintEvent)
+
+class EditorController;
 
 class GutterWidget : public QScrollArea {
   Q_OBJECT
@@ -49,8 +45,6 @@ public slots:
 
 private:
   [[nodiscard]] double measureWidth() const;
-  void drawText(QPainter *painter, const ViewportContext &ctx, int lineCount);
-  void drawLineHighlight(QPainter *painter, const ViewportContext &ctx);
 
   void decreaseFontSize();
   void increaseFontSize();

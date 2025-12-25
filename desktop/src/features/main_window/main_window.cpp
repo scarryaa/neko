@@ -1,14 +1,42 @@
 #include "main_window.h"
+#include "controllers/app_state_controller.h"
+#include "features/command_palette/command_palette_widget.h"
+#include "features/context_menu/command_registry.h"
+#include "features/context_menu/context_menu_registry.h"
 #include "features/context_menu/providers/tab_context.h"
+#include "features/editor/controllers/editor_controller.h"
+#include "features/editor/editor_widget.h"
+#include "features/editor/gutter_widget.h"
+#include "features/file_explorer/controllers/file_tree_controller.h"
+#include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/connections/editor_connections.h"
 #include "features/main_window/connections/file_explorer_connections.h"
 #include "features/main_window/connections/main_window_connections.h"
 #include "features/main_window/connections/theme_connections.h"
 #include "features/main_window/connections/workspace_connections.h"
+#include "features/main_window/controllers/command_manager.h"
 #include "features/main_window/controllers/shortcuts_manager.h"
+#include "features/main_window/controllers/workspace_controller.h"
+#include "features/main_window/controllers/workspace_coordinator.h"
+#include "features/status_bar/status_bar_widget.h"
+#include "features/tabs/controllers/tab_controller.h"
+#include "features/tabs/tab_bar_widget.h"
+#include "features/title_bar/title_bar_widget.h"
+#include "neko-core/src/ffi/bridge.rs.h"
 #include "theme/theme_provider.h"
 #include "utils/gui_utils.h"
 #include "utils/mac_utils.h"
+#include <QDir>
+#include <QFileDialog>
+#include <QFont>
+#include <QFontMetrics>
+#include <QHBoxLayout>
+#include <QList>
+#include <QPushButton>
+#include <QSplitter>
+#include <QString>
+#include <QVBoxLayout>
+#include <QWidget>
 
 Q_DECLARE_METATYPE(TabContext);
 

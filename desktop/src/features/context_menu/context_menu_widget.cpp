@@ -1,5 +1,19 @@
 #include "features/context_menu/context_menu_widget.h"
 #include "utils/gui_utils.h"
+#include <QGraphicsDropShadowEffect>
+#include <QLabel>
+#include <QToolButton>
+#include <QVBoxLayout>
+
+namespace k {
+static constexpr double shadowXOffset = 0.0;
+static constexpr double shadowYOffset = 5.0;
+static constexpr double shadowBlurRadius = 25.0;
+static constexpr double shadowContentMargin =
+    20.0; // Content margin for drop shadow
+static constexpr double minWidth = 200.0;
+static constexpr double contentMargin = 6.0;
+} // namespace k
 
 ContextMenuWidget::ContextMenuWidget(const ContextMenuTheme &theme,
                                      neko::ConfigManager *configManager,
@@ -13,29 +27,30 @@ ContextMenuWidget::ContextMenuWidget(const ContextMenuTheme &theme,
   setAttribute(Qt::WA_TranslucentBackground);
   setFocusPolicy(Qt::StrongFocus);
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
-  setMinimumWidth(MIN_WIDTH);
+  setMinimumWidth(k::minWidth);
   setMouseTracking(true);
   setAutoFillBackground(false);
 
   const auto shadowColor = theme.shadowColor;
   auto *shadow = new QGraphicsDropShadowEffect(this);
-  shadow->setBlurRadius(SHADOW_BLUR_RADIUS);
+  shadow->setBlurRadius(k::shadowBlurRadius);
   shadow->setColor(shadowColor);
-  shadow->setOffset(SHADOW_X_OFFSET, SHADOW_Y_OFFSET);
+  shadow->setOffset(k::shadowXOffset, k::shadowYOffset);
 
   mainFrame =
       new ContextMenuFrame({theme.backgroundColor, theme.borderColor}, this);
   mainFrame->setGraphicsEffect(shadow);
 
   auto *rootLayout = new QVBoxLayout(this);
-  rootLayout->setContentsMargins(SHADOW_CONTENT_MARGIN, SHADOW_CONTENT_MARGIN,
-                                 SHADOW_CONTENT_MARGIN, SHADOW_CONTENT_MARGIN);
+  rootLayout->setContentsMargins(k::shadowContentMargin, k::shadowContentMargin,
+                                 k::shadowContentMargin,
+                                 k::shadowContentMargin);
   rootLayout->setSizeConstraint(QLayout::SetMinimumSize);
   rootLayout->addWidget(mainFrame);
 
   layout = new QVBoxLayout(mainFrame);
-  layout->setContentsMargins(CONTENT_MARGIN, CONTENT_MARGIN, CONTENT_MARGIN,
-                             CONTENT_MARGIN);
+  layout->setContentsMargins(k::contentMargin, k::contentMargin,
+                             k::contentMargin, k::contentMargin);
   layout->setSpacing(4);
 
   const auto borderColor = theme.borderColor;
@@ -68,7 +83,7 @@ ContextMenuWidget::ContextMenuWidget(const ContextMenuTheme &theme,
 }
 
 void ContextMenuWidget::showMenu(const QPoint &position) {
-  const int margin = static_cast<int>(SHADOW_CONTENT_MARGIN);
+  const int margin = static_cast<int>(k::shadowContentMargin);
   move(position - QPoint(margin / 2, margin / 2));
   show();
   setFocus(Qt::PopupFocusReason);

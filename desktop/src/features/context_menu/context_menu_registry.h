@@ -4,6 +4,9 @@
 #include "features/context_menu/context_menu_item.h"
 #include <QHash>
 #include <QString>
+#include <QVariant>
+#include <QVector>
+#include <functional>
 
 using ProviderFn = std::function<QVector<ContextMenuItem>(const QVariant &ctx)>;
 
@@ -17,4 +20,4 @@ private:
   QHash<QString, ProviderFn> providers;
 };
 
-#endif
+#endif // CONTEXT_MENU_REGISTRY_H

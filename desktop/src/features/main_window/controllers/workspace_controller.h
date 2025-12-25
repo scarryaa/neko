@@ -1,9 +1,11 @@
 #ifndef WORKSPACE_CONTROLLER_H
 #define WORKSPACE_CONTROLLER_H
 
+class TabController;
+
 #include "features/main_window/interfaces/workspace_ui.h"
-#include "features/tabs/controllers/tab_controller.h"
-#include <QHash>
+#include <QList>
+#include <functional>
 
 class WorkspaceController {
 public:

@@ -1,19 +1,19 @@
 #ifndef TAB_WIDGET_H
 #define TAB_WIDGET_H
 
-#include "features/context_menu/command_registry.h"
-#include "features/context_menu/context_menu_registry.h"
-#include "features/context_menu/context_menu_widget.h"
-#include "neko-core/src/ffi/bridge.rs.h"
+class CommandRegistry;
+class ContextMenuRegistry;
+class ContextMenuWidget;
+
 #include "theme/theme_types.h"
-#include <QApplication>
-#include <QDrag>
-#include <QIcon>
-#include <QMimeData>
-#include <QPaintEvent>
-#include <QPainter>
+#include "types/ffi_types_fwd.h"
+#include "types/qt_types_fwd.h"
 #include <QPoint>
+#include <QRect>
+#include <QString>
 #include <QWidget>
+
+QT_FWD(QPaintEvent, QMouseEvent, QEnterEvent, QEvent, QContextMenuEvent)
 
 class TabWidget : public QWidget {
   Q_OBJECT

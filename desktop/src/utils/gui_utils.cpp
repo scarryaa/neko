@@ -1,4 +1,8 @@
 #include "gui_utils.h"
+#include <QLabel>
+#include <QPainter>
+#include <QPixmap>
+#include <QWidget>
 
 QString UiUtils::getConfigString(neko::ConfigManager *manager,
                                  char *(*getter)(neko::ConfigManager *)) {

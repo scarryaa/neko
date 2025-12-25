@@ -1,27 +1,20 @@
 #ifndef TAB_BAR_WIDGET_H
 #define TAB_BAR_WIDGET_H
 
-#include "features/context_menu/command_registry.h"
-#include "features/context_menu/context_menu_registry.h"
-#include "features/tabs/controllers/tab_controller.h"
-#include "features/tabs/tab_widget.h"
-#include "neko-core/src/ffi/bridge.rs.h"
+class CommandRegistry;
+class ContextMenuRegistry;
+class TabController;
+class TabWidget;
+
 #include "theme/theme_types.h"
-#include <QClipboard>
-#include <QDragEnterEvent>
-#include <QDragLeaveEvent>
-#include <QDragMoveEvent>
-#include <QDropEvent>
-#include <QEvent>
-#include <QHBoxLayout>
-#include <QMimeData>
-#include <QPaintEvent>
-#include <QPainter>
-#include <QPoint>
-#include <QPushButton>
+#include "types/ffi_types_fwd.h"
+#include "types/qt_types_fwd.h"
+#include <QList>
 #include <QScrollArea>
-#include <QScrollBar>
 #include <QStringList>
+
+QT_FWD(QPushButton, QHBoxLayout, QDragEnterEvent, QDragMoveEvent,
+       QDragLeaveEvent, QDropEvent, QEvent, QPoint);
 
 class TabBarWidget : public QScrollArea {
   Q_OBJECT

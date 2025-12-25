@@ -1,4 +1,7 @@
 #include "gutter_renderer.h"
+#include <QPainter>
+#include <QPointF>
+#include <QString>
 
 void GutterRenderer::paint(QPainter &painter, const RenderState &state,
                            const ViewportContext &ctx) {

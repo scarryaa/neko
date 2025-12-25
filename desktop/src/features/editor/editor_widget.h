@@ -3,28 +3,18 @@
 
 #include "controllers/editor_controller.h"
 #include "features/editor/render/editor_renderer.h"
-#include "neko-core/src/ffi/bridge.rs.h"
 #include "row_col.h"
 #include "theme/theme_types.h"
-#include <QApplication>
+#include "types/ffi_types_fwd.h"
+#include "types/qt_types_fwd.h"
 #include <QFont>
 #include <QFontMetricsF>
-#include <QKeyEvent>
-#include <QMouseEvent>
-#include <QPainter>
 #include <QPoint>
 #include <QScrollArea>
-#include <QScrollBar>
 #include <QString>
-#include <QStringList>
-#include <QTextLayout>
 #include <QTimer>
-#include <QWheelEvent>
 
-class QKeyEvent;
-class QMouseEvent;
-class QPaintEvent;
-class QWheelEvent;
+QT_FWD(QWheelEvent, QMouseEvent, QKeyEvent, QPaintEvent)
 
 class EditorWidget : public QScrollArea {
   Q_OBJECT

@@ -1,7 +1,6 @@
 #ifndef TAB_CONTEXT_H
 #define TAB_CONTEXT_H
 
-#include <QMetaType>
 #include <QString>
 
 struct TabContext {

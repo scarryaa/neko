@@ -1,4 +1,5 @@
 #include "tab_controller.h"
+#include "neko-core/src/ffi/bridge.rs.h"
 
 TabController::TabController(neko::AppState *appState) : appState(appState) {}
 

@@ -2,6 +2,7 @@
 #define WORKSPACE_UI_H
 
 #include "close_decision.h"
+#include <QList>
 #include <QString>
 #include <functional>
 

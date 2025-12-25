@@ -1,6 +1,7 @@
 #include "mac_utils.h"
 #include <AppKit/AppKit.h>
 #include <Cocoa/Cocoa.h>
+#include <QWidget>
 #include <objc/objc.h>
 
 // NOLINTNEXTLINE

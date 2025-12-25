@@ -3,19 +3,12 @@
 
 #include "features/command_palette/command_palette_mode.h"
 #include "theme/theme_types.h"
+#include "types/qt_types_fwd.h"
 #include <QStringList>
 #include <QWidget>
 
-QT_FORWARD_DECLARE_CLASS(QVBoxLayout)
-QT_FORWARD_DECLARE_CLASS(QLabel)
-QT_FORWARD_DECLARE_CLASS(QLineEdit)
-QT_FORWARD_DECLARE_CLASS(QListWidget)
-QT_FORWARD_DECLARE_CLASS(QToolButton)
-QT_FORWARD_DECLARE_CLASS(QShortcut)
-QT_FORWARD_DECLARE_CLASS(QSpacerItem)
-QT_FORWARD_DECLARE_CLASS(QShowEvent)
-QT_FORWARD_DECLARE_CLASS(QEvent)
-QT_FORWARD_DECLARE_CLASS(QKeyEvent)
+QT_FWD(QVBoxLayout, QLabel, QLineEdit, QListWidget, QToolButton, QShortcut,
+       QSpacerItem, QShowEvent, QEvent, QKeyEvent, QShowEvent);
 
 class PaletteDivider;
 class PaletteFrame;

@@ -1,7 +1,6 @@
 #ifndef EDITOR_RENDER_UTILS_H
 #define EDITOR_RENDER_UTILS_H
 
-#include <QAbstractScrollArea>
 #include <QRectF>
 
 struct ViewportContext {

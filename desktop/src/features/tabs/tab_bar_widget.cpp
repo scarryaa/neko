@@ -1,8 +1,33 @@
 #include "tab_bar_widget.h"
-
+#include "features/context_menu/command_registry.h"
+#include "features/context_menu/context_menu_registry.h"
 #include "features/context_menu/providers/tab_context.h"
+#include "features/tabs/controllers/tab_controller.h"
+#include "features/tabs/tab_widget.h"
+#include "neko-core/src/ffi/bridge.rs.h"
 #include "theme/theme_types.h"
 #include "utils/gui_utils.h"
+#include <QByteArray>
+#include <QClipboard>
+#include <QDragEnterEvent>
+#include <QDragLeaveEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
+#include <QEvent>
+#include <QFont>
+#include <QFontMetrics>
+#include <QGuiApplication>
+#include <QHBoxLayout>
+#include <QLayoutItem>
+#include <QMimeData>
+#include <QPaintEvent>
+#include <QPainter>
+#include <QPoint>
+#include <QPushButton>
+#include <QRect>
+#include <QScrollBar>
+#include <QString>
+#include <QVariant>
 
 // TODO(scarlet): Rework the tab update system to not rely on mass setting
 // all the tabs and have the TabBarWidget be in charge of mgmt/updates,

@@ -2,15 +2,14 @@
 #define TITLE_BAR_WIDGET_H
 
 #include "theme/theme_types.h"
-#include <QHBoxLayout>
-#include <QMouseEvent>
-#include <QPainter>
-#include <QPen>
-#include <QPushButton>
+#include "types/ffi_types_fwd.h"
+#include "types/qt_types_fwd.h"
+#include <QPoint>
 #include <QString>
 #include <QWidget>
-#include <neko-core/src/ffi/bridge.rs.h>
 #include <string>
+
+QT_FWD(QPushButton, QMouseEvent, QPaintEvent)
 
 class TitleBarWidget : public QWidget {
   Q_OBJECT

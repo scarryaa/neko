@@ -1,27 +1,29 @@
 #ifndef MAIN_WINDOW_H
 #define MAIN_WINDOW_H
 
-#include "features/command_palette/command_palette_widget.h"
+class EditorController;
+class WorkspaceCoordinator;
+class WorkspaceController;
+class CommandManager;
+class ThemeProvider;
+class StatusBarWidget;
+class TabBarWidget;
+class TitleBarWidget;
+class GutterWidget;
+class EditorWidget;
+class CommandPaletteWidget;
+class FileExplorerWidget;
+class FileTreeController;
+class TabController;
+
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
-#include "features/editor/controllers/editor_controller.h"
-#include "features/editor/editor_widget.h"
-#include "features/editor/gutter_widget.h"
-#include "features/file_explorer/controllers/file_tree_controller.h"
-#include "features/file_explorer/file_explorer_widget.h"
-#include "features/main_window/controllers/command_manager.h"
-#include "features/main_window/controllers/workspace_controller.h"
-#include "features/main_window/controllers/workspace_coordinator.h"
-#include "features/status_bar/status_bar_widget.h"
-#include "features/tabs/controllers/tab_controller.h"
-#include "features/tabs/tab_bar_widget.h"
-#include "features/title_bar/title_bar_widget.h"
-#include "neko-core/src/ffi/bridge.rs.h"
-#include "theme/theme_provider.h"
+#include "types/qt_types_fwd.h"
+#include "workspace_ui_handles.h"
 #include <QMainWindow>
-#include <QPushButton>
-#include <QSplitter>
-#include <QVBoxLayout>
+#include <neko-core/src/ffi/bridge.rs.h>
+
+QT_FWD(QPushButton, QSplitter, QWidget);
 
 class MainWindow : public QMainWindow {
   Q_OBJECT

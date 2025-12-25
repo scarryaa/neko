@@ -3,8 +3,11 @@
 
 #include "render_theme.h"
 #include <QFont>
+#include <QString>
 #include <QStringList>
+#include <functional>
 #include <neko-core/src/ffi/bridge.rs.h>
+#include <vector>
 
 struct RenderState {
   const QStringList lines;

@@ -1,5 +1,19 @@
 #include "status_bar_widget.h"
+#include "features/editor/controllers/editor_controller.h"
 #include "utils/gui_utils.h"
+#include <QApplication>
+#include <QFont>
+#include <QFontMetrics>
+#include <QHBoxLayout>
+#include <QIcon>
+#include <QPaintEvent>
+#include <QPainter>
+#include <QPointF>
+#include <QPushButton>
+#include <QRectF>
+#include <QString>
+#include <QStyle>
+#include <QStyleOption>
 
 StatusBarWidget::StatusBarWidget(EditorController *editorController,
                                  neko::ConfigManager &configManager,

@@ -3,8 +3,9 @@
 
 #include "editor_render_utils.h"
 #include "render_state.h"
-#include <QPainter>
-#include <neko-core/src/ffi/bridge.rs.h>
+#include "types/qt_types_fwd.h"
+
+QT_FWD(QPainter)
 
 class EditorRenderer {
 public:

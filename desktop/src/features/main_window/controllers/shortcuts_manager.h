@@ -1,10 +1,15 @@
 #ifndef SHORTCUTS_MANAGER_H
 #define SHORTCUTS_MANAGER_H
 
-#include "features/main_window/controllers/workspace_coordinator.h"
-#include "features/tabs/controllers/tab_controller.h"
-#include "neko-core/src/ffi/bridge.rs.h"
-#include <QAction>
+class TabController;
+class WorkspaceCoordinator;
+class WorkspaceUiHandles;
+
+#include "types/ffi_types_fwd.h"
+#include "types/qt_types_fwd.h"
+#include <QWidget>
+
+QT_FWD(QAction)
 
 class ShortcutsManager : public QObject {
   Q_OBJECT

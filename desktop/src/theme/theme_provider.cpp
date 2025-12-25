@@ -1,5 +1,5 @@
 #include "theme/theme_provider.h"
-#include "theme/theme_types.h"
+#include "neko-core/src/ffi/bridge.rs.h"
 #include "utils/gui_utils.h"
 
 ThemeProvider::ThemeProvider(neko::ThemeManager *themeManager, QObject *parent)

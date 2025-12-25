@@ -3,7 +3,9 @@
 
 #include "editor_render_utils.h"
 #include "render_state.h"
-#include <QPainter>
+#include "types/qt_types_fwd.h"
+
+QT_FWD(QPainter)
 
 class GutterRenderer {
 public:

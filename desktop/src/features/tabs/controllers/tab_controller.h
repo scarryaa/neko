@@ -1,8 +1,10 @@
 #ifndef TAB_CONTROLLER_H
 #define TAB_CONTROLLER_H
 
+#include "types/ffi_types_fwd.h"
+#include <QList>
 #include <QObject>
-#include <neko-core/src/ffi/bridge.rs.h>
+#include <string>
 
 class TabController : public QObject {
   Q_OBJECT

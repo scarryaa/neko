@@ -1,17 +1,15 @@
 #ifndef STATUS_BAR_WIDGET_H
 #define STATUS_BAR_WIDGET_H
 
-#include "features/editor/controllers/editor_controller.h"
-#include "neko-core/src/ffi/bridge.rs.h"
+class EditorController;
+class ConfigManager;
+
 #include "theme/theme_types.h"
-#include <QApplication>
-#include <QHBoxLayout>
-#include <QIcon>
-#include <QPainter>
-#include <QPushButton>
-#include <QStyle>
-#include <QStyleOption>
+#include "types/ffi_types_fwd.h"
+#include "types/qt_types_fwd.h"
 #include <QWidget>
+
+QT_FWD(QPaintEvent, QPushButton);
 
 class StatusBarWidget : public QWidget {
   Q_OBJECT

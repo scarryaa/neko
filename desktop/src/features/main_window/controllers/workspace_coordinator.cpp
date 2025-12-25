@@ -1,5 +1,22 @@
 #include "workspace_coordinator.h"
 #include "features/command_palette/command_palette_mode.h"
+#include "features/command_palette/command_palette_widget.h"
+#include "features/editor/controllers/editor_controller.h"
+#include "features/editor/editor_widget.h"
+#include "features/editor/gutter_widget.h"
+#include "features/file_explorer/file_explorer_widget.h"
+#include "features/main_window/controllers/app_state_controller.h"
+#include "features/main_window/controllers/workspace_controller.h"
+#include "features/main_window/workspace_ui_handles.h"
+#include "features/status_bar/status_bar_widget.h"
+#include "features/tabs/controllers/tab_controller.h"
+#include "features/tabs/tab_bar_widget.h"
+#include "neko-core/src/ffi/bridge.rs.h"
+#include <QApplication>
+#include <QCLipboard>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QScrollBar>
 
 WorkspaceCoordinator::WorkspaceCoordinator(
     WorkspaceController *workspaceController, TabController *tabController,
