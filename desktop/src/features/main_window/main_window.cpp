@@ -37,8 +37,6 @@
 #include <QVBoxLayout>
 #include <QWidget>
 
-Q_DECLARE_METATYPE(neko::TabContextFfi);
-
 // TODO(scarlet): StatusBar signals/tab inform and MainWindow editor ref
 // are messy and need to be cleaned up. Also consider "rearchitecting"
 // to use the AppState consistently and extract common MainWindow/StatusBar
@@ -55,14 +53,17 @@ MainWindow::MainWindow(QWidget *parent)
 
   commandRegistry = CommandRegistry();
   contextMenuRegistry = ContextMenuRegistry();
+
   auto *appStateController = new AppStateController(&*appState);
-  auto *tabController = new TabController(&*appState);
 
   neko::Editor *editor = &appStateController->getActiveEditorMut();
-  neko::FileTree *fileTree = &appStateController->getFileTreeMut();
-
-  auto *fileTreeController = new FileTreeController(fileTree, this);
   editorController = new EditorController(editor);
+
+  neko::FileTree *fileTree = &appStateController->getFileTreeMut();
+  auto *fileTreeController = new FileTreeController(fileTree, this);
+
+  auto *tabController = new TabController(&*appState);
+
   workspaceController = new WorkspaceController(
       tabController,
       WorkspaceUi{
@@ -76,6 +77,7 @@ MainWindow::MainWindow(QWidget *parent)
                 return workspaceCoordinator->showTabCloseConfirmationDialog(
                     ids);
               }});
+
   themeProvider = new ThemeProvider(&*themeManager, this);
 
   applyTheme();
@@ -92,6 +94,7 @@ MainWindow::MainWindow(QWidget *parent)
   workspaceCoordinator = new WorkspaceCoordinator(
       workspaceController, tabController, appStateController, editorController,
       &*configManager, &*themeManager, &uiHandles, this);
+
   auto *commandManager =
       new CommandManager(&commandRegistry, &contextMenuRegistry,
                          workspaceCoordinator, appStateController);
@@ -99,11 +102,7 @@ MainWindow::MainWindow(QWidget *parent)
       new ShortcutsManager(this, &*shortcutsManager, workspaceCoordinator,
                            tabController, &uiHandles, this);
 
-  MainWindow::registerCommands(commandManager);
   connectSignals();
-
-  qtShortcutsManager->setUpKeyboardShortcuts();
-  workspaceCoordinator->applyInitialState();
   themeProvider->reload();
 }
 
@@ -251,13 +250,6 @@ QSplitter *MainWindow::buildSplitter(QWidget *editorSideContainer) {
                    });
 
   return splitter;
-}
-
-void MainWindow::registerCommands(CommandManager *commandManager) {
-  qRegisterMetaType<neko::TabContextFfi>("TabContext");
-
-  commandManager->registerProviders();
-  commandManager->registerCommands();
 }
 
 void MainWindow::applyTheme() {

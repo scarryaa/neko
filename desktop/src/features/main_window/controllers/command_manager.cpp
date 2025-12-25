@@ -67,6 +67,8 @@ inline bool isTabCommandEnabled(const std::string &commandId,
 };
 } // namespace
 
+Q_DECLARE_METATYPE(neko::TabContextFfi);
+
 CommandManager::CommandManager(CommandRegistry *commandRegistry,
                                ContextMenuRegistry *contextMenuRegistry,
                                WorkspaceCoordinator *workspaceCoordinator,
@@ -74,7 +76,12 @@ CommandManager::CommandManager(CommandRegistry *commandRegistry,
     : commandRegistry(commandRegistry),
       contextMenuRegistry(contextMenuRegistry),
       workspaceCoordinator(workspaceCoordinator),
-      appStateController(appStateController) {}
+      appStateController(appStateController) {
+  qRegisterMetaType<neko::TabContextFfi>("TabContext");
+
+  registerProviders();
+  registerCommands();
+}
 
 void CommandManager::registerCommands() {
   // Tab commands

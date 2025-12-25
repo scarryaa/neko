@@ -36,6 +36,7 @@ WorkspaceCoordinator::WorkspaceCoordinator(
 
   neko::Editor &activeEditor = appStateController->getActiveEditorMut();
   setActiveEditor(&activeEditor);
+  applyInitialState();
 }
 
 void WorkspaceCoordinator::fileExplorerToggled() {

@@ -15,7 +15,9 @@ ShortcutsManager::ShortcutsManager(QWidget *actionOwner,
                                    QObject *parent)
     : actionOwner(actionOwner), nekoShortcutsManager(nekoShortcutsManager),
       workspaceCoordinator(workspaceCoordinator), tabController(tabController),
-      uiHandles(uiHandles), QObject(parent) {}
+      uiHandles(uiHandles), QObject(parent) {
+  setUpKeyboardShortcuts();
+}
 
 void ShortcutsManager::setUpKeyboardShortcuts() {
   // TODO(scarlet): Break this down
