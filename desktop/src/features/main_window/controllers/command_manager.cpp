@@ -57,7 +57,7 @@ inline void addSeparatorIfNotEmpty(QVector<ContextMenuItem> &items) {
 inline bool isTabCommandEnabled(const std::string &commandId,
                                 const neko::TabCommandStateFfi state) {
   std::map<std::string, bool> enabledMap{
-      {"tab.close", state.can_close && !state.is_pinned},
+      {"tab.close", state.can_close},
       {"tab.closeOthers", state.can_close_others},
       {"tab.closeLeft", state.can_close_left},
       {"tab.closeRight", state.can_close_right},
