@@ -1,5 +1,6 @@
 #include "workspace_connections.h"
 #include "features/editor/editor_widget.h"
+#include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
 #include "features/main_window/workspace_ui_handles.h"
 #include "features/tabs/tab_bar_widget.h"
@@ -23,4 +24,18 @@ WorkspaceConnections::WorkspaceConnections(
   // EditorWidget -> WorkspaceCoordinator
   connect(uiHandles.editorWidget, &EditorWidget::newTabRequested,
           workspaceCoordinator, &WorkspaceCoordinator::newTab);
+
+  connect(uiHandles.fileExplorerWidget,
+          &FileExplorerWidget::directorySelectionRequested,
+          workspaceCoordinator, [workspaceCoordinator, uiHandles]() {
+            auto maybeDirectory =
+                workspaceCoordinator->requestFileExplorerDirectory();
+
+            if (!maybeDirectory) {
+              return;
+            }
+
+            uiHandles.fileExplorerWidget->applySelectedDirectory(
+                *maybeDirectory);
+          });
 }

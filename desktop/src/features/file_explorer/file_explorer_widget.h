@@ -42,11 +42,12 @@ signals:
   void fontSizeChanged(double newSize);
   void directoryPersistRequested(const std::string &path);
   void directorySelected(const std::string &path);
+  void directorySelectionRequested();
 
 public slots:
-  void directorySelectionRequested();
   void loadSavedDirectory(const std::string &path);
   void itemRevealRequested();
+  void applySelectedDirectory(const std::string &path);
 
 private:
   void redraw();

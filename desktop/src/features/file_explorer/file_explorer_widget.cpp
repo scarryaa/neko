@@ -52,7 +52,7 @@ FileExplorerWidget::FileExplorerWidget(const FileExplorerProps &props,
 
 void FileExplorerWidget::connectSignals() {
   connect(directorySelectionButton, &QPushButton::clicked, this,
-          &FileExplorerWidget::directorySelectionRequested);
+          [this]() { emit directorySelectionRequested(); });
   connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
           &FileExplorerWidget::redraw);
   connect(horizontalScrollBar(), &QScrollBar::valueChanged, this,
@@ -260,20 +260,16 @@ void FileExplorerWidget::focusOutEvent(QFocusEvent *event) {
   QScrollArea::focusOutEvent(event);
 }
 
-void FileExplorerWidget::directorySelectionRequested() {
-  // TODO(scarlet): Move dialog out of widget
-  QString dir = QFileDialog::getExistingDirectory(
-      this, "Select a directory", QDir::homePath(),
-      QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-
-  if (!dir.isEmpty()) {
-    std::string path = dir.toStdString();
-    initialize(path);
-    directorySelectionButton->hide();
-
-    emit directorySelected(path);
-    emit directoryPersistRequested(path);
+void FileExplorerWidget::applySelectedDirectory(const std::string &path) {
+  if (path.empty()) {
+    return;
   }
+
+  initialize(path);
+  directorySelectionButton->hide();
+
+  emit directorySelected(path);
+  emit directoryPersistRequested(path);
 }
 
 void FileExplorerWidget::redraw() { viewport()->update(); }

@@ -333,6 +333,11 @@ WorkspaceCoordinator::showTabCloseConfirmationDialog(const QList<int> &ids) {
   return CloseDecision::Cancel;
 }
 
+std::optional<std::string>
+WorkspaceCoordinator::requestFileExplorerDirectory() {
+  return workspaceController->requestFileExplorerDirectory();
+}
+
 SaveResult WorkspaceCoordinator::saveTab(int tabId, bool isSaveAs) {
   if (workspaceController->saveTab(tabId, isSaveAs)) {
     uiHandles->tabBarWidget->setTabModified(tabId, false);

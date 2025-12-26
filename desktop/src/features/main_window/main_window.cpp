@@ -78,6 +78,13 @@ MainWindow::MainWindow(QWidget *parent)
                [this](const QList<int> &ids) {
                  return workspaceCoordinator->showTabCloseConfirmationDialog(
                      ids);
+               },
+           .promptFileExplorerDirectory =
+               [this]() {
+                 return QFileDialog::getExistingDirectory(
+                     this, tr("Select a directory"), QDir::homePath(),
+                     QFileDialog::ShowDirsOnly |
+                         QFileDialog::DontResolveSymlinks);
                }}});
 
   appConfigService =

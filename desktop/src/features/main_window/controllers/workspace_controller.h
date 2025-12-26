@@ -24,6 +24,7 @@ public:
 
   bool saveTab(int tabId, bool forceSaveAs);
   bool saveTabWithPromptIfNeeded(int tabId, bool isSaveAs);
+  [[nodiscard]] std::optional<std::string> requestFileExplorerDirectory() const;
 
 private:
   bool closeMany(const QList<int> &ids, bool forceClose,

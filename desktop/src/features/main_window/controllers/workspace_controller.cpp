@@ -68,6 +68,16 @@ bool WorkspaceController::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
   return tabController->saveTabWithIdAndSetPath(tabId, filePath.toStdString());
 }
 
+std::optional<std::string>
+WorkspaceController::requestFileExplorerDirectory() const {
+  const QString dir = workspaceUi.promptFileExplorerDirectory();
+  if (dir.isEmpty()) {
+    return std::nullopt;
+  }
+
+  return dir.toStdString();
+}
+
 bool WorkspaceController::closeMany(const QList<int> &ids, bool forceClose,
                                     const std::function<void()> &closeAction) {
   if (ids.isEmpty()) {
