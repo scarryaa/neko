@@ -188,9 +188,14 @@ void ContextMenuWidget::setItems(const QVector<ContextMenuItem> &items) {
     btnLayout->setStretch(0, 1);
     btn->setMinimumSize(btnLayout->sizeHint());
 
-    connect(btn, &QToolButton::clicked, this, [this, itemId = item.id] {
+    connect(btn, &QToolButton::clicked, this, [this, itemId = item.id]() {
+      QPointer<ContextMenuWidget> guard(this);
+
       emit actionTriggered(itemId);
-      close();
+
+      if (guard) {
+        this->close();
+      }
     });
 
     layout->addWidget(btn);

@@ -74,7 +74,6 @@ bool WorkspaceController::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
     }
   }
 
-  // TODO(scarlet): Switch to relevant tab
   const QString filePath = workspaceUi.promptSaveAsPath(initialDir, fileName);
 
   if (filePath.isEmpty()) {
@@ -100,35 +99,43 @@ bool WorkspaceController::closeMany(const QList<int> &ids, bool forceClose,
     return false;
   }
 
-  const auto snap = tabController->getTabsSnapshot();
+  const auto snapshot = tabController->getTabsSnapshot();
 
-  QHash<int, bool> modifiedById = QHash<int, bool>();
-  modifiedById.reserve(static_cast<int>(snap.tabs.size()));
-  for (const auto &tab : snap.tabs) {
+  QHash<int, bool> modifiedById;
+  modifiedById.reserve(static_cast<int>(snapshot.tabs.size()));
+  for (const auto &tab : snapshot.tabs) {
     modifiedById.insert(static_cast<int>(tab.id), tab.modified);
   }
 
   auto isModified = [&](int tabId) -> bool {
-    auto foundTab = modifiedById.constFind(tabId);
-    return foundTab != modifiedById.constEnd() ? foundTab.value() : false;
+    auto maybeModifiedTab = modifiedById.constFind(tabId);
+    return maybeModifiedTab != modifiedById.constEnd()
+               ? maybeModifiedTab.value()
+               : false;
   };
 
-  bool anyModified = false;
+  QList<int> modifiedIds;
+  modifiedIds.reserve(ids.size());
   for (int tabId : ids) {
     if (isModified(tabId)) {
-      anyModified = true;
-      break;
+      modifiedIds.append(tabId);
     }
   }
 
-  if (!forceClose && anyModified) {
+  if (!forceClose && !modifiedIds.isEmpty()) {
+    if (modifiedIds.size() == 1) {
+      workspaceUi.focusTab(modifiedIds.first());
+    }
+
+    // TODO(scarlet): Change 'save'/'cancel' to 'save all'/'discard all' when
+    // there are many modified tabs
     switch (workspaceUi.confirmCloseTabs(ids)) {
     case CloseDecision::Save:
-      for (int tabId : ids) {
-        if (isModified(tabId)) {
-          if (!saveTabWithPromptIfNeeded(tabId, false)) {
-            return false;
-          }
+      for (int tabId : modifiedIds) {
+        workspaceUi.focusTab(tabId);
+
+        if (!saveTabWithPromptIfNeeded(tabId, false)) {
+          return false;
         }
       }
       break;

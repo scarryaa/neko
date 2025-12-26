@@ -298,7 +298,7 @@ void TabWidget::contextMenuEvent(QContextMenuEvent *event) {
   const auto items = contextMenuRegistry.build("tab", variant);
 
   auto *menu = new ContextMenuWidget(
-      {.themeProvider = themeProvider, .font = font}, this);
+      {.themeProvider = themeProvider, .font = font}, nullptr);
   menu->setItems(items);
 
   connect(menu, &ContextMenuWidget::actionTriggered, this,

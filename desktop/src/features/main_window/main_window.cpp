@@ -91,6 +91,10 @@ MainWindow::MainWindow(QWidget *parent)
              return QFileDialog::getSaveFileName(this, tr("Save As"),
                                                  initialPath);
            },
+           .focusTab =
+               [tabController, this](int tabId) {
+                 workspaceCoordinator->tabChanged(tabId);
+               },
            .confirmCloseTabs =
                [this](const QList<int> &ids) {
                  return workspaceCoordinator->showTabCloseConfirmationDialog(
