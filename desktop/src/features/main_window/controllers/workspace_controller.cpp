@@ -1,6 +1,7 @@
 #include "workspace_controller.h"
 #include "features/tabs/controllers/tab_controller.h"
 #include "neko-core/src/ffi/bridge.rs.h"
+#include <QFileInfo>
 #include <QHash>
 #include <QString>
 
@@ -47,10 +48,14 @@ bool WorkspaceController::saveTab(int tabId, bool forceSaveAs) {
 
 bool WorkspaceController::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
   const auto snapshot = tabController->getTabsSnapshot();
-  QString path = QString();
+  QString fileName;
+  QString path;
+
   for (const auto &tab : snapshot.tabs) {
     if (tab.id == tabId) {
       path = QString::fromUtf8(tab.path);
+      fileName = QString::fromUtf8(tab.title);
+      break;
     }
   }
 
@@ -58,9 +63,20 @@ bool WorkspaceController::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
     return tabController->saveTabWithId(tabId);
   }
 
-  // TODO(scarlet): Fill in file name/path if available
+  QString initialDir;
+  if (!path.isEmpty()) {
+    QFileInfo info(path);
+
+    if (info.isDir()) {
+      initialDir = info.absoluteFilePath();
+    } else {
+      initialDir = info.absolutePath();
+    }
+  }
+
   // TODO(scarlet): Switch to relevant tab
-  const QString filePath = workspaceUi.promptSaveAsPath(tabId);
+  const QString filePath = workspaceUi.promptSaveAsPath(initialDir, fileName);
+
   if (filePath.isEmpty()) {
     return false;
   }

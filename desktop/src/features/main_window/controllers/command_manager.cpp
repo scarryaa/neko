@@ -116,7 +116,6 @@ void CommandManager::registerCommands() {
 }
 
 void CommandManager::registerProviders() {
-  // TODO(scarlet): Centralize this
   contextMenuRegistry->registerProvider("tab", [this](const QVariant &variant) {
     auto availableCommands = AppStateController::getAvailableTabCommands();
 

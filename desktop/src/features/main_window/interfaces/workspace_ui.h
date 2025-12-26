@@ -7,7 +7,9 @@
 #include <functional>
 
 struct WorkspaceUi {
-  std::function<QString(int tabId)> promptSaveAsPath;
+  std::function<QString(std::optional<QString> initialDirectory,
+                        std::optional<QString> initialFileName)>
+      promptSaveAsPath;
   std::function<CloseDecision(const QList<int> &ids)> confirmCloseTabs;
   std::function<QString()> promptFileExplorerDirectory;
 };

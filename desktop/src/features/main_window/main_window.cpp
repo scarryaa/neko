@@ -70,10 +70,27 @@ MainWindow::MainWindow(QWidget *parent)
       {.tabController = tabController,
        .workspaceUi = WorkspaceUi{
            .promptSaveAsPath =
-               [this](int tabId) {
-                 return QFileDialog::getSaveFileName(this, tr("Save As"),
-                                                     QDir::homePath());
-               },
+               [this](std::optional<QString> initialDirectory,
+                      std::optional<QString> initialFileName) -> QString {
+             QString baseDir;
+
+             if (initialDirectory && !initialDirectory->isEmpty()) {
+               QFileInfo info(*initialDirectory);
+
+               baseDir =
+                   info.isDir() ? info.absoluteFilePath() : info.absolutePath();
+             } else {
+               baseDir = QDir::homePath();
+             }
+
+             QString initialPath = baseDir;
+             if (initialFileName && !initialFileName->isEmpty()) {
+               initialPath = QDir(baseDir).filePath(*initialFileName);
+             }
+
+             return QFileDialog::getSaveFileName(this, tr("Save As"),
+                                                 initialPath);
+           },
            .confirmCloseTabs =
                [this](const QList<int> &ids) {
                  return workspaceCoordinator->showTabCloseConfirmationDialog(
