@@ -96,7 +96,10 @@ MainWindow::MainWindow(QWidget *parent)
 
   // Layout
   MainWindowLayoutBuilder layoutBuilder(
-      {.themeProvider = themeProvider, .configManager = &*configManager}, this);
+      {.themeProvider = themeProvider,
+       .uiStyleManager = uiStyleManager,
+       .appConfigService = &*appConfigService},
+      this);
 
   auto layoutResult =
       layoutBuilder.build({.titleBarWidget = titleBarWidget,

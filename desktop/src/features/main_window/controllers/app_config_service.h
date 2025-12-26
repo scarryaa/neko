@@ -43,6 +43,7 @@ public slots:
   void setFileExplorerFontSize(int fontSize);
   void setFileExplorerDirectory(const std::string &path);
   void setFileExplorerShown(bool shown);
+  void setFileExplorerWidth(double width);
 
   // For external mutations (FFI commands)
   void notifyExternalConfigChange();

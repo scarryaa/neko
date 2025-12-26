@@ -1,5 +1,6 @@
 #include "main_window_layout_builder.h"
-#include "neko-core/src/ffi/bridge.rs.h"
+#include "features/main_window/controllers/app_config_service.h"
+#include "features/main_window/controllers/ui_style_manager.h"
 #include "theme/theme_provider.h"
 #include "utils/ui_utils.h"
 #include <QHBoxLayout>
@@ -66,8 +67,7 @@ MainWindowLayoutBuilder::buildTabBarSection(QWidget *tabBarWidget) {
 
   auto *newTabButton = new QPushButton("+", tabBarContainer);
 
-  QFont uiFont =
-      UiUtils::loadFont(*props.configManager, neko::FontType::Interface);
+  auto uiFont = props.uiStyleManager->interfaceFont();
   QFontMetrics fontMetrics(uiFont);
   int dynamicHeight = static_cast<int>(
       fontMetrics.height() + k::topTabBarPadding + k::bottomTabBarPadding);
@@ -116,7 +116,7 @@ QSplitter *MainWindowLayoutBuilder::buildSplitter(QWidget *editorSideContainer,
                                                   QWidget *fileExplorerWidget) {
   auto *splitter = new QSplitter(Qt::Horizontal, rootParent);
 
-  auto snapshot = props.configManager->get_config_snapshot();
+  auto snapshot = props.appConfigService->getSnapshot();
   auto fileExplorerRight = snapshot.file_explorer_right;
   int savedSidebarWidth = static_cast<int>(snapshot.file_explorer_width);
 
@@ -143,23 +143,22 @@ QSplitter *MainWindowLayoutBuilder::buildSplitter(QWidget *editorSideContainer,
       QStringLiteral("QSplitter::handle { background-color: %1; margin: 0px; }")
           .arg(handleColor));
 
-  auto *configManager = props.configManager;
+  auto *appConfigService = props.appConfigService;
   QObject::connect(splitter, &QSplitter::splitterMoved, rootParent,
-                   [splitter, configManager](int pos, int index) {
+                   [splitter, appConfigService](int pos, int index) {
                      const QList<int> sizes = splitter->sizes();
                      if (sizes.size() < 2) {
                        return;
                      }
 
-                     auto snapshot = configManager->get_config_snapshot();
+                     auto snapshot = appConfigService->getSnapshot();
+
                      const bool fileExplorerRight =
                          snapshot.file_explorer_right;
-
                      const int fileExplorerWidth =
                          fileExplorerRight ? sizes[1] : sizes[0];
 
-                     snapshot.file_explorer_width = fileExplorerWidth;
-                     configManager->apply_config_snapshot(snapshot);
+                     appConfigService->setFileExplorerWidth(fileExplorerWidth);
                    });
 
   return splitter;

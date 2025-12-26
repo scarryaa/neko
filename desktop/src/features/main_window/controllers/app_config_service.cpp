@@ -19,6 +19,12 @@ void AppConfigService::setFileExplorerShown(bool shown) {
   configManager->apply_config_snapshot(snapshot);
 }
 
+void AppConfigService::setFileExplorerWidth(double width) {
+  auto snapshot = configManager->get_config_snapshot();
+  snapshot.file_explorer_width = static_cast<uint32_t>(width);
+  configManager->apply_config_snapshot(snapshot);
+}
+
 void AppConfigService::setInterfaceFontSize(int fontSize) {
   auto snapshot = configManager->get_config_snapshot();
   snapshot.interface_font_size = fontSize;

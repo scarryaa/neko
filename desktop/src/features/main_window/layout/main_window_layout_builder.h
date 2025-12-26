@@ -3,8 +3,8 @@
 
 class ThemeProvider;
 class UiStyleManager;
+class AppConfigService;
 
-#include "types/ffi_types_fwd.h"
 #include "types/qt_types_fwd.h"
 #include <QObject>
 
@@ -14,7 +14,8 @@ class MainWindowLayoutBuilder {
 public:
   struct MainWindowLayoutProps {
     ThemeProvider *themeProvider;
-    neko::ConfigManager *configManager;
+    UiStyleManager *uiStyleManager;
+    AppConfigService *appConfigService;
   };
 
   struct MainWindowLayoutWidgets {
