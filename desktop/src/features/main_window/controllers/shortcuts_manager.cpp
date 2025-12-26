@@ -22,6 +22,8 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
   registerAllShortcuts();
 }
 
+// TODO(scarlet): Make sure ShortcutsManager updates the shortcuts file on
+// changes/updates
 void ShortcutsManager::syncShortcutsFromRust() {
   auto rustShortcuts = nekoShortcutsManager->get_shortcuts();
 
@@ -55,6 +57,7 @@ void ShortcutsManager::syncShortcutsFromRust() {
   ensureShortcut("Tab::ForceClose", "Ctrl+Shift+W");
   ensureShortcut("Tab::Next", "Meta+Tab");
   ensureShortcut("Tab::Previous", "Meta+Shift+Tab");
+  ensureShortcut("Tab::Reveal", "Ctrl+Shift+E");
   ensureShortcut("Cursor::JumpTo", "Ctrl+G");
   ensureShortcut("FileExplorer::Toggle", "Ctrl+E");
   ensureShortcut("FileExplorer::Focus", "Meta+H");
@@ -162,6 +165,22 @@ void ShortcutsManager::registerAllShortcuts() {
         workspaceCoordinator->tabChanged(
             static_cast<int>(snapshot.tabs[prevIndex].id));
       });
+
+  // Reveal Tab
+  // TODO(scarlet): Scope to EditorWidget?
+  registerShortcut(
+      "Tab::Reveal",
+      QKeySequence(Qt::ControlModifier | Qt::ShiftModifier | Qt::Key_E),
+      Qt::WindowShortcut,
+      [this]() { workspaceCoordinator->revealActiveTab(); });
+
+  // Close Tab
+  registerShortcut("Tab::Close", QKeySequence(Qt::ControlModifier | Qt::Key_W),
+                   Qt::WindowShortcut, [this]() {
+                     const auto snapshot = tabController->getTabsSnapshot();
+                     workspaceCoordinator->closeTab(
+                         static_cast<int>(snapshot.active_id), false);
+                   });
 
   // Jump To
   registerShortcut("Cursor::JumpTo",

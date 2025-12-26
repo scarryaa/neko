@@ -55,6 +55,7 @@ impl Default for Shortcuts {
         let new_tab = Shortcut::new("Tab::New".into(), "Ctrl+T".into());
         let next_tab = Shortcut::new("Tab::Next".into(), "Meta+Tab".into());
         let previous_tab = Shortcut::new("Tab::Previous".into(), "Meta+Shift+Tab".into());
+        let reveal_tab = Shortcut::new("Tab::Reveal".into(), "Ctrl+Shift+E".into());
         let jump_to = Shortcut::new("Cursor::JumpTo".into(), "Ctrl+G".into());
         let toggle_explorer = Shortcut::new("FileExplorer::Toggle".into(), "Ctrl+E".into());
         let focus_explorer = Shortcut::new("FileExplorer::Focus".into(), "Meta+H".into());
@@ -71,6 +72,7 @@ impl Default for Shortcuts {
             new_tab,
             next_tab,
             previous_tab,
+            reveal_tab,
             jump_to,
             toggle_explorer,
             focus_explorer,

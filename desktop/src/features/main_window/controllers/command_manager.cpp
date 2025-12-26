@@ -25,6 +25,7 @@ struct TabCommandSpec {
 };
 
 namespace k {
+// TODO(scarlet): Map between Cmd/Meta/Ctrl depending on platform
 // NOLINTNEXTLINE
 const TabCommandSpec tabCommandSpecs[] = {
     {"tab.close", "Close", "Ctrl+W", "", TabCommandGroup::ClosePrimary},
@@ -35,7 +36,8 @@ const TabCommandSpec tabCommandSpecs[] = {
     {"tab.closeClean", "Close Clean", "", "", TabCommandGroup::CloseAllOrClean},
     {"tab.pin", "Pin", "", "", TabCommandGroup::Pin},
     {"tab.copyPath", "Copy Path", "", "", TabCommandGroup::Path},
-    {"tab.reveal", "Reveal in Explorer", "", "", TabCommandGroup::Path},
+    {"tab.reveal", "Reveal in Explorer", "Cmd+Shift+E", "",
+     TabCommandGroup::Path},
 };
 } // namespace k
 

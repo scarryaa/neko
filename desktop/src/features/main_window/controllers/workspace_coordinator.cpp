@@ -233,13 +233,13 @@ void WorkspaceCoordinator::tabTogglePin(int tabId, bool tabIsPinned) {
 
 void WorkspaceCoordinator::tabReveal(const std::string &commandId,
                                      const neko::TabContextFfi &ctx) {
-  if (commandId.empty()) {
+  if (commandId.empty() || !ctx.file_path_present) {
     return;
   }
 
   appStateController->runTabCommand(commandId, ctx);
 
-  // Show file Explorer if hidden
+  // Show File Explorer if hidden
   if (uiHandles->fileExplorerWidget->isHidden()) {
     fileExplorerToggled();
   }
@@ -353,6 +353,27 @@ SaveResult WorkspaceCoordinator::saveTab(int tabId, bool isSaveAs) {
 
   qDebug() << "Save as failed";
   return SaveResult::Failed;
+}
+
+void WorkspaceCoordinator::revealActiveTab() {
+  const auto snapshot = tabController->getTabsSnapshot();
+  if (!snapshot.active_present) {
+    return;
+  }
+
+  neko::TabContextFfi ctx{};
+  for (const auto &tab : snapshot.tabs) {
+    if (tab.id == snapshot.active_id) {
+      ctx.id = tab.id;
+      ctx.is_pinned = tab.pinned;
+      ctx.is_modified = tab.modified;
+      ctx.file_path_present = tab.path_present;
+      ctx.file_path = tab.path;
+      break;
+    }
+  }
+
+  handleTabCommand("tab.reveal", ctx, false);
 }
 
 void WorkspaceCoordinator::closeTab(int tabId, bool forceClose) {
