@@ -73,6 +73,7 @@ private:
   void closeRightTabs(int tabId, bool forceClose);
   void closeOtherTabs(int tabId, bool forceClose);
   void closeAllTabs(bool forceClose);
+  void closeCleanTabs();
 
   void saveScrollOffsetsForActiveTab();
   void restoreScrollOffsetsForActiveTab();

@@ -55,6 +55,11 @@ impl AppState {
             .expect("Unable to get 'close all' tab ids")
     }
 
+    pub fn get_close_clean_tab_ids_wrapper(&self) -> Vec<usize> {
+        self.get_close_clean_tab_ids()
+            .expect("Unable to get 'close clean' tab ids")
+    }
+
     fn make_tab_snapshot(tab: &Tab) -> TabSnapshot {
         let (path_present, path) = match tab.get_file_path() {
             Some(p) => (true, p.to_string_lossy().to_string()),
@@ -126,6 +131,10 @@ impl AppState {
 
     pub(crate) fn close_all_tabs_wrapper(&mut self) -> bool {
         self.close_all_tabs().is_ok()
+    }
+
+    pub(crate) fn close_clean_tabs_wrapper(self: &mut AppState) -> bool {
+        self.close_clean_tabs().is_ok()
     }
 
     pub(crate) fn move_tab_wrapper(&mut self, from: usize, to: usize) -> bool {
@@ -529,6 +538,7 @@ pub(crate) fn get_tab_command_state(app_state: &AppState, id: u64) -> TabCommand
             can_close_left: false,
             can_close_right: false,
             can_close_all: false,
+            can_close_clean: false,
             can_copy_path: false,
             can_reveal: false,
             is_pinned: false,

@@ -8,6 +8,7 @@ pub enum TabCommand {
     CloseLeft,
     CloseRight,
     CloseAll,
+    CloseClean,
     CopyPath,
     Reveal,
     Pin,
@@ -21,6 +22,7 @@ impl TabCommand {
             TabCommand::CloseLeft => "tab.closeLeft",
             TabCommand::CloseRight => "tab.closeRight",
             TabCommand::CloseAll => "tab.closeAll",
+            TabCommand::CloseClean => "tab.closeClean",
             TabCommand::CopyPath => "tab.copyPath",
             TabCommand::Reveal => "tab.reveal",
             TabCommand::Pin => "tab.pin",
@@ -34,6 +36,7 @@ impl TabCommand {
             TabCommand::CloseLeft,
             TabCommand::CloseRight,
             TabCommand::CloseAll,
+            TabCommand::CloseClean,
             TabCommand::CopyPath,
             TabCommand::Reveal,
             TabCommand::Pin,
@@ -51,6 +54,7 @@ impl FromStr for TabCommand {
             "tab.closeLeft" => Ok(Self::CloseLeft),
             "tab.closeRight" => Ok(Self::CloseRight),
             "tab.closeAll" => Ok(Self::CloseAll),
+            "tab.closeClean" => Ok(Self::CloseClean),
             "tab.copyPath" => Ok(Self::CopyPath),
             "tab.reveal" => Ok(Self::Reveal),
             "tab.pin" => Ok(Self::Pin),
@@ -73,6 +77,7 @@ pub struct TabCommandState {
     pub can_close_left: bool,
     pub can_close_right: bool,
     pub can_close_all: bool,
+    pub can_close_clean: bool,
     pub can_copy_path: bool,
     pub can_reveal: bool,
     pub is_pinned: bool,
@@ -92,6 +97,7 @@ pub fn tab_command_state(app_state: &AppState, id: usize) -> std::io::Result<Tab
     let can_close_others = !app_state.get_close_other_tab_ids(id)?.is_empty();
     let can_close_left = !app_state.get_close_left_tab_ids(id)?.is_empty();
     let can_close_right = !app_state.get_close_right_tab_ids(id)?.is_empty();
+    let can_close_clean = !app_state.get_close_clean_tab_ids()?.is_empty();
 
     Ok(TabCommandState {
         can_close: true,
@@ -99,6 +105,7 @@ pub fn tab_command_state(app_state: &AppState, id: usize) -> std::io::Result<Tab
         can_close_left,
         can_close_right,
         can_close_all: true,
+        can_close_clean,
         can_copy_path: has_path,
         can_reveal: has_path,
         is_pinned,
@@ -120,6 +127,7 @@ pub fn run_tab_command(
         TabCommand::CloseLeft => app_state.close_left_tabs(ctx.id)?,
         TabCommand::CloseRight => app_state.close_right_tabs(ctx.id)?,
         TabCommand::CloseAll => app_state.close_all_tabs()?,
+        TabCommand::CloseClean => app_state.close_clean_tabs()?,
         TabCommand::Pin => {
             if ctx.is_pinned {
                 app_state.unpin_tab(ctx.id)?;

@@ -192,6 +192,8 @@ void WorkspaceCoordinator::handleTabCommand(const std::string &commandId,
     closeRightTabs(tabId, forceClose);
   } else if (commandId == "tab.closeAll") {
     closeAllTabs(forceClose);
+  } else if (commandId == "tab.closeClean") {
+    closeCleanTabs();
   } else if (commandId == "tab.copyPath") {
     tabCopyPath(tabId);
   } else if (commandId == "tab.reveal") {
@@ -407,6 +409,15 @@ void WorkspaceCoordinator::closeAllTabs(bool forceClose) {
   saveScrollOffsetsForActiveTab();
 
   auto ids = workspaceController->closeAll(forceClose);
+  if (!ids.empty()) {
+    handleTabsClosed();
+  }
+}
+
+void WorkspaceCoordinator::closeCleanTabs() {
+  saveScrollOffsetsForActiveTab();
+
+  auto ids = workspaceController->closeClean();
   if (!ids.empty()) {
     handleTabsClosed();
   }

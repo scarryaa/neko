@@ -92,6 +92,15 @@ impl AppState {
             .collect())
     }
 
+    pub fn get_close_clean_tab_ids(&self) -> Result<Vec<usize>, Error> {
+        Ok(self
+            .tabs
+            .iter()
+            .filter(|t| !t.get_is_pinned() && !t.get_modified())
+            .map(|t| t.get_id())
+            .collect())
+    }
+
     pub fn get_close_left_tab_ids(&self, id: usize) -> Result<Vec<usize>, Error> {
         let index = self
             .tabs
@@ -221,6 +230,20 @@ impl AppState {
     pub fn close_all_tabs(&mut self) -> Result<(), Error> {
         // Remove all non-pinned tabs, keeping order of pinned ones
         self.tabs.retain(|t| t.get_is_pinned());
+
+        // If the current active tab is gone, pick a new one
+        let still_has_active = self.tabs.iter().any(|t| t.get_id() == self.active_tab_id);
+
+        if !still_has_active {
+            self.active_tab_id = self.tabs.first().map(|t| t.get_id()).unwrap_or(0);
+        }
+
+        Ok(())
+    }
+
+    pub fn close_clean_tabs(&mut self) -> Result<(), Error> {
+        // Remove all clean non-pinned tabs, keeping order of pinned ones
+        self.tabs.retain(|t| t.get_is_pinned() || t.get_modified());
 
         // If the current active tab is gone, pick a new one
         let still_has_active = self.tabs.iter().any(|t| t.get_id() == self.active_tab_id);
