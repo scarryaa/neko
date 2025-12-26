@@ -38,12 +38,24 @@ private:
   [[nodiscard]] QKeySequence seqFor(const std::string &key,
                                     const QKeySequence &fallback) const;
 
+  // Scoped to *actionOwner (MainWindow)
   template <typename Slot>
   void registerShortcut(const std::string &key, const QKeySequence &fallback,
                         Qt::ShortcutContext context, Slot &&slot);
+  // Scoped to Widget *owner
+  template <typename Slot>
+  void registerShortcut(QWidget *owner, const std::string &key,
+                        const QKeySequence &fallback,
+                        Qt::ShortcutContext context, Slot &&slot);
+  // Scoped to *actionOwner (MainWindow)
   template <typename Slot>
   void addShortcut(QAction *action, const QKeySequence &sequence,
                    Qt::ShortcutContext context, Slot &&slot);
+  // Scoped to Widget *owner
+  template <typename Slot>
+  void addShortcut(QWidget *owner, QAction *action,
+                   const QKeySequence &sequence, Qt::ShortcutContext context,
+                   Slot &&slot);
 
   std::unordered_map<std::string, std::string> shortcutMap;
   QWidget *actionOwner;

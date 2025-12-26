@@ -167,20 +167,11 @@ void ShortcutsManager::registerAllShortcuts() {
       });
 
   // Reveal Tab
-  // TODO(scarlet): Scope to EditorWidget?
   registerShortcut(
-      "Tab::Reveal",
+      uiHandles->editorWidget, "Tab::Reveal",
       QKeySequence(Qt::ControlModifier | Qt::ShiftModifier | Qt::Key_E),
-      Qt::WindowShortcut,
+      Qt::WidgetWithChildrenShortcut,
       [this]() { workspaceCoordinator->revealActiveTab(); });
-
-  // Close Tab
-  registerShortcut("Tab::Close", QKeySequence(Qt::ControlModifier | Qt::Key_W),
-                   Qt::WindowShortcut, [this]() {
-                     const auto snapshot = tabController->getTabsSnapshot();
-                     workspaceCoordinator->closeTab(
-                         static_cast<int>(snapshot.active_id), false);
-                   });
 
   // Jump To
   registerShortcut("Cursor::JumpTo",
@@ -236,6 +227,26 @@ void ShortcutsManager::registerShortcut(const std::string &key,
                                         Slot &&slot) {
   auto *action = new QAction(this);
   addShortcut(action, seqFor(key, fallback), context, std::forward<Slot>(slot));
+}
+
+template <typename Slot>
+void ShortcutsManager::registerShortcut(QWidget *owner, const std::string &key,
+                                        const QKeySequence &fallback,
+                                        Qt::ShortcutContext context,
+                                        Slot &&slot) {
+  auto *action = new QAction(owner);
+  addShortcut(owner, action, seqFor(key, fallback), context,
+              std::forward<Slot>(slot));
+}
+
+template <typename Slot>
+void ShortcutsManager::addShortcut(QWidget *owner, QAction *action,
+                                   const QKeySequence &sequence,
+                                   Qt::ShortcutContext context, Slot &&slot) {
+  action->setShortcut(sequence);
+  action->setShortcutContext(context);
+  connect(action, &QAction::triggered, this, std::forward<Slot>(slot));
+  owner->addAction(action);
 }
 
 template <typename Slot>
