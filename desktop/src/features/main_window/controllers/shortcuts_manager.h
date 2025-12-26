@@ -8,6 +8,7 @@ class UiHandles;
 #include "types/ffi_types_fwd.h"
 #include "types/qt_types_fwd.h"
 #include <QWidget>
+#include <unordered_map>
 
 QT_FWD(QAction)
 
@@ -34,30 +35,42 @@ private:
   void syncShortcutsFromRust();
   // Creates QActions from the shortcutMap and connects them
   void registerAllShortcuts();
+  void populateShortcutMetadata();
 
   [[nodiscard]] QKeySequence seqFor(const std::string &key,
                                     const QKeySequence &fallback) const;
 
-  // Scoped to *actionOwner (MainWindow)
+  // Shortcut scoped to *actionOwner (MainWindow)
   template <typename Slot>
   void registerShortcut(const std::string &key, const QKeySequence &fallback,
                         Qt::ShortcutContext context, Slot &&slot);
-  // Scoped to Widget *owner
+  // Shortcut scoped to *owner
   template <typename Slot>
   void registerShortcut(QWidget *owner, const std::string &key,
                         const QKeySequence &fallback,
                         Qt::ShortcutContext context, Slot &&slot);
-  // Scoped to *actionOwner (MainWindow)
+  // Shortcut scoped to *actionOwner (MainWindow)
   template <typename Slot>
   void addShortcut(QAction *action, const QKeySequence &sequence,
                    Qt::ShortcutContext context, Slot &&slot);
-  // Scoped to Widget *owner
+  // Shortcut scoped to *owner
   template <typename Slot>
   void addShortcut(QWidget *owner, QAction *action,
                    const QKeySequence &sequence, Qt::ShortcutContext context,
                    Slot &&slot);
 
-  std::unordered_map<std::string, std::string> shortcutMap;
+  using ShortcutFn = std::function<void()>;
+  struct Shortcut {
+    QWidget *owner;
+    std::string key;
+    std::string keyCombo;
+    Qt::ShortcutContext context;
+    ShortcutFn action;
+  };
+
+  std::unordered_map<std::string, Shortcut> shortcutMap;
+  std::unordered_map<std::string, ShortcutFn> shortcutActionMap;
+
   QWidget *actionOwner;
   neko::ShortcutsManager *nekoShortcutsManager;
   WorkspaceCoordinator *workspaceCoordinator;

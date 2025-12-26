@@ -14,6 +14,7 @@ ShortcutsManager::ShortcutsManager(const ShortcutsManagerProps &props,
       workspaceCoordinator(props.workspaceCoordinator),
       tabController(props.tabController), uiHandles(props.uiHandles),
       QObject(parent) {
+  populateShortcutMetadata();
   setUpKeyboardShortcuts();
 }
 
@@ -22,8 +23,113 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
   registerAllShortcuts();
 }
 
-// TODO(scarlet): Make sure ShortcutsManager updates the shortcuts file on
-// changes/updates
+void ShortcutsManager::populateShortcutMetadata() {
+  auto moveTabBy = [this](int delta) {
+    auto findIndexById = [](const neko::TabsSnapshot &snap,
+                            uint64_t tabId) -> int {
+      for (int i = 0; i < static_cast<int>(snap.tabs.size()); ++i) {
+        if (snap.tabs[i].id == tabId) {
+          return i;
+        }
+      }
+      return -1;
+    };
+
+    const auto snapshot = tabController->getTabsSnapshot();
+    if (!snapshot.active_present) {
+      return;
+    }
+
+    const int tabCount = static_cast<int>(snapshot.tabs.size());
+    if (tabCount <= 1) {
+      return;
+    }
+
+    const int currentIndex = findIndexById(snapshot, snapshot.active_id);
+    if (currentIndex < 0) {
+      return;
+    }
+
+    int nextIndex = (currentIndex + delta) % tabCount;
+    if (nextIndex < 0) {
+      nextIndex += tabCount;
+    }
+
+    workspaceCoordinator->tabChanged(
+        static_cast<int>(snapshot.tabs[nextIndex].id));
+  };
+
+  shortcutActionMap = {
+      {
+          "Tab::Save",
+          [this]() { workspaceCoordinator->fileSaved(false); },
+      },
+      {
+          "Tab::SaveAs",
+          [this]() { workspaceCoordinator->fileSaved(true); },
+      },
+      {
+          "Tab::New",
+          [this]() { workspaceCoordinator->newTab(); },
+      },
+      {
+          "Tab::Close",
+          [this]() {
+            const auto snapshot = tabController->getTabsSnapshot();
+            workspaceCoordinator->closeTab(static_cast<int>(snapshot.active_id),
+                                           false);
+          },
+      },
+      {
+          "Tab::ForceClose",
+          [this]() {
+            const auto snapshot = tabController->getTabsSnapshot();
+            workspaceCoordinator->closeTab(static_cast<int>(snapshot.active_id),
+                                           true);
+          },
+      },
+      {
+          "Tab::Next",
+          [moveTabBy]() { moveTabBy(+1); },
+      },
+      {
+          "Tab::Previous",
+          [moveTabBy]() { moveTabBy(-1); },
+      },
+      {
+          "Tab::Reveal",
+          [this]() { workspaceCoordinator->revealActiveTab(); },
+      },
+      {
+          "Cursor::JumpTo",
+          [this]() { workspaceCoordinator->cursorPositionClicked(); },
+      },
+      {
+          "FileExplorer::Toggle",
+          [this]() { workspaceCoordinator->fileExplorerToggled(); },
+      },
+      {
+          "FileExplorer::Focus",
+          [this]() { uiHandles->fileExplorerWidget->setFocus(); },
+      },
+      {
+          "Editor::Focus",
+          [this]() { uiHandles->editorWidget->setFocus(); },
+      },
+      {
+          "Editor::OpenConfig",
+          [this]() { workspaceCoordinator->openConfig(); },
+      },
+      {
+          "CommandPalette::Show",
+          [this]() {
+            uiHandles->commandPaletteWidget->showPalette(
+                CommandPaletteMode::Command, {});
+          },
+      },
+  };
+}
+
 void ShortcutsManager::syncShortcutsFromRust() {
   auto rustShortcuts = nekoShortcutsManager->get_shortcuts();
 
@@ -31,9 +137,30 @@ void ShortcutsManager::syncShortcutsFromRust() {
   shortcutMap.reserve(rustShortcuts.size());
 
   for (const auto &shortcut : rustShortcuts) {
+    std::string key = static_cast<rust::String>(shortcut.key).c_str();
+    std::string keyCombo =
+        static_cast<rust::String>(shortcut.key_combo).c_str();
+    bool scopeToEditor = key == "Tab::Reveal";
+
+    ShortcutFn action;
+    if (auto foundAction = shortcutActionMap.find(key);
+        foundAction != shortcutActionMap.end()) {
+      action = foundAction->second;
+    }
+
     shortcutMap.emplace(
-        std::string(static_cast<rust::String>(shortcut.key).c_str()),
-        std::string(static_cast<rust::String>(shortcut.key_combo).c_str()));
+        key,
+        Shortcut{
+            // TODO(scarlet): Convert this to a map later if needed
+            .owner = scopeToEditor ? uiHandles->editorWidget : actionOwner,
+            .key = key,
+            .keyCombo = std::move(keyCombo),
+            // TODO(scarlet): Convert this to a map later if needed
+            .context = scopeToEditor
+                           ? Qt::ShortcutContext::WidgetWithChildrenShortcut
+                           : Qt::ShortcutContext::WindowShortcut,
+            .action = std::move(action),
+        });
   }
 
   rust::Vec<neko::Shortcut> missingShortcuts;
@@ -41,13 +168,38 @@ void ShortcutsManager::syncShortcutsFromRust() {
   auto ensureShortcut = [&](const std::string &key,
                             const std::string &keyCombo) {
     auto foundShortcut = shortcutMap.find(key);
-    if (foundShortcut == shortcutMap.end() || foundShortcut->second.empty()) {
-      neko::Shortcut shortcut;
-      shortcut.key = key;
-      shortcut.key_combo = keyCombo;
-      missingShortcuts.push_back(std::move(shortcut));
-      shortcutMap[key] = keyCombo;
+    if (foundShortcut != shortcutMap.end() &&
+        !foundShortcut->second.key.empty()) {
+      // If there is a Rust-provided shortcut for this key already, skip it
+      return;
     }
+
+    // Mark the shortcut as missing
+    neko::Shortcut shortcut;
+    shortcut.key = key;
+    shortcut.key_combo = keyCombo;
+    missingShortcuts.push_back(std::move(shortcut));
+
+    const bool scopeToEditor = (key == "Tab::Reveal");
+    auto *owner = scopeToEditor ? uiHandles->editorWidget : actionOwner;
+    auto context = scopeToEditor
+                       ? Qt::ShortcutContext::WidgetWithChildrenShortcut
+                       : Qt::ShortcutContext::WindowShortcut;
+
+    ShortcutFn action;
+    if (auto foundAction = shortcutActionMap.find(key);
+        foundAction != shortcutActionMap.end()) {
+      action = foundAction->second;
+    }
+
+    // Add the missing shortcut to the shortcut map
+    shortcutMap[key] = Shortcut{
+        .owner = owner,
+        .key = key,
+        .keyCombo = keyCombo,
+        .context = context,
+        .action = std::move(action),
+    };
   };
 
   ensureShortcut("Tab::Save", "Ctrl+S");
@@ -71,150 +223,26 @@ void ShortcutsManager::syncShortcutsFromRust() {
 }
 
 void ShortcutsManager::registerAllShortcuts() {
-  auto findIndexById = [](const neko::TabsSnapshot &snap,
-                          uint64_t tabId) -> int {
-    for (int i = 0; i < static_cast<int>(snap.tabs.size()); ++i) {
-      if (snap.tabs[i].id == tabId) {
-        return i;
-      }
+  for (const auto &shortcutEntry : shortcutMap) {
+    const Shortcut &shortcut = shortcutEntry.second;
+    const QKeySequence keyCombo(shortcut.keyCombo.c_str());
+
+    if (shortcut.owner != nullptr) {
+      registerShortcut(shortcut.owner, shortcut.key, keyCombo, shortcut.context,
+                       shortcut.action);
+    } else {
+      registerShortcut(shortcut.key, keyCombo, shortcut.context,
+                       shortcut.action);
     }
-    return -1;
-  };
-
-  // Save
-  registerShortcut("Tab::Save", QKeySequence(Qt::ControlModifier | Qt::Key_S),
-                   Qt::WindowShortcut,
-                   [this]() { workspaceCoordinator->fileSaved(false); });
-
-  // Save As
-  registerShortcut(
-      "Tab::SaveAs",
-      QKeySequence(Qt::ControlModifier | Qt::ShiftModifier | Qt::Key_S),
-      Qt::WindowShortcut, [this]() { workspaceCoordinator->fileSaved(true); });
-
-  // New Tab
-  registerShortcut("Tab::New", QKeySequence(Qt::ControlModifier | Qt::Key_T),
-                   Qt::WindowShortcut,
-                   [this]() { workspaceCoordinator->newTab(); });
-
-  // Close Tab
-  registerShortcut("Tab::Close", QKeySequence(Qt::ControlModifier | Qt::Key_W),
-                   Qt::WindowShortcut, [this]() {
-                     const auto snapshot = tabController->getTabsSnapshot();
-                     workspaceCoordinator->closeTab(
-                         static_cast<int>(snapshot.active_id), false);
-                   });
-
-  // Force Close
-  registerShortcut(
-      "Tab::ForceClose",
-      QKeySequence(Qt::ControlModifier | Qt::ShiftModifier | Qt::Key_W),
-      Qt::WindowShortcut, [this]() {
-        const auto snapshot = tabController->getTabsSnapshot();
-        workspaceCoordinator->closeTab(static_cast<int>(snapshot.active_id),
-                                       true);
-      });
-
-  // Next Tab
-  registerShortcut("Tab::Next", QKeySequence(Qt::MetaModifier | Qt::Key_Tab),
-                   Qt::WindowShortcut, [this, findIndexById]() {
-                     const auto snapshot = tabController->getTabsSnapshot();
-                     if (!snapshot.active_present) {
-                       return;
-                     }
-
-                     const int tabCount =
-                         static_cast<int>(snapshot.tabs.size());
-                     if (tabCount <= 1) {
-                       return;
-                     }
-
-                     const int currentIndex =
-                         findIndexById(snapshot, snapshot.active_id);
-                     if (currentIndex < 0) {
-                       return;
-                     }
-
-                     const int nextIndex = (currentIndex + 1) % tabCount;
-                     workspaceCoordinator->tabChanged(
-                         static_cast<int>(snapshot.tabs[nextIndex].id));
-                   });
-
-  // Previous Tab
-  registerShortcut(
-      "Tab::Previous",
-      QKeySequence(Qt::MetaModifier | Qt::ShiftModifier | Qt::Key_Tab),
-      Qt::WindowShortcut, [this, findIndexById]() {
-        const auto snapshot = tabController->getTabsSnapshot();
-        if (!snapshot.active_present) {
-          return;
-        }
-
-        const int tabCount = static_cast<int>(snapshot.tabs.size());
-        if (tabCount <= 1) {
-          return;
-        }
-
-        const int currentIndex = findIndexById(snapshot, snapshot.active_id);
-        if (currentIndex < 0) {
-          return;
-        }
-
-        const int prevIndex =
-            (currentIndex == 0) ? (tabCount - 1) : (currentIndex - 1);
-        workspaceCoordinator->tabChanged(
-            static_cast<int>(snapshot.tabs[prevIndex].id));
-      });
-
-  // Reveal Tab
-  registerShortcut(
-      uiHandles->editorWidget, "Tab::Reveal",
-      QKeySequence(Qt::ControlModifier | Qt::ShiftModifier | Qt::Key_E),
-      Qt::WidgetWithChildrenShortcut,
-      [this]() { workspaceCoordinator->revealActiveTab(); });
-
-  // Jump To
-  registerShortcut("Cursor::JumpTo",
-                   QKeySequence(Qt::ControlModifier | Qt::Key_G),
-                   Qt::WindowShortcut,
-                   [this]() { workspaceCoordinator->cursorPositionClicked(); });
-
-  // Toggle Explorer
-  registerShortcut("FileExplorer::Toggle",
-                   QKeySequence(Qt::ControlModifier | Qt::Key_E),
-                   Qt::WindowShortcut,
-                   [this]() { workspaceCoordinator->fileExplorerToggled(); });
-
-  // Focus Explorer
-  registerShortcut("FileExplorer::Focus",
-                   QKeySequence(Qt::MetaModifier | Qt::Key_H),
-                   Qt::WindowShortcut,
-                   [this]() { uiHandles->fileExplorerWidget->setFocus(); });
-
-  // Focus Editor
-  registerShortcut("Editor::Focus", QKeySequence(Qt::MetaModifier | Qt::Key_L),
-                   Qt::WindowShortcut,
-                   [this]() { uiHandles->editorWidget->setFocus(); });
-
-  // Open Config
-  registerShortcut(
-      "Editor::OpenConfig", QKeySequence(Qt::ControlModifier | Qt::Key_Comma),
-      Qt::WindowShortcut, [this]() { workspaceCoordinator->openConfig(); });
-
-  // Show Command Palette
-  registerShortcut("CommandPalette::Show",
-                   QKeySequence(Qt::ControlModifier | Qt::Key_P),
-                   Qt::WindowShortcut, [this]() {
-                     uiHandles->commandPaletteWidget->showPalette(
-                         CommandPaletteMode::Command, {});
-                   });
+  }
 }
 
 QKeySequence ShortcutsManager::seqFor(const std::string &key,
                                       const QKeySequence &fallback) const {
   auto foundShortcut = shortcutMap.find(key);
-  if (foundShortcut != shortcutMap.end() && !foundShortcut->second.empty()) {
-    return {foundShortcut->second.c_str()};
+  if (foundShortcut != shortcutMap.end() &&
+      !foundShortcut->second.key.empty()) {
+    return {foundShortcut->second.keyCombo.c_str()};
   }
 
   return fallback;
