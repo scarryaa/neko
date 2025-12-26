@@ -11,12 +11,6 @@
 QT_FWD(QLabel, QColor, QSize, QWidget)
 
 namespace UiUtils {
-QString getConfigString(neko::ConfigManager *manager,
-                        char *(getter)(neko::ConfigManager *));
-
-QString getThemeColor(neko::ThemeManager &manager, const char *key,
-                      const char *fallback = "#000000");
-
 template <typename... Args>
 auto getThemeColors(neko::ThemeManager &manager, Args &&...keys) {
   return std::make_tuple(
@@ -24,11 +18,6 @@ auto getThemeColors(neko::ThemeManager &manager, Args &&...keys) {
 }
 
 QFont makeFont(const QString &fontFamily, size_t fontSize);
-
-QFont loadFont(neko::ConfigManager &manager, neko::FontType type);
-
-void setFontSize(neko::ConfigManager &manager, neko::FontType type,
-                 double newFontSize);
 
 QString getScrollBarStylesheet(const QString &scrollbarThumbColor,
                                const QString &scrollbarThumbHoverColor,

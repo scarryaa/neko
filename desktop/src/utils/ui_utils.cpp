@@ -4,86 +4,8 @@
 #include <QPixmap>
 #include <QWidget>
 
-QString UiUtils::getConfigString(neko::ConfigManager *manager,
-                                 char *(*getter)(neko::ConfigManager *)) {
-  auto *raw = getter(manager);
-  QString result = QString::fromUtf8(raw);
-
-  return result;
-}
-
-// NOLINTNEXTLINE
-QString UiUtils::getThemeColor(neko::ThemeManager &manager, const char *key,
-                               const char *fallback) {
-  auto colorStr = manager.get_color(key);
-  QString result = QString::fromUtf8(colorStr);
-
-  if (result.isEmpty()) {
-    return fallback;
-  }
-
-  return result;
-}
-
-QFont UiUtils::loadFont(neko::ConfigManager &manager, neko::FontType type) {
-  bool forceMonospace = false;
-
-  auto snapshot = manager.get_config_snapshot();
-  rust::String rawFamily;
-  double size;
-
-  switch (type) {
-  case neko::FontType::Interface:
-    rawFamily = snapshot.interface_font_family;
-    size = snapshot.interface_font_size;
-    break;
-  case neko::FontType::Editor:
-    rawFamily = snapshot.editor_font_family;
-    size = snapshot.editor_font_size;
-    break;
-  case neko::FontType::FileExplorer:
-    rawFamily = snapshot.file_explorer_font_family;
-    size = snapshot.file_explorer_font_size;
-    break;
-  case neko::FontType::Terminal:
-    rawFamily = snapshot.terminal_font_family;
-    size = snapshot.interface_font_size;
-    break;
-  }
-
-  if (rawFamily.empty() || (size == 0.0)) {
-    return {};
-  }
-
-  QString family = QString::fromUtf8(rawFamily);
-  QFont font(family, static_cast<int>(size));
-  return font;
-}
-
 QFont UiUtils::makeFont(const QString &fontFamily, size_t fontSize) {
   return {fontFamily, static_cast<int>(fontSize)};
-}
-
-void UiUtils::setFontSize(neko::ConfigManager &manager, neko::FontType type,
-                          double newFontSize) {
-  auto snapshot = manager.get_config_snapshot();
-
-  switch (type) {
-  case neko::FontType::Editor:
-    snapshot.editor_font_size = static_cast<int>(newFontSize);
-    break;
-  case neko::FontType::FileExplorer:
-    snapshot.file_explorer_font_size = static_cast<int>(newFontSize);
-    break;
-  case neko::FontType::Interface:
-    snapshot.interface_font_size = static_cast<int>(newFontSize);
-    break;
-  case neko::FontType::Terminal:
-    snapshot.terminal_font_size = static_cast<int>(newFontSize);
-    break;
-  }
-
-  manager.apply_config_snapshot(snapshot);
 }
 
 QString UiUtils::getScrollBarStylesheet(const QString &scrollbarThumbColor,
