@@ -149,6 +149,7 @@ pub mod ffi {
         can_close_others: bool,
         can_close_left: bool,
         can_close_right: bool,
+        can_close_all: bool,
         can_copy_path: bool,
         can_reveal: bool,
         is_pinned: bool,
@@ -180,6 +181,8 @@ pub mod ffi {
         pub(crate) fn get_close_left_tab_ids_wrapper(self: &AppState, id: usize) -> Vec<usize>;
         #[cxx_name = "get_close_right_tab_ids"]
         pub(crate) fn get_close_right_tab_ids_wrapper(self: &AppState, id: usize) -> Vec<usize>;
+        #[cxx_name = "get_close_all_tab_ids"]
+        pub(crate) fn get_close_all_tab_ids_wrapper(self: &AppState) -> Vec<usize>;
         pub(crate) fn get_tabs_snapshot(self: &AppState) -> TabsSnapshot;
 
         pub(crate) fn new_tab(self: &mut AppState) -> usize;
@@ -191,6 +194,8 @@ pub mod ffi {
         pub(crate) fn close_left_tabs_wrapper(self: &mut AppState, id: usize) -> bool;
         #[cxx_name = "close_right_tabs"]
         pub(crate) fn close_right_tabs_wrapper(self: &mut AppState, id: usize) -> bool;
+        #[cxx_name = "close_all_tabs"]
+        pub(crate) fn close_all_tabs_wrapper(self: &mut AppState) -> bool;
         pub(crate) fn set_active_tab(self: &mut AppState, id: usize) -> Result<()>;
         #[cxx_name = "move_tab"]
         pub(crate) fn move_tab_wrapper(self: &mut AppState, from: usize, to: usize) -> bool;

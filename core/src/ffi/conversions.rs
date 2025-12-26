@@ -174,6 +174,7 @@ impl From<TabCommandState> for TabCommandStateFfi {
             can_close_others: command_state.can_close_others,
             can_close_left: command_state.can_close_left,
             can_close_right: command_state.can_close_right,
+            can_close_all: command_state.can_close_all,
             can_copy_path: command_state.can_copy_path,
             can_reveal: command_state.can_reveal,
             is_pinned: command_state.is_pinned,

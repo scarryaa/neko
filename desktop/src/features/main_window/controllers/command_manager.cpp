@@ -11,8 +11,9 @@ namespace {
 enum class TabCommandGroup : uint8_t {
   ClosePrimary = 0,
   CloseSides = 1,
-  Pin = 2,
-  Path = 3,
+  CloseAll = 2,
+  Pin = 3,
+  Path = 4,
 };
 
 struct TabCommandSpec {
@@ -30,6 +31,7 @@ const TabCommandSpec tabCommandSpecs[] = {
     {"tab.closeOthers", "Close Others", "", "", TabCommandGroup::ClosePrimary},
     {"tab.closeLeft", "Close Left", "", "", TabCommandGroup::CloseSides},
     {"tab.closeRight", "Close Right", "", "", TabCommandGroup::CloseSides},
+    {"tab.closeAll", "Close All", "", "", TabCommandGroup::CloseAll},
     {"tab.pin", "Pin", "", "", TabCommandGroup::Pin},
     {"tab.copyPath", "Copy Path", "", "", TabCommandGroup::Path},
     {"tab.reveal", "Reveal in Explorer", "", "", TabCommandGroup::Path},
@@ -58,6 +60,7 @@ inline bool isTabCommandEnabled(const std::string &commandId,
       {"tab.closeOthers", state.can_close_others},
       {"tab.closeLeft", state.can_close_left},
       {"tab.closeRight", state.can_close_right},
+      {"tab.closeAll", state.can_close_all},
       {"tab.copyPath", state.can_copy_path},
       {"tab.reveal", state.can_reveal},
       {"tab.pin", true},
@@ -98,6 +101,10 @@ void CommandManager::registerCommands() {
       "tab.closeRight", [this](const QVariant &variant) {
         handleTabCommand("tab.closeRight", variant);
       });
+  commandRegistry->registerCommand("tab.closeAll",
+                                   [this](const QVariant &variant) {
+                                     handleTabCommand("tab.closeAll", variant);
+                                   });
   commandRegistry->registerCommand("tab.copyPath",
                                    [this](const QVariant &variant) {
                                      handleTabCommand("tab.copyPath", variant);

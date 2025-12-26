@@ -190,6 +190,8 @@ void WorkspaceCoordinator::handleTabCommand(const std::string &commandId,
     closeLeftTabs(tabId, forceClose);
   } else if (commandId == "tab.closeRight") {
     closeRightTabs(tabId, forceClose);
+  } else if (commandId == "tab.closeAll") {
+    closeAllTabs(forceClose);
   } else if (commandId == "tab.copyPath") {
     tabCopyPath(tabId);
   } else if (commandId == "tab.reveal") {
@@ -352,7 +354,6 @@ SaveResult WorkspaceCoordinator::saveTab(int tabId, bool isSaveAs) {
 }
 
 void WorkspaceCoordinator::closeTab(int tabId, bool forceClose) {
-  // TODO(scarlet): Focus remaining tabs after close process
   auto close = [this](int tabId, bool forceClose) {
     // Save current scroll offset before closing
     saveScrollOffsetsForActiveTab();
@@ -385,7 +386,6 @@ void WorkspaceCoordinator::closeTab(int tabId, bool forceClose) {
 }
 
 void WorkspaceCoordinator::closeLeftTabs(int tabId, bool forceClose) {
-  // TODO(scarlet): Focus remaining tabs after close process
   saveScrollOffsetsForActiveTab();
 
   auto ids = workspaceController->closeLeft(tabId, forceClose);
@@ -395,7 +395,6 @@ void WorkspaceCoordinator::closeLeftTabs(int tabId, bool forceClose) {
 }
 
 void WorkspaceCoordinator::closeRightTabs(int tabId, bool forceClose) {
-  // TODO(scarlet): Focus remaining tabs after close process
   saveScrollOffsetsForActiveTab();
 
   auto ids = workspaceController->closeRight(tabId, forceClose);
@@ -404,8 +403,16 @@ void WorkspaceCoordinator::closeRightTabs(int tabId, bool forceClose) {
   }
 }
 
+void WorkspaceCoordinator::closeAllTabs(bool forceClose) {
+  saveScrollOffsetsForActiveTab();
+
+  auto ids = workspaceController->closeAll(forceClose);
+  if (!ids.empty()) {
+    handleTabsClosed();
+  }
+}
+
 void WorkspaceCoordinator::closeOtherTabs(int tabId, bool forceClose) {
-  // TODO(scarlet): Focus remaining tabs after close process
   saveScrollOffsetsForActiveTab();
 
   auto ids = workspaceController->closeOthers(tabId, forceClose);

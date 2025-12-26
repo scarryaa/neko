@@ -21,6 +21,19 @@ QList<int> TabController::getCloseOtherTabIds(int tabId) const {
   return ids;
 }
 
+QList<int> TabController::getCloseAllTabIds() const {
+  auto rawIds = appState->get_close_all_tab_ids();
+
+  QList<int> ids = QList<int>();
+  ids.reserve(static_cast<int>(rawIds.size()));
+
+  for (uint64_t rawId : rawIds) {
+    ids.append(static_cast<int>(rawId));
+  }
+
+  return ids;
+}
+
 QList<int> TabController::getCloseLeftTabIds(int tabId) const {
   auto rawIds = appState->get_close_left_tab_ids(tabId);
 
@@ -71,6 +84,20 @@ bool TabController::closeTab(int tabId) {
 
   emit tabListChanged();
   emit activeTabChanged(static_cast<int>(snapshot.active_id));
+
+  return true;
+}
+
+bool TabController::closeAllTabs() {
+  if (appState == nullptr) {
+    return false;
+  }
+
+  if (!appState->close_all_tabs()) {
+    return false;
+  }
+
+  emit tabListChanged();
 
   return true;
 }

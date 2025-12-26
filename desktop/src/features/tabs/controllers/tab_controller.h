@@ -22,10 +22,12 @@ public:
   [[nodiscard]] QList<int> getCloseOtherTabIds(int tabId) const;
   [[nodiscard]] QList<int> getCloseLeftTabIds(int tabId) const;
   [[nodiscard]] QList<int> getCloseRightTabIds(int tabId) const;
+  [[nodiscard]] QList<int> getCloseAllTabIds() const;
 
   // Setters
   int addTab();
   bool closeTab(int tabId);
+  bool closeAllTabs();
   bool closeOtherTabs(int tabId);
   bool closeLeftTabs(int tabId);
   bool closeRightTabs(int tabId);

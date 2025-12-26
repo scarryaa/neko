@@ -21,6 +21,7 @@ public:
   QList<int> closeRight(int tabId, bool forceClose);
   QList<int> closeOthers(int tabId, bool forceClose);
   QList<int> closeTab(int tabId, bool forceClose);
+  QList<int> closeAll(bool forceClose);
 
   bool saveTab(int tabId, bool forceSaveAs);
   bool saveTabWithPromptIfNeeded(int tabId, bool isSaveAs);

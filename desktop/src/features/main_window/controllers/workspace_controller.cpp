@@ -32,6 +32,13 @@ QList<int> WorkspaceController::closeOthers(int tabId, bool forceClose) {
   return ids;
 }
 
+QList<int> WorkspaceController::closeAll(bool forceClose) {
+  auto ids = tabController->getCloseAllTabIds();
+  closeMany(ids, forceClose, [this]() { tabController->closeAllTabs(); });
+
+  return ids;
+}
+
 QList<int> WorkspaceController::closeTab(int tabId, bool forceClose) {
   auto ids = QList<int>();
   ids.push_back(tabId);
