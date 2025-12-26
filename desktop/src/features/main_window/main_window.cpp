@@ -124,12 +124,12 @@ MainWindow::MainWindow(QWidget *parent)
   emptyStateNewTabButton = layoutResult.emptyStateNewTabButton;
   mainSplitter = layoutResult.mainSplitter;
 
-  uiHandles = WorkspaceUiHandles{
-      editorWidget,          gutterWidget,         tabBarWidget,
-      tabBarContainer,       emptyStateWidget,     fileExplorerWidget,
-      statusBarWidget,       commandPaletteWidget, this->window(),
-      titleBarWidget,        mainSplitter,         newTabButton,
-      emptyStateNewTabButton};
+  uiHandles =
+      UiHandles{editorWidget,          gutterWidget,         tabBarWidget,
+                tabBarContainer,       emptyStateWidget,     fileExplorerWidget,
+                statusBarWidget,       commandPaletteWidget, this->window(),
+                titleBarWidget,        mainSplitter,         newTabButton,
+                emptyStateNewTabButton};
 
   workspaceCoordinator = new WorkspaceCoordinator(
       {

@@ -29,6 +29,15 @@ set(SKIP_UIC_SOURCES
   src/features/tabs/tab_widget.cpp
   src/features/title_bar/title_bar_widget.cpp
   src/features/main_window/layout/main_window_layout_builder.cpp
+  src/features/main_window/ui_handles.h
+  src/features/main_window/connections/theme_connections.h
+  src/features/main_window/connections/ui_style_connections.h
+  src/features/main_window/connections/main_window_connections.cpp
+  src/features/main_window/connections/editor_connections.cpp
+  src/features/main_window/connections/workspace_connections.cpp
+  src/features/main_window/controllers/shortcuts_manager.cpp
+  src/features/main_window/controllers/workspace_coordinator.cpp
+  src/features/main_window/main_window.h
 )
 
 set_source_files_properties(
@@ -49,7 +58,7 @@ qt_add_executable(neko
     src/features/main_window/layout/main_window_layout_builder.h
 
     # UI Handles
-    src/features/main_window/workspace_ui_handles.h
+    src/features/main_window/ui_handles.h
 
     # Main Window Interfaces
     src/features/main_window/interfaces/workspace_ui.h

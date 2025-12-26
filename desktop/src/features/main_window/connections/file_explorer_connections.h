@@ -2,7 +2,7 @@
 #define FILE_EXPLORER_CONNECTIONS_H
 
 class AppConfigService;
-class WorkspaceUiHandles;
+class UiHandles;
 
 #include <QObject>
 
@@ -11,7 +11,7 @@ class FileExplorerConnections : public QObject {
 
 public:
   struct FileExplorerConnectionsProps {
-    const WorkspaceUiHandles &uiHandles;
+    const UiHandles &uiHandles;
     AppConfigService *appConfigService;
   };
 

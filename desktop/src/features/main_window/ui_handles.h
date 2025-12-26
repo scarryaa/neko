@@ -1,5 +1,5 @@
-#ifndef WORKSPACE_UI_HANDLES_H
-#define WORKSPACE_UI_HANDLES_H
+#ifndef UI_HANDLES_H
+#define UI_HANDLES_H
 
 class EditorWidget;
 class GutterWidget;
@@ -13,8 +13,7 @@ class TitleBarWidget;
 
 QT_FWD(QSplitter, QPushButton, QWidget)
 
-// TODO(scarlet): Rename to UiHandles
-struct WorkspaceUiHandles {
+struct UiHandles {
   EditorWidget *editorWidget;
   GutterWidget *gutterWidget;
   TabBarWidget *tabBarWidget;

@@ -2,7 +2,7 @@
 #define MAIN_WINDOW_CONNECTIONS_H
 
 class WorkspaceCoordinator;
-class WorkspaceUiHandles;
+class UiHandles;
 class ThemeProvider;
 
 #include <QObject>
@@ -12,7 +12,7 @@ class MainWindowConnections : public QObject {
 
 public:
   struct MainWindowConnectionsProps {
-    const WorkspaceUiHandles &uiHandles;
+    const UiHandles &uiHandles;
     WorkspaceCoordinator *workspaceCoordinator;
     ThemeProvider *themeProvider;
   };

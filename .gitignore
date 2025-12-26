@@ -38,6 +38,7 @@ Thumbs.db
 !ui_utils.*
 !ui_style_manager.*
 !ui_style_connections.*
+!ui_handles.*
 
 # Rust
 core/target/

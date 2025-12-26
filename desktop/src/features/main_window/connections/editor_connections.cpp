@@ -3,7 +3,7 @@
 #include "features/editor/editor_widget.h"
 #include "features/editor/gutter_widget.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
-#include "features/main_window/workspace_ui_handles.h"
+#include "features/main_window/ui_handles.h"
 #include "features/status_bar/status_bar_widget.h"
 #include <QScrollBar>
 

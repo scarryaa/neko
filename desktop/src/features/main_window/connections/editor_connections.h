@@ -3,7 +3,7 @@
 
 class EditorController;
 class WorkspaceCoordinator;
-class WorkspaceUiHandles;
+class UiHandles;
 
 #include <QObject>
 
@@ -12,7 +12,7 @@ class EditorConnections : public QObject {
 
 public:
   struct EditorConnectionsProps {
-    const WorkspaceUiHandles &uiHandles;
+    const UiHandles &uiHandles;
     EditorController *editorController;
     WorkspaceCoordinator *workspaceCoordinator;
   };

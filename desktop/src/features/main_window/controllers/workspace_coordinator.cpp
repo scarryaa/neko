@@ -9,7 +9,7 @@
 #include "features/main_window/controllers/app_state_controller.h"
 #include "features/main_window/controllers/command_executor.h"
 #include "features/main_window/controllers/workspace_controller.h"
-#include "features/main_window/workspace_ui_handles.h"
+#include "features/main_window/ui_handles.h"
 #include "features/status_bar/status_bar_widget.h"
 #include "features/tabs/controllers/tab_controller.h"
 #include "features/tabs/tab_bar_widget.h"

@@ -3,7 +3,7 @@
 
 class ThemeProvider;
 
-#include "features/main_window/workspace_ui_handles.h"
+#include "features/main_window/ui_handles.h"
 #include "theme/theme_types.h"
 #include <QObject>
 
@@ -12,7 +12,7 @@ class ThemeConnections : public QObject {
 
 public:
   struct ThemeConnectionsProps {
-    const WorkspaceUiHandles &uiHandles;
+    const UiHandles &uiHandles;
     ThemeProvider *themeProvider;
   };
 
@@ -25,7 +25,7 @@ private:
   void applySplitterTheme(const SplitterTheme &theme) const;
   void applyEmptyStateTheme(const EmptyStateTheme &theme) const;
 
-  WorkspaceUiHandles uiHandles;
+  UiHandles uiHandles;
 };
 
 #endif

@@ -4,7 +4,7 @@
 class UiStyleManager;
 class AppConfigService;
 
-#include "features/main_window/workspace_ui_handles.h"
+#include "features/main_window/ui_handles.h"
 #include <QObject>
 
 class UiStyleConnections : public QObject {
@@ -12,7 +12,7 @@ class UiStyleConnections : public QObject {
 
 public:
   struct UiStyleConnectionsProps {
-    WorkspaceUiHandles uiHandles;
+    UiHandles uiHandles;
     UiStyleManager *uiStyleManager;
     AppConfigService *appConfigService;
   };

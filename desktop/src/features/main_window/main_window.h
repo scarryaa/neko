@@ -22,7 +22,7 @@ class UiStyleManager;
 #include "features/context_menu/context_menu_registry.h"
 #include "features/main_window/interfaces/core_services.h"
 #include "types/qt_types_fwd.h"
-#include "workspace_ui_handles.h"
+#include "ui_handles.h"
 #include <QMainWindow>
 #include <neko-core/src/ffi/bridge.rs.h>
 
@@ -66,7 +66,7 @@ private:
   StatusBarWidget *statusBarWidget;
   QPushButton *newTabButton;
   QSplitter *mainSplitter;
-  WorkspaceUiHandles uiHandles;
+  UiHandles uiHandles;
 };
 
 #endif // MAIN_WINDOW_H

@@ -1,7 +1,7 @@
 #include "file_explorer_connections.h"
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/controllers/app_config_service.h"
-#include "features/main_window/workspace_ui_handles.h"
+#include "features/main_window/ui_handles.h"
 #include "features/title_bar/title_bar_widget.h"
 
 FileExplorerConnections::FileExplorerConnections(

@@ -4,7 +4,7 @@
 class TabController;
 class WorkspaceController;
 class AppStateController;
-class WorkspaceUiHandles;
+class UiHandles;
 class EditorController;
 class AppConfigService;
 class CommandExecutor;
@@ -26,7 +26,7 @@ public:
     EditorController *editorController;
     AppConfigService *appConfigService;
     CommandExecutor *commandExecutor;
-    const WorkspaceUiHandles *uiHandles;
+    const UiHandles *uiHandles;
   };
 
   explicit WorkspaceCoordinator(const WorkspaceCoordinatorProps &props,
@@ -87,7 +87,7 @@ private:
   AppConfigService *appConfigService;
   EditorController *editorController;
   CommandExecutor *commandExecutor;
-  const WorkspaceUiHandles *uiHandles;
+  const UiHandles *uiHandles;
 };
 
 #endif

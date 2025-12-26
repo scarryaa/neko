@@ -1,7 +1,7 @@
 #ifndef WORKSPACE_CONNECTIONS_H
 #define WORKSPACE_CONNECTIONS_H
 
-class WorkspaceUiHandles;
+class UiHandles;
 class WorkspaceCoordinator;
 
 #include <QObject>
@@ -11,7 +11,7 @@ class WorkspaceConnections : public QObject {
 
 public:
   struct WorkspaceConnectionsProps {
-    WorkspaceUiHandles &uiHandles;
+    UiHandles &uiHandles;
     WorkspaceCoordinator *workspaceCoordinator;
   };
 

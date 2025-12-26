@@ -3,7 +3,7 @@
 
 class TabController;
 class WorkspaceCoordinator;
-class WorkspaceUiHandles;
+class UiHandles;
 
 #include "types/ffi_types_fwd.h"
 #include "types/qt_types_fwd.h"
@@ -20,7 +20,7 @@ public:
     neko::ShortcutsManager *shortcutsManager;
     WorkspaceCoordinator *workspaceCoordinator;
     TabController *tabController;
-    const WorkspaceUiHandles *uiHandles;
+    const UiHandles *uiHandles;
   };
 
   explicit ShortcutsManager(const ShortcutsManagerProps &props,
@@ -38,7 +38,7 @@ private:
   neko::ShortcutsManager *nekoShortcutsManager;
   WorkspaceCoordinator *workspaceCoordinator;
   TabController *tabController;
-  const WorkspaceUiHandles *uiHandles;
+  const UiHandles *uiHandles;
 };
 
 #endif
