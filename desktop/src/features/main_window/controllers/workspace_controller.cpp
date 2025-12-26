@@ -141,8 +141,6 @@ bool WorkspaceController::closeMany(const QList<int> &ids, bool forceClose,
       workspaceUi.focusTab(modifiedIds.first());
     }
 
-    // TODO(scarlet): Change 'save'/'cancel' to 'save all'/'discard all' when
-    // there are many modified tabs
     switch (workspaceUi.confirmCloseTabs(ids)) {
     case CloseDecision::Save:
       for (int tabId : modifiedIds) {

@@ -310,15 +310,18 @@ WorkspaceCoordinator::showTabCloseConfirmationDialog(const QList<int> &ids) {
     return CloseDecision::DontSave;
   }
 
+  bool multipleModifiedTabs = modifiedCount > 1;
   QMessageBox box(QMessageBox::Warning, tr("Close Tabs"),
                   tr("%1 tab%2 unsaved edits.")
                       .arg(modifiedCount)
-                      .arg(modifiedCount > 1 ? "s have" : " has"),
+                      .arg(multipleModifiedTabs ? "s have" : " has"),
                   QMessageBox::NoButton, uiHandles->window);
 
-  auto *saveBtn = box.addButton(tr("Save"), QMessageBox::AcceptRole);
+  auto *saveBtn = box.addButton(tr(multipleModifiedTabs ? "Save all" : "Save"),
+                                QMessageBox::AcceptRole);
   auto *dontSaveBtn =
-      box.addButton(tr("Don't Save"), QMessageBox::DestructiveRole);
+      box.addButton(tr(multipleModifiedTabs ? "Discard all" : "Don't Save"),
+                    QMessageBox::DestructiveRole);
   auto *cancelBtn = box.addButton(QMessageBox::Cancel);
 
   box.setDefaultButton(cancelBtn);
