@@ -144,6 +144,7 @@ void MainWindow::setupWidgets(neko::Editor *editor,
   const auto &tabTheme = themeProvider->getTabTheme();
 
   // TODO(scarlet): Create a font manager later?
+  auto snapshot = appConfigService->getSnapshot();
   const auto uiFont =
       UiUtils::loadFont(*configManager, neko::FontType::Interface);
   const auto editorFont =
@@ -171,17 +172,18 @@ void MainWindow::setupWidgets(neko::Editor *editor,
                                    .theme = editorTheme},
                                   this);
   gutterWidget = new GutterWidget({.editorController = editorController,
-                                   .configManager = &*configManager,
-                                   .theme = gutterTheme},
+                                   .theme = gutterTheme,
+                                   .font = editorFont},
                                   this);
-  statusBarWidget = new StatusBarWidget({.editorController = editorController,
-                                         .configManager = &*configManager,
-                                         .theme = statusBarTheme},
-                                        this);
+  statusBarWidget = new StatusBarWidget(
+      {.editorController = editorController,
+       .theme = statusBarTheme,
+       .fileExplorerInitiallyShown = snapshot.file_explorer_shown},
+      this);
   tabBarContainer = new QWidget(this);
-  tabBarWidget = new TabBarWidget({.configManager = &*configManager,
-                                   .theme = tabBarTheme,
+  tabBarWidget = new TabBarWidget({.theme = tabBarTheme,
                                    .tabTheme = tabTheme,
+                                   .font = uiFont,
                                    .themeProvider = themeProvider,
                                    .contextMenuRegistry = &contextMenuRegistry,
                                    .commandRegistry = &commandRegistry,

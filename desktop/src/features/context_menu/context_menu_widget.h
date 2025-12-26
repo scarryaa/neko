@@ -4,7 +4,6 @@
 #include "features/context_menu/context_menu_frame.h"
 #include "features/context_menu/context_menu_item.h"
 #include "theme/theme_types.h"
-#include "types/ffi_types_fwd.h"
 #include "types/qt_types_fwd.h"
 #include <QPoint>
 #include <QString>
@@ -21,7 +20,7 @@ class ContextMenuWidget : public QWidget {
 public:
   struct ContextMenuProps {
     ThemeProvider *themeProvider;
-    neko::ConfigManager *configManager;
+    QFont font;
   };
 
   explicit ContextMenuWidget(const ContextMenuProps &props,
@@ -45,10 +44,10 @@ private:
   void clearRows();
 
   ContextMenuTheme theme;
+  QFont font;
 
   ThemeProvider *themeProvider;
   ContextMenuFrame *mainFrame;
-  neko::ConfigManager *configManager;
   QVBoxLayout *layout;
 };
 

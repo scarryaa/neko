@@ -16,12 +16,11 @@
 #include <QStyleOption>
 
 StatusBarWidget::StatusBarWidget(const StatusBarProps &props, QWidget *parent)
-    : QWidget(parent), configManager(*props.configManager),
+    : QWidget(parent), font(props.font),
       editorController(props.editorController), theme(props.theme) {
-  QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
-  setFont(uiFont);
+  setFont(font);
+  QFontMetrics fontMetrics(font);
 
-  QFontMetrics fontMetrics(uiFont);
   int dynamicHeight =
       static_cast<int>(fontMetrics.height() + TOP_PADDING + BOTTOM_PADDING);
   m_height = dynamicHeight;
@@ -29,12 +28,9 @@ StatusBarWidget::StatusBarWidget(const StatusBarProps &props, QWidget *parent)
 
   setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
 
-  auto snapshot = configManager.get_config_snapshot();
-  bool fileExplorerShown = snapshot.file_explorer_shown;
-
   fileExplorerToggleButton = new QPushButton();
   fileExplorerToggleButton->setCheckable(true);
-  fileExplorerToggleButton->setChecked(fileExplorerShown);
+  fileExplorerToggleButton->setChecked(props.fileExplorerInitiallyShown);
 
   connect(fileExplorerToggleButton, &QPushButton::clicked, this,
           &StatusBarWidget::onFileExplorerToggled);

@@ -30,16 +30,14 @@
 // all the tabs and have the TabBarWidget be in charge of mgmt/updates,
 // with each TabWidget in control of its repaints?
 TabBarWidget::TabBarWidget(const TabBarProps &props, QWidget *parent)
-    : QScrollArea(parent), configManager(*props.configManager),
-      tabBarTheme(props.theme), tabTheme(props.tabTheme),
-      themeProvider(props.themeProvider),
+    : QScrollArea(parent), font(props.font), tabBarTheme(props.theme),
+      tabTheme(props.tabTheme), themeProvider(props.themeProvider),
       contextMenuRegistry(*props.contextMenuRegistry),
       commandRegistry(*props.commandRegistry),
       tabController(props.tabController) {
-  QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
-  setFont(uiFont);
+  setFont(font);
 
-  QFontMetrics fontMetrics(uiFont);
+  QFontMetrics fontMetrics(font);
   int dynamicHeight =
       static_cast<int>(fontMetrics.height() + TOP_PADDING + BOTTOM_PADDING);
   setFixedHeight(dynamicHeight);
@@ -123,7 +121,7 @@ void TabBarWidget::setTabs(const QStringList &titles, const QStringList &paths,
                        .index = tabIndex,
                        .tabId = tabId,
                        .isPinned = pinned,
-                       .configManager = &configManager,
+                       .font = font,
                        .themeProvider = themeProvider,
                        .theme = tabTheme,
                        .contextMenuRegistry = &contextMenuRegistry,

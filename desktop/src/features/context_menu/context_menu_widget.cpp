@@ -25,8 +25,7 @@ static constexpr double marginAdjustmentDivisor = 1.5;
 
 ContextMenuWidget::ContextMenuWidget(const ContextMenuProps &props,
                                      QWidget *parent)
-    : QWidget(parent), configManager(props.configManager),
-      themeProvider(props.themeProvider) {
+    : QWidget(parent), font(props.font), themeProvider(props.themeProvider) {
   setWindowFlags(Qt::Popup | Qt::FramelessWindowHint |
                  Qt::WindowStaysOnTopHint | Qt::NoDropShadowWindowHint);
   setAttribute(Qt::WA_DeleteOnClose);
@@ -139,9 +138,6 @@ void ContextMenuWidget::showMenu(const QPoint &position) {
 
 void ContextMenuWidget::setItems(const QVector<ContextMenuItem> &items) {
   clearRows();
-
-  const QFont font =
-      UiUtils::loadFont(*configManager, neko::FontType::Interface);
 
   for (const auto &item : items) {
     if (!item.visible) {

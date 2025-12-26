@@ -8,7 +8,6 @@ class TabWidget;
 class ThemeProvider;
 
 #include "theme/theme_types.h"
-#include "types/ffi_types_fwd.h"
 #include "types/qt_types_fwd.h"
 #include <QList>
 #include <QScrollArea>
@@ -22,9 +21,9 @@ class TabBarWidget : public QScrollArea {
 
 public:
   struct TabBarProps {
-    neko::ConfigManager *configManager;
     TabBarTheme theme;
     TabTheme tabTheme;
+    QFont font;
     ThemeProvider *themeProvider;
     ContextMenuRegistry *contextMenuRegistry;
     CommandRegistry *commandRegistry;
@@ -65,7 +64,6 @@ private:
   TabController *tabController;
   ContextMenuRegistry &contextMenuRegistry;
   CommandRegistry &commandRegistry;
-  neko::ConfigManager &configManager;
   QPushButton *newTabButton;
   QWidget *containerWidget;
   QWidget *dropIndicator;
@@ -73,6 +71,7 @@ private:
   QList<TabWidget *> tabs;
   int currentTabId;
 
+  QFont font;
   TabBarTheme tabBarTheme;
   TabTheme tabTheme;
 

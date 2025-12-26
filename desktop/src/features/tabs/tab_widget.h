@@ -26,7 +26,7 @@ public:
     int index;
     int tabId;
     bool isPinned;
-    neko::ConfigManager *configManager;
+    QFont font;
     ThemeProvider *themeProvider;
     TabTheme theme;
     ContextMenuRegistry *contextMenuRegistry;
@@ -68,7 +68,6 @@ private:
   ContextMenuRegistry &contextMenuRegistry;
   CommandRegistry &commandRegistry;
   ContextMenuWidget *contextMenuWidget;
-  neko::ConfigManager &configManager;
   ThemeProvider *themeProvider;
   QString title;
   QString path;
@@ -83,6 +82,7 @@ private:
   bool dragInProgress = false;
   QPoint dragStartPosition;
 
+  QFont font;
   TabTheme theme;
 
   static constexpr int LEFT_PADDING_PX = 12;

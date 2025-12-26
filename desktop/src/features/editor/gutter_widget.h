@@ -3,7 +3,6 @@
 
 #include "render/gutter_renderer.h"
 #include "theme/theme_types.h"
-#include "types/ffi_types_fwd.h"
 #include "types/qt_types_fwd.h"
 #include <QFont>
 #include <QFontMetricsF>
@@ -20,8 +19,8 @@ class GutterWidget : public QScrollArea {
 public:
   struct GutterProps {
     EditorController *editorController;
-    neko::ConfigManager *configManager;
     GutterTheme theme;
+    QFont font;
   };
 
   explicit GutterWidget(const GutterProps &props, QWidget *parent = nullptr);
@@ -56,7 +55,6 @@ private:
 
   GutterTheme theme;
 
-  neko::ConfigManager &configManager;
   EditorController *editorController;
   GutterRenderer *renderer;
   QFont font;

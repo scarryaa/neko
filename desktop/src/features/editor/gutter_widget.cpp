@@ -9,9 +9,7 @@
 
 GutterWidget::GutterWidget(const GutterProps &props, QWidget *parent)
     : QScrollArea(parent), editorController(props.editorController),
-      configManager(*props.configManager), renderer(new GutterRenderer()),
-      theme(props.theme),
-      font(UiUtils::loadFont(configManager, neko::FontType::Editor)),
+      renderer(new GutterRenderer()), theme(props.theme), font(props.font),
       fontMetrics(font) {
   setFocusPolicy(Qt::NoFocus);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);

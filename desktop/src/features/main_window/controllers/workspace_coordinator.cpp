@@ -43,6 +43,9 @@ void WorkspaceCoordinator::fileExplorerToggled() {
   auto snapshot = configManager->get_config_snapshot();
   snapshot.file_explorer_shown = shouldShow;
   configManager->apply_config_snapshot(snapshot);
+
+  emit onFileExplorerToggledViaShortcut(
+      !uiHandles->fileExplorerWidget->isHidden());
 }
 
 void WorkspaceCoordinator::cursorPositionClicked() {
@@ -109,8 +112,6 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
     switch (intent.kind) {
     case neko::UiIntentKindFfi::ToggleFileExplorer:
       fileExplorerToggled();
-      emit onFileExplorerToggledViaShortcut(
-          !uiHandles->fileExplorerWidget->isHidden());
       break;
     case neko::UiIntentKindFfi::ApplyTheme:
       emit themeChanged(std::string(intent.argument.c_str()));
@@ -237,8 +238,6 @@ void WorkspaceCoordinator::tabReveal(const std::string &commandId,
   // Show file Explorer if hidden
   if (uiHandles->fileExplorerWidget->isHidden()) {
     fileExplorerToggled();
-    emit onFileExplorerToggledViaShortcut(
-        !uiHandles->fileExplorerWidget->isHidden());
   }
   emit tabRevealedInFileExplorer();
 }

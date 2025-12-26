@@ -5,7 +5,6 @@ class EditorController;
 class ConfigManager;
 
 #include "theme/theme_types.h"
-#include "types/ffi_types_fwd.h"
 #include "types/qt_types_fwd.h"
 #include <QWidget>
 
@@ -17,8 +16,9 @@ class StatusBarWidget : public QWidget {
 public:
   struct StatusBarProps {
     EditorController *editorController;
-    neko::ConfigManager *configManager;
+    QFont font;
     StatusBarTheme theme;
+    bool fileExplorerInitiallyShown;
   };
 
   explicit StatusBarWidget(const StatusBarProps &props,
@@ -46,10 +46,10 @@ private:
   void onCursorPositionClicked();
 
   EditorController *editorController;
-  neko::ConfigManager &configManager;
   double m_height;
   QPushButton *fileExplorerToggleButton;
   QPushButton *cursorPosition;
+  QFont font;
 
   StatusBarTheme theme;
 

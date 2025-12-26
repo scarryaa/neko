@@ -19,16 +19,14 @@
 #include <QVariant>
 
 TabWidget::TabWidget(const TabProps &props, QWidget *parent)
-    : QWidget(parent), configManager(*props.configManager),
-      themeProvider(props.themeProvider), theme(props.theme),
-      contextMenuRegistry(*props.contextMenuRegistry),
+    : QWidget(parent), font(props.font), themeProvider(props.themeProvider),
+      theme(props.theme), contextMenuRegistry(*props.contextMenuRegistry),
       commandRegistry(*props.commandRegistry), title(props.title),
       path(props.path), isPinned(props.isPinned), index(props.index),
       tabId(props.tabId), isActive(false) {
-  QFont uiFont = UiUtils::loadFont(configManager, neko::FontType::Interface);
-  setFont(uiFont);
+  setFont(font);
 
-  QFontMetrics fontMetrics(uiFont);
+  QFontMetrics fontMetrics(font);
   const int dynamicHeight =
       static_cast<int>(fontMetrics.height() + TOP_PADDING + BOTTOM_PADDING);
   setFixedHeight(dynamicHeight);
@@ -65,7 +63,7 @@ int TabWidget::getId() const { return tabId; }
 void TabWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
-  painter.setFont(font());
+  painter.setFont(font);
 
   const QRect widgetRect = rect();
 
@@ -267,7 +265,7 @@ void TabWidget::leaveEvent(QEvent *event) {
 }
 
 double TabWidget::measureText(const QString &text) {
-  QFontMetrics fontMetrics(font());
+  QFontMetrics fontMetrics(font);
   return static_cast<double>(fontMetrics.horizontalAdvance(text));
 }
 
@@ -300,7 +298,7 @@ void TabWidget::contextMenuEvent(QContextMenuEvent *event) {
   const auto items = contextMenuRegistry.build("tab", variant);
 
   auto *menu = new ContextMenuWidget(
-      {.themeProvider = themeProvider, .configManager = &configManager}, this);
+      {.themeProvider = themeProvider, .font = font}, this);
   menu->setItems(items);
 
   connect(menu, &ContextMenuWidget::actionTriggered, this,
