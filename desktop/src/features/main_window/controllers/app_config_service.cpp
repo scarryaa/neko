@@ -13,53 +13,66 @@ std::string AppConfigService::getConfigPath() const {
   return configManager->get_config_path().c_str();
 }
 
-void AppConfigService::setFileExplorerShown(bool shown) {
+void AppConfigService::updateConfig(
+    const std::function<void(neko::ConfigSnapshotFfi &)> &mutator,
+    EmitConfigChanged emitMode) {
   auto snapshot = configManager->get_config_snapshot();
-  snapshot.file_explorer_shown = shown;
+  mutator(snapshot);
   configManager->apply_config_snapshot(snapshot);
-}
 
-void AppConfigService::setFileExplorerWidth(double width) {
-  auto snapshot = configManager->get_config_snapshot();
-  snapshot.file_explorer_width = static_cast<uint32_t>(width);
-  configManager->apply_config_snapshot(snapshot);
+  if (emitMode == EmitConfigChanged::Yes) {
+    auto updatedSnapshot = configManager->get_config_snapshot();
+    emit configChanged(updatedSnapshot);
+  }
 }
 
 void AppConfigService::setInterfaceFontSize(int fontSize) {
-  auto snapshot = configManager->get_config_snapshot();
-  snapshot.interface_font_size = fontSize;
-  configManager->apply_config_snapshot(snapshot);
-
-  auto updatedSnapshot = configManager->get_config_snapshot();
-  emit configChanged(updatedSnapshot);
+  updateConfig(
+      [fontSize](neko::ConfigSnapshotFfi &snapshot) {
+        snapshot.interface_font_size = fontSize;
+      },
+      EmitConfigChanged::Yes);
 }
 
 void AppConfigService::setEditorFontSize(int fontSize) {
-  auto snapshot = configManager->get_config_snapshot();
-  snapshot.editor_font_size = fontSize;
-  configManager->apply_config_snapshot(snapshot);
-
-  auto updatedSnapshot = configManager->get_config_snapshot();
-  emit configChanged(updatedSnapshot);
+  updateConfig(
+      [fontSize](neko::ConfigSnapshotFfi &snapshot) {
+        snapshot.editor_font_size = fontSize;
+      },
+      EmitConfigChanged::Yes);
 }
 
 void AppConfigService::setFileExplorerFontSize(int fontSize) {
-  auto snapshot = configManager->get_config_snapshot();
-  snapshot.file_explorer_font_size = fontSize;
-  configManager->apply_config_snapshot(snapshot);
-
-  auto updatedSnapshot = configManager->get_config_snapshot();
-  emit configChanged(updatedSnapshot);
+  updateConfig(
+      [fontSize](neko::ConfigSnapshotFfi &snapshot) {
+        snapshot.file_explorer_font_size = fontSize;
+      },
+      EmitConfigChanged::Yes);
 }
 
 void AppConfigService::setFileExplorerDirectory(const std::string &path) {
-  auto snapshot = configManager->get_config_snapshot();
-  snapshot.file_explorer_directory_present = true;
-  snapshot.file_explorer_directory = path;
-  configManager->apply_config_snapshot(snapshot);
+  updateConfig(
+      [&path](neko::ConfigSnapshotFfi &snapshot) {
+        snapshot.file_explorer_directory_present = true;
+        snapshot.file_explorer_directory = path;
+      },
+      EmitConfigChanged::Yes);
+}
 
-  auto updatedSnapshot = configManager->get_config_snapshot();
-  emit configChanged(updatedSnapshot);
+void AppConfigService::setFileExplorerShown(bool shown) {
+  updateConfig(
+      [shown](neko::ConfigSnapshotFfi &snapshot) {
+        snapshot.file_explorer_shown = shown;
+      },
+      EmitConfigChanged::No);
+}
+
+void AppConfigService::setFileExplorerWidth(double width) {
+  updateConfig(
+      [width](neko::ConfigSnapshotFfi &snapshot) {
+        snapshot.file_explorer_width = static_cast<uint32_t>(width);
+      },
+      EmitConfigChanged::No);
 }
 
 void AppConfigService::notifyExternalConfigChange() {

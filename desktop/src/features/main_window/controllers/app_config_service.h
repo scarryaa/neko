@@ -37,7 +37,6 @@ public:
 
   // NOLINTNEXTLINE(readability-redundant-access-specifiers)
 public slots:
-  // TODO(scarlet): Consolidate these into a single 'update' method if possible?
   void setInterfaceFontSize(int fontSize);
   void setEditorFontSize(int fontSize);
   void setFileExplorerFontSize(int fontSize);
@@ -56,6 +55,12 @@ signals:
   void fileExplorerFontConfigChanged(QString fontFamily, int fontSize);
 
 private:
+  enum class EmitConfigChanged : uint8_t { No, Yes };
+
+  void
+  updateConfig(const std::function<void(neko::ConfigSnapshotFfi &)> &mutator,
+               EmitConfigChanged emitMode);
+
   neko::ConfigManager *configManager;
 };
 
