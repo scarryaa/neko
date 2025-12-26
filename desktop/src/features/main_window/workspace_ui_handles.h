@@ -13,6 +13,7 @@ class TitleBarWidget;
 
 QT_FWD(QSplitter, QPushButton, QWidget)
 
+// TODO(scarlet): Rename to UiHandles
 struct WorkspaceUiHandles {
   EditorWidget *editorWidget;
   GutterWidget *gutterWidget;

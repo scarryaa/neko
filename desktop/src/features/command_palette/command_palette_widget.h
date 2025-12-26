@@ -2,7 +2,6 @@
 #define COMMAND_PALETTE_WIDGET_H
 
 #include "features/command_palette/command_palette_mode.h"
-#include "features/main_window/interfaces/core_services.h"
 #include "theme/theme_types.h"
 #include "types/qt_types_fwd.h"
 #include <QStringList>
@@ -14,10 +13,6 @@ QT_FWD(QVBoxLayout, QLabel, QLineEdit, QListWidget, QToolButton, QShortcut,
 class PaletteDivider;
 class PaletteFrame;
 class CurrentSizeStackedWidget;
-
-namespace neko {
-class ConfigManager;
-}
 
 class CommandPaletteWidget : public QWidget {
   Q_OBJECT
@@ -47,7 +42,7 @@ private:
 
 public:
   struct CommandPaletteProps {
-    neko::ConfigManager *configManager;
+    QFont font;
     CommandPaletteTheme theme;
   };
 
@@ -57,6 +52,10 @@ public:
 
   void setAndApplyTheme(const CommandPaletteTheme &newTheme);
   void showPalette(const CommandPaletteMode &mode, JumpState newJumpState);
+
+  // NOLINTNEXTLINE(readability-redundant-access-specifiers)
+public slots:
+  void updateFont(const QFont &newFont);
 
 signals:
   void goToPositionRequested(int row, int col);
@@ -114,8 +113,6 @@ private:
   void jumpToDocumentEnd();
   void jumpToLastTarget();
 
-  [[nodiscard]] QFont makeInterfaceFont(qreal pointSize) const;
-
   bool handleJumpHistoryNavigation(const QKeyEvent *event);
   void saveJumpHistoryEntry(const QString &entry);
   void resetJumpHistoryNavigation();
@@ -132,9 +129,8 @@ private:
   void updateCommandSuggestions(const QString &text);
   void resetCommandHistoryNavigation();
 
-  neko::ConfigManager &configManager;
-
   CommandPaletteTheme theme;
+  QFont font;
 
   CurrentSizeStackedWidget *pages;
   PaletteFrame *mainFrame;

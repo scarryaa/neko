@@ -1,5 +1,5 @@
 #include "editor_widget.h"
-#include "utils/gui_utils.h"
+#include "utils/ui_utils.h"
 #include <QApplication>
 #include <QMouseEvent>
 #include <QPainter>

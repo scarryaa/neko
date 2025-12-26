@@ -2,7 +2,7 @@
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/workspace_ui_handles.h"
 #include "features/title_bar/title_bar_widget.h"
-#include "utils/gui_utils.h"
+#include "utils/ui_utils.h"
 
 FileExplorerConnections::FileExplorerConnections(
     const FileExplorerConnectionsProps &props, QObject *parent)

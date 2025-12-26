@@ -1,6 +1,6 @@
 #include "file_explorer_widget.h"
 #include "features/file_explorer/controllers/file_tree_controller.h"
-#include "utils/gui_utils.h"
+#include "utils/ui_utils.h"
 #include <QApplication>
 #include <QClipboard>
 #include <QColor>

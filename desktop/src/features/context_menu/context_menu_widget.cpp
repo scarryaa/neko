@@ -1,7 +1,7 @@
 #include "features/context_menu/context_menu_widget.h"
 #include "theme/theme_provider.h"
-#include "utils/gui_utils.h"
 #include "utils/mac_utils.h"
+#include "utils/ui_utils.h"
 #include <QGraphicsDropShadowEffect>
 #include <QLabel>
 #include <QPointer>

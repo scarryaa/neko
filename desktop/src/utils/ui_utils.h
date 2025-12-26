@@ -23,6 +23,8 @@ auto getThemeColors(neko::ThemeManager &manager, Args &&...keys) {
       QString::fromUtf8(manager.get_color(std::forward<Args>(keys)))...);
 }
 
+QFont makeFont(const QString &fontFamily, size_t fontSize);
+
 QFont loadFont(neko::ConfigManager &manager, neko::FontType type);
 
 void setFontSize(neko::ConfigManager &manager, neko::FontType type,

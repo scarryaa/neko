@@ -15,6 +15,8 @@ class CommandPaletteWidget;
 class FileExplorerWidget;
 class TabController;
 class AppStateController;
+class AppConfigService;
+class UiStyleManager;
 
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
@@ -54,8 +56,8 @@ private:
   CommandRegistry commandRegistry;
   ContextMenuRegistry contextMenuRegistry;
   ThemeProvider *themeProvider;
-
-  CoreServices coreServices;
+  AppConfigService *appConfigService;
+  UiStyleManager *uiStyleManager;
 
   QWidget *emptyStateWidget;
   QPushButton *emptyStateNewTabButton;

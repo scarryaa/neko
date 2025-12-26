@@ -34,7 +34,7 @@ public:
   void updateDimensions();
   void setEditorController(EditorController *newEditorController);
 
-  // NOLINTNEXTLINE
+  // NOLINTNEXTLINE(readability-redundant-access-specifiers)
 public slots:
   void onBufferChanged() const;
   void onCursorChanged();

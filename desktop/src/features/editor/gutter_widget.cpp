@@ -1,6 +1,6 @@
 #include "gutter_widget.h"
 #include "features/editor/controllers/editor_controller.h"
-#include "utils/gui_utils.h"
+#include "utils/ui_utils.h"
 #include <QPainter>
 #include <QScrollBar>
 #include <QString>

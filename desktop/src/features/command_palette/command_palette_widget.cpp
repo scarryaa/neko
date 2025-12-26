@@ -4,8 +4,8 @@
 #include "features/command_palette/palette_divider.h"
 #include "features/command_palette/palette_frame.h"
 #include "theme/theme_types.h"
-#include "utils/gui_utils.h"
 #include "utils/mac_utils.h"
+#include "utils/ui_utils.h"
 #include <QDialog>
 #include <QEvent>
 #include <QFrame>
@@ -172,7 +172,8 @@ CommandPaletteWidget::findNav(std::string_view key) {
 
 CommandPaletteWidget::CommandPaletteWidget(const CommandPaletteProps &props,
                                            QWidget *parent)
-    : QWidget(parent), theme(props.theme), configManager(*props.configManager) {
+    : QWidget(parent), theme(props.theme), font(props.font) {
+  setFont(font);
   setUpWindow();
   buildUi();
   connectSignals();
@@ -277,7 +278,7 @@ void CommandPaletteWidget::connectSignals() {
 void CommandPaletteWidget::buildJumpPage() {
   jumpPage = new QWidget(pages);
 
-  auto font = makeInterfaceFont(k::jumpFontSize);
+  // auto font = makeInterfaceFont(k::jumpFontSize);
 
   auto *layout = new QVBoxLayout(jumpPage);
   layout->setContentsMargins(0, 0, 0, 0);
@@ -329,7 +330,7 @@ void CommandPaletteWidget::buildJumpPage() {
 void CommandPaletteWidget::buildCommandPage() {
   commandPage = new QWidget(pages);
 
-  auto font = makeInterfaceFont(k::jumpFontSize);
+  // auto font = makeInterfaceFont(k::jumpFontSize);
 
   auto *layout = new QVBoxLayout(commandPage);
   layout->setContentsMargins(0, 0, 0, 0);
@@ -384,7 +385,7 @@ void CommandPaletteWidget::adjustPosition() {
 }
 
 QWidget *CommandPaletteWidget::buildShortcutsContainer(QWidget *parent) {
-  const auto font = makeInterfaceFont(k::jumpFontSize);
+  // const auto font = makeInterfaceFont(k::jumpFontSize);
 
   struct ShortcutRow {
     std::string_view code;
@@ -461,7 +462,7 @@ QWidget *CommandPaletteWidget::buildShortcutsContainer(QWidget *parent) {
 }
 
 QWidget *CommandPaletteWidget::buildShortcutsRow(QWidget *parent) {
-  QFont font = makeInterfaceFont(k::jumpFontSize);
+  // QFont font = makeInterfaceFont(k::jumpFontSize);
 
   auto *shortcutsRow = new QWidget(jumpPage);
 
@@ -654,6 +655,13 @@ void CommandPaletteWidget::showPalette(const CommandPaletteMode &mode,
 
     jumpInput->setFocus();
   }
+}
+
+void CommandPaletteWidget::updateFont(const QFont &newFont) {
+  font = newFont;
+  setFont(font);
+  updateGeometry();
+  update();
 }
 
 void CommandPaletteWidget::showEvent(QShowEvent *event) {
@@ -898,12 +906,6 @@ void CommandPaletteWidget::jumpToLastTarget() {
   }
 
   close();
-}
-
-QFont CommandPaletteWidget::makeInterfaceFont(const qreal pointSize) const {
-  auto font = UiUtils::loadFont(configManager, neko::FontType::Interface);
-  font.setPointSizeF(pointSize);
-  return font;
 }
 
 QLabel *CommandPaletteWidget::buildCurrentLineLabel(QWidget *parent,

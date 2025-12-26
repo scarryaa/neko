@@ -12,6 +12,29 @@ if(APPLE)
   list(APPEND PLATFORM_LIBS ${COCOA_LIB})
 endif()
 
+set(SKIP_UIC_SOURCES
+  src/features/main_window/main_window.cpp
+  src/features/main_window/connections/file_explorer_connections.cpp
+  src/theme/theme_provider.cpp
+  src/features/main_window/controllers/ui_style_manager.cpp
+  src/features/main_window/connections/ui_style_connections.cpp
+  src/utils/ui_utils.cpp
+  src/features/command_palette/command_palette_widget.cpp
+  src/features/context_menu/context_menu_widget.cpp
+  src/features/editor/editor_widget.cpp
+  src/features/editor/gutter_widget.cpp
+  src/features/file_explorer/file_explorer_widget.cpp
+  src/features/status_bar/status_bar_widget.cpp
+  src/features/tabs/tab_bar_widget.cpp
+  src/features/tabs/tab_widget.cpp
+  src/features/title_bar/title_bar_widget.cpp
+)
+
+set_source_files_properties(
+  ${SKIP_UIC_SOURCES}
+  PROPERTIES SKIP_AUTOUIC ON
+)
+
 qt_add_executable(neko
     WIN32 MACOSX_BUNDLE
     src/main.cpp
@@ -40,6 +63,10 @@ qt_add_executable(neko
     src/features/main_window/controllers/command_manager.h
     src/features/main_window/controllers/shortcuts_manager.cpp
     src/features/main_window/controllers/shortcuts_manager.h
+    src/features/main_window/controllers/app_config_service.cpp
+    src/features/main_window/controllers/app_config_service.h
+    src/features/main_window/controllers/ui_style_manager.cpp
+    src/features/main_window/controllers/ui_style_manager.h
 
     # Widget Connections
     src/features/main_window/connections/editor_connections.cpp
@@ -52,6 +79,8 @@ qt_add_executable(neko
     src/features/main_window/connections/workspace_connections.h
     src/features/main_window/connections/theme_connections.cpp
     src/features/main_window/connections/theme_connections.h
+    src/features/main_window/connections/ui_style_connections.cpp
+    src/features/main_window/connections/ui_style_connections.h
 
     # Theming
     src/theme/theme_provider.cpp
@@ -131,8 +160,8 @@ qt_add_executable(neko
     src/features/context_menu/context_menu_frame.h
 
     # Utils
-    src/utils/gui_utils.cpp
-    src/utils/gui_utils.h
+    src/utils/ui_utils.cpp
+    src/utils/ui_utils.h
 
     # Forward declarations
     src/types/ffi_types_fwd.h

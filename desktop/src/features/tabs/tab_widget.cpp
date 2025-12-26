@@ -2,7 +2,7 @@
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
 #include "features/context_menu/context_menu_widget.h"
-#include "utils/gui_utils.h"
+#include "utils/ui_utils.h"
 #include <QApplication>
 #include <QByteArray>
 #include <QColor>

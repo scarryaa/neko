@@ -1,6 +1,6 @@
 #include "theme/theme_provider.h"
 #include "theme/theme_types.h"
-#include "utils/gui_utils.h"
+#include "utils/ui_utils.h"
 
 ThemeProvider::ThemeProvider(const ThemeProviderProps &props, QObject *parent)
     : QObject(parent), themeManager(props.themeManager) {}

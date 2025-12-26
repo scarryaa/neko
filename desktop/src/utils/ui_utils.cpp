@@ -1,4 +1,4 @@
-#include "gui_utils.h"
+#include "ui_utils.h"
 #include <QLabel>
 #include <QPainter>
 #include <QPixmap>
@@ -58,6 +58,10 @@ QFont UiUtils::loadFont(neko::ConfigManager &manager, neko::FontType type) {
   QString family = QString::fromUtf8(rawFamily);
   QFont font(family, static_cast<int>(size));
   return font;
+}
+
+QFont UiUtils::makeFont(const QString &fontFamily, size_t fontSize) {
+  return {fontFamily, static_cast<int>(fontSize)};
 }
 
 void UiUtils::setFontSize(neko::ConfigManager &manager, neko::FontType type,

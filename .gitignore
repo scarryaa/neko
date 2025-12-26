@@ -36,6 +36,8 @@ Thumbs.db
 /.qmake.cache
 /.qmake.stash
 !ui_utils.*
+!ui_style_manager.*
+!ui_style_connections.*
 
 # Rust
 core/target/

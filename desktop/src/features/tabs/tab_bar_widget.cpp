@@ -1,12 +1,9 @@
 #include "tab_bar_widget.h"
-#include "features/context_menu/command_registry.h"
-#include "features/context_menu/context_menu_registry.h"
 #include "features/tabs/controllers/tab_controller.h"
 #include "features/tabs/tab_widget.h"
 #include "neko-core/src/ffi/bridge.rs.h"
-#include "theme/theme_provider.h"
 #include "theme/theme_types.h"
-#include "utils/gui_utils.h"
+#include "utils/ui_utils.h"
 #include <QByteArray>
 #include <QClipboard>
 #include <QDragEnterEvent>

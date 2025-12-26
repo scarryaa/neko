@@ -12,9 +12,12 @@
 #include "features/main_window/connections/file_explorer_connections.h"
 #include "features/main_window/connections/main_window_connections.h"
 #include "features/main_window/connections/theme_connections.h"
+#include "features/main_window/connections/ui_style_connections.h"
 #include "features/main_window/connections/workspace_connections.h"
+#include "features/main_window/controllers/app_config_service.h"
 #include "features/main_window/controllers/command_manager.h"
 #include "features/main_window/controllers/shortcuts_manager.h"
+#include "features/main_window/controllers/ui_style_manager.h"
 #include "features/main_window/controllers/workspace_controller.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
 #include "features/status_bar/status_bar_widget.h"
@@ -23,8 +26,8 @@
 #include "features/title_bar/title_bar_widget.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 #include "theme/theme_provider.h"
-#include "utils/gui_utils.h"
 #include "utils/mac_utils.h"
+#include "utils/ui_utils.h"
 #include <QDir>
 #include <QFileDialog>
 #include <QFont>
@@ -75,11 +78,12 @@ MainWindow::MainWindow(QWidget *parent)
                      ids);
                }}});
 
+  appConfigService =
+      new AppConfigService({.configManager = &*configManager}, this);
   themeProvider = new ThemeProvider({.themeManager = &*themeManager}, this);
-  coreServices = CoreServices{&*configManager,      &*themeManager,
-                              themeProvider,        &commandRegistry,
-                              &contextMenuRegistry, tabController,
-                              workspaceController,  nullptr};
+  uiStyleManager = new UiStyleManager(
+      {.appConfigService = appConfigService, .themeProvider = themeProvider},
+      this);
 
   applyTheme();
   setupWidgets(editor, tabController, appStateController);
@@ -103,7 +107,6 @@ MainWindow::MainWindow(QWidget *parent)
           .uiHandles = &uiHandles,
       },
       this);
-  coreServices.workspaceCoordinator = workspaceCoordinator;
 
   auto *commandManager = new CommandManager(CommandManager::CommandManagerProps{
       .commandRegistry = &commandRegistry,
@@ -141,9 +144,11 @@ void MainWindow::setupWidgets(neko::Editor *editor,
   const auto &tabTheme = themeProvider->getTabTheme();
 
   // TODO(scarlet): Create a font manager later?
-  QFont uiFont = UiUtils::loadFont(*configManager, neko::FontType::Interface);
-  QFont fileExplorerFont =
+  const auto uiFont =
+      UiUtils::loadFont(*configManager, neko::FontType::Interface);
+  const auto fileExplorerFont =
       UiUtils::loadFont(*configManager, neko::FontType::FileExplorer);
+  const auto commandPaletteFont = uiStyleManager->commandPaletteFont();
 
   neko::FileTree *fileTree = &appStateController->getFileTreeMut();
   auto *fileTreeController =
@@ -158,7 +163,7 @@ void MainWindow::setupWidgets(neko::Editor *editor,
                               .theme = fileExplorerTheme},
                              this);
   commandPaletteWidget = new CommandPaletteWidget(
-      {.configManager = &*configManager, .theme = commandPaletteTheme}, this);
+      {.font = commandPaletteFont, .theme = commandPaletteTheme}, this);
   editorWidget = new EditorWidget({.editorController = editorController,
                                    .configManager = &*configManager,
                                    .theme = editorTheme},
@@ -323,4 +328,6 @@ void MainWindow::connectSignals() {
       this);
   new ThemeConnections({.uiHandles = uiHandles, .themeProvider = themeProvider},
                        this);
+  new UiStyleConnections(
+      {.uiHandles = uiHandles, .uiStyleManager = uiStyleManager});
 }

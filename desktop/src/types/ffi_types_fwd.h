@@ -8,6 +8,7 @@ class Editor;
 class Selection;
 class CursorPosition;
 class ChangeSetFfi;
+class ConfigSnapshotFfi;
 class ConfigManager;
 class FileTree;
 class AppState;
