@@ -28,6 +28,7 @@ set(SKIP_UIC_SOURCES
   src/features/tabs/tab_bar_widget.cpp
   src/features/tabs/tab_widget.cpp
   src/features/title_bar/title_bar_widget.cpp
+  src/features/main_window/layout/main_window_layout_builder.cpp
 )
 
 set_source_files_properties(
@@ -42,6 +43,10 @@ qt_add_executable(neko
     # Main Window
     src/features/main_window/main_window.cpp
     src/features/main_window/main_window.h
+
+    # Main Window Layout
+    src/features/main_window/layout/main_window_layout_builder.cpp
+    src/features/main_window/layout/main_window_layout_builder.h
 
     # UI Handles
     src/features/main_window/workspace_ui_handles.h

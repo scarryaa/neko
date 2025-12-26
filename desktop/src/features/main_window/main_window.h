@@ -38,11 +38,6 @@ public:
 private:
   void setupWidgets(neko::Editor *editor, TabController *tabController,
                     AppStateController *appStateController);
-  void setupLayout();
-  QWidget *buildTabBarSection();
-  QWidget *buildEmptyStateSection();
-  QWidget *buildEditorSection(QWidget *emptyState);
-  QSplitter *buildSplitter(QWidget *editorSideContainer);
   void applyTheme();
   void connectSignals();
 
@@ -72,12 +67,6 @@ private:
   QPushButton *newTabButton;
   QSplitter *mainSplitter;
   WorkspaceUiHandles uiHandles;
-
-  static double constexpr SPLITTER_LARGE_WIDTH = 1000000.0;
-  static double constexpr EMPTY_STATE_NEW_TAB_BUTTON_WIDTH = 80.0;
-  static double constexpr EMPTY_STATE_NEW_TAB_BUTTON_HEIGHT = 35.0;
-  static double constexpr TOP_TAB_BAR_PADDING = 8.0;
-  static double constexpr BOTTOM_TAB_BAR_PADDING = 8.0;
 };
 
 #endif // MAIN_WINDOW_H

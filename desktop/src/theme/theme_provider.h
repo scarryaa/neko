@@ -32,7 +32,7 @@ public:
   explicit ThemeProvider(const ThemeProviderProps &props,
                          QObject *parent = nullptr);
 
-  ThemeSnapshot getCurrentThemes() const;
+  [[nodiscard]] ThemeSnapshot getCurrentThemes() const;
 
   [[nodiscard]] const TitleBarTheme &getTitleBarTheme() const;
   [[nodiscard]] const FileExplorerTheme &getFileExplorerTheme() const;
