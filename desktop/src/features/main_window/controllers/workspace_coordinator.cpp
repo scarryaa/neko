@@ -5,7 +5,9 @@
 #include "features/editor/editor_widget.h"
 #include "features/editor/gutter_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
+#include "features/main_window/controllers/app_config_service.h"
 #include "features/main_window/controllers/app_state_controller.h"
+#include "features/main_window/controllers/command_executor.h"
 #include "features/main_window/controllers/workspace_controller.h"
 #include "features/main_window/workspace_ui_handles.h"
 #include "features/status_bar/status_bar_widget.h"
@@ -23,9 +25,9 @@ WorkspaceCoordinator::WorkspaceCoordinator(
     : workspaceController(props.workspaceController),
       tabController(props.tabController),
       appStateController(props.appStateController),
+      appConfigService(props.appConfigService),
       editorController(props.editorController), uiHandles(props.uiHandles),
-      configManager(props.configManager), themeManager(props.themeManager),
-      QObject(parent) {
+      commandExecutor(props.commandExecutor), QObject(parent) {
   // TabController -> WorkspaceCoordinator
   connect(tabController, &TabController::tabListChanged, this,
           &WorkspaceCoordinator::updateTabBar);
@@ -40,9 +42,9 @@ void WorkspaceCoordinator::fileExplorerToggled() {
   const bool shouldShow = uiHandles->fileExplorerWidget->isHidden();
   uiHandles->fileExplorerWidget->setVisible(shouldShow);
 
-  auto snapshot = configManager->get_config_snapshot();
+  auto snapshot = appConfigService->getSnapshot();
   snapshot.file_explorer_shown = shouldShow;
-  configManager->apply_config_snapshot(snapshot);
+  appConfigService->setFileExplorerShown(shouldShow);
 
   emit onFileExplorerToggledViaShortcut(
       !uiHandles->fileExplorerWidget->isHidden());
@@ -104,9 +106,7 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
     return;
   }
 
-  auto commandFfi = neko::new_command(kind, std::move(argument));
-  auto result =
-      neko::execute_command(commandFfi, *configManager, *themeManager);
+  auto result = commandExecutor->execute(kind, std::move(argument));
 
   for (auto &intent : result.intents) {
     switch (intent.kind) {
@@ -167,10 +167,10 @@ void WorkspaceCoordinator::fileSaved(bool saveAs) {
 }
 
 void WorkspaceCoordinator::openConfig() {
-  auto configPath = configManager->get_config_path();
+  auto configPath = appConfigService->getConfigPath();
 
   if (!configPath.empty()) {
-    fileSelected(configPath.c_str(), true);
+    fileSelected(configPath, true);
   }
 }
 
@@ -414,7 +414,7 @@ void WorkspaceCoordinator::applyInitialState() {
   updateTabBar();
   refreshStatusBarCursorInfo();
 
-  auto snapshot = configManager->get_config_snapshot();
+  auto snapshot = appConfigService->getSnapshot();
   if (!snapshot.file_explorer_shown) {
     uiHandles->fileExplorerWidget->hide();
   }

@@ -6,6 +6,8 @@ class WorkspaceController;
 class AppStateController;
 class WorkspaceUiHandles;
 class EditorController;
+class AppConfigService;
+class CommandExecutor;
 
 #include "features/main_window/interfaces/close_decision.h"
 #include "features/main_window/interfaces/save_result.h"
@@ -22,8 +24,8 @@ public:
     TabController *tabController;
     AppStateController *appStateController;
     EditorController *editorController;
-    neko::ConfigManager *configManager;
-    neko::ThemeManager *themeManager;
+    AppConfigService *appConfigService;
+    CommandExecutor *commandExecutor;
     const WorkspaceUiHandles *uiHandles;
   };
 
@@ -81,9 +83,9 @@ private:
   WorkspaceController *workspaceController;
   TabController *tabController;
   AppStateController *appStateController;
+  AppConfigService *appConfigService;
   EditorController *editorController;
-  neko::ConfigManager *configManager;
-  neko::ThemeManager *themeManager;
+  CommandExecutor *commandExecutor;
   const WorkspaceUiHandles *uiHandles;
 };
 

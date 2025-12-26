@@ -33,6 +33,7 @@ public:
                             QObject *parent = nullptr);
 
   [[nodiscard]] neko::ConfigSnapshotFfi getSnapshot() const;
+  [[nodiscard]] std::string getConfigPath() const;
 
   // NOLINTNEXTLINE(readability-redundant-access-specifiers)
 public slots:
@@ -41,8 +42,13 @@ public slots:
   void setEditorFontSize(int fontSize);
   void setFileExplorerFontSize(int fontSize);
   void setFileExplorerDirectory(const std::string &path);
+  void setFileExplorerShown(bool shown);
+
+  // For external mutations (FFI commands)
+  void notifyExternalConfigChange();
 
 signals:
+  // NOTE: Currently only emitted for fonts
   void configChanged(const neko::ConfigSnapshotFfi &snapshot);
   void interfaceFontConfigChanged(QString fontFamily, int fontSize);
   void editorFontConfigChanged(QString fontFamily, int fontSize);

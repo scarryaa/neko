@@ -21,6 +21,9 @@ class TabCommandFfi;
 class TabContextFfi;
 class TabCommandStateFfi;
 
+class CommandResultFfi;
+enum class CommandKindFfi : uint8_t;
+
 enum class AddCursorDirectionKind : uint8_t;
 } // namespace neko
 

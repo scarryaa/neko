@@ -72,6 +72,8 @@ qt_add_executable(neko
     src/features/main_window/controllers/app_config_service.h
     src/features/main_window/controllers/ui_style_manager.cpp
     src/features/main_window/controllers/ui_style_manager.h
+    src/features/main_window/controllers/command_executor.cpp
+    src/features/main_window/controllers/command_executor.h
 
     # Widget Connections
     src/features/main_window/connections/editor_connections.cpp

@@ -15,6 +15,7 @@
 #include "features/main_window/connections/ui_style_connections.h"
 #include "features/main_window/connections/workspace_connections.h"
 #include "features/main_window/controllers/app_config_service.h"
+#include "features/main_window/controllers/command_executor.h"
 #include "features/main_window/controllers/command_manager.h"
 #include "features/main_window/controllers/shortcuts_manager.h"
 #include "features/main_window/controllers/ui_style_manager.h"
@@ -81,6 +82,10 @@ MainWindow::MainWindow(QWidget *parent)
 
   appConfigService =
       new AppConfigService({.configManager = &*configManager}, this);
+  auto *commandExecutor =
+      new CommandExecutor({.configManager = &*configManager,
+                           .themeManager = &*themeManager,
+                           .appConfigService = appConfigService});
   themeProvider = new ThemeProvider({.themeManager = &*themeManager}, this);
   uiStyleManager = new UiStyleManager(
       {.appConfigService = appConfigService, .themeProvider = themeProvider},
@@ -122,8 +127,8 @@ MainWindow::MainWindow(QWidget *parent)
           .tabController = tabController,
           .appStateController = appStateController,
           .editorController = editorController,
-          .configManager = &*configManager,
-          .themeManager = &*themeManager,
+          .appConfigService = appConfigService,
+          .commandExecutor = commandExecutor,
           .uiHandles = &uiHandles,
       },
       this);

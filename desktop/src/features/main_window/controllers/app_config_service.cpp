@@ -9,6 +9,16 @@ neko::ConfigSnapshotFfi AppConfigService::getSnapshot() const {
   return configManager->get_config_snapshot();
 }
 
+std::string AppConfigService::getConfigPath() const {
+  return configManager->get_config_path().c_str();
+}
+
+void AppConfigService::setFileExplorerShown(bool shown) {
+  auto snapshot = configManager->get_config_snapshot();
+  snapshot.file_explorer_shown = shown;
+  configManager->apply_config_snapshot(snapshot);
+}
+
 void AppConfigService::setInterfaceFontSize(int fontSize) {
   auto snapshot = configManager->get_config_snapshot();
   snapshot.interface_font_size = fontSize;
@@ -44,4 +54,9 @@ void AppConfigService::setFileExplorerDirectory(const std::string &path) {
 
   auto updatedSnapshot = configManager->get_config_snapshot();
   emit configChanged(updatedSnapshot);
+}
+
+void AppConfigService::notifyExternalConfigChange() {
+  auto snapshot = configManager->get_config_snapshot();
+  emit configChanged(snapshot);
 }
