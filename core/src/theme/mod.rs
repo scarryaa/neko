@@ -85,6 +85,12 @@ impl Theme {
             "context_menu.button.hover"        => "#dadada",
             "context_menu.shadow"              => "#33000000",
 
+            // Empty State New Tab Button
+            "empty_state.button.background"        => "#a589d1",
+            "empty_state.button.background.hover"  => "#bca3e0",
+            "empty_state.button.foreground"        => "#f5f5f5",
+            "empty_state.button.border"            => "#a589d1",
+
             // UI
             "ui.background"          => "#f5f5f5",
             "ui.background.hover"    => "#ededed",
@@ -157,6 +163,12 @@ impl Theme {
             "context_menu.shortcut.disabled"   => "#4f4f4f",
             "context_menu.button.hover"        => "#2c2c2c",
             "context_menu.shadow"              => "#66000000",
+
+            // Empty State New Tab Button
+            "empty_state.button.background"        => "#a589d1",
+            "empty_state.button.background.hover"  => "#bca3e0",
+            "empty_state.button.foreground"        => "#f5f5f5",
+            "empty_state.button.border"            => "#a589d1",
 
             // UI
             "ui.background"           => "#000000",

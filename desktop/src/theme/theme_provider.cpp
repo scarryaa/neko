@@ -272,9 +272,10 @@ void ThemeProvider::refreshSplitterTheme() {
 void ThemeProvider::refreshEmptyStateTheme() {
   auto [backgroundColor, buttonBackgroundColor, foregroundColor, hoverColor,
         borderColor] =
-      UiUtils::getThemeColors(*themeManager, "ui.background", "ui.accent.muted",
-                              "ui.foreground", "ui.background.hover",
-                              "ui.border");
+      UiUtils::getThemeColors(
+          *themeManager, "ui.background", "empty_state.button.background",
+          "empty_state.button.foreground",
+          "empty_state.button.background.hover", "empty_state.button.border");
 
   EmptyStateTheme newTheme{backgroundColor, buttonBackgroundColor,
                            foregroundColor, hoverColor, borderColor};

@@ -66,20 +66,21 @@ void ThemeConnections::applyNewTabButtonTheme(
     return;
   }
 
-  const QString styleSheet =
-      QString("QPushButton {"
-              "  background: %1;"
-              "  color: %2;"
-              "  border: none;"
-              "  border-left: 1px solid %4;"
-              "  border-bottom: 1px solid %4;"
-              "  font-size: 20px;"
-              "}"
-              "QPushButton:hover {"
-              "  background: %3;"
-              "}")
-          .arg(theme.backgroundColor, theme.foregroundColor, theme.hoverColor,
-               theme.borderColor);
+  const QString styleSheet = QString("QPushButton {"
+                                     "  background: %1;"
+                                     "  color: %2;"
+                                     "  border: none;"
+                                     "  border-left: 1px solid %4;"
+                                     "  border-bottom: 1px solid %4;"
+                                     "  font-size: 20px;"
+                                     "}"
+                                     "QPushButton:hover {"
+                                     "  background: %3;"
+                                     "}")
+                                 .arg(theme.backgroundColor)
+                                 .arg(theme.foregroundColor)
+                                 .arg(theme.hoverColor)
+                                 .arg(theme.borderColor);
 
   uiHandles.newTabButton->setStyleSheet(styleSheet);
 }
@@ -99,7 +100,6 @@ void ThemeConnections::applySplitterTheme(const SplitterTheme &theme) const {
   uiHandles.mainSplitter->setStyleSheet(styleSheet);
 }
 
-// TODO(scarlet): Disable fade in on new theme
 void ThemeConnections::applyEmptyStateTheme(
     const EmptyStateTheme &theme) const {
   if (uiHandles.emptyStateWidget == nullptr) {
