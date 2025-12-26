@@ -57,8 +57,6 @@ public slots:
   void onEditorFontSizeChangedByUser(double newFontSize);
 
 signals:
-  // TODO(scarlet): Consolidate these into a single 'fontChanged/configChanged'
-  // signal
   void interfaceFontChanged(const QFont &newFont);
   void fileExplorerFontChanged(const QFont &newFont);
   void editorFontChanged(const QFont &newFont);

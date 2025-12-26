@@ -30,10 +30,22 @@ public:
   void setUpKeyboardShortcuts();
 
 private:
+  // Populates the shortcutMap and adds any missing shortcuts
+  void syncShortcutsFromRust();
+  // Creates QActions from the shortcutMap and connects them
+  void registerAllShortcuts();
+
+  [[nodiscard]] QKeySequence seqFor(const std::string &key,
+                                    const QKeySequence &fallback) const;
+
+  template <typename Slot>
+  void registerShortcut(const std::string &key, const QKeySequence &fallback,
+                        Qt::ShortcutContext context, Slot &&slot);
   template <typename Slot>
   void addShortcut(QAction *action, const QKeySequence &sequence,
                    Qt::ShortcutContext context, Slot &&slot);
 
+  std::unordered_map<std::string, std::string> shortcutMap;
   QWidget *actionOwner;
   neko::ShortcutsManager *nekoShortcutsManager;
   WorkspaceCoordinator *workspaceCoordinator;
