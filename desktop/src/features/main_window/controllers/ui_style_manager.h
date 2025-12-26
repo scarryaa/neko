@@ -35,6 +35,15 @@ public:
     ThemeProvider *themeProvider;
   };
 
+  struct FontSnapshot {
+    QFont interfaceFont;
+    QFont editorFont;
+    QFont fileExplorerFont;
+    QFont commandPaletteFont;
+  };
+
+  [[nodiscard]] FontSnapshot getCurrentFonts() const;
+
   explicit UiStyleManager(const UiStyleManagerProps &props,
                           QObject *parent = nullptr);
 

@@ -13,6 +13,15 @@ UiStyleManager::UiStyleManager(const UiStyleManagerProps &props,
   handleConfigChanged(appConfigService->getSnapshot());
 }
 
+UiStyleManager::FontSnapshot UiStyleManager::getCurrentFonts() const {
+  return {
+      .interfaceFont = m_interfaceFont,
+      .editorFont = m_editorFont,
+      .fileExplorerFont = m_fileExplorerFont,
+      .commandPaletteFont = commandPaletteFont(),
+  };
+}
+
 QFont UiStyleManager::interfaceFont() const { return m_interfaceFont; }
 
 QFont UiStyleManager::fileExplorerFont() const { return m_fileExplorerFont; }

@@ -13,8 +13,26 @@ public:
     neko::ThemeManager *themeManager;
   };
 
+  struct ThemeSnapshot {
+    TitleBarTheme titleBarTheme;
+    FileExplorerTheme fileExplorerTheme;
+    CommandPaletteTheme commandPaletteTheme;
+    TabBarTheme tabBarTheme;
+    TabTheme tabTheme;
+    EditorTheme editorTheme;
+    GutterTheme gutterTheme;
+    StatusBarTheme statusBarTheme;
+    ScrollBarTheme scrollBarTheme;
+    NewTabButtonTheme newTabButtonTheme;
+    SplitterTheme splitterTheme;
+    EmptyStateTheme emptyStateTheme;
+    ContextMenuTheme contextMenuTheme;
+  };
+
   explicit ThemeProvider(const ThemeProviderProps &props,
                          QObject *parent = nullptr);
+
+  ThemeSnapshot getCurrentThemes() const;
 
   [[nodiscard]] const TitleBarTheme &getTitleBarTheme() const;
   [[nodiscard]] const FileExplorerTheme &getFileExplorerTheme() const;

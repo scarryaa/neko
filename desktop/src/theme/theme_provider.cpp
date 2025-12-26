@@ -5,6 +5,22 @@
 ThemeProvider::ThemeProvider(const ThemeProviderProps &props, QObject *parent)
     : QObject(parent), themeManager(props.themeManager) {}
 
+ThemeProvider::ThemeSnapshot ThemeProvider::getCurrentThemes() const {
+  return {.titleBarTheme = titleBarTheme,
+          .fileExplorerTheme = fileExplorerTheme,
+          .commandPaletteTheme = commandPaletteTheme,
+          .tabBarTheme = tabBarTheme,
+          .tabTheme = tabTheme,
+          .editorTheme = editorTheme,
+          .gutterTheme = gutterTheme,
+          .statusBarTheme = statusBarTheme,
+          .scrollBarTheme = scrollBarTheme,
+          .newTabButtonTheme = newTabButtonTheme,
+          .splitterTheme = splitterTheme,
+          .emptyStateTheme = emptyStateTheme,
+          .contextMenuTheme = contextMenuTheme};
+}
+
 const TitleBarTheme &ThemeProvider::getTitleBarTheme() const {
   return titleBarTheme;
 }

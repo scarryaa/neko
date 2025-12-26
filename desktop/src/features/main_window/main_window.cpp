@@ -134,56 +134,43 @@ MainWindow::MainWindow(QWidget *parent)
 void MainWindow::setupWidgets(neko::Editor *editor,
                               TabController *tabController,
                               AppStateController *appStateController) {
-  const auto &titleBarTheme = themeProvider->getTitleBarTheme();
-  const auto &statusBarTheme = themeProvider->getStatusBarTheme();
-  const auto &fileExplorerTheme = themeProvider->getFileExplorerTheme();
-  const auto &commandPaletteTheme = themeProvider->getCommandPaletteTheme();
-  const auto &editorTheme = themeProvider->getEditorTheme();
-  const auto &gutterTheme = themeProvider->getGutterTheme();
-  const auto &tabBarTheme = themeProvider->getTabBarTheme();
-  const auto &tabTheme = themeProvider->getTabTheme();
-
-  // TODO(scarlet): Create a font manager later?
+  auto themes = themeProvider->getCurrentThemes();
+  auto fonts = uiStyleManager->getCurrentFonts();
   auto snapshot = appConfigService->getSnapshot();
-  const auto uiFont =
-      UiUtils::loadFont(*configManager, neko::FontType::Interface);
-  const auto editorFont =
-      UiUtils::loadFont(*configManager, neko::FontType::Editor);
-  const auto fileExplorerFont =
-      UiUtils::loadFont(*configManager, neko::FontType::FileExplorer);
-  const auto commandPaletteFont = uiStyleManager->commandPaletteFont();
+  const bool fileExplorerShown = snapshot.file_explorer_shown;
 
   neko::FileTree *fileTree = &appStateController->getFileTreeMut();
   auto *fileTreeController =
       new FileTreeController({.fileTree = fileTree}, this);
 
   emptyStateWidget = new QWidget(this);
-  titleBarWidget =
-      new TitleBarWidget({.font = uiFont, .theme = titleBarTheme}, this);
+  titleBarWidget = new TitleBarWidget(
+      {.font = fonts.interfaceFont, .theme = themes.titleBarTheme}, this);
   fileExplorerWidget =
       new FileExplorerWidget({.fileTreeController = fileTreeController,
-                              .font = fileExplorerFont,
-                              .theme = fileExplorerTheme},
+                              .font = fonts.fileExplorerFont,
+                              .theme = themes.fileExplorerTheme},
                              this);
   commandPaletteWidget = new CommandPaletteWidget(
-      {.font = commandPaletteFont, .theme = commandPaletteTheme}, this);
+      {.font = fonts.commandPaletteFont, .theme = themes.commandPaletteTheme},
+      this);
   editorWidget = new EditorWidget({.editorController = editorController,
-                                   .font = editorFont,
-                                   .theme = editorTheme},
+                                   .font = fonts.editorFont,
+                                   .theme = themes.editorTheme},
                                   this);
   gutterWidget = new GutterWidget({.editorController = editorController,
-                                   .theme = gutterTheme,
-                                   .font = editorFont},
+                                   .theme = themes.gutterTheme,
+                                   .font = fonts.editorFont},
                                   this);
-  statusBarWidget = new StatusBarWidget(
-      {.editorController = editorController,
-       .theme = statusBarTheme,
-       .fileExplorerInitiallyShown = snapshot.file_explorer_shown},
-      this);
+  statusBarWidget =
+      new StatusBarWidget({.editorController = editorController,
+                           .theme = themes.statusBarTheme,
+                           .fileExplorerInitiallyShown = fileExplorerShown},
+                          this);
   tabBarContainer = new QWidget(this);
-  tabBarWidget = new TabBarWidget({.theme = tabBarTheme,
-                                   .tabTheme = tabTheme,
-                                   .font = uiFont,
+  tabBarWidget = new TabBarWidget({.theme = themes.tabBarTheme,
+                                   .tabTheme = themes.tabTheme,
+                                   .font = fonts.interfaceFont,
                                    .themeProvider = themeProvider,
                                    .contextMenuRegistry = &contextMenuRegistry,
                                    .commandRegistry = &commandRegistry,
