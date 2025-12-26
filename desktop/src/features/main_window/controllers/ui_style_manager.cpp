@@ -1,4 +1,5 @@
 #include "features/main_window/controllers/ui_style_manager.h"
+#include "app_config_service.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 #include "utils/ui_utils.h"
 
@@ -8,7 +9,9 @@ constexpr double commandPaletteFontSizeMultiplier = 1.5;
 
 UiStyleManager::UiStyleManager(const UiStyleManagerProps &props,
                                QObject *parent)
-    : QObject(parent), appConfigService(props.appConfigService) {}
+    : QObject(parent), appConfigService(props.appConfigService) {
+  handleConfigChanged(appConfigService->getSnapshot());
+}
 
 QFont UiStyleManager::interfaceFont() const { return m_interfaceFont; }
 
@@ -21,6 +24,10 @@ QFont UiStyleManager::commandPaletteFont() const {
   commandPaletteFont.setPointSizeF(m_interfaceFont.pointSizeF() *
                                    k::commandPaletteFontSizeMultiplier);
   return commandPaletteFont;
+}
+
+void UiStyleManager::onEditorFontSizeChangedByUser(double newFontSize) {
+  appConfigService->setEditorFontSize(static_cast<int>(newFontSize));
 }
 
 void UiStyleManager::handleConfigChanged(

@@ -2,6 +2,7 @@
 #define UI_STYLE_CONNECTIONS_H
 
 class UiStyleManager;
+class AppConfigService;
 
 #include "features/main_window/workspace_ui_handles.h"
 #include <QObject>
@@ -13,6 +14,7 @@ public:
   struct UiStyleConnectionsProps {
     WorkspaceUiHandles uiHandles;
     UiStyleManager *uiStyleManager;
+    AppConfigService *appConfigService;
   };
 
   explicit UiStyleConnections(const UiStyleConnectionsProps &props,

@@ -43,6 +43,10 @@ public:
   [[nodiscard]] QFont editorFont() const;
   [[nodiscard]] QFont commandPaletteFont() const;
 
+  // NOLINTNEXTLINE(readability-redundant-access-specifiers)
+public slots:
+  void onEditorFontSizeChangedByUser(double newFontSize);
+
 signals:
   // TODO(scarlet): Consolidate these into a single 'fontChanged/configChanged'
   // signal
@@ -51,7 +55,7 @@ signals:
   void editorFontChanged(const QFont &newFont);
   void commandPaletteFontChanged(const QFont &newFont);
 
-private slots:
+public slots:
   void handleConfigChanged(const neko::ConfigSnapshotFfi &configSnapshot);
 
   // NOLINTNEXTLINE(readability-redundant-access-specifiers)

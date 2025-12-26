@@ -8,9 +8,7 @@
 
 EditorWidget::EditorWidget(const EditorProps &props, QWidget *parent)
     : QScrollArea(parent), editorController(props.editorController),
-      renderer(new EditorRenderer()), configManager(*props.configManager),
-      theme(props.theme),
-      font(UiUtils::loadFont(configManager, neko::FontType::Editor)),
+      renderer(new EditorRenderer()), theme(props.theme), font(props.font),
       fontMetrics(font) {
   setFocusPolicy(Qt::StrongFocus);
   setFrameShape(QFrame::NoFrame);
@@ -475,26 +473,36 @@ RowCol EditorWidget::convertMousePositionToRowCol(const double xPos,
 
 void EditorWidget::increaseFontSize() {
   if (font.pointSizeF() < FONT_UPPER_LIMIT) {
-    setFontSize(font.pointSizeF() + FONT_STEP);
+    setFontSizeInternal(font.pointSizeF() + FONT_STEP);
   }
 }
 
 void EditorWidget::decreaseFontSize() {
   if (font.pointSizeF() > FONT_LOWER_LIMIT) {
-    setFontSize(font.pointSizeF() - FONT_STEP);
+    setFontSizeInternal(font.pointSizeF() - FONT_STEP);
   }
 }
 
-void EditorWidget::resetFontSize() { setFontSize(DEFAULT_FONT_SIZE); }
+void EditorWidget::resetFontSize() { setFontSizeInternal(DEFAULT_FONT_SIZE); }
 
-void EditorWidget::setFontSize(double newFontSize) {
+void EditorWidget::setFontSizeInternal(double newFontSize) {
   font.setPointSizeF(newFontSize);
   fontMetrics = QFontMetricsF(font);
 
-  UiUtils::setFontSize(configManager, neko::FontType::Editor, newFontSize);
-  emit fontSizeChanged(newFontSize);
+  emit fontSizeChangedByUser(newFontSize);
+  updateDimensions();
+  updateGeometry();
+  update();
+}
+
+void EditorWidget::updateFont(const QFont &newFont) {
+  font = newFont;
+  setFont(font);
+  fontMetrics = QFontMetricsF(font);
 
   updateDimensions();
+  updateGeometry();
+  update();
 }
 
 void EditorWidget::scrollToCursor() {

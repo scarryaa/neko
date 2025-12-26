@@ -21,7 +21,7 @@ EditorConnections::EditorConnections(const EditorConnectionsProps &props,
   connect(uiHandles.editorWidget->verticalScrollBar(),
           &QScrollBar::valueChanged,
           uiHandles.gutterWidget->verticalScrollBar(), &QScrollBar::setValue);
-  connect(uiHandles.editorWidget, &EditorWidget::fontSizeChanged,
+  connect(uiHandles.editorWidget, &EditorWidget::fontSizeChangedByUser,
           uiHandles.gutterWidget, &GutterWidget::onEditorFontSizeChanged);
 
   // EditorController -> StatusBarWidget

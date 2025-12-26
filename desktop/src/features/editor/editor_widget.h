@@ -5,7 +5,6 @@
 #include "features/editor/render/editor_renderer.h"
 #include "row_col.h"
 #include "theme/theme_types.h"
-#include "types/ffi_types_fwd.h"
 #include "types/qt_types_fwd.h"
 #include <QFont>
 #include <QFontMetricsF>
@@ -22,7 +21,7 @@ class EditorWidget : public QScrollArea {
 public:
   struct EditorProps {
     EditorController *editorController;
-    neko::ConfigManager *configManager;
+    QFont font;
     EditorTheme theme;
   };
 
@@ -40,6 +39,7 @@ public slots:
   void onCursorChanged();
   void onSelectionChanged() const;
   void onViewportChanged();
+  void updateFont(const QFont &newFont);
 
 protected:
   void keyPressEvent(QKeyEvent *event) override;
@@ -52,7 +52,8 @@ protected:
   bool focusNextPrevChild(bool next) override;
 
 signals:
-  void fontSizeChanged(qreal newSize);
+  // Only emitted for user-driven zoom changes
+  void fontSizeChangedByUser(double newSize);
   void newTabRequested();
 
 private:
@@ -63,14 +64,13 @@ private:
   void increaseFontSize();
   void decreaseFontSize();
   void resetFontSize();
-  void setFontSize(double newFontSize);
+  void setFontSizeInternal(double newFontSize);
 
   void scrollToCursor();
   [[nodiscard]] double measureWidth() const;
 
   EditorTheme theme;
 
-  neko::ConfigManager &configManager;
   EditorController *editorController;
   EditorRenderer *renderer;
   QFont font;

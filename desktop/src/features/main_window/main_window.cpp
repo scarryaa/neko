@@ -146,6 +146,8 @@ void MainWindow::setupWidgets(neko::Editor *editor,
   // TODO(scarlet): Create a font manager later?
   const auto uiFont =
       UiUtils::loadFont(*configManager, neko::FontType::Interface);
+  const auto editorFont =
+      UiUtils::loadFont(*configManager, neko::FontType::Editor);
   const auto fileExplorerFont =
       UiUtils::loadFont(*configManager, neko::FontType::FileExplorer);
   const auto commandPaletteFont = uiStyleManager->commandPaletteFont();
@@ -165,7 +167,7 @@ void MainWindow::setupWidgets(neko::Editor *editor,
   commandPaletteWidget = new CommandPaletteWidget(
       {.font = commandPaletteFont, .theme = commandPaletteTheme}, this);
   editorWidget = new EditorWidget({.editorController = editorController,
-                                   .configManager = &*configManager,
+                                   .font = editorFont,
                                    .theme = editorTheme},
                                   this);
   gutterWidget = new GutterWidget({.editorController = editorController,
@@ -328,6 +330,7 @@ void MainWindow::connectSignals() {
       this);
   new ThemeConnections({.uiHandles = uiHandles, .themeProvider = themeProvider},
                        this);
-  new UiStyleConnections(
-      {.uiHandles = uiHandles, .uiStyleManager = uiStyleManager});
+  new UiStyleConnections({.uiHandles = uiHandles,
+                          .uiStyleManager = uiStyleManager,
+                          .appConfigService = appConfigService});
 }
