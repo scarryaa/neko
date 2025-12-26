@@ -38,6 +38,7 @@ void AppConfigService::setFileExplorerFontSize(int fontSize) {
 
 void AppConfigService::setFileExplorerDirectory(const std::string &path) {
   auto snapshot = configManager->get_config_snapshot();
+  snapshot.file_explorer_directory_present = true;
   snapshot.file_explorer_directory = path;
   configManager->apply_config_snapshot(snapshot);
 

@@ -217,7 +217,7 @@ void MainWindow::connectSignals() {
                              .themeProvider = themeProvider},
                             this);
   new FileExplorerConnections(
-      {.uiHandles = uiHandles, .configManager = &*configManager}, this);
+      {.uiHandles = uiHandles, .appConfigService = appConfigService}, this);
   new WorkspaceConnections(
       {.uiHandles = uiHandles, .workspaceCoordinator = workspaceCoordinator},
       this);

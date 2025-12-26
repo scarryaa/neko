@@ -1,9 +1,9 @@
 #ifndef FILE_EXPLORER_CONNECTIONS_H
 #define FILE_EXPLORER_CONNECTIONS_H
 
+class AppConfigService;
 class WorkspaceUiHandles;
 
-#include "types/ffi_types_fwd.h"
 #include <QObject>
 
 class FileExplorerConnections : public QObject {
@@ -12,7 +12,7 @@ class FileExplorerConnections : public QObject {
 public:
   struct FileExplorerConnectionsProps {
     const WorkspaceUiHandles &uiHandles;
-    neko::ConfigManager *configManager;
+    AppConfigService *appConfigService;
   };
 
   explicit FileExplorerConnections(const FileExplorerConnectionsProps &props,
