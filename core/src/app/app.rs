@@ -1,13 +1,15 @@
 use super::Tab;
-use crate::{Editor, FileTree};
+use crate::{Editor, FileTree, config::ConfigManager};
 use std::{
     io::{Error, ErrorKind},
     path::{Path, PathBuf},
 };
 
+// TODO(scarlet): Create a separate TabManager?
 #[derive(Debug)]
 pub struct AppState {
     tabs: Vec<Tab>,
+    config_manager: *const ConfigManager,
     active_tab_id: usize,
     file_tree: FileTree,
     next_tab_id: usize,
@@ -16,9 +18,13 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(root_path: Option<&str>) -> Result<Self, std::io::Error> {
+    pub fn new(
+        config_manager: &ConfigManager,
+        root_path: Option<&str>,
+    ) -> Result<Self, std::io::Error> {
         let mut state = Self {
             tabs: Vec::new(),
+            config_manager,
             active_tab_id: 0,
             file_tree: FileTree::new(root_path)?,
             next_tab_id: 0,
@@ -154,11 +160,14 @@ impl AppState {
         (id, self.tabs.len())
     }
 
+    // TODO(scarlet): Create a unified fn for removing tabs (and adjusting history)
     pub fn close_tab(&mut self, id: usize) -> Result<(), Error> {
         if let Some(index) = self.tabs.iter().position(|t| t.get_id() == id) {
             self.tabs.remove(index);
 
-            self.remove_tabs_from_history(&vec![id]);
+            if self.config_manager().get_snapshot().editor_tab_history {
+                self.remove_tabs_from_history(&vec![id]);
+            }
             self.switch_to_last_active_tab();
 
             Ok(())
@@ -170,7 +179,7 @@ impl AppState {
         }
     }
 
-    // TODO: Reduce duplication in 'close_*' methods
+    // TODO(scarlet): Reduce duplication in 'close_*' methods
     pub fn close_other_tabs(&mut self, id: usize) -> Result<Vec<usize>, Error> {
         // Get the IDs that will be closed
         let ids = self.get_close_other_tab_ids(id)?;
@@ -184,7 +193,9 @@ impl AppState {
         }
 
         self.tabs.retain(|t| t.get_is_pinned() || t.get_id() == id);
-        self.remove_tabs_from_history(&ids);
+        if self.config_manager().get_snapshot().editor_tab_history {
+            self.remove_tabs_from_history(&ids);
+        }
         self.switch_to_last_active_tab();
 
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
@@ -208,7 +219,9 @@ impl AppState {
             i += 1;
             keep
         });
-        self.remove_tabs_from_history(&ids);
+        if self.config_manager().get_snapshot().editor_tab_history {
+            self.remove_tabs_from_history(&ids);
+        }
         self.switch_to_last_active_tab();
 
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
@@ -232,7 +245,9 @@ impl AppState {
             i += 1;
             keep
         });
-        self.remove_tabs_from_history(&ids);
+        if self.config_manager().get_snapshot().editor_tab_history {
+            self.remove_tabs_from_history(&ids);
+        }
         self.switch_to_last_active_tab();
 
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
@@ -246,7 +261,9 @@ impl AppState {
 
         // Remove all non-pinned tabs, keeping order of pinned ones
         self.tabs.retain(|t| t.get_is_pinned());
-        self.remove_tabs_from_history(&ids);
+        if self.config_manager().get_snapshot().editor_tab_history {
+            self.remove_tabs_from_history(&ids);
+        }
         self.switch_to_last_active_tab();
 
         Ok(ids)
@@ -258,7 +275,9 @@ impl AppState {
 
         // Remove all clean non-pinned tabs, keeping order of pinned ones
         self.tabs.retain(|t| t.get_is_pinned() || t.get_modified());
-        self.remove_tabs_from_history(&ids);
+        if self.config_manager().get_snapshot().editor_tab_history {
+            self.remove_tabs_from_history(&ids);
+        }
         self.switch_to_last_active_tab();
 
         Ok(ids)
@@ -497,6 +516,15 @@ impl AppState {
     }
 
     // Utility
+    fn config_manager(&self) -> &ConfigManager {
+        // SAFETY: C++ must ensure ConfigManager outlives AppState
+        assert!(
+            !self.config_manager.is_null(),
+            "config_manager pointer is null"
+        );
+        unsafe { &*self.config_manager }
+    }
+
     fn get_next_tab_id(&mut self) -> usize {
         let id = self.next_tab_id;
         self.next_tab_id += 1;
@@ -505,8 +533,15 @@ impl AppState {
     }
 
     fn activate_tab(&mut self, id: usize) {
-        self.active_tab_history.retain(|&x| x != id);
-        self.active_tab_history.push(id);
+        let history_enabled = self.config_manager().get_snapshot().editor_tab_history;
+
+        if history_enabled {
+            self.active_tab_history.retain(|&x| x != id);
+            self.active_tab_history.push(id);
+        } else {
+            self.active_tab_history.clear();
+        }
+
         self.active_tab_id = id;
     }
 
@@ -518,7 +553,16 @@ impl AppState {
 
     fn switch_to_last_active_tab(&mut self) {
         if self.tabs.iter().all(|t| t.get_id() != self.active_tab_id) {
-            self.active_tab_id = self.active_tab_history.last().copied().unwrap_or(0);
+            self.active_tab_id = match self.config_manager().get_snapshot().editor_tab_history {
+                true => self.active_tab_history.last().copied().unwrap_or(0),
+                false => {
+                    if let Some(tab) = self.tabs.last() {
+                        tab.get_id()
+                    } else {
+                        0
+                    }
+                }
+            }
         }
     }
 }
@@ -529,7 +573,8 @@ mod test {
 
     #[test]
     fn close_tab_returns_error_when_tabs_are_empty() {
-        let mut a = AppState::new(None).unwrap();
+        let c = ConfigManager::default();
+        let mut a = AppState::new(&c, None).unwrap();
         let result = a.close_tab(1);
 
         assert!(result.is_err())
@@ -537,7 +582,8 @@ mod test {
 
     #[test]
     fn close_tab_returns_error_when_id_not_found() {
-        let mut a = AppState::new(None).unwrap();
+        let c = ConfigManager::default();
+        let mut a = AppState::new(&c, None).unwrap();
         let result = a.close_tab(1);
 
         assert!(result.is_err())
@@ -545,7 +591,8 @@ mod test {
 
     #[test]
     fn set_active_tab_returns_error_when_tabs_are_empty() {
-        let mut a = AppState::new(None).unwrap();
+        let c = ConfigManager::default();
+        let mut a = AppState::new(&c, None).unwrap();
         let _ = a.close_tab(0);
         let result = a.set_active_tab(0);
 
@@ -554,7 +601,8 @@ mod test {
 
     #[test]
     fn set_active_tab_returns_error_when_id_not_found() {
-        let mut a = AppState::new(None).unwrap();
+        let c = ConfigManager::default();
+        let mut a = AppState::new(&c, None).unwrap();
         let result = a.set_active_tab(1);
 
         assert!(result.is_err())
@@ -562,7 +610,8 @@ mod test {
 
     #[test]
     fn open_file_returns_error_when_file_is_already_open() {
-        let mut a = AppState::new(None).unwrap();
+        let c = ConfigManager::default();
+        let mut a = AppState::new(&c, None).unwrap();
         a.new_tab();
         a.tabs[1].set_file_path(Some("test".to_string()));
 
@@ -573,7 +622,8 @@ mod test {
 
     #[test]
     fn save_active_tab_returns_error_when_tabs_are_empty() {
-        let mut a = AppState::new(None).unwrap();
+        let c = ConfigManager::default();
+        let mut a = AppState::new(&c, None).unwrap();
         let _ = a.close_tab(0);
         let result = a.save_active_tab();
 
@@ -582,7 +632,8 @@ mod test {
 
     #[test]
     fn save_active_tab_returns_error_when_there_is_no_current_file() {
-        let mut a = AppState::new(None).unwrap();
+        let c = ConfigManager::default();
+        let mut a = AppState::new(&c, None).unwrap();
         let result = a.save_active_tab();
 
         assert!(result.is_err())
@@ -590,7 +641,8 @@ mod test {
 
     #[test]
     fn save_active_tab_and_set_path_returns_error_when_provided_path_is_empty() {
-        let mut a = AppState::new(None).unwrap();
+        let c = ConfigManager::default();
+        let mut a = AppState::new(&c, None).unwrap();
         let result = a.save_active_tab_and_set_path("");
 
         assert!(result.is_err())
@@ -598,7 +650,8 @@ mod test {
 
     #[test]
     fn save_active_tab_and_set_path_returns_error_when_tabs_are_empty() {
-        let mut a = AppState::new(None).unwrap();
+        let c = ConfigManager::default();
+        let mut a = AppState::new(&c, None).unwrap();
         let _ = a.close_tab(0);
         let result = a.save_active_tab_and_set_path("");
 
@@ -607,7 +660,8 @@ mod test {
 
     #[test]
     fn pin_tab_reorders_tabs_and_updates_active_index() {
-        let mut a = AppState::new(None).unwrap();
+        let c = ConfigManager::default();
+        let mut a = AppState::new(&c, None).unwrap();
         a.new_tab();
         a.new_tab();
 

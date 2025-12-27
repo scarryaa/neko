@@ -24,6 +24,8 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
 }
 
 void ShortcutsManager::populateShortcutMetadata() {
+  // TODO(scarlet): Update this to respect whether editor_tab_history is enabled
+  // in config
   auto moveTabBy = [this](int delta) {
     auto findIndexById = [](const neko::TabsSnapshot &snap,
                             uint64_t tabId) -> int {

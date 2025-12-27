@@ -207,7 +207,7 @@ pub mod ffi {
         type FileTree;
 
         // AppState
-        pub(crate) fn new_app_state(root_path: &str) -> Result<Box<AppState>>;
+        fn new_app_state(root_path: &str, config_manager: &ConfigManager) -> Result<Box<AppState>>;
         #[cxx_name = "get_active_editor"]
         pub(crate) fn get_active_editor_wrapper(self: &AppState) -> &Editor;
         #[cxx_name = "get_active_editor_mut"]

@@ -48,9 +48,9 @@
 // functionality.
 // TODO(scarlet): Auto detect config file save in editor
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), appState(neko::new_app_state("")),
+    : QMainWindow(parent), configManager(neko::new_config_manager()),
+      appState(neko::new_app_state("", *configManager)),
       themeManager(neko::new_theme_manager()),
-      configManager(neko::new_config_manager()),
       shortcutsManager(neko::new_shortcuts_manager()) {
   setupMacOSTitleBar(this);
   setAttribute(Qt::WA_NativeWindow);

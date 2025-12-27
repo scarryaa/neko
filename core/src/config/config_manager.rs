@@ -1,6 +1,7 @@
 use super::Config;
 use std::{fs, path::PathBuf, sync::RwLock};
 
+#[derive(Debug)]
 pub struct ConfigManager {
     inner: RwLock<Config>,
     file_path: PathBuf,

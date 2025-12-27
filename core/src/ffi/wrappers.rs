@@ -11,14 +11,17 @@ use crate::{
 };
 use std::path::PathBuf;
 
-pub fn new_app_state(root_path: &str) -> std::io::Result<Box<AppState>> {
+pub fn new_app_state(
+    root_path: &str,
+    config_manager: &ConfigManager,
+) -> std::io::Result<Box<AppState>> {
     let path_opt = if root_path.is_empty() {
         None
     } else {
         Some(root_path)
     };
 
-    let state = AppState::new(path_opt)
+    let state = AppState::new(config_manager, path_opt)
         .map_err(|e| std::io::Error::other(format!("Failed to initialize app state: {e}")))?;
 
     Ok(Box::new(state))
