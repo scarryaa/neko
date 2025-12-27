@@ -103,6 +103,11 @@ int TabController::addTab() {
   return newTabId;
 }
 
+void TabController::fileOpened(const neko::TabSnapshot &snapshot) {
+  auto presentation = fromSnapshot(snapshot);
+  emit tabUpdated(presentation);
+}
+
 bool TabController::closeTab(int tabId) {
   if (appState == nullptr) {
     return false;

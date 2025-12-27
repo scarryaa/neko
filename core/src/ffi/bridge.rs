@@ -130,6 +130,11 @@ pub mod ffi {
         pub snapshot: TabSnapshot,
     }
 
+    pub struct FileOpenResult {
+        pub success: bool,
+        pub snapshot: TabSnapshot,
+    }
+
     pub struct CloseTabResult {
         pub closed: bool,
         pub has_active: bool,
@@ -249,7 +254,7 @@ pub mod ffi {
         #[cxx_name = "move_tab"]
         pub(crate) fn move_tab_wrapper(self: &mut AppState, from: usize, to: usize) -> bool;
         #[cxx_name = "open_file"]
-        pub(crate) fn open_file_wrapper(self: &mut AppState, path: &str) -> bool;
+        pub(crate) fn open_file_wrapper(self: &mut AppState, path: &str) -> FileOpenResult;
         #[cxx_name = "save_active_tab"]
         pub(crate) fn save_active_tab_wrapper(self: &mut AppState) -> bool;
         #[cxx_name = "save_active_tab_and_set_path"]

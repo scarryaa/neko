@@ -155,10 +155,14 @@ void WorkspaceCoordinator::fileSelected(const std::string &path,
 
   // Otherwise, create a tab, open file into it, rollback on failure
   const int newTabId = tabController->addTab();
-  if (!appStateController->openFile(path)) {
+  auto result = appStateController->openFile(path);
+
+  if (!result.success) {
     tabController->closeTab(newTabId);
     return;
   }
+
+  tabController->fileOpened(result.snapshot);
 }
 
 void WorkspaceCoordinator::fileSaved(bool saveAs) {

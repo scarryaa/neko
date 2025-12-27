@@ -43,6 +43,10 @@ public:
                                              const std::string &path) const;
   void setTabScrollOffsets(int tabId, const neko::ScrollOffsetFfi &newOffsets);
 
+  // NOLINTNEXTLINE(readability-redundant-access-specifiers)
+public slots:
+  void fileOpened(const neko::TabSnapshot &snapshot);
+
 signals:
   void tabOpened(const TabPresentation &tab, int index);
   void tabClosed(int tabId);

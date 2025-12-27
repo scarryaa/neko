@@ -323,6 +323,12 @@ void TabWidget::setAndApplyTheme(const TabTheme &newTheme) {
   update();
 }
 
-void TabWidget::setTitle(const QString &newTitle) { title = newTitle; }
+void TabWidget::setTitle(const QString &newTitle) {
+  title = newTitle;
+
+  const double titleWidth = measureText(title);
+  setMinimumWidth(LEFT_PADDING_PX + static_cast<int>(titleWidth) +
+                  MIN_RIGHT_EXTRA_PX);
+}
 
 void TabWidget::setPath(const QString &newPath) { path = newPath; }

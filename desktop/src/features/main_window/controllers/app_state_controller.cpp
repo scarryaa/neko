@@ -4,7 +4,7 @@
 AppStateController::AppStateController(const AppStateControllerProps &props)
     : appState(props.appState) {}
 
-bool AppStateController::openFile(const std::string &path) {
+neko::FileOpenResult AppStateController::openFile(const std::string &path) {
   return appState->open_file(path);
 }
 

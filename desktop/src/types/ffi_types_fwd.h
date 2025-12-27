@@ -22,6 +22,8 @@ class TabCommandFfi;
 class TabContextFfi;
 class TabCommandStateFfi;
 
+class FileOpenResult;
+
 class CommandResultFfi;
 enum class CommandKindFfi : uint8_t;
 

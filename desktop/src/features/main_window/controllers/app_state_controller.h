@@ -16,7 +16,7 @@ public:
   explicit AppStateController(const AppStateControllerProps &props);
   ~AppStateController() override = default;
 
-  bool openFile(const std::string &path);
+  neko::FileOpenResult openFile(const std::string &path);
   [[nodiscard]] neko::Editor &getActiveEditorMut() const;
   [[nodiscard]] neko::FileTree &getFileTreeMut() const;
   [[nodiscard]] neko::TabCommandStateFfi

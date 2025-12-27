@@ -362,7 +362,7 @@ impl AppState {
         Ok(())
     }
 
-    pub fn open_file(&mut self, path: &str) -> Result<(), std::io::Error> {
+    pub fn open_file(&mut self, path: &str) -> Result<usize, std::io::Error> {
         // Check if file is already open
         if self
             .tabs
@@ -393,7 +393,7 @@ impl AppState {
             );
         }
 
-        Ok(())
+        Ok(self.active_tab_id)
     }
 
     // TODO: Extract duplicated logic in the save_active_tab_* methods

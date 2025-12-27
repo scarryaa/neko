@@ -111,8 +111,22 @@ impl AppState {
         }
     }
 
-    pub(crate) fn open_file_wrapper(&mut self, path: &str) -> bool {
-        self.open_file(path).is_ok()
+    pub(crate) fn open_file_wrapper(&mut self, path: &str) -> FileOpenResult {
+        let result = self.open_file(path);
+
+        match result {
+            Ok(id) => {
+                let tab = self.get_tab(id).unwrap();
+                FileOpenResult {
+                    success: true,
+                    snapshot: Self::make_tab_snapshot(tab),
+                }
+            }
+            Err(_) => FileOpenResult {
+                success: false,
+                snapshot: TabSnapshot::default(),
+            },
+        }
     }
 
     pub(crate) fn save_active_tab_wrapper(&mut self) -> bool {
