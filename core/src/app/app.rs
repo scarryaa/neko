@@ -719,6 +719,26 @@ impl AppState {
             return ResolveOutcome::Existing(id);
         }
 
+        // Try to get the path for this history id from closed_tabs
+        let maybe_path = self.closed_tabs.get(&id).map(|info| info.path.clone());
+
+        // If there is a currently open tab with the same path (even if id is different), target that
+        if let Some(ref path) = maybe_path {
+            if let Some(tab) = self.tabs.iter().find(|t| t.get_file_path() == Some(path)) {
+                let new_id = tab.get_id();
+
+                // Update history to point at the new id instead of the old one
+                for history_id in &mut self.active_tab_history {
+                    if *history_id == id {
+                        *history_id = new_id;
+                    }
+                }
+                self.closed_tabs.remove(&id);
+
+                return ResolveOutcome::Existing(new_id);
+            }
+        }
+
         // If the config setting is turned off, skip
         let cfg = self.config_manager().get_snapshot();
         if !cfg.editor_auto_reopen_closed_tabs_in_history {
