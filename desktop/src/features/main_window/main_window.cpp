@@ -106,7 +106,23 @@ MainWindow::MainWindow(QWidget *parent)
                      this, tr("Select a directory"), QDir::homePath(),
                      QFileDialog::ShowDirsOnly |
                          QFileDialog::DontResolveSymlinks);
-               }}});
+               },
+           .openFile =
+               [this](std::optional<QString> initialDirectory) -> QString {
+             QString baseDir;
+
+             if (initialDirectory && !initialDirectory->isEmpty()) {
+               QFileInfo info(*initialDirectory);
+               baseDir =
+                   info.isDir() ? info.absoluteFilePath() : info.absolutePath();
+             } else {
+               baseDir = QDir::homePath();
+             }
+
+             return QFileDialog::getOpenFileName(this, tr("Open a file"),
+                                                 baseDir);
+           },
+       }});
 
   appConfigService =
       new AppConfigService({.configManager = &*configManager}, this);

@@ -24,6 +24,7 @@ public:
   QList<int> closeAll(bool forceClose);
   QList<int> closeClean();
 
+  bool openFile(const QString &startingPath);
   bool saveTab(int tabId, bool forceSaveAs);
   bool saveTabWithPromptIfNeeded(int tabId, bool isSaveAs);
   [[nodiscard]] std::optional<std::string> requestFileExplorerDirectory() const;

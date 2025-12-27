@@ -42,6 +42,7 @@ public:
 
   std::optional<std::string> requestFileExplorerDirectory();
   void fileSaved(bool saveAs);
+  void openFile();
 
   void applyInitialState();
 

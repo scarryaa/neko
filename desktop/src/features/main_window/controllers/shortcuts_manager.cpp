@@ -26,6 +26,10 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
 void ShortcutsManager::populateShortcutMetadata() {
   shortcutActionMap = {
       {
+          "Tab::Open",
+          [this]() { workspaceCoordinator->openFile(); },
+      },
+      {
           "Tab::Save",
           [this]() { workspaceCoordinator->fileSaved(false); },
       },
@@ -175,6 +179,7 @@ void ShortcutsManager::syncShortcutsFromRust() {
     };
   };
 
+  ensureShortcut("Tab::Open", "Ctrl+O");
   ensureShortcut("Tab::Save", "Ctrl+S");
   ensureShortcut("Tab::SaveAs", "Ctrl+Shift+S");
   ensureShortcut("Tab::New", "Ctrl+T");

@@ -28,6 +28,7 @@ public:
 
   // Setters
   int addTab();
+  bool openFile(int tabId, const std::string &path);
   bool closeTab(int tabId);
   bool closeAllTabs();
   bool closeCleanTabs();

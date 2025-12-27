@@ -13,6 +13,7 @@ struct WorkspaceUi {
   std::function<void(int tabId)> focusTab;
   std::function<CloseDecision(const QList<int> &ids)> confirmCloseTabs;
   std::function<QString()> promptFileExplorerDirectory;
+  std::function<QString(std::optional<QString> initialDirectory)> openFile;
 };
 
 #endif

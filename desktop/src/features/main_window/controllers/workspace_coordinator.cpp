@@ -158,6 +158,24 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
   }
 }
 
+void WorkspaceCoordinator::openFile() {
+  // Check if there is an active tab - if so, use the parent path
+  const auto snapshot = tabController->getTabsSnapshot();
+  QString startingPath;
+
+  if (snapshot.active_present) {
+    const int activeId = static_cast<int>(snapshot.active_id);
+    for (const auto &tab : snapshot.tabs) {
+      if (tab.path_present && tab.id == activeId) {
+        startingPath = QString::fromUtf8(tab.path);
+        break;
+      }
+    }
+  }
+
+  workspaceController->openFile(startingPath);
+}
+
 void WorkspaceCoordinator::fileSelected(const std::string &path,
                                         bool focusEditor) {
   // Save scroll offsets if there is an active tab

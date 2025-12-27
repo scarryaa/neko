@@ -57,6 +57,25 @@ QList<int> WorkspaceController::closeTab(int tabId, bool forceClose) {
   return ids;
 }
 
+bool WorkspaceController::openFile(const QString &startingPath) {
+  QString initialDir;
+
+  if (!startingPath.isEmpty()) {
+    QFileInfo info(startingPath);
+    initialDir = info.isDir() ? info.absoluteFilePath() : info.absolutePath();
+  }
+
+  const QString filePath = workspaceUi.openFile(initialDir);
+  if (filePath.isEmpty()) {
+    return false;
+  }
+
+  const auto snapshot = tabController->getTabsSnapshot();
+  auto targetTabId = tabController->addTab();
+
+  return tabController->openFile(targetTabId, filePath.toStdString());
+}
+
 bool WorkspaceController::saveTab(int tabId, bool forceSaveAs) {
   return saveTabWithPromptIfNeeded(tabId, forceSaveAs);
 }
