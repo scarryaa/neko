@@ -174,7 +174,7 @@ void TabWidget::paintEvent(QPaintEvent *event) {
 
 void TabWidget::mousePressEvent(QMouseEvent *event) {
   const auto modifiers = event->modifiers();
-  const bool shiftPressed = modifiers.testFlag(Qt::ShiftModifier);
+  const bool shiftHeld = modifiers.testFlag(Qt::ShiftModifier);
 
   if (event->button() == Qt::LeftButton) {
     if (closeHitRect().contains(event->pos())) {
@@ -184,25 +184,28 @@ void TabWidget::mousePressEvent(QMouseEvent *event) {
       if (isPinned) {
         emit unpinRequested(tabId);
       } else {
-        emit closeRequested(tabId, shiftPressed);
+        emit closeRequested(tabId, shiftHeld);
       }
+      event->accept();
       return;
     }
 
     dragStartPosition = event->pos();
     dragEligible = true;
     dragInProgress = false;
+    event->accept();
     return;
   }
 
   if (event->button() == Qt::MiddleButton) {
     dragEligible = false;
     dragInProgress = false;
-
-    if (!isPinned) {
-      emit closeRequested(tabId, shiftPressed);
-    }
+    middleClickPending = true;
+    event->accept();
+    return;
   }
+
+  QWidget::mousePressEvent(event);
 }
 
 void TabWidget::mouseMoveEvent(QMouseEvent *event) {
@@ -237,12 +240,28 @@ void TabWidget::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void TabWidget::mouseReleaseEvent(QMouseEvent *event) {
+  const auto modifiers = event->modifiers();
+  const bool shiftPressed = modifiers.testFlag(Qt::ShiftModifier);
+
   if (event->button() == Qt::LeftButton && dragEligible && !dragInProgress) {
     emit clicked(tabId);
+    event->accept();
+  } else if (event->button() == Qt::MiddleButton) {
+    if (middleClickPending) {
+      middleClickPending = false;
+
+      if (!isPinned && rect().contains(event->pos())) {
+        emit closeRequested(tabId, shiftPressed);
+      }
+    }
+
+    event->accept();
   }
 
   dragEligible = false;
   dragInProgress = false;
+
+  QWidget::mouseReleaseEvent(event);
 }
 
 void TabWidget::enterEvent(QEnterEvent *event) {

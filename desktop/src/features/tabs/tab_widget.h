@@ -85,6 +85,7 @@ private:
   bool isCloseHovered = false;
   bool dragEligible = false;
   bool dragInProgress = false;
+  bool middleClickPending = false;
   QPoint dragStartPosition;
 
   QFont font;
