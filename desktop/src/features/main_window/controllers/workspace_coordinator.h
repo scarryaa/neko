@@ -79,7 +79,6 @@ private:
   void saveScrollOffsetsForActiveTab();
   void restoreScrollOffsetsForActiveTab();
   void refreshUiForActiveTab(bool focusEditor);
-  void updateTabBar();
   void handleTabsClosed();
   void setActiveEditor(neko::Editor *editor);
   void refreshStatusBarCursorInfo();

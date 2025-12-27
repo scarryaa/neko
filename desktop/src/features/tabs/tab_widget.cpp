@@ -58,7 +58,15 @@ void TabWidget::setIsPinned(bool isPinned) {
 
 bool TabWidget::getIsPinned() const { return isPinned; }
 
+bool TabWidget::getIsModified() const { return isModified; }
+
+QString TabWidget::getPath() const { return path; }
+
+QString TabWidget::getTitle() const { return title; }
+
 int TabWidget::getId() const { return tabId; }
+
+void TabWidget::setIndex(int newIndex) { index = newIndex; }
 
 void TabWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
@@ -314,3 +322,7 @@ void TabWidget::setAndApplyTheme(const TabTheme &newTheme) {
   theme = newTheme;
   update();
 }
+
+void TabWidget::setTitle(const QString &newTitle) { title = newTitle; }
+
+void TabWidget::setPath(const QString &newPath) { path = newPath; }

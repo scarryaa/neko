@@ -80,6 +80,20 @@ impl AppState {
         }
     }
 
+    pub(crate) fn get_tab_snapshot(&self, id: usize) -> TabSnapshotMaybe {
+        if let Ok(tab) = self.get_tab(id) {
+            TabSnapshotMaybe {
+                found: true,
+                snapshot: Self::make_tab_snapshot(tab),
+            }
+        } else {
+            TabSnapshotMaybe {
+                found: false,
+                snapshot: TabSnapshot::default(),
+            }
+        }
+    }
+
     pub(crate) fn get_tabs_snapshot(&self) -> TabsSnapshot {
         let tabs: Vec<TabSnapshot> = self
             .get_tabs()
@@ -113,40 +127,181 @@ impl AppState {
         self.save_active_tab_and_set_path(path).is_ok()
     }
 
-    pub(crate) fn close_tab_wrapper(&mut self, id: usize) -> bool {
-        self.close_tab(id).is_ok()
+    pub(crate) fn new_tab_wrapper(self: &mut AppState) -> NewTabResult {
+        let (id, index) = self.new_tab();
+        let tab = self.get_tab(id).unwrap();
+
+        NewTabResult {
+            id: id as u64,
+            index: index as u32,
+            snapshot: Self::make_tab_snapshot(tab),
+        }
     }
 
-    pub(crate) fn close_other_tabs_wrapper(&mut self, id: usize) -> bool {
-        self.close_other_tabs(id).is_ok()
+    pub(crate) fn close_tab_wrapper(&mut self, id: usize) -> CloseTabResult {
+        let closed = self.close_tab(id).is_ok();
+
+        let any_tabs_left = !self.get_tabs().is_empty();
+        let active_id = if any_tabs_left {
+            self.get_active_tab_id() as u64
+        } else {
+            0
+        };
+
+        CloseTabResult {
+            closed,
+            has_active: any_tabs_left,
+            active_id,
+        }
     }
 
-    pub(crate) fn close_left_tabs_wrapper(&mut self, id: usize) -> bool {
-        self.close_left_tabs(id).is_ok()
+    fn build_close_many_result(
+        &self,
+        success: bool,
+        closed_ids: Vec<usize>,
+    ) -> CloseManyTabsResult {
+        let any_tabs_left = !self.get_tabs().is_empty();
+        let active_id = if any_tabs_left {
+            self.get_active_tab_id() as u64
+        } else {
+            0
+        };
+
+        CloseManyTabsResult {
+            success,
+            closed_ids: closed_ids.into_iter().map(|id| id as u64).collect(),
+            has_active: any_tabs_left,
+            active_id,
+        }
     }
 
-    pub(crate) fn close_right_tabs_wrapper(&mut self, id: usize) -> bool {
-        self.close_right_tabs(id).is_ok()
+    pub(crate) fn close_other_tabs_wrapper(&mut self, id: usize) -> CloseManyTabsResult {
+        match self.close_other_tabs(id) {
+            Ok(closed_ids) => self.build_close_many_result(true, closed_ids),
+            Err(_) => self.build_close_many_result(false, vec![]),
+        }
     }
 
-    pub(crate) fn close_all_tabs_wrapper(&mut self) -> bool {
-        self.close_all_tabs().is_ok()
+    pub(crate) fn close_left_tabs_wrapper(&mut self, id: usize) -> CloseManyTabsResult {
+        match self.close_left_tabs(id) {
+            Ok(closed_ids) => self.build_close_many_result(true, closed_ids),
+            Err(_) => self.build_close_many_result(false, vec![]),
+        }
     }
 
-    pub(crate) fn close_clean_tabs_wrapper(self: &mut AppState) -> bool {
-        self.close_clean_tabs().is_ok()
+    pub(crate) fn close_right_tabs_wrapper(&mut self, id: usize) -> CloseManyTabsResult {
+        match self.close_right_tabs(id) {
+            Ok(closed_ids) => self.build_close_many_result(true, closed_ids),
+            Err(_) => self.build_close_many_result(false, vec![]),
+        }
+    }
+
+    pub(crate) fn close_all_tabs_wrapper(&mut self) -> CloseManyTabsResult {
+        match self.close_all_tabs() {
+            Ok(closed_ids) => self.build_close_many_result(true, closed_ids),
+            Err(_) => self.build_close_many_result(false, vec![]),
+        }
+    }
+
+    pub(crate) fn close_clean_tabs_wrapper(&mut self) -> CloseManyTabsResult {
+        match self.close_clean_tabs() {
+            Ok(closed_ids) => self.build_close_many_result(true, closed_ids),
+            Err(_) => self.build_close_many_result(false, vec![]),
+        }
     }
 
     pub(crate) fn move_tab_wrapper(&mut self, from: usize, to: usize) -> bool {
         self.move_tab(from, to).is_ok()
     }
 
-    pub(crate) fn pin_tab_wrapper(&mut self, id: usize) -> bool {
-        self.pin_tab(id).is_ok()
+    pub(crate) fn pin_tab_wrapper(&mut self, id: usize) -> PinTabResult {
+        let from_index = match self.get_tabs().iter().position(|t| t.get_id() == id) {
+            Some(idx) => idx as u32,
+            None => {
+                return PinTabResult {
+                    success: false,
+                    from_index: 0,
+                    to_index: 0,
+                    snapshot: TabSnapshot::default(),
+                };
+            }
+        };
+
+        if self.pin_tab(id).is_err() {
+            return PinTabResult {
+                success: false,
+                from_index: 0,
+                to_index: 0,
+                snapshot: TabSnapshot::default(),
+            };
+        }
+
+        let to_index = match self.get_tabs().iter().position(|t| t.get_id() == id) {
+            Some(idx) => idx as u32,
+            None => {
+                return PinTabResult {
+                    success: false,
+                    from_index: 0,
+                    to_index: 0,
+                    snapshot: TabSnapshot::default(),
+                };
+            }
+        };
+
+        let tab_ref = &self.get_tabs()[to_index as usize];
+        let snapshot = Self::make_tab_snapshot(tab_ref);
+
+        PinTabResult {
+            success: true,
+            from_index,
+            to_index,
+            snapshot,
+        }
     }
 
-    pub(crate) fn unpin_tab_wrapper(&mut self, id: usize) -> bool {
-        self.unpin_tab(id).is_ok()
+    pub(crate) fn unpin_tab_wrapper(&mut self, id: usize) -> PinTabResult {
+        let from_index = match self.get_tabs().iter().position(|t| t.get_id() == id) {
+            Some(idx) => idx as u32,
+            None => {
+                return PinTabResult {
+                    success: false,
+                    from_index: 0,
+                    to_index: 0,
+                    snapshot: TabSnapshot::default(),
+                };
+            }
+        };
+
+        if self.unpin_tab(id).is_err() {
+            return PinTabResult {
+                success: false,
+                from_index: 0,
+                to_index: 0,
+                snapshot: TabSnapshot::default(),
+            };
+        }
+
+        let to_index = match self.get_tabs().iter().position(|t| t.get_id() == id) {
+            Some(idx) => idx as u32,
+            None => {
+                return PinTabResult {
+                    success: false,
+                    from_index: 0,
+                    to_index: 0,
+                    snapshot: TabSnapshot::default(),
+                };
+            }
+        };
+
+        let tab_ref = &self.get_tabs()[to_index as usize];
+        let snapshot = Self::make_tab_snapshot(tab_ref);
+
+        PinTabResult {
+            success: true,
+            from_index,
+            to_index,
+            snapshot,
+        }
     }
 
     pub(crate) fn save_tab_with_id_wrapper(&mut self, id: usize) -> bool {

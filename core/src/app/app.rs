@@ -31,6 +31,17 @@ impl AppState {
         &self.tabs
     }
 
+    pub fn get_tab(&self, id: usize) -> Result<&Tab, Error> {
+        if let Some(tab) = self.tabs.iter().find(|t| t.get_id() == id) {
+            Ok(tab)
+        } else {
+            Err(Error::new(
+                ErrorKind::NotFound,
+                "Tab with given id not found",
+            ))
+        }
+    }
+
     pub fn get_active_tab_id(&self) -> usize {
         self.active_tab_id
     }
@@ -130,13 +141,13 @@ impl AppState {
     }
 
     // Setters
-    pub fn new_tab(&mut self) -> usize {
+    pub fn new_tab(&mut self) -> (usize, usize) {
         let id = self.get_next_tab_id();
         let tab = Tab::new(id);
 
         self.tabs.push(tab);
         self.active_tab_id = id;
-        id
+        (id, self.tabs.len())
     }
 
     pub fn close_tab(&mut self, id: usize) -> Result<(), Error> {
@@ -160,7 +171,11 @@ impl AppState {
         }
     }
 
-    pub fn close_other_tabs(&mut self, id: usize) -> Result<(), Error> {
+    // TODO: Reduce duplication in 'close_*' methods
+    pub fn close_other_tabs(&mut self, id: usize) -> Result<Vec<usize>, Error> {
+        // Get the IDs that will be closed
+        let ids = self.get_close_other_tab_ids(id)?;
+
         let exists = self.tabs.iter().any(|t| t.get_id() == id);
         if !exists {
             return Err(Error::new(
@@ -179,10 +194,13 @@ impl AppState {
 
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
 
-        Ok(())
+        Ok(ids)
     }
 
-    pub fn close_left_tabs(&mut self, id: usize) -> Result<(), Error> {
+    pub fn close_left_tabs(&mut self, id: usize) -> Result<Vec<usize>, Error> {
+        // Get the IDs that will be closed
+        let ids = self.get_close_left_tab_ids(id)?;
+
         let index = self
             .tabs
             .iter()
@@ -201,10 +219,13 @@ impl AppState {
         }
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
 
-        Ok(())
+        Ok(ids)
     }
 
-    pub fn close_right_tabs(&mut self, id: usize) -> Result<(), Error> {
+    pub fn close_right_tabs(&mut self, id: usize) -> Result<Vec<usize>, Error> {
+        // Get the IDs that will be closed
+        let ids = self.get_close_right_tab_ids(id)?;
+
         let index = self
             .tabs
             .iter()
@@ -224,71 +245,90 @@ impl AppState {
 
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
 
-        Ok(())
+        Ok(ids)
     }
 
-    pub fn close_all_tabs(&mut self) -> Result<(), Error> {
+    pub fn close_all_tabs(&mut self) -> Result<Vec<usize>, Error> {
+        // Get the IDs that will be closed
+        let ids = self.get_close_all_tab_ids()?;
+
         // Remove all non-pinned tabs, keeping order of pinned ones
         self.tabs.retain(|t| t.get_is_pinned());
 
         // If the current active tab is gone, pick a new one
         let still_has_active = self.tabs.iter().any(|t| t.get_id() == self.active_tab_id);
-
         if !still_has_active {
             self.active_tab_id = self.tabs.first().map(|t| t.get_id()).unwrap_or(0);
         }
 
-        Ok(())
+        Ok(ids)
     }
 
-    pub fn close_clean_tabs(&mut self) -> Result<(), Error> {
+    pub fn close_clean_tabs(&mut self) -> Result<Vec<usize>, Error> {
+        // Get the IDs that will be closed
+        let ids = self.get_close_clean_tab_ids()?;
+
         // Remove all clean non-pinned tabs, keeping order of pinned ones
         self.tabs.retain(|t| t.get_is_pinned() || t.get_modified());
 
         // If the current active tab is gone, pick a new one
         let still_has_active = self.tabs.iter().any(|t| t.get_id() == self.active_tab_id);
-
         if !still_has_active {
             self.active_tab_id = self.tabs.first().map(|t| t.get_id()).unwrap_or(0);
         }
 
-        Ok(())
+        Ok(ids)
     }
 
     pub fn pin_tab(&mut self, id: usize) -> Result<(), Error> {
-        if let Some(index) = self.tabs.iter().position(|t| t.get_id() == id) {
-            if !self.tabs.is_empty() {
-                if let Some(t) = self.tabs.get_mut(index) {
-                    t.set_is_pinned(true)
-                }
-            }
+        let idx = self
+            .tabs
+            .iter()
+            .position(|t| t.get_id() == id)
+            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
 
-            self.reorder_tabs_by_pin();
-            Ok(())
-        } else {
-            Err(Error::new(
-                ErrorKind::NotFound,
-                "Tab with given id not found",
-            ))
+        if self.tabs[idx].get_is_pinned() {
+            return Ok(());
         }
+
+        self.tabs[idx].set_is_pinned(true);
+
+        let tab = self.tabs.remove(idx);
+
+        let insert_idx = self
+            .tabs
+            .iter()
+            .position(|t| !t.get_is_pinned())
+            .unwrap_or(self.tabs.len());
+
+        self.tabs.insert(insert_idx, tab);
+
+        Ok(())
     }
 
     pub fn unpin_tab(&mut self, id: usize) -> Result<(), Error> {
-        if let Some(index) = self.tabs.iter().position(|t| t.get_id() == id) {
-            if !self.tabs.is_empty() {
-                if let Some(t) = self.tabs.get_mut(index) {
-                    t.set_is_pinned(false)
-                }
-            }
+        let idx = self
+            .tabs
+            .iter()
+            .position(|t| t.get_id() == id)
+            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
 
-            self.reorder_tabs_by_pin();
-            Ok(())
-        } else {
-            Err(Error::new(
-                ErrorKind::NotFound,
-                "Tab with given id not found",
-            ))
+        if !self.tabs[idx].get_is_pinned() {
+            return Ok(());
         }
+
+        self.tabs[idx].set_is_pinned(false);
+
+        let tab = self.tabs.remove(idx);
+
+        let insert_idx = match self.tabs.iter().rposition(|t| t.get_is_pinned()) {
+            Some(last_pinned_idx) => last_pinned_idx + 1,
+            None => 0,
+        };
+
+        self.tabs.insert(insert_idx, tab);
+
+        Ok(())
     }
 
     pub fn set_tab_scroll_offsets(
@@ -320,27 +360,20 @@ impl AppState {
     }
 
     pub fn move_tab(&mut self, from: usize, to: usize) -> Result<(), Error> {
-        let tab_count = self.tabs.len();
-        if from >= tab_count || to > tab_count {
-            return Err(Error::new(ErrorKind::InvalidInput, "Invalid tab index"));
+        let len = self.tabs.len();
+        if from >= len || to >= len {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "Invalid tab index",
+            ));
         }
 
-        if from == to || tab_count <= 1 {
+        if from == to || len <= 1 {
             return Ok(());
         }
 
         let tab = self.tabs.remove(from);
-        let mut insert_index = to;
-
-        if from < insert_index {
-            insert_index = insert_index.saturating_sub(1);
-        }
-
-        if insert_index > self.tabs.len() {
-            insert_index = self.tabs.len();
-        }
-
-        self.tabs.insert(insert_index, tab);
+        self.tabs.insert(to, tab);
 
         Ok(())
     }
@@ -464,32 +497,6 @@ impl AppState {
         }
 
         Ok(())
-    }
-
-    fn reorder_tabs_by_pin(&mut self) {
-        if self.tabs.is_empty() {
-            self.active_tab_id = 0;
-            return;
-        }
-
-        let mut pinned: Vec<(usize, Tab)> = Vec::new();
-        let mut unpinned: Vec<(usize, Tab)> = Vec::new();
-
-        for (i, tab) in self.tabs.drain(..).enumerate() {
-            if tab.get_is_pinned() {
-                pinned.push((i, tab));
-            } else {
-                unpinned.push((i, tab));
-            }
-        }
-
-        let mut new_tabs: Vec<Tab> = Vec::with_capacity(pinned.len() + unpinned.len());
-
-        for (_, tab) in pinned.into_iter().chain(unpinned.into_iter()) {
-            new_tabs.push(tab);
-        }
-
-        self.tabs = new_tabs;
     }
 
     pub fn reveal_in_file_tree(&mut self, path: &str) {

@@ -1,6 +1,20 @@
 #include "tab_controller.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 
+// TODO(scarlet): Add tab history preservation (e.g. switch to 'last active' tab
+// when closing)
+// - Make a setting toggle for switching to 'last active' vs by regular inc/dec
+// order on last/next tab shortcut?
+TabPresentation TabController::fromSnapshot(const neko::TabSnapshot &tab) {
+  return TabPresentation{
+      .id = static_cast<int>(tab.id),
+      .title = QString::fromUtf8(tab.title),
+      .path = QString::fromUtf8(tab.path),
+      .pinned = tab.pinned,
+      .modified = tab.modified,
+  };
+}
+
 TabController::TabController(const TabControllerProps &props)
     : appState(props.appState) {}
 
@@ -78,8 +92,13 @@ int TabController::addTab() {
     return -1;
   }
 
-  int newTabId = static_cast<int>(appState->new_tab());
-  emit tabListChanged();
+  auto result = appState->new_tab();
+  int newTabId = static_cast<int>(result.id);
+  int newTabIndex = static_cast<int>(result.index);
+
+  auto presentation = fromSnapshot(result.snapshot);
+
+  emit tabOpened(presentation, newTabIndex);
   emit activeTabChanged(newTabId);
   return newTabId;
 }
@@ -89,84 +108,106 @@ bool TabController::closeTab(int tabId) {
     return false;
   }
 
-  if (!appState->close_tab(tabId)) {
+  auto result = appState->close_tab(tabId);
+  if (!result.closed) {
     return false;
   }
 
-  const auto snapshot = getTabsSnapshot();
+  emit tabClosed(tabId);
 
-  emit tabListChanged();
-  emit activeTabChanged(static_cast<int>(snapshot.active_id));
+  if (result.has_active) {
+    emit activeTabChanged(static_cast<int>(result.active_id));
+  }
 
   return true;
 }
 
 bool TabController::closeAllTabs() {
-  if (appState == nullptr) {
+  auto result = appState->close_all_tabs();
+  if (!result.success) {
+    // TODO(scarlet): Show error?
     return false;
   }
 
-  if (!appState->close_all_tabs()) {
-    return false;
+  for (auto closedTabId : result.closed_ids) {
+    emit tabClosed(static_cast<int>(closedTabId));
   }
 
-  emit tabListChanged();
+  if (result.has_active) {
+    emit activeTabChanged(static_cast<int>(result.active_id));
+  }
 
   return true;
 }
 
 bool TabController::closeCleanTabs() {
-  if (appState == nullptr) {
+  auto result = appState->close_clean_tabs();
+  if (!result.success) {
+    // TODO(scarlet): Show error?
     return false;
   }
 
-  if (!appState->close_clean_tabs()) {
-    return false;
+  for (auto closedTabId : result.closed_ids) {
+    emit tabClosed(static_cast<int>(closedTabId));
   }
 
-  emit tabListChanged();
+  if (result.has_active) {
+    emit activeTabChanged(static_cast<int>(result.active_id));
+  }
 
   return true;
 }
 
 bool TabController::closeOtherTabs(int tabId) {
-  if (appState == nullptr) {
+  auto result = appState->close_other_tabs(tabId);
+  if (!result.success) {
+    // TODO(scarlet): Show error?
     return false;
   }
 
-  if (!appState->close_other_tabs(tabId)) {
-    return false;
+  for (auto closedTabId : result.closed_ids) {
+    emit tabClosed(static_cast<int>(closedTabId));
   }
 
-  emit tabListChanged();
+  if (result.has_active) {
+    emit activeTabChanged(static_cast<int>(result.active_id));
+  }
 
   return true;
 }
 
 bool TabController::closeLeftTabs(int tabId) {
-  if (appState == nullptr) {
+  auto result = appState->close_left_tabs(tabId);
+  if (!result.success) {
+    // TODO(scarlet): Show error?
     return false;
   }
 
-  if (!appState->close_left_tabs(tabId)) {
-    return false;
+  for (auto closedTabId : result.closed_ids) {
+    emit tabClosed(static_cast<int>(closedTabId));
   }
 
-  emit tabListChanged();
+  if (result.has_active) {
+    emit activeTabChanged(static_cast<int>(result.active_id));
+  }
 
   return true;
 }
 
 bool TabController::closeRightTabs(int tabId) {
-  if (appState == nullptr) {
+  auto result = appState->close_right_tabs(tabId);
+  if (!result.success) {
+    // TODO(scarlet): Show error?
     return false;
   }
 
-  if (!appState->close_right_tabs(tabId)) {
-    return false;
+  for (auto closedTabId : result.closed_ids) {
+    emit tabClosed(static_cast<int>(closedTabId));
   }
 
-  emit tabListChanged();
+  if (result.has_active) {
+    emit activeTabChanged(static_cast<int>(result.active_id));
+  }
 
   return true;
 }
@@ -176,14 +217,19 @@ bool TabController::pinTab(int tabId) {
     return false;
   }
 
-  if (!appState->pin_tab(tabId)) {
+  auto result = appState->pin_tab(tabId);
+  if (!result.success) {
     return false;
   }
 
-  const auto snapshot = getTabsSnapshot();
+  auto presentation = fromSnapshot(result.snapshot);
 
-  emit tabListChanged();
-  emit activeTabChanged(static_cast<int>(snapshot.active_id));
+  emit tabUpdated(presentation);
+  if (result.from_index != result.to_index) {
+    emit tabMoved(static_cast<int>(result.from_index),
+                  static_cast<int>(result.to_index));
+  }
+
   return true;
 }
 
@@ -192,14 +238,19 @@ bool TabController::unpinTab(int tabId) {
     return false;
   }
 
-  if (!appState->unpin_tab(tabId)) {
+  auto result = appState->unpin_tab(tabId);
+  if (!result.success) {
     return false;
   }
 
-  const auto snapshot = getTabsSnapshot();
+  auto presentation = fromSnapshot(result.snapshot);
 
-  emit tabListChanged();
-  emit activeTabChanged(static_cast<int>(snapshot.active_id));
+  emit tabUpdated(presentation);
+  if (result.from_index != result.to_index) {
+    emit tabMoved(static_cast<int>(result.from_index),
+                  static_cast<int>(result.to_index));
+  }
+
   return true;
 }
 
@@ -208,21 +259,11 @@ bool TabController::moveTab(int fromIndex, int toIndex) {
     return false;
   }
 
-  const auto beforeSnapshot = getTabsSnapshot();
-  int count = static_cast<int>(beforeSnapshot.tabs.size());
-  if (fromIndex < 0 || fromIndex >= count || toIndex < 0 || toIndex > count) {
-    return false;
-  }
-
   if (!appState->move_tab(fromIndex, toIndex)) {
     return false;
   }
 
-  const auto snapshot = getTabsSnapshot();
-
-  emit tabListChanged();
-  emit activeTabChanged(static_cast<int>(snapshot.active_id));
-
+  emit tabMoved(fromIndex, toIndex);
   return true;
 }
 
@@ -233,14 +274,6 @@ void TabController::setActiveTab(int tabId) {
 
   appState->set_active_tab(tabId);
   emit activeTabChanged(tabId);
-}
-
-bool TabController::saveActiveTab() const {
-  return appState->save_active_tab();
-}
-
-bool TabController::saveActiveTabAndSetPath(const std::string &path) const {
-  return appState->save_active_tab_and_set_path(path);
 }
 
 bool TabController::saveTabWithId(int tabId) const {

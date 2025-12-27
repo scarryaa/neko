@@ -7,9 +7,9 @@ class TabController;
 class TabWidget;
 class ThemeProvider;
 
+#include "features/tabs/tab_types.h"
 #include "theme/theme_types.h"
 #include "types/qt_types_fwd.h"
-#include <QList>
 #include <QScrollArea>
 #include <QStringList>
 
@@ -35,12 +35,17 @@ public:
 
   void setAndApplyTheme(const TabBarTheme &newTheme);
   void setAndApplyTabTheme(const TabTheme &newTheme);
-  void setTabs(const QStringList &titles, const QStringList &paths,
-               const QList<bool> &modifiedStates,
-               const QList<bool> &pinnedStates);
-  void setCurrentId(int tabId);
   void setTabModified(int tabId, bool modified);
   int getNumberOfTabs();
+
+  // NOLINTNEXTLINE(readability-redundant-access-specifiers)
+public slots:
+  void addTab(const TabPresentation &tab, int index);
+  void removeTab(int tabId);
+  void moveTab(int fromIndex, int toIndex);
+  void
+  updateTab(const TabPresentation &tab); // updates title/path/pinned/modified
+  void setCurrentTabId(int tabId);
 
 signals:
   void currentChanged(int tabId);
@@ -58,13 +63,12 @@ protected:
 private:
   [[nodiscard]] int dropIndexForPosition(const QPoint &pos) const;
   void updateDropIndicator(int index);
-  void updateTabAppearance();
+  TabWidget *findTabWidgetById(int tabId);
 
   ThemeProvider *themeProvider;
   TabController *tabController;
   ContextMenuRegistry &contextMenuRegistry;
   CommandRegistry &commandRegistry;
-  QPushButton *newTabButton;
   QWidget *containerWidget;
   QWidget *dropIndicator;
   QHBoxLayout *layout;

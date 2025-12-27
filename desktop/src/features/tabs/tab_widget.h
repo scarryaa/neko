@@ -7,7 +7,6 @@ class ContextMenuWidget;
 class ThemeProvider;
 
 #include "theme/theme_types.h"
-#include "types/ffi_types_fwd.h"
 #include "types/qt_types_fwd.h"
 #include <QPoint>
 #include <QRect>
@@ -36,12 +35,19 @@ public:
   explicit TabWidget(const TabProps &props, QWidget *parent = nullptr);
   ~TabWidget() override = default;
 
+  [[nodiscard]] bool getIsPinned() const;
+  [[nodiscard]] int getId() const;
+  [[nodiscard]] bool getIsModified() const;
+  [[nodiscard]] QString getPath() const;
+  [[nodiscard]] QString getTitle() const;
+
   void setActive(bool active);
   void setModified(bool modified);
   void setIsPinned(bool isPinned);
-  [[nodiscard]] bool getIsPinned() const;
-  [[nodiscard]] int getId() const;
   void setAndApplyTheme(const TabTheme &newTheme);
+  void setTitle(const QString &newTitle);
+  void setPath(const QString &newPath);
+  void setIndex(int newIndex);
 
 signals:
   void clicked(int tabId);
@@ -67,7 +73,6 @@ private:
 
   ContextMenuRegistry &contextMenuRegistry;
   CommandRegistry &commandRegistry;
-  ContextMenuWidget *contextMenuWidget;
   ThemeProvider *themeProvider;
   QString title;
   QString path;
@@ -110,7 +115,6 @@ private:
   static constexpr double TOP_PADDING = 8.0;
   static constexpr double BOTTOM_PADDING = 8.0;
   static constexpr double CLOSE_PEN_THICKNESS = 1.5;
-  static constexpr double CLOSE_HOVER_ALPHA = 60.0;
 };
 
 #endif // TAB_WIDGET_H

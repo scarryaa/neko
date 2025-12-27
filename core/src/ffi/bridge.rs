@@ -27,6 +27,7 @@ pub mod ffi {
         active: bool,
     }
 
+    #[derive(Default, Clone)]
     struct ScrollOffsetFfi {
         x: i32,
         y: i32,
@@ -101,6 +102,7 @@ pub mod ffi {
         current_theme: String,
     }
 
+    #[derive(Default, Clone)]
     struct TabSnapshot {
         pub id: u64,
         pub title: String,
@@ -115,6 +117,37 @@ pub mod ffi {
         pub active_present: bool,
         pub active_id: u64,
         pub tabs: Vec<TabSnapshot>,
+    }
+
+    pub struct TabSnapshotMaybe {
+        pub found: bool,
+        pub snapshot: TabSnapshot,
+    }
+
+    pub struct NewTabResult {
+        pub id: u64,
+        pub index: u32,
+        pub snapshot: TabSnapshot,
+    }
+
+    pub struct CloseTabResult {
+        pub closed: bool,
+        pub has_active: bool,
+        pub active_id: u64,
+    }
+
+    pub struct CloseManyTabsResult {
+        pub success: bool,
+        pub closed_ids: Vec<u64>,
+        pub has_active: bool,
+        pub active_id: u64,
+    }
+
+    pub struct PinTabResult {
+        pub success: bool,
+        pub from_index: u32,
+        pub to_index: u32,
+        pub snapshot: TabSnapshot,
     }
 
     struct FileNodeSnapshot {
@@ -187,20 +220,31 @@ pub mod ffi {
         #[cxx_name = "get_close_clean_tab_ids"]
         pub(crate) fn get_close_clean_tab_ids_wrapper(self: &AppState) -> Vec<usize>;
         pub(crate) fn get_tabs_snapshot(self: &AppState) -> TabsSnapshot;
+        pub(crate) fn get_tab_snapshot(self: &AppState, id: usize) -> TabSnapshotMaybe;
 
-        pub(crate) fn new_tab(self: &mut AppState) -> usize;
+        #[cxx_name = "new_tab"]
+        pub(crate) fn new_tab_wrapper(self: &mut AppState) -> NewTabResult;
         #[cxx_name = "close_tab"]
-        pub(crate) fn close_tab_wrapper(self: &mut AppState, id: usize) -> bool;
+        pub(crate) fn close_tab_wrapper(self: &mut AppState, id: usize) -> CloseTabResult;
         #[cxx_name = "close_other_tabs"]
-        pub(crate) fn close_other_tabs_wrapper(self: &mut AppState, id: usize) -> bool;
+        pub(crate) fn close_other_tabs_wrapper(
+            self: &mut AppState,
+            id: usize,
+        ) -> CloseManyTabsResult;
         #[cxx_name = "close_left_tabs"]
-        pub(crate) fn close_left_tabs_wrapper(self: &mut AppState, id: usize) -> bool;
+        pub(crate) fn close_left_tabs_wrapper(
+            self: &mut AppState,
+            id: usize,
+        ) -> CloseManyTabsResult;
         #[cxx_name = "close_right_tabs"]
-        pub(crate) fn close_right_tabs_wrapper(self: &mut AppState, id: usize) -> bool;
+        pub(crate) fn close_right_tabs_wrapper(
+            self: &mut AppState,
+            id: usize,
+        ) -> CloseManyTabsResult;
         #[cxx_name = "close_all_tabs"]
-        pub(crate) fn close_all_tabs_wrapper(self: &mut AppState) -> bool;
+        pub(crate) fn close_all_tabs_wrapper(self: &mut AppState) -> CloseManyTabsResult;
         #[cxx_name = "close_clean_tabs"]
-        pub(crate) fn close_clean_tabs_wrapper(self: &mut AppState) -> bool;
+        pub(crate) fn close_clean_tabs_wrapper(self: &mut AppState) -> CloseManyTabsResult;
         pub(crate) fn set_active_tab(self: &mut AppState, id: usize) -> Result<()>;
         #[cxx_name = "move_tab"]
         pub(crate) fn move_tab_wrapper(self: &mut AppState, from: usize, to: usize) -> bool;
@@ -212,9 +256,9 @@ pub mod ffi {
         pub(crate) fn save_active_tab_and_set_path_wrapper(self: &mut AppState, path: &str)
         -> bool;
         #[cxx_name = "pin_tab"]
-        pub(crate) fn pin_tab_wrapper(self: &mut AppState, id: usize) -> bool;
+        pub(crate) fn pin_tab_wrapper(self: &mut AppState, id: usize) -> PinTabResult;
         #[cxx_name = "unpin_tab"]
-        pub(crate) fn unpin_tab_wrapper(self: &mut AppState, id: usize) -> bool;
+        pub(crate) fn unpin_tab_wrapper(self: &mut AppState, id: usize) -> PinTabResult;
         #[cxx_name = "save_tab_with_id"]
         pub(crate) fn save_tab_with_id_wrapper(self: &mut AppState, id: usize) -> bool;
         #[cxx_name = "save_tab_with_id_and_set_path"]

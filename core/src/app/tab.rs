@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 
 #[derive(Debug, Default)]
 pub struct Tab {
-    editor: Editor,
+    editor: Box<Editor>,
     original_content: String,
     file_path: Option<PathBuf>,
     title: String,
@@ -15,7 +15,7 @@ pub struct Tab {
 impl Tab {
     pub fn new(id: usize) -> Self {
         Self {
-            editor: Editor::new(),
+            editor: Box::new(Editor::new()),
             original_content: String::new(),
             file_path: None,
             title: "Untitled".to_string(),
@@ -27,7 +27,7 @@ impl Tab {
 
     pub fn with_title(title: &str, id: usize) -> Self {
         Self {
-            editor: Editor::new(),
+            editor: Box::new(Editor::new()),
             original_content: String::new(),
             file_path: None,
             title: title.to_string(),

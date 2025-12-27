@@ -1,6 +1,7 @@
 #ifndef TAB_CONTROLLER_H
 #define TAB_CONTROLLER_H
 
+#include "features/tabs/tab_types.h"
 #include "types/ffi_types_fwd.h"
 #include <QList>
 #include <QObject>
@@ -18,12 +19,12 @@ public:
   ~TabController() override = default;
 
   // Getters
-  neko::TabsSnapshot getTabsSnapshot();
   [[nodiscard]] QList<int> getCloseOtherTabIds(int tabId) const;
   [[nodiscard]] QList<int> getCloseLeftTabIds(int tabId) const;
   [[nodiscard]] QList<int> getCloseRightTabIds(int tabId) const;
   [[nodiscard]] QList<int> getCloseAllTabIds() const;
   [[nodiscard]] QList<int> getCloseCleanTabIds() const;
+  neko::TabsSnapshot getTabsSnapshot();
 
   // Setters
   int addTab();
@@ -37,18 +38,22 @@ public:
   bool unpinTab(int tabId);
   bool moveTab(int fromIndex, int toIndex);
   void setActiveTab(int tabId);
-  [[nodiscard]] bool saveActiveTab() const;
-  [[nodiscard]] bool saveActiveTabAndSetPath(const std::string &path) const;
   [[nodiscard]] bool saveTabWithId(int tabId) const;
   [[nodiscard]] bool saveTabWithIdAndSetPath(int tabId,
                                              const std::string &path) const;
   void setTabScrollOffsets(int tabId, const neko::ScrollOffsetFfi &newOffsets);
 
 signals:
-  void tabListChanged();
+  void tabOpened(const TabPresentation &tab, int index);
+  void tabClosed(int tabId);
+  void tabMoved(int fromIndex, int toIndex);
+  void
+  tabUpdated(const TabPresentation &tab); // updated title/path/pinned/modified
   void activeTabChanged(int tabId);
 
 private:
+  static TabPresentation fromSnapshot(const neko::TabSnapshot &tab);
+
   neko::AppState *appState;
 };
 

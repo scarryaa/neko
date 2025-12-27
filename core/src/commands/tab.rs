@@ -122,12 +122,24 @@ pub fn run_tab_command(
     })?;
 
     match command {
-        TabCommand::Close => app_state.close_tab(ctx.id)?,
-        TabCommand::CloseOthers => app_state.close_other_tabs(ctx.id)?,
-        TabCommand::CloseLeft => app_state.close_left_tabs(ctx.id)?,
-        TabCommand::CloseRight => app_state.close_right_tabs(ctx.id)?,
-        TabCommand::CloseAll => app_state.close_all_tabs()?,
-        TabCommand::CloseClean => app_state.close_clean_tabs()?,
+        TabCommand::Close => {
+            app_state.close_tab(ctx.id)?;
+        }
+        TabCommand::CloseOthers => {
+            app_state.close_other_tabs(ctx.id)?;
+        }
+        TabCommand::CloseLeft => {
+            app_state.close_left_tabs(ctx.id)?;
+        }
+        TabCommand::CloseRight => {
+            app_state.close_right_tabs(ctx.id)?;
+        }
+        TabCommand::CloseAll => {
+            app_state.close_all_tabs()?;
+        }
+        TabCommand::CloseClean => {
+            app_state.close_clean_tabs()?;
+        }
         TabCommand::Pin => {
             if ctx.is_pinned {
                 app_state.unpin_tab(ctx.id)?;

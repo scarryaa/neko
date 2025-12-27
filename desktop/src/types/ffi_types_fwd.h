@@ -16,6 +16,7 @@ class ShortcutsManager;
 class ThemeManager;
 class ScrollOffsetFfi;
 class TabsSnapshot;
+class TabSnapshot;
 
 class TabCommandFfi;
 class TabContextFfi;

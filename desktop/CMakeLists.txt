@@ -147,6 +147,7 @@ qt_add_executable(neko
     src/features/tabs/tab_bar_widget.h
     src/features/tabs/tab_widget.cpp
     src/features/tabs/tab_widget.h
+    src/features/tabs/tab_types.h
 
     # Tab Controller
     src/features/tabs/controllers/tab_controller.cpp
