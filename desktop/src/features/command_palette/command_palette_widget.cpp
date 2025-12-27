@@ -285,8 +285,6 @@ void CommandPaletteWidget::connectSignals() {
 void CommandPaletteWidget::buildJumpPage() {
   jumpPage = new QWidget(pages);
 
-  // auto font = makeInterfaceFont(k::jumpFontSize);
-
   auto *layout = new QVBoxLayout(jumpPage);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(k::frameLayoutSpacing);
@@ -334,10 +332,9 @@ void CommandPaletteWidget::buildJumpPage() {
   pages->addWidget(jumpPage);
 }
 
+// TODO(scarlet): Add relevant shortcuts per command
 void CommandPaletteWidget::buildCommandPage() {
   commandPage = new QWidget(pages);
-
-  // auto font = makeInterfaceFont(k::jumpFontSize);
 
   auto *layout = new QVBoxLayout(commandPage);
   layout->setContentsMargins(0, 0, 0, 0);
@@ -392,8 +389,6 @@ void CommandPaletteWidget::adjustPosition() {
 }
 
 QWidget *CommandPaletteWidget::buildShortcutsContainer(QWidget *parent) {
-  // const auto font = makeInterfaceFont(k::jumpFontSize);
-
   struct ShortcutRow {
     std::string_view code;
     const char *desc;

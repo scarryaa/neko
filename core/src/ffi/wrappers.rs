@@ -1,7 +1,6 @@
 use super::bridge::ffi::*;
 use crate::{
-    AppState, Editor, FileTree, ShortcutsManager,
-    app::Tab,
+    AppState, Editor, FileTree, ShortcutsManager, Tab,
     commands::{
         execute_command,
         tab::{get_available_tab_commands, run_tab_command, tab_command_state},
