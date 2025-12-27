@@ -1,10 +1,6 @@
 #include "tab_controller.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 
-// TODO(scarlet): Add tab history preservation (e.g. switch to 'last active' tab
-// when closing)
-// - Make a setting toggle for switching to 'last active' vs by regular inc/dec
-// order on last/next tab shortcut?
 TabPresentation TabController::fromSnapshot(const neko::TabSnapshot &tab) {
   return TabPresentation{
       .id = static_cast<int>(tab.id),
@@ -260,6 +256,17 @@ bool TabController::unpinTab(int tabId) {
                   static_cast<int>(result.to_index));
   }
 
+  return true;
+}
+
+bool TabController::moveTabBy(int delta) {
+  if (appState == nullptr) {
+    return false;
+  }
+
+  int newActiveId = static_cast<int>(appState->move_active_tab_by(delta));
+
+  emit activeTabChanged(newActiveId);
   return true;
 }
 

@@ -15,6 +15,8 @@ pub struct AppState {
     next_tab_id: usize,
     /// Tracks last activated tabs by id
     active_tab_history: Vec<usize>,
+    // Index into active_tab_history when navigating
+    history_pos: Option<usize>,
 }
 
 impl AppState {
@@ -29,6 +31,7 @@ impl AppState {
             file_tree: FileTree::new(root_path)?,
             next_tab_id: 0,
             active_tab_history: vec![0],
+            history_pos: Some(0),
         };
 
         state.new_tab();
@@ -165,9 +168,7 @@ impl AppState {
         if let Some(index) = self.tabs.iter().position(|t| t.get_id() == id) {
             self.tabs.remove(index);
 
-            if self.config_manager().get_snapshot().editor_tab_history {
-                self.remove_tabs_from_history(&vec![id]);
-            }
+            self.remove_tabs_from_history(&vec![id]);
             self.switch_to_last_active_tab();
 
             Ok(())
@@ -193,9 +194,7 @@ impl AppState {
         }
 
         self.tabs.retain(|t| t.get_is_pinned() || t.get_id() == id);
-        if self.config_manager().get_snapshot().editor_tab_history {
-            self.remove_tabs_from_history(&ids);
-        }
+        self.remove_tabs_from_history(&ids);
         self.switch_to_last_active_tab();
 
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
@@ -219,9 +218,7 @@ impl AppState {
             i += 1;
             keep
         });
-        if self.config_manager().get_snapshot().editor_tab_history {
-            self.remove_tabs_from_history(&ids);
-        }
+        self.remove_tabs_from_history(&ids);
         self.switch_to_last_active_tab();
 
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
@@ -245,9 +242,7 @@ impl AppState {
             i += 1;
             keep
         });
-        if self.config_manager().get_snapshot().editor_tab_history {
-            self.remove_tabs_from_history(&ids);
-        }
+        self.remove_tabs_from_history(&ids);
         self.switch_to_last_active_tab();
 
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
@@ -261,9 +256,7 @@ impl AppState {
 
         // Remove all non-pinned tabs, keeping order of pinned ones
         self.tabs.retain(|t| t.get_is_pinned());
-        if self.config_manager().get_snapshot().editor_tab_history {
-            self.remove_tabs_from_history(&ids);
-        }
+        self.remove_tabs_from_history(&ids);
         self.switch_to_last_active_tab();
 
         Ok(ids)
@@ -275,12 +268,66 @@ impl AppState {
 
         // Remove all clean non-pinned tabs, keeping order of pinned ones
         self.tabs.retain(|t| t.get_is_pinned() || t.get_modified());
-        if self.config_manager().get_snapshot().editor_tab_history {
-            self.remove_tabs_from_history(&ids);
-        }
+        self.remove_tabs_from_history(&ids);
         self.switch_to_last_active_tab();
 
         Ok(ids)
+    }
+
+    pub fn move_active_tab_by(&mut self, delta: i64) -> usize {
+        if self.tabs.is_empty() {
+            return self.active_tab_id;
+        }
+
+        let history_enabled = self.config_manager().get_snapshot().editor_tab_history;
+
+        // History disabled, use linear order
+        if !history_enabled {
+            let tab_count = self.tabs.len() as i64;
+            let current_idx = self
+                .tabs
+                .iter()
+                .position(|t| t.get_id() == self.active_tab_id)
+                .unwrap_or(0) as i64;
+
+            let next_idx = (current_idx + delta).rem_euclid(tab_count) as usize;
+            let tab_id = self.tabs[next_idx].get_id();
+            self.activate_tab(tab_id);
+            return tab_id;
+        }
+
+        // If there are no tabs in history, do nothing
+        if self.active_tab_history.is_empty() || delta == 0 {
+            return self.active_tab_id;
+        }
+
+        // Determine starting index in the visit log
+        let start_idx = match self.history_pos {
+            None => self.active_tab_history.len() - 1,
+            Some(i) => i,
+        };
+
+        let next_idx_opt = if delta < 0 {
+            // Backwards
+            self.previous_distinct_history_entry(start_idx)
+        } else {
+            // Forwards
+            self.next_distinct_history_entry(start_idx)
+        };
+
+        let next_idx = match next_idx_opt {
+            Some(i) => i,
+            None => {
+                self.history_pos = Some(start_idx);
+                return self.active_tab_id;
+            }
+        };
+
+        let tab_id = self.active_tab_history[next_idx];
+        self.active_tab_id = tab_id;
+        self.history_pos = Some(next_idx);
+
+        tab_id
     }
 
     pub fn pin_tab(&mut self, id: usize) -> Result<(), Error> {
@@ -532,23 +579,46 @@ impl AppState {
         id
     }
 
-    fn activate_tab(&mut self, id: usize) {
-        let history_enabled = self.config_manager().get_snapshot().editor_tab_history;
-
-        if history_enabled {
-            self.active_tab_history.retain(|&x| x != id);
-            self.active_tab_history.push(id);
-        } else {
-            self.active_tab_history.clear();
+    // History ops
+    fn previous_distinct_history_entry(&self, start: usize) -> Option<usize> {
+        if start == 0 {
+            return None;
         }
-
-        self.active_tab_id = id;
+        let current = self.active_tab_history[start];
+        (0..start)
+            .rev()
+            .find(|&i| self.active_tab_history[i] != current)
     }
 
+    fn next_distinct_history_entry(&self, start: usize) -> Option<usize> {
+        let len = self.active_tab_history.len();
+        if start + 1 >= len {
+            return None;
+        }
+        let current = self.active_tab_history[start];
+        (start + 1..len).find(|&i| self.active_tab_history[i] != current)
+    }
+
+    // TODO(scarlet): Add a config option to reopen tabs that were previously visited (if they have
+    // a path)?
     fn remove_tabs_from_history(&mut self, ids: &Vec<usize>) {
         for id in ids {
             self.active_tab_history.retain(|&x| x != *id);
         }
+    }
+
+    fn activate_tab(&mut self, id: usize) {
+        if self.active_tab_id == id {
+            return;
+        }
+
+        self.active_tab_id = id;
+        if self.active_tab_history.last().copied() != Some(id) {
+            self.active_tab_history.push(id);
+        }
+
+        // Explicit activation cancels history navigation mode
+        self.history_pos = None;
     }
 
     fn switch_to_last_active_tab(&mut self) {

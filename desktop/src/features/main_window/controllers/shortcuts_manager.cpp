@@ -24,43 +24,6 @@ void ShortcutsManager::setUpKeyboardShortcuts() {
 }
 
 void ShortcutsManager::populateShortcutMetadata() {
-  // TODO(scarlet): Update this to respect whether editor_tab_history is enabled
-  // in config
-  auto moveTabBy = [this](int delta) {
-    auto findIndexById = [](const neko::TabsSnapshot &snap,
-                            uint64_t tabId) -> int {
-      for (int i = 0; i < static_cast<int>(snap.tabs.size()); ++i) {
-        if (snap.tabs[i].id == tabId) {
-          return i;
-        }
-      }
-      return -1;
-    };
-
-    const auto snapshot = tabController->getTabsSnapshot();
-    if (!snapshot.active_present) {
-      return;
-    }
-
-    const int tabCount = static_cast<int>(snapshot.tabs.size());
-    if (tabCount <= 1) {
-      return;
-    }
-
-    const int currentIndex = findIndexById(snapshot, snapshot.active_id);
-    if (currentIndex < 0) {
-      return;
-    }
-
-    int nextIndex = (currentIndex + delta) % tabCount;
-    if (nextIndex < 0) {
-      nextIndex += tabCount;
-    }
-
-    workspaceCoordinator->tabChanged(
-        static_cast<int>(snapshot.tabs[nextIndex].id));
-  };
-
   shortcutActionMap = {
       {
           "Tab::Save",
@@ -91,12 +54,13 @@ void ShortcutsManager::populateShortcutMetadata() {
           },
       },
       {
+          // TODO(scarlet): Separate linear back/fwd and last visited hotkeys
           "Tab::Next",
-          [moveTabBy]() { moveTabBy(+1); },
+          [this]() { workspaceCoordinator->moveTabBy(+1); },
       },
       {
           "Tab::Previous",
-          [moveTabBy]() { moveTabBy(-1); },
+          [this]() { workspaceCoordinator->moveTabBy(-1); },
       },
       {
           "Tab::Reveal",

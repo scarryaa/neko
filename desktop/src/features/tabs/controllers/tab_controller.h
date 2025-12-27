@@ -36,6 +36,7 @@ public:
   bool closeRightTabs(int tabId);
   bool pinTab(int tabId);
   bool unpinTab(int tabId);
+  bool moveTabBy(int delta);
   bool moveTab(int fromIndex, int toIndex);
   void setActiveTab(int tabId);
   [[nodiscard]] bool saveTabWithId(int tabId) const;

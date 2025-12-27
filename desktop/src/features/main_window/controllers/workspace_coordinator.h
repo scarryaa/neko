@@ -38,6 +38,7 @@ public:
   CloseDecision showTabCloseConfirmationDialog(const QList<int> &ids);
   SaveResult saveTab(int tabId, bool isSaveAs);
   void revealActiveTab();
+  void moveTabBy(int delta);
 
   std::optional<std::string> requestFileExplorerDirectory();
   void fileSaved(bool saveAs);

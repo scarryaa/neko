@@ -227,6 +227,10 @@ impl AppState {
         self.move_tab(from, to).is_ok()
     }
 
+    pub fn move_active_tab_by_wrapper(self: &mut AppState, delta: i64) -> usize {
+        self.move_active_tab_by(delta)
+    }
+
     pub(crate) fn pin_tab_wrapper(&mut self, id: usize) -> PinTabResult {
         let from_index = match self.get_tabs().iter().position(|t| t.get_id() == id) {
             Some(idx) => idx as u32,

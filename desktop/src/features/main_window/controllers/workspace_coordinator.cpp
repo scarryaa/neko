@@ -378,6 +378,10 @@ void WorkspaceCoordinator::revealActiveTab() {
   handleTabCommand("tab.reveal", ctx, false);
 }
 
+void WorkspaceCoordinator::moveTabBy(int delta) {
+  tabController->moveTabBy(delta);
+}
+
 void WorkspaceCoordinator::closeTab(int tabId, bool forceClose) {
   auto close = [this](int tabId, bool forceClose) {
     // Save current scroll offset before closing
