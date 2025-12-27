@@ -168,12 +168,12 @@ impl AppState {
     }
 
     // Setters
-    pub fn new_tab(&mut self, should_activate: bool) -> (usize, usize) {
+    pub fn new_tab(&mut self, add_to_history: bool) -> (usize, usize) {
         let id = self.get_next_tab_id();
         let tab = Tab::new(id);
 
         self.tabs.push(tab);
-        if should_activate {
+        if add_to_history {
             self.activate_tab(id);
         } else {
             self.activate_tab_no_history(id);

@@ -706,8 +706,9 @@ pub(crate) fn execute_command_wrapper(
     cmd: CommandFfi,
     config: &mut ConfigManager,
     theme: &mut ThemeManager,
+    app: &mut AppState,
 ) -> CommandResultFfi {
-    execute_command(cmd.into(), config, theme).into()
+    execute_command(cmd.into(), config, theme, app).into()
 }
 
 pub(crate) fn new_command(kind: CommandKindFfi, argument: String) -> CommandFfi {

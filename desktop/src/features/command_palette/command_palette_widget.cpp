@@ -25,17 +25,24 @@
 #include <neko-core/src/ffi/bridge.rs.h>
 
 namespace {
-enum class CommandId : uint8_t { ToggleFileExplorer, ThemeLight, ThemeDark };
+enum class CommandId : uint8_t {
+  ToggleFileExplorer,
+  ThemeLight,
+  ThemeDark,
+  OpenConfig
+};
 
 struct CommandDef {
   CommandId id;
   QString displayString;
 };
 
-inline const std::array<CommandDef, 3> COMMANDS = {{
+// TODO(scarlet): Make this pull from rust/easier to add commands
+inline const std::array<CommandDef, 4> COMMANDS = {{
     {CommandId::ToggleFileExplorer, QStringLiteral("file explorer: toggle")},
     {CommandId::ThemeLight, QStringLiteral("set theme: light")},
     {CommandId::ThemeDark, QStringLiteral("set theme: dark")},
+    {CommandId::OpenConfig, QStringLiteral("editor: open config")},
 }};
 
 bool isPrevNavKey(const QKeyEvent *event) {

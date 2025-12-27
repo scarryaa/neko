@@ -109,6 +109,7 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
   neko::CommandKindFfi kind;
   rust::String argument;
 
+  // TODO(scarlet): Avoid hardcoding command strings
   if (command == "file explorer: toggle") {
     kind = neko::CommandKindFfi::FileExplorerToggle;
   } else if (command == "set theme: light") {
@@ -117,8 +118,15 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
   } else if (command == "set theme: dark") {
     kind = neko::CommandKindFfi::ChangeTheme;
     argument = rust::String("Default Dark");
+  } else if (command == "editor: open config") {
+    kind = neko::CommandKindFfi::OpenConfig;
   } else {
     return;
+  }
+
+  const auto beforeSnapshot = tabController->getTabsSnapshot();
+  if (beforeSnapshot.active_present) {
+    saveScrollOffsetsForActiveTab();
   }
 
   auto result = commandExecutor->execute(kind, std::move(argument));
@@ -129,7 +137,22 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
       fileExplorerToggled();
       break;
     case neko::UiIntentKindFfi::ApplyTheme:
-      emit themeChanged(std::string(intent.argument.c_str()));
+      emit themeChanged(std::string(intent.argument_str.c_str()));
+      break;
+    case neko::UiIntentKindFfi::OpenConfig:
+      // TODO(scarlet): Avoid duplicating the fileSelected logic here
+      const int tabId = static_cast<int>(intent.argument_u64);
+      const std::string &path = std::string(intent.argument_str);
+
+      // If config was already open, just activate it
+      for (const auto &tab : beforeSnapshot.tabs) {
+        if (tab.path_present && tab.path == path) {
+          tabController->setActiveTab(static_cast<int>(tab.id));
+          return;
+        }
+      }
+
+      tabController->notifyTabOpenedFromCore(tabId);
       break;
     }
   }

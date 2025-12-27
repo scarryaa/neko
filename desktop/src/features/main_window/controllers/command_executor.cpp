@@ -4,13 +4,13 @@
 
 CommandExecutor::CommandExecutor(const CommandExecutorProps &props)
     : configManager(props.configManager), themeManager(props.themeManager),
-      appConfigService(props.appConfigService) {}
+      appState(props.appState), appConfigService(props.appConfigService) {}
 
 neko::CommandResultFfi CommandExecutor::execute(neko::CommandKindFfi kind,
                                                 rust::String argument) {
   auto commandFfi = neko::new_command(kind, std::move(argument));
-  auto result =
-      neko::execute_command(commandFfi, *configManager, *themeManager);
+  auto result = neko::execute_command(commandFfi, *configManager, *themeManager,
+                                      *appState);
 
   if (appConfigService != nullptr) {
     appConfigService->notifyExternalConfigChange();

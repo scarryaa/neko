@@ -43,6 +43,7 @@ public:
   [[nodiscard]] bool saveTabWithIdAndSetPath(int tabId,
                                              const std::string &path) const;
   void setTabScrollOffsets(int tabId, const neko::ScrollOffsetFfi &newOffsets);
+  void notifyTabOpenedFromCore(int tabId);
 
   // NOLINTNEXTLINE(readability-redundant-access-specifiers)
 public slots:

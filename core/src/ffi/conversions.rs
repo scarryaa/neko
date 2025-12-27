@@ -94,7 +94,7 @@ impl From<UiIntentFfi> for UiIntent {
         match intent.kind {
             UiIntentKindFfi::ToggleFileExplorer => UiIntent::ToggleFileExplorer,
             UiIntentKindFfi::ApplyTheme => UiIntent::ApplyTheme {
-                name: intent.argument,
+                name: intent.argument_str,
             },
             // Should not happen
             _ => UiIntent::ToggleFileExplorer,
@@ -107,11 +107,18 @@ impl From<UiIntent> for UiIntentFfi {
         match intent {
             UiIntent::ToggleFileExplorer => UiIntentFfi {
                 kind: UiIntentKindFfi::ToggleFileExplorer,
-                argument: String::new(),
+                argument_str: String::new(),
+                argument_u64: 0,
             },
             UiIntent::ApplyTheme { name } => UiIntentFfi {
                 kind: UiIntentKindFfi::ApplyTheme,
-                argument: name,
+                argument_str: name,
+                argument_u64: 0,
+            },
+            UiIntent::OpenConfig { id, path } => UiIntentFfi {
+                kind: UiIntentKindFfi::OpenConfig,
+                argument_str: path,
+                argument_u64: id as u64,
             },
         }
     }
@@ -122,8 +129,14 @@ impl From<CommandFfi> for Command {
         match command.kind {
             CommandKindFfi::FileExplorerToggle => Command::FileExplorerToggle,
             CommandKindFfi::ChangeTheme => Command::ChangeTheme(command.argument),
+            CommandKindFfi::OpenConfig => Command::OpenConfig,
             // Should not happen
-            _ => Command::FileExplorerToggle,
+            _ => {
+                eprintln!(
+                    "Conversion from CommandFfi to Command failed: defaulting to FileExplorerToggle"
+                );
+                Command::FileExplorerToggle
+            }
         }
     }
 }
@@ -138,6 +151,10 @@ impl From<Command> for CommandFfi {
             Command::ChangeTheme(t) => CommandFfi {
                 kind: CommandKindFfi::ChangeTheme,
                 argument: t,
+            },
+            Command::OpenConfig => CommandFfi {
+                kind: CommandKindFfi::OpenConfig,
+                argument: String::new(),
             },
         }
     }

@@ -61,6 +61,7 @@ pub mod ffi {
     enum CommandKindFfi {
         FileExplorerToggle,
         ChangeTheme,
+        OpenConfig,
     }
 
     struct CommandFfi {
@@ -71,11 +72,13 @@ pub mod ffi {
     enum UiIntentKindFfi {
         ToggleFileExplorer,
         ApplyTheme,
+        OpenConfig,
     }
 
     struct UiIntentFfi {
         pub kind: UiIntentKindFfi,
-        pub argument: String,
+        pub argument_str: String,
+        pub argument_u64: u64,
     }
 
     struct CommandResultFfi {
@@ -437,6 +440,7 @@ pub mod ffi {
             cmd: CommandFfi,
             config: &mut ConfigManager,
             theme: &mut ThemeManager,
+            app: &mut AppState,
         ) -> CommandResultFfi;
         pub(crate) fn new_command(kind: CommandKindFfi, argument: String) -> CommandFfi;
 

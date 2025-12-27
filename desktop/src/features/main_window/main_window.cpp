@@ -113,6 +113,7 @@ MainWindow::MainWindow(QWidget *parent)
   auto *commandExecutor =
       new CommandExecutor({.configManager = &*configManager,
                            .themeManager = &*themeManager,
+                           .appState = &*appState,
                            .appConfigService = appConfigService});
   themeProvider = new ThemeProvider({.themeManager = &*themeManager}, this);
   uiStyleManager = new UiStyleManager(

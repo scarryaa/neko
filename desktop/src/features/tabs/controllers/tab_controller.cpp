@@ -98,6 +98,36 @@ int TabController::addTab() {
   return newTabId;
 }
 
+// TODO(scarlet): Figure out a unified/better solution than separate 'core ->
+// cpp' signals?
+void TabController::notifyTabOpenedFromCore(int tabId) {
+  if (appState == nullptr) {
+    return;
+  }
+
+  auto tabsSnapshot = getTabsSnapshot();
+  const neko::TabSnapshot *found = nullptr;
+  int index = 0;
+
+  for (int i = 0; i < static_cast<int>(tabsSnapshot.tabs.size()); ++i) {
+    const auto &tab = tabsSnapshot.tabs[i];
+    if (static_cast<int>(tab.id) == tabId) {
+      found = &tab;
+      index = i;
+      break;
+    }
+  }
+
+  if (found == nullptr) {
+    return;
+  }
+
+  TabPresentation presentation = fromSnapshot(*found);
+
+  emit tabOpened(presentation, index);
+  emit activeTabChanged(tabId);
+}
+
 void TabController::fileOpened(const neko::TabSnapshot &snapshot) {
   auto presentation = fromSnapshot(snapshot);
   emit tabUpdated(presentation);
@@ -303,6 +333,7 @@ void TabController::setActiveTab(int tabId) {
   }
 
   appState->set_active_tab(tabId);
+
   emit activeTabChanged(tabId);
 }
 
