@@ -227,8 +227,12 @@ impl AppState {
         self.move_tab(from, to).is_ok()
     }
 
-    pub fn move_active_tab_by_wrapper(self: &mut AppState, delta: i64) -> MoveActiveTabResult {
-        let (id, reopened) = self.move_active_tab_by(delta);
+    pub fn move_active_tab_by_wrapper(
+        self: &mut AppState,
+        delta: i64,
+        use_history: bool,
+    ) -> MoveActiveTabResult {
+        let (id, reopened) = self.move_active_tab_by(delta, use_history);
 
         // Try to find the tab with this id
         let snapshot = if let Ok(tab) = self.get_tab(id) {

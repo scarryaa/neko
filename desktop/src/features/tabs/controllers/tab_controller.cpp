@@ -288,12 +288,13 @@ bool TabController::unpinTab(int tabId) {
   return true;
 }
 
-bool TabController::moveTabBy(int delta) {
+bool TabController::moveTabBy(int delta, bool useHistory) {
   if (appState == nullptr) {
     return false;
   }
 
-  neko::MoveActiveTabResult result = appState->move_active_tab_by(delta);
+  neko::MoveActiveTabResult result =
+      appState->move_active_tab_by(delta, useHistory);
   int tabId = static_cast<int>(result.id);
 
   if (result.reopened) {

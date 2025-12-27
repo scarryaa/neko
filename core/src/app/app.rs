@@ -298,12 +298,12 @@ impl AppState {
     }
 
     // Returns the id and a flag indicating whether a closed tab was reopened
-    pub fn move_active_tab_by(&mut self, delta: i64) -> (usize, bool) {
+    pub fn move_active_tab_by(&mut self, delta: i64, use_history: bool) -> (usize, bool) {
         if self.tabs.is_empty() {
             return (self.active_tab_id, false);
         }
 
-        let history_enabled = self.config_manager().get_snapshot().editor_tab_history;
+        let history_enabled = use_history;
 
         // History disabled, use linear order
         if !history_enabled {
@@ -691,7 +691,10 @@ impl AppState {
             return;
         }
 
-        let history_enabled = self.config_manager().get_snapshot().editor_tab_history;
+        let history_enabled = self
+            .config_manager()
+            .get_snapshot()
+            .editor_switch_to_last_visited_tab_on_close;
 
         if history_enabled && !self.active_tab_history.is_empty() {
             // Walk history backwards and pick the most recent tab that still exists

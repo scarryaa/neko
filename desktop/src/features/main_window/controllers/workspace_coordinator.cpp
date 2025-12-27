@@ -401,8 +401,8 @@ void WorkspaceCoordinator::revealActiveTab() {
   handleTabCommand("tab.reveal", ctx, false);
 }
 
-void WorkspaceCoordinator::moveTabBy(int delta) {
-  tabController->moveTabBy(delta);
+void WorkspaceCoordinator::moveTabBy(int delta, bool useHistory) {
+  tabController->moveTabBy(delta, useHistory);
 }
 
 void WorkspaceCoordinator::closeTab(int tabId, bool forceClose) {

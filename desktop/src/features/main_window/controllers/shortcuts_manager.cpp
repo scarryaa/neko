@@ -54,13 +54,20 @@ void ShortcutsManager::populateShortcutMetadata() {
           },
       },
       {
-          // TODO(scarlet): Separate linear back/fwd and last visited hotkeys
-          "Tab::Next",
-          [this]() { workspaceCoordinator->moveTabBy(+1); },
+          "Tab::NextLinear",
+          [this]() { workspaceCoordinator->moveTabBy(+1, false); },
       },
       {
-          "Tab::Previous",
-          [this]() { workspaceCoordinator->moveTabBy(-1); },
+          "Tab::PreviousLinear",
+          [this]() { workspaceCoordinator->moveTabBy(-1, false); },
+      },
+      {
+          "Tab::HistoryForward",
+          [this]() { workspaceCoordinator->moveTabBy(+1, true); },
+      },
+      {
+          "Tab::HistoryBack",
+          [this]() { workspaceCoordinator->moveTabBy(-1, true); },
       },
       {
           "Tab::Reveal",
@@ -173,8 +180,10 @@ void ShortcutsManager::syncShortcutsFromRust() {
   ensureShortcut("Tab::New", "Ctrl+T");
   ensureShortcut("Tab::Close", "Ctrl+W");
   ensureShortcut("Tab::ForceClose", "Ctrl+Shift+W");
-  ensureShortcut("Tab::Next", "Meta+Tab");
-  ensureShortcut("Tab::Previous", "Meta+Shift+Tab");
+  ensureShortcut("Tab::NextLinear", "Meta+Tab");
+  ensureShortcut("Tab::PreviousLinear", "Meta+Shift+Tab");
+  ensureShortcut("Tab::HistoryForward", "Meta+]");
+  ensureShortcut("Tab::HistoryBack", "Meta+[");
   ensureShortcut("Tab::Reveal", "Ctrl+Shift+E");
   ensureShortcut("Cursor::JumpTo", "Ctrl+G");
   ensureShortcut("FileExplorer::Toggle", "Ctrl+E");

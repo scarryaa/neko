@@ -22,7 +22,7 @@ use crate::Theme;
 pub struct Config {
     pub editor_font_size: usize,
     pub editor_font_family: String,
-    pub editor_tab_history: bool,
+    pub editor_switch_to_last_visited_tab_on_close: bool,
     pub editor_auto_reopen_closed_tabs_in_history: bool,
     pub file_explorer_font_size: usize,
     pub file_explorer_font_family: String,
@@ -42,7 +42,7 @@ impl Default for Config {
         Self {
             editor_font_size: 15,
             editor_font_family: "IBM Plex Mono".to_string(),
-            editor_tab_history: true,
+            editor_switch_to_last_visited_tab_on_close: true,
             editor_auto_reopen_closed_tabs_in_history: true,
             file_explorer_font_family: "IBM Plex Sans".to_string(),
             file_explorer_font_size: 15,

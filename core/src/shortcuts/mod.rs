@@ -53,8 +53,11 @@ impl Default for Shortcuts {
         let close_tab = Shortcut::new("Tab::Close".into(), "Ctrl+W".into());
         let force_close_tab = Shortcut::new("Tab::ForceClose".into(), "Ctrl+Shift+W".into());
         let new_tab = Shortcut::new("Tab::New".into(), "Ctrl+T".into());
-        let next_tab = Shortcut::new("Tab::Next".into(), "Meta+Tab".into());
-        let previous_tab = Shortcut::new("Tab::Previous".into(), "Meta+Shift+Tab".into());
+        let tab_next_linear = Shortcut::new("Tab::NextLinear".into(), "Meta+Tab".into());
+        let tab_previous_linear =
+            Shortcut::new("Tab::PreviousLinear".into(), "Meta+Shift+Tab".into());
+        let tab_history_back = Shortcut::new("Tab::HistoryBack".into(), "Meta+[".into());
+        let tab_history_forward = Shortcut::new("Tab::HistoryForward".into(), "Meta+]".into());
         let reveal_tab = Shortcut::new("Tab::Reveal".into(), "Ctrl+Shift+E".into());
         let jump_to = Shortcut::new("Cursor::JumpTo".into(), "Ctrl+G".into());
         let toggle_explorer = Shortcut::new("FileExplorer::Toggle".into(), "Ctrl+E".into());
@@ -70,8 +73,10 @@ impl Default for Shortcuts {
             close_tab,
             force_close_tab,
             new_tab,
-            next_tab,
-            previous_tab,
+            tab_previous_linear,
+            tab_next_linear,
+            tab_history_back,
+            tab_history_forward,
             reveal_tab,
             jump_to,
             toggle_explorer,

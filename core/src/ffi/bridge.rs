@@ -270,7 +270,11 @@ pub mod ffi {
         pub(crate) fn save_active_tab_and_set_path_wrapper(self: &mut AppState, path: &str)
         -> bool;
         #[cxx_name = "move_active_tab_by"]
-        pub fn move_active_tab_by_wrapper(self: &mut AppState, delta: i64) -> MoveActiveTabResult;
+        pub fn move_active_tab_by_wrapper(
+            self: &mut AppState,
+            delta: i64,
+            use_history: bool,
+        ) -> MoveActiveTabResult;
         #[cxx_name = "pin_tab"]
         pub(crate) fn pin_tab_wrapper(self: &mut AppState, id: usize) -> PinTabResult;
         #[cxx_name = "unpin_tab"]
