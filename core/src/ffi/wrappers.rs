@@ -141,7 +141,7 @@ impl AppState {
     }
 
     pub(crate) fn new_tab_wrapper(self: &mut AppState) -> NewTabResult {
-        let (id, index) = self.new_tab();
+        let (id, index) = self.new_tab(true);
         let tab = self.get_tab(id).unwrap();
 
         NewTabResult {
@@ -227,8 +227,22 @@ impl AppState {
         self.move_tab(from, to).is_ok()
     }
 
-    pub fn move_active_tab_by_wrapper(self: &mut AppState, delta: i64) -> usize {
-        self.move_active_tab_by(delta)
+    pub fn move_active_tab_by_wrapper(self: &mut AppState, delta: i64) -> MoveActiveTabResult {
+        let (id, reopened) = self.move_active_tab_by(delta);
+
+        // Try to find the tab with this id
+        let snapshot = if let Ok(tab) = self.get_tab(id) {
+            Self::make_tab_snapshot(tab)
+        } else {
+            eprintln!("move_active_tab_by_wrapper: no Tab with id {id} (reopened: {reopened})");
+            TabSnapshot::default()
+        };
+
+        MoveActiveTabResult {
+            id: id as u64,
+            reopened,
+            snapshot,
+        }
     }
 
     pub(crate) fn pin_tab_wrapper(&mut self, id: usize) -> PinTabResult {

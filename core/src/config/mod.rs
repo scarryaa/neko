@@ -17,10 +17,13 @@ use crate::Theme;
 //  font_size: xyz,
 // }
 //
+// TODO(scarlet): Update config on app open. Currently it only updates when config is modified by
+// the app (e.g. toggling the file explorer)
 pub struct Config {
     pub editor_font_size: usize,
     pub editor_font_family: String,
     pub editor_tab_history: bool,
+    pub editor_auto_reopen_closed_tabs_in_history: bool,
     pub file_explorer_font_size: usize,
     pub file_explorer_font_family: String,
     pub file_explorer_directory: Option<String>,
@@ -40,6 +43,7 @@ impl Default for Config {
             editor_font_size: 15,
             editor_font_family: "IBM Plex Mono".to_string(),
             editor_tab_history: true,
+            editor_auto_reopen_closed_tabs_in_history: true,
             file_explorer_font_family: "IBM Plex Sans".to_string(),
             file_explorer_font_size: 15,
             file_explorer_directory: None,

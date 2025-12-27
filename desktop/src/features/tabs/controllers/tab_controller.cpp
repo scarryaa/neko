@@ -91,7 +91,6 @@ int TabController::addTab() {
   auto result = appState->new_tab();
   int newTabId = static_cast<int>(result.id);
   int newTabIndex = static_cast<int>(result.index);
-
   auto presentation = fromSnapshot(result.snapshot);
 
   emit tabOpened(presentation, newTabIndex);
@@ -264,9 +263,24 @@ bool TabController::moveTabBy(int delta) {
     return false;
   }
 
-  int newActiveId = static_cast<int>(appState->move_active_tab_by(delta));
+  neko::MoveActiveTabResult result = appState->move_active_tab_by(delta);
+  int tabId = static_cast<int>(result.id);
 
-  emit activeTabChanged(newActiveId);
+  if (result.reopened) {
+    TabPresentation presentation = fromSnapshot(result.snapshot);
+    auto snapshot = getTabsSnapshot();
+    int index = 0;
+    for (int i = 0; i < static_cast<int>(snapshot.tabs.size()); ++i) {
+      if (static_cast<int>(snapshot.tabs[i].id) == tabId) {
+        index = i;
+        break;
+      }
+    }
+
+    emit tabOpened(presentation, index);
+  }
+
+  emit activeTabChanged(tabId);
   return true;
 }
 

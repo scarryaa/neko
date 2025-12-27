@@ -1,9 +1,22 @@
 use super::Tab;
 use crate::{Editor, FileTree, config::ConfigManager};
 use std::{
+    collections::HashMap,
     io::{Error, ErrorKind},
     path::{Path, PathBuf},
 };
+
+#[derive(Debug)]
+struct ClosedTabInfo {
+    path: PathBuf,
+    // title, scroll offsets, cursor pos, etc?
+}
+
+enum ResolveOutcome {
+    Existing(usize),
+    Reopened(usize),
+    Unresolvable,
+}
 
 // TODO(scarlet): Create a separate TabManager?
 #[derive(Debug)]
@@ -17,6 +30,7 @@ pub struct AppState {
     active_tab_history: Vec<usize>,
     // Index into active_tab_history when navigating
     history_pos: Option<usize>,
+    closed_tabs: HashMap<usize, ClosedTabInfo>,
 }
 
 impl AppState {
@@ -32,9 +46,10 @@ impl AppState {
             next_tab_id: 0,
             active_tab_history: vec![0],
             history_pos: Some(0),
+            closed_tabs: HashMap::new(),
         };
 
-        state.new_tab();
+        state.new_tab(true);
         Ok(state)
     }
 
@@ -153,12 +168,16 @@ impl AppState {
     }
 
     // Setters
-    pub fn new_tab(&mut self) -> (usize, usize) {
+    pub fn new_tab(&mut self, should_activate: bool) -> (usize, usize) {
         let id = self.get_next_tab_id();
         let tab = Tab::new(id);
 
         self.tabs.push(tab);
-        self.activate_tab(id);
+        if should_activate {
+            self.activate_tab(id);
+        } else {
+            self.activate_tab_no_history(id);
+        }
 
         (id, self.tabs.len())
     }
@@ -166,9 +185,8 @@ impl AppState {
     // TODO(scarlet): Create a unified fn for removing tabs (and adjusting history)
     pub fn close_tab(&mut self, id: usize) -> Result<(), Error> {
         if let Some(index) = self.tabs.iter().position(|t| t.get_id() == id) {
+            self.record_closed_tabs(&[id]);
             self.tabs.remove(index);
-
-            self.remove_tabs_from_history(&vec![id]);
             self.switch_to_last_active_tab();
 
             Ok(())
@@ -193,8 +211,9 @@ impl AppState {
             ));
         }
 
+        self.record_closed_tabs(&ids);
+
         self.tabs.retain(|t| t.get_is_pinned() || t.get_id() == id);
-        self.remove_tabs_from_history(&ids);
         self.switch_to_last_active_tab();
 
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
@@ -212,13 +231,14 @@ impl AppState {
             .position(|t| t.get_id() == id)
             .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
 
+        self.record_closed_tabs(&ids);
+
         let mut i = 0usize;
         self.tabs.retain(|t| {
             let keep = i >= index || t.get_is_pinned();
             i += 1;
             keep
         });
-        self.remove_tabs_from_history(&ids);
         self.switch_to_last_active_tab();
 
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
@@ -236,13 +256,14 @@ impl AppState {
             .position(|t| t.get_id() == id)
             .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
 
+        self.record_closed_tabs(&ids);
+
         let mut i = 0usize;
         self.tabs.retain(|t| {
             let keep = i <= index || t.get_is_pinned();
             i += 1;
             keep
         });
-        self.remove_tabs_from_history(&ids);
         self.switch_to_last_active_tab();
 
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
@@ -254,9 +275,10 @@ impl AppState {
         // Get the IDs that will be closed
         let ids = self.get_close_all_tab_ids()?;
 
+        self.record_closed_tabs(&ids);
+
         // Remove all non-pinned tabs, keeping order of pinned ones
         self.tabs.retain(|t| t.get_is_pinned());
-        self.remove_tabs_from_history(&ids);
         self.switch_to_last_active_tab();
 
         Ok(ids)
@@ -266,17 +288,19 @@ impl AppState {
         // Get the IDs that will be closed
         let ids = self.get_close_clean_tab_ids()?;
 
+        self.record_closed_tabs(&ids);
+
         // Remove all clean non-pinned tabs, keeping order of pinned ones
         self.tabs.retain(|t| t.get_is_pinned() || t.get_modified());
-        self.remove_tabs_from_history(&ids);
         self.switch_to_last_active_tab();
 
         Ok(ids)
     }
 
-    pub fn move_active_tab_by(&mut self, delta: i64) -> usize {
+    // Returns the id and a flag indicating whether a closed tab was reopened
+    pub fn move_active_tab_by(&mut self, delta: i64) -> (usize, bool) {
         if self.tabs.is_empty() {
-            return self.active_tab_id;
+            return (self.active_tab_id, false);
         }
 
         let history_enabled = self.config_manager().get_snapshot().editor_tab_history;
@@ -293,41 +317,77 @@ impl AppState {
             let next_idx = (current_idx + delta).rem_euclid(tab_count) as usize;
             let tab_id = self.tabs[next_idx].get_id();
             self.activate_tab(tab_id);
-            return tab_id;
+            return (tab_id, false);
         }
 
         // If there are no tabs in history, do nothing
         if self.active_tab_history.is_empty() || delta == 0 {
-            return self.active_tab_id;
+            return (self.active_tab_id, false);
         }
 
         // Determine starting index in the visit log
-        let start_idx = match self.history_pos {
+        let mut start_idx = match self.history_pos {
             None => self.active_tab_history.len() - 1,
             Some(i) => i,
         };
 
-        let next_idx_opt = if delta < 0 {
-            // Backwards
-            self.previous_distinct_history_entry(start_idx)
-        } else {
-            // Forwards
-            self.next_distinct_history_entry(start_idx)
-        };
+        let going_back = delta < 0;
 
-        let next_idx = match next_idx_opt {
-            Some(i) => i,
-            None => {
-                self.history_pos = Some(start_idx);
-                return self.active_tab_id;
+        loop {
+            if self.active_tab_history.is_empty() {
+                self.history_pos = None;
+                return (self.active_tab_id, false);
             }
-        };
 
-        let tab_id = self.active_tab_history[next_idx];
-        self.active_tab_id = tab_id;
-        self.history_pos = Some(next_idx);
+            let next_idx_opt = if delta < 0 {
+                // Backwards
+                self.previous_distinct_history_entry(start_idx)
+            } else {
+                // Forwards
+                self.next_distinct_history_entry(start_idx)
+            };
 
-        tab_id
+            let next_idx = match next_idx_opt {
+                Some(i) => i,
+                None => {
+                    self.history_pos = Some(start_idx);
+                    return (self.active_tab_id, false);
+                }
+            };
+
+            let original_tab_id = self.active_tab_history[next_idx];
+
+            match self.resolve_history_target(original_tab_id) {
+                ResolveOutcome::Existing(id) => {
+                    self.active_tab_id = id;
+                    self.history_pos = Some(next_idx);
+                    return (id, false);
+                }
+                ResolveOutcome::Reopened(id) => {
+                    self.active_tab_id = id;
+                    self.history_pos = Some(next_idx);
+                    return (id, true);
+                }
+                ResolveOutcome::Unresolvable => {
+                    // Drop this entry from history and keep looking
+                    self.active_tab_history.remove(next_idx);
+
+                    if self.active_tab_history.is_empty() {
+                        self.history_pos = None;
+                        return (self.active_tab_id, false);
+                    }
+
+                    // Adjust start_idx
+                    if going_back {
+                        start_idx = next_idx.saturating_sub(1);
+                    } else {
+                        start_idx = next_idx.min(self.active_tab_history.len() - 1);
+                    }
+
+                    continue;
+                }
+            }
+        }
     }
 
     pub fn pin_tab(&mut self, id: usize) -> Result<(), Error> {
@@ -599,11 +659,9 @@ impl AppState {
         (start + 1..len).find(|&i| self.active_tab_history[i] != current)
     }
 
-    // TODO(scarlet): Add a config option to reopen tabs that were previously visited (if they have
-    // a path)?
     fn remove_tabs_from_history(&mut self, ids: &Vec<usize>) {
         for id in ids {
-            self.active_tab_history.retain(|&x| x != *id);
+            self.active_tab_history.retain(|&i| i != *id);
         }
     }
 
@@ -621,16 +679,88 @@ impl AppState {
         self.history_pos = None;
     }
 
+    fn activate_tab_no_history(&mut self, id: usize) {
+        self.active_tab_id = id;
+    }
+
     fn switch_to_last_active_tab(&mut self) {
-        if self.tabs.iter().all(|t| t.get_id() != self.active_tab_id) {
-            self.active_tab_id = match self.config_manager().get_snapshot().editor_tab_history {
-                true => self.active_tab_history.last().copied().unwrap_or(0),
-                false => {
-                    if let Some(tab) = self.tabs.last() {
-                        tab.get_id()
-                    } else {
-                        0
-                    }
+        // No tabs left
+        if self.tabs.is_empty() {
+            self.active_tab_id = 0;
+            self.history_pos = None;
+            return;
+        }
+
+        let history_enabled = self.config_manager().get_snapshot().editor_tab_history;
+
+        if history_enabled && !self.active_tab_history.is_empty() {
+            // Walk history backwards and pick the most recent tab that still exists
+            if let Some(idx) = self
+                .active_tab_history
+                .iter()
+                .rposition(|id| self.tabs.iter().any(|t| t.get_id() == *id))
+            {
+                let id = self.active_tab_history[idx];
+                self.active_tab_id = id;
+                self.history_pos = Some(idx);
+                return;
+            }
+        }
+
+        // If history is disabled or no valid entry was found,
+        // pick the last tab in the list
+        self.active_tab_id = self.tabs.last().unwrap().get_id();
+        self.history_pos = None;
+    }
+
+    fn resolve_history_target(&mut self, id: usize) -> ResolveOutcome {
+        // If the tab still exists, use it
+        if self.tabs.iter().any(|t| t.get_id() == id) {
+            return ResolveOutcome::Existing(id);
+        }
+
+        // If the config setting is turned off, skip
+        let cfg = self.config_manager().get_snapshot();
+        if !cfg.editor_auto_reopen_closed_tabs_in_history {
+            return ResolveOutcome::Unresolvable;
+        }
+
+        // If there is recorded tab info, try to reopen it
+        let Some(info) = self.closed_tabs.remove(&id) else {
+            return ResolveOutcome::Unresolvable;
+        };
+
+        let (new_id, _) = self.new_tab(false);
+        if self.open_file(&info.path.to_string_lossy()).is_err() {
+            return ResolveOutcome::Unresolvable;
+        }
+
+        // Update the tab id
+        for history_id in &mut self.active_tab_history {
+            if *history_id == id {
+                *history_id = new_id;
+            }
+        }
+
+        ResolveOutcome::Reopened(new_id)
+    }
+
+    // Closed tab history
+    // TODO(scarlet): Add session restoration persistance? E.g. allowing history navigation even if
+    // history is empty by reopening past tabs
+    fn record_closed_tabs(&mut self, ids: &[usize]) {
+        for id in ids {
+            if let Some(tab) = self.tabs.iter().find(|t| t.get_id() == *id) {
+                if let Some(path) = tab.get_file_path() {
+                    self.closed_tabs.insert(
+                        *id,
+                        ClosedTabInfo {
+                            path: path.to_path_buf(),
+                        },
+                    );
+                } else {
+                    // If there is no path, remove from history
+                    self.remove_tabs_from_history(&vec![*id]);
                 }
             }
         }
@@ -682,7 +812,7 @@ mod test {
     fn open_file_returns_error_when_file_is_already_open() {
         let c = ConfigManager::default();
         let mut a = AppState::new(&c, None).unwrap();
-        a.new_tab();
+        a.new_tab(true);
         a.tabs[1].set_file_path(Some("test".to_string()));
 
         let result = a.open_file("test");
@@ -732,8 +862,8 @@ mod test {
     fn pin_tab_reorders_tabs_and_updates_active_index() {
         let c = ConfigManager::default();
         let mut a = AppState::new(&c, None).unwrap();
-        a.new_tab();
-        a.new_tab();
+        a.new_tab(true);
+        a.new_tab(true);
 
         a.tabs[0].set_title("A");
         a.tabs[1].set_title("B");
