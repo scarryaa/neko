@@ -117,8 +117,8 @@ QSplitter *MainWindowLayoutBuilder::buildSplitter(QWidget *editorSideContainer,
   auto *splitter = new QSplitter(Qt::Horizontal, rootParent);
 
   auto snapshot = props.appConfigService->getSnapshot();
-  auto fileExplorerRight = snapshot.file_explorer_right;
-  int savedSidebarWidth = static_cast<int>(snapshot.file_explorer_width);
+  auto fileExplorerRight = snapshot.file_explorer.right;
+  int savedSidebarWidth = static_cast<int>(snapshot.file_explorer.width);
 
   if (fileExplorerRight) {
     splitter->addWidget(editorSideContainer);
@@ -154,7 +154,7 @@ QSplitter *MainWindowLayoutBuilder::buildSplitter(QWidget *editorSideContainer,
                      auto snapshot = appConfigService->getSnapshot();
 
                      const bool fileExplorerRight =
-                         snapshot.file_explorer_right;
+                         snapshot.file_explorer.right;
                      const int fileExplorerWidth =
                          fileExplorerRight ? sizes[1] : sizes[0];
 

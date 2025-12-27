@@ -85,23 +85,36 @@ pub mod ffi {
         pub intents: Vec<UiIntentFfi>,
     }
 
+    struct EditorConfigFfi {
+        font_size: u32,
+        font_family: String,
+    }
+
+    struct FileExplorerConfigFfi {
+        font_size: u32,
+        font_family: String,
+        directory_present: bool,
+        directory: String,
+        shown: bool,
+        width: u32,
+        right: bool,
+    }
+
+    struct InterfaceConfigFfi {
+        font_size: u32,
+        font_family: String,
+    }
+
+    struct TerminalConfigFfi {
+        font_size: u32,
+        font_family: String,
+    }
+
     struct ConfigSnapshotFfi {
-        editor_font_size: u32,
-        editor_font_family: String,
-
-        file_explorer_font_size: u32,
-        file_explorer_font_family: String,
-        file_explorer_directory_present: bool,
-        file_explorer_directory: String,
-        file_explorer_shown: bool,
-        file_explorer_width: u32,
-        file_explorer_right: bool,
-
-        interface_font_family: String,
-        interface_font_size: u32,
-        terminal_font_family: String,
-        terminal_font_size: u32,
-
+        editor: EditorConfigFfi,
+        file_explorer: FileExplorerConfigFfi,
+        interface: InterfaceConfigFfi,
+        terminal: TerminalConfigFfi,
         current_theme: String,
     }
 

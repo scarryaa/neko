@@ -42,14 +42,14 @@ void UiStyleManager::onEditorFontSizeChangedByUser(double newFontSize) {
 void UiStyleManager::handleConfigChanged(
     const neko::ConfigSnapshotFfi &configSnapshot) {
   auto interfaceFont =
-      UiUtils::makeFont(QString::fromUtf8(configSnapshot.interface_font_family),
-                        configSnapshot.interface_font_size);
+      UiUtils::makeFont(QString::fromUtf8(configSnapshot.interface.font_family),
+                        configSnapshot.interface.font_size);
   auto fileExplorerFont = UiUtils::makeFont(
-      QString::fromUtf8(configSnapshot.file_explorer_font_family),
-      configSnapshot.file_explorer_font_size);
+      QString::fromUtf8(configSnapshot.file_explorer.font_family),
+      configSnapshot.file_explorer.font_size);
   auto editorFont =
-      UiUtils::makeFont(QString::fromUtf8(configSnapshot.editor_font_family),
-                        configSnapshot.editor_font_size);
+      UiUtils::makeFont(QString::fromUtf8(configSnapshot.editor.font_family),
+                        configSnapshot.editor.font_size);
 
   if (interfaceFont != m_interfaceFont) {
     m_interfaceFont = interfaceFont;

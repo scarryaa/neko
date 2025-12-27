@@ -370,21 +370,21 @@ impl ConfigManager {
 
     pub(crate) fn apply_snapshot_wrapper(&self, snap: ConfigSnapshotFfi) {
         self.update(|c| {
-            c.editor_font_size = snap.editor_font_size as usize;
-            c.editor_font_family = snap.editor_font_family;
+            c.editor.font_size = snap.editor.font_size as usize;
+            c.editor.font_family = snap.editor.font_family;
 
-            c.file_explorer_font_size = snap.file_explorer_font_size as usize;
-            c.file_explorer_font_family = snap.file_explorer_font_family;
+            c.file_explorer.font_size = snap.file_explorer.font_size as usize;
+            c.file_explorer.font_family = snap.file_explorer.font_family;
 
-            c.file_explorer_directory = if snap.file_explorer_directory_present {
-                Some(snap.file_explorer_directory)
+            c.file_explorer.directory = if snap.file_explorer.directory_present {
+                Some(snap.file_explorer.directory)
             } else {
                 None
             };
 
-            c.file_explorer_shown = snap.file_explorer_shown;
-            c.file_explorer_width = snap.file_explorer_width as usize;
-            c.file_explorer_right = snap.file_explorer_right;
+            c.file_explorer.shown = snap.file_explorer.shown;
+            c.file_explorer.width = snap.file_explorer.width as usize;
+            c.file_explorer.right = snap.file_explorer.right;
 
             c.current_theme = snap.current_theme;
         });

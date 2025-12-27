@@ -64,8 +64,8 @@ pub fn execute_command(
 ) -> CommandResult {
     match cmd {
         Command::FileExplorerToggle => {
-            let new_state = !config.get_snapshot().file_explorer_shown;
-            config.update(|c| c.file_explorer_shown = new_state);
+            let new_state = !config.get_snapshot().file_explorer.shown;
+            config.update(|c| c.file_explorer.shown = new_state);
 
             CommandResult {
                 intents: vec![UiIntent::ToggleFileExplorer],

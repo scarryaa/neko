@@ -40,9 +40,9 @@ FileExplorerConnections::FileExplorerConnections(
 
   // FileExplorerWidget -> load saved directory on startup
   const auto snapshot = appConfigService->getSnapshot();
-  if (snapshot.file_explorer_directory_present &&
-      !snapshot.file_explorer_directory.empty()) {
+  if (snapshot.file_explorer.directory_present &&
+      !snapshot.file_explorer.directory.empty()) {
     emit savedDirectoryLoaded(
-        QString::fromUtf8(snapshot.file_explorer_directory).toStdString());
+        QString::fromUtf8(snapshot.file_explorer.directory).toStdString());
   }
 }

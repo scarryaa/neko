@@ -9,28 +9,33 @@ use crate::{
 
 impl From<Config> for ConfigSnapshotFfi {
     fn from(c: Config) -> Self {
-        let (dir_present, dir) = match c.file_explorer_directory {
+        let (dir_present, dir) = match c.file_explorer.directory {
             Some(d) => (true, d),
             None => (false, String::new()),
         };
 
         Self {
-            editor_font_size: c.editor_font_size as u32,
-            editor_font_family: c.editor_font_family,
-
-            file_explorer_font_size: c.file_explorer_font_size as u32,
-            file_explorer_font_family: c.file_explorer_font_family,
-            file_explorer_directory_present: dir_present,
-            file_explorer_directory: dir,
-            file_explorer_shown: c.file_explorer_shown,
-            file_explorer_width: c.file_explorer_width as u32,
-            file_explorer_right: c.file_explorer_right,
-
-            terminal_font_family: c.terminal_font_family,
-            terminal_font_size: c.terminal_font_size as u32,
-            interface_font_family: c.interface_font_family,
-            interface_font_size: c.interface_font_size as u32,
-
+            editor: EditorConfigFfi {
+                font_size: c.editor.font_size as u32,
+                font_family: c.editor.font_family,
+            },
+            file_explorer: FileExplorerConfigFfi {
+                font_size: c.file_explorer.font_size as u32,
+                font_family: c.file_explorer.font_family,
+                directory_present: dir_present,
+                directory: dir,
+                shown: c.file_explorer.shown,
+                width: c.file_explorer.width as u32,
+                right: c.file_explorer.right,
+            },
+            interface: InterfaceConfigFfi {
+                font_size: c.interface.font_size as u32,
+                font_family: c.interface.font_family,
+            },
+            terminal: TerminalConfigFfi {
+                font_size: c.terminal.font_size as u32,
+                font_family: c.terminal.font_family,
+            },
             current_theme: c.current_theme,
         }
     }

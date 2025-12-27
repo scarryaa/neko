@@ -29,7 +29,7 @@ void AppConfigService::updateConfig(
 void AppConfigService::setInterfaceFontSize(int fontSize) {
   updateConfig(
       [fontSize](neko::ConfigSnapshotFfi &snapshot) {
-        snapshot.interface_font_size = fontSize;
+        snapshot.interface.font_size = fontSize;
       },
       EmitConfigChanged::Yes);
 }
@@ -37,7 +37,7 @@ void AppConfigService::setInterfaceFontSize(int fontSize) {
 void AppConfigService::setEditorFontSize(int fontSize) {
   updateConfig(
       [fontSize](neko::ConfigSnapshotFfi &snapshot) {
-        snapshot.editor_font_size = fontSize;
+        snapshot.editor.font_size = fontSize;
       },
       EmitConfigChanged::Yes);
 }
@@ -45,7 +45,7 @@ void AppConfigService::setEditorFontSize(int fontSize) {
 void AppConfigService::setFileExplorerFontSize(int fontSize) {
   updateConfig(
       [fontSize](neko::ConfigSnapshotFfi &snapshot) {
-        snapshot.file_explorer_font_size = fontSize;
+        snapshot.file_explorer.font_size = fontSize;
       },
       EmitConfigChanged::Yes);
 }
@@ -53,8 +53,8 @@ void AppConfigService::setFileExplorerFontSize(int fontSize) {
 void AppConfigService::setFileExplorerDirectory(const std::string &path) {
   updateConfig(
       [&path](neko::ConfigSnapshotFfi &snapshot) {
-        snapshot.file_explorer_directory_present = true;
-        snapshot.file_explorer_directory = path;
+        snapshot.file_explorer.directory_present = true;
+        snapshot.file_explorer.directory = path;
       },
       EmitConfigChanged::Yes);
 }
@@ -62,7 +62,7 @@ void AppConfigService::setFileExplorerDirectory(const std::string &path) {
 void AppConfigService::setFileExplorerShown(bool shown) {
   updateConfig(
       [shown](neko::ConfigSnapshotFfi &snapshot) {
-        snapshot.file_explorer_shown = shown;
+        snapshot.file_explorer.shown = shown;
       },
       EmitConfigChanged::No);
 }
@@ -70,7 +70,7 @@ void AppConfigService::setFileExplorerShown(bool shown) {
 void AppConfigService::setFileExplorerWidth(double width) {
   updateConfig(
       [width](neko::ConfigSnapshotFfi &snapshot) {
-        snapshot.file_explorer_width = static_cast<uint32_t>(width);
+        snapshot.file_explorer.width = static_cast<uint32_t>(width);
       },
       EmitConfigChanged::No);
 }

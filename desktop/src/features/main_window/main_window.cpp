@@ -194,7 +194,7 @@ void MainWindow::setupWidgets(neko::Editor *editor,
   auto themes = themeProvider->getCurrentThemes();
   auto fonts = uiStyleManager->getCurrentFonts();
   auto snapshot = appConfigService->getSnapshot();
-  const bool fileExplorerShown = snapshot.file_explorer_shown;
+  const bool fileExplorerShown = snapshot.file_explorer.shown;
 
   neko::FileTree *fileTree = &appStateController->getFileTreeMut();
   auto *fileTreeController =

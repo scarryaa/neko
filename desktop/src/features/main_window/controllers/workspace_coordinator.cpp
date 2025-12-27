@@ -58,7 +58,7 @@ void WorkspaceCoordinator::fileExplorerToggled() {
   uiHandles->fileExplorerWidget->setVisible(shouldShow);
 
   auto snapshot = appConfigService->getSnapshot();
-  snapshot.file_explorer_shown = shouldShow;
+  snapshot.file_explorer.shown = shouldShow;
   appConfigService->setFileExplorerShown(shouldShow);
 
   emit onFileExplorerToggledViaShortcut(
@@ -509,7 +509,7 @@ void WorkspaceCoordinator::applyInitialState() {
   refreshStatusBarCursorInfo();
 
   auto cfg = appConfigService->getSnapshot();
-  if (!cfg.file_explorer_shown) {
+  if (!cfg.file_explorer.shown) {
     uiHandles->fileExplorerWidget->hide();
   }
 

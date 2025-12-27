@@ -694,7 +694,8 @@ impl AppState {
         let history_enabled = self
             .config_manager()
             .get_snapshot()
-            .editor_switch_to_last_visited_tab_on_close;
+            .editor
+            .switch_to_last_visited_tab_on_close;
 
         if history_enabled && !self.active_tab_history.is_empty() {
             // Walk history backwards and pick the most recent tab that still exists
@@ -744,7 +745,7 @@ impl AppState {
 
         // If the config setting is turned off, skip
         let cfg = self.config_manager().get_snapshot();
-        if !cfg.editor_auto_reopen_closed_tabs_in_history {
+        if !cfg.editor.auto_reopen_closed_tabs_in_history {
             return ResolveOutcome::Unresolvable;
         }
 
