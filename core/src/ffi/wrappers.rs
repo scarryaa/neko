@@ -101,16 +101,12 @@ impl AppState {
             .map(Self::make_tab_snapshot)
             .collect();
 
-        let active_present = !self.get_tabs().is_empty();
-        let active_id = if active_present {
-            self.get_active_tab_id() as u64
-        } else {
-            0
-        };
+        let active_id = self.get_active_tab_id();
+        let active_present = self.get_tabs().iter().any(|t| t.get_id() == active_id);
 
         TabsSnapshot {
             active_present,
-            active_id,
+            active_id: if active_present { active_id as u64 } else { 0 },
             tabs,
         }
     }

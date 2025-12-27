@@ -31,6 +31,8 @@ WorkspaceCoordinator::WorkspaceCoordinator(
   // TabController -> WorkspaceCoordinator
   connect(tabController, &TabController::activeTabChanged, this,
           &WorkspaceCoordinator::refreshUiForActiveTab);
+  connect(tabController, &TabController::allTabsClosed, this,
+          [this] { refreshUiForActiveTab(false); });
 
   // TabController -> TabBarWidget
   connect(tabController, &TabController::tabOpened, uiHandles->tabBarWidget,
@@ -146,7 +148,6 @@ void WorkspaceCoordinator::fileSelected(const std::string &path,
     for (const auto &tab : snapshot.tabs) {
       if (tab.path_present && tab.path == path) {
         tabController->setActiveTab(static_cast<int>(tab.id));
-        refreshUiForActiveTab(focusEditor);
         return;
       }
     }
@@ -158,8 +159,6 @@ void WorkspaceCoordinator::fileSelected(const std::string &path,
     tabController->closeTab(newTabId);
     return;
   }
-
-  refreshUiForActiveTab(focusEditor);
 }
 
 void WorkspaceCoordinator::fileSaved(bool saveAs) {
@@ -255,15 +254,11 @@ void WorkspaceCoordinator::newTab() {
   saveScrollOffsetsForActiveTab();
 
   tabController->addTab();
-
-  refreshUiForActiveTab(true);
 }
 
 void WorkspaceCoordinator::tabChanged(int tabId) {
   saveScrollOffsetsForActiveTab();
   tabController->setActiveTab(tabId);
-
-  refreshUiForActiveTab(true);
 }
 
 void WorkspaceCoordinator::tabUnpinned(int tabId) {
@@ -537,15 +532,17 @@ void WorkspaceCoordinator::refreshUiForActiveTab(bool focusEditor) {
     return;
   }
 
+  // IMPORTANT: set active editor before re-showing widgets, otherwise
+  // Qt layout triggers a resize event (which queries the line count with the
+  // old editor reference)
+  neko::Editor &activeEditor = appStateController->getActiveEditorMut();
+  setActiveEditor(&activeEditor);
+
   uiHandles->emptyStateWidget->hide();
   uiHandles->tabBarContainerWidget->show();
   uiHandles->editorWidget->show();
   uiHandles->gutterWidget->show();
   uiHandles->statusBarWidget->showCursorPositionInfo();
-
-  // Update active editor
-  neko::Editor &activeEditor = appStateController->getActiveEditorMut();
-  setActiveEditor(&activeEditor);
 
   uiHandles->editorWidget->updateDimensions();
   uiHandles->editorWidget->redraw();
@@ -565,7 +562,6 @@ void WorkspaceCoordinator::handleTabsClosed() {
   const int newTabCount = static_cast<int>(snapshot.tabs.size());
 
   uiHandles->statusBarWidget->onTabClosed(newTabCount);
-  refreshUiForActiveTab(true);
 }
 
 void WorkspaceCoordinator::setActiveEditor(neko::Editor *editor) {

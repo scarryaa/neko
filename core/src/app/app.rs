@@ -11,6 +11,8 @@ pub struct AppState {
     active_tab_id: usize,
     file_tree: FileTree,
     next_tab_id: usize,
+    /// Tracks last activated tabs by id
+    active_tab_history: Vec<usize>,
 }
 
 impl AppState {
@@ -20,6 +22,7 @@ impl AppState {
             active_tab_id: 0,
             file_tree: FileTree::new(root_path)?,
             next_tab_id: 0,
+            active_tab_history: vec![0],
         };
 
         state.new_tab();
@@ -146,7 +149,8 @@ impl AppState {
         let tab = Tab::new(id);
 
         self.tabs.push(tab);
-        self.active_tab_id = id;
+        self.activate_tab(id);
+
         (id, self.tabs.len())
     }
 
@@ -154,13 +158,8 @@ impl AppState {
         if let Some(index) = self.tabs.iter().position(|t| t.get_id() == id) {
             self.tabs.remove(index);
 
-            if self.active_tab_id == id && !self.tabs.is_empty() {
-                if let Some(last_id) = self.tabs.last().map(|t| t.get_id()) {
-                    self.active_tab_id = last_id;
-                }
-            } else if self.tabs.is_empty() {
-                self.active_tab_id = 0;
-            }
+            self.remove_tabs_from_history(&vec![id]);
+            self.switch_to_last_active_tab();
 
             Ok(())
         } else {
@@ -185,12 +184,8 @@ impl AppState {
         }
 
         self.tabs.retain(|t| t.get_is_pinned() || t.get_id() == id);
-
-        if self.tabs.is_empty() {
-            self.active_tab_id = 0;
-        } else {
-            self.active_tab_id = id;
-        }
+        self.remove_tabs_from_history(&ids);
+        self.switch_to_last_active_tab();
 
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
 
@@ -213,10 +208,9 @@ impl AppState {
             i += 1;
             keep
         });
+        self.remove_tabs_from_history(&ids);
+        self.switch_to_last_active_tab();
 
-        if !self.tabs.iter().any(|t| t.get_id() == self.active_tab_id) {
-            self.active_tab_id = if self.tabs.is_empty() { 0 } else { id };
-        }
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
 
         Ok(ids)
@@ -238,10 +232,8 @@ impl AppState {
             i += 1;
             keep
         });
-
-        if !self.tabs.iter().any(|t| t.get_id() == self.active_tab_id) {
-            self.active_tab_id = if self.tabs.is_empty() { 0 } else { id };
-        }
+        self.remove_tabs_from_history(&ids);
+        self.switch_to_last_active_tab();
 
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
 
@@ -254,12 +246,8 @@ impl AppState {
 
         // Remove all non-pinned tabs, keeping order of pinned ones
         self.tabs.retain(|t| t.get_is_pinned());
-
-        // If the current active tab is gone, pick a new one
-        let still_has_active = self.tabs.iter().any(|t| t.get_id() == self.active_tab_id);
-        if !still_has_active {
-            self.active_tab_id = self.tabs.first().map(|t| t.get_id()).unwrap_or(0);
-        }
+        self.remove_tabs_from_history(&ids);
+        self.switch_to_last_active_tab();
 
         Ok(ids)
     }
@@ -270,12 +258,8 @@ impl AppState {
 
         // Remove all clean non-pinned tabs, keeping order of pinned ones
         self.tabs.retain(|t| t.get_is_pinned() || t.get_modified());
-
-        // If the current active tab is gone, pick a new one
-        let still_has_active = self.tabs.iter().any(|t| t.get_id() == self.active_tab_id);
-        if !still_has_active {
-            self.active_tab_id = self.tabs.first().map(|t| t.get_id()).unwrap_or(0);
-        }
+        self.remove_tabs_from_history(&ids);
+        self.switch_to_last_active_tab();
 
         Ok(ids)
     }
@@ -349,7 +333,7 @@ impl AppState {
 
     pub fn set_active_tab(&mut self, id: usize) -> Result<(), Error> {
         if self.tabs.iter().any(|t| t.get_id() == id) {
-            self.active_tab_id = id;
+            self.activate_tab(id);
             Ok(())
         } else {
             Err(Error::new(
@@ -412,6 +396,7 @@ impl AppState {
         Ok(())
     }
 
+    // TODO: Extract duplicated logic in the save_active_tab_* methods
     pub fn save_active_tab(&mut self) -> Result<(), std::io::Error> {
         let tab = self
             .tabs
@@ -517,6 +502,24 @@ impl AppState {
         self.next_tab_id += 1;
 
         id
+    }
+
+    fn activate_tab(&mut self, id: usize) {
+        self.active_tab_history.retain(|&x| x != id);
+        self.active_tab_history.push(id);
+        self.active_tab_id = id;
+    }
+
+    fn remove_tabs_from_history(&mut self, ids: &Vec<usize>) {
+        for id in ids {
+            self.active_tab_history.retain(|&x| x != *id);
+        }
+    }
+
+    fn switch_to_last_active_tab(&mut self) {
+        if self.tabs.iter().all(|t| t.get_id() != self.active_tab_id) {
+            self.active_tab_id = self.active_tab_history.last().copied().unwrap_or(0);
+        }
     }
 }
 

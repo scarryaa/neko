@@ -50,6 +50,7 @@ signals:
   void
   tabUpdated(const TabPresentation &tab); // updated title/path/pinned/modified
   void activeTabChanged(int tabId);
+  void allTabsClosed();
 
 private:
   static TabPresentation fromSnapshot(const neko::TabSnapshot &tab);

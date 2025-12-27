@@ -117,6 +117,8 @@ bool TabController::closeTab(int tabId) {
 
   if (result.has_active) {
     emit activeTabChanged(static_cast<int>(result.active_id));
+  } else {
+    emit allTabsClosed();
   }
 
   return true;
@@ -135,6 +137,8 @@ bool TabController::closeAllTabs() {
 
   if (result.has_active) {
     emit activeTabChanged(static_cast<int>(result.active_id));
+  } else {
+    emit allTabsClosed();
   }
 
   return true;
