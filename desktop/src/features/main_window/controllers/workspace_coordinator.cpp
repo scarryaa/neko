@@ -107,22 +107,20 @@ void WorkspaceCoordinator::commandPaletteGoToPosition(int row, int col) {
 }
 
 void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
+  rust::String key;
+  rust::String displayName;
   neko::CommandKindFfi kind;
   rust::String argument;
 
-  // TODO(scarlet): Avoid hardcoding command strings
-  if (command == "file explorer: toggle") {
-    kind = neko::CommandKindFfi::FileExplorerToggle;
-  } else if (command == "set theme: light") {
-    kind = neko::CommandKindFfi::ChangeTheme;
-    argument = rust::String("Default Light");
-  } else if (command == "set theme: dark") {
-    kind = neko::CommandKindFfi::ChangeTheme;
-    argument = rust::String("Default Dark");
-  } else if (command == "editor: open config") {
-    kind = neko::CommandKindFfi::OpenConfig;
-  } else {
-    return;
+  const auto commands = AppStateController::getAvailableCommands();
+  for (const auto &nekoCommand : commands) {
+    if (command == nekoCommand.display_name) {
+      key = nekoCommand.key;
+      displayName = nekoCommand.display_name;
+      kind = nekoCommand.kind;
+      argument = nekoCommand.argument;
+      break;
+    }
   }
 
   const auto beforeSnapshot = tabController->getTabsSnapshot();
@@ -130,7 +128,7 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
     saveScrollOffsetsForActiveTab();
   }
 
-  auto result = commandExecutor->execute(kind, std::move(argument));
+  auto result = commandExecutor->execute(key, displayName, kind, argument);
 
   for (auto &intent : result.intents) {
     switch (intent.kind) {

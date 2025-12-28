@@ -148,14 +148,20 @@ impl From<Command> for CommandFfi {
     fn from(command: Command) -> Self {
         match command {
             Command::FileExplorerToggle => CommandFfi {
+                key: command.key(),
+                display_name: command.to_string(),
                 kind: CommandKindFfi::FileExplorerToggle,
                 argument: String::new(),
             },
-            Command::ChangeTheme(t) => CommandFfi {
+            Command::ChangeTheme(ref t) => CommandFfi {
+                key: command.key(),
+                display_name: command.to_string(),
                 kind: CommandKindFfi::ChangeTheme,
-                argument: t,
+                argument: t.to_string(),
             },
             Command::OpenConfig => CommandFfi {
+                key: command.key(),
+                display_name: command.to_string(),
                 kind: CommandKindFfi::OpenConfig,
                 argument: String::new(),
             },

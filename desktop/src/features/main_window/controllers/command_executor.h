@@ -17,8 +17,10 @@ class CommandExecutor {
 public:
   explicit CommandExecutor(const CommandExecutorProps &props);
 
-  neko::CommandResultFfi execute(neko::CommandKindFfi kind,
-                                 rust::String argument = rust::String(""));
+  neko::CommandResultFfi execute(const rust::String &key,
+                                 const rust::String &displayName,
+                                 neko::CommandKindFfi kind,
+                                 const rust::String &argument);
 
 private:
   neko::ConfigManager *configManager;

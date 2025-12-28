@@ -21,6 +21,18 @@ AppStateController::getTabCommandState(const neko::TabContextFfi &ctx) const {
   return neko::get_tab_command_state(*appState, ctx.id);
 }
 
+std::vector<neko::CommandFfi> AppStateController::getAvailableCommands() {
+  auto rawCommands = neko::get_available_commands();
+  std::vector<neko::CommandFfi> commands = {};
+  commands.reserve(commands.size());
+
+  for (const auto &command : rawCommands) {
+    commands.push_back(command);
+  }
+
+  return commands;
+}
+
 std::vector<neko::TabCommandFfi> AppStateController::getAvailableTabCommands() {
   auto rawCommands = neko::get_available_tab_commands();
   std::vector<neko::TabCommandFfi> commands = {};

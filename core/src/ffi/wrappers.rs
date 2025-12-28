@@ -1,7 +1,8 @@
 use super::*;
 use crate::{
     AppState, ConfigManager, Editor, FileTree, ShortcutsManager, Tab, ThemeManager,
-    execute_command, get_available_tab_commands, run_tab_command, tab_command_state,
+    commands::get_available_commands, execute_command, get_available_tab_commands, run_tab_command,
+    tab_command_state,
 };
 use std::path::PathBuf;
 
@@ -729,8 +730,18 @@ pub(crate) fn execute_command_wrapper(
     execute_command(cmd.into(), config, theme, app).into()
 }
 
-pub(crate) fn new_command(kind: CommandKindFfi, argument: String) -> CommandFfi {
-    CommandFfi { kind, argument }
+pub(crate) fn new_command(
+    key: String,
+    display_name: String,
+    kind: CommandKindFfi,
+    argument: String,
+) -> CommandFfi {
+    CommandFfi {
+        key,
+        display_name,
+        kind,
+        argument,
+    }
 }
 
 // Tab commands
@@ -757,6 +768,14 @@ pub(crate) fn run_tab_command_wrapper(
     ctx: TabContextFfi,
 ) -> bool {
     run_tab_command(app_state, id, &ctx.into()).is_ok()
+}
+
+pub fn get_available_commands_wrapper() -> Vec<CommandFfi> {
+    let Ok(commands) = get_available_commands() else {
+        return Vec::new();
+    };
+
+    commands.into_iter().map(|cmd| cmd.into()).collect()
 }
 
 pub fn get_available_tab_commands_wrapper() -> Vec<TabCommandFfi> {

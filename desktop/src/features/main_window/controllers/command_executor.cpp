@@ -6,9 +6,11 @@ CommandExecutor::CommandExecutor(const CommandExecutorProps &props)
     : configManager(props.configManager), themeManager(props.themeManager),
       appState(props.appState), appConfigService(props.appConfigService) {}
 
-neko::CommandResultFfi CommandExecutor::execute(neko::CommandKindFfi kind,
-                                                rust::String argument) {
-  auto commandFfi = neko::new_command(kind, std::move(argument));
+neko::CommandResultFfi CommandExecutor::execute(const rust::String &key,
+                                                const rust::String &displayName,
+                                                neko::CommandKindFfi kind,
+                                                const rust::String &argument) {
+  auto commandFfi = neko::new_command(key, displayName, kind, argument);
   auto result = neko::execute_command(commandFfi, *configManager, *themeManager,
                                       *appState);
 

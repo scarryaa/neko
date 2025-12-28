@@ -15,6 +15,15 @@ impl Command {
             Command::OpenConfig => "Editor::OpenConfig".into(),
         }
     }
+
+    pub fn all() -> Vec<Command> {
+        vec![
+            Command::FileExplorerToggle,
+            Command::ChangeTheme("Default Dark".to_string()),
+            Command::ChangeTheme("Default Light".to_string()),
+            Command::OpenConfig,
+        ]
+    }
 }
 
 impl FromStr for Command {
@@ -34,9 +43,9 @@ impl FromStr for Command {
 impl Display for Command {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Command::FileExplorerToggle => write!(f, "Toggle file explorer"),
-            Command::ChangeTheme(name) => write!(f, "Change theme to {name}"),
-            Command::OpenConfig => write!(f, "Open config in editor"),
+            Command::FileExplorerToggle => write!(f, "file explorer: toggle"),
+            Command::ChangeTheme(name) => write!(f, "theme: {}", name.to_lowercase()),
+            Command::OpenConfig => write!(f, "editor: open config"),
         }
     }
 }

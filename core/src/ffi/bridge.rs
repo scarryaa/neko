@@ -61,6 +61,8 @@ pub mod ffi {
     }
 
     struct CommandFfi {
+        key: String,
+        display_name: String,
         kind: CommandKindFfi,
         argument: String,
     }
@@ -455,7 +457,14 @@ pub mod ffi {
             theme: &mut ThemeManager,
             app: &mut AppState,
         ) -> CommandResultFfi;
-        pub(crate) fn new_command(kind: CommandKindFfi, argument: String) -> CommandFfi;
+        pub(crate) fn new_command(
+            key: String,
+            display_name: String,
+            kind: CommandKindFfi,
+            argument: String,
+        ) -> CommandFfi;
+        #[cxx_name = "get_available_commands"]
+        pub(crate) fn get_available_commands_wrapper() -> Vec<CommandFfi>;
 
         // Tab commands
         pub(crate) fn get_tab_command_state(app_state: &AppState, id: u64) -> TabCommandStateFfi;

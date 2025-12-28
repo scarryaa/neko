@@ -2,6 +2,7 @@
 #include "features/command_palette/current_size_stacked_widget.h"
 #include "features/command_palette/palette_divider.h"
 #include "features/command_palette/palette_frame.h"
+#include "features/main_window/controllers/app_state_controller.h"
 #include "utils/mac_utils.h"
 #include "utils/ui_utils.h"
 #include <QDialog>
@@ -23,26 +24,6 @@
 #include <neko-core/src/ffi/bridge.rs.h>
 
 namespace {
-enum class CommandId : uint8_t {
-  ToggleFileExplorer,
-  ThemeLight,
-  ThemeDark,
-  OpenConfig
-};
-
-struct CommandDef {
-  CommandId id;
-  QString displayString;
-};
-
-// TODO(scarlet): Make this pull from rust/easier to add commands
-inline const std::array<CommandDef, 4> COMMANDS = {{
-    {CommandId::ToggleFileExplorer, QStringLiteral("file explorer: toggle")},
-    {CommandId::ThemeLight, QStringLiteral("set theme: light")},
-    {CommandId::ThemeDark, QStringLiteral("set theme: dark")},
-    {CommandId::OpenConfig, QStringLiteral("editor: open config")},
-}};
-
 bool isPrevNavKey(const QKeyEvent *event) {
   const int key = event->key();
   const auto mods = event->modifiers();
@@ -118,6 +99,7 @@ const std::array<CommandPaletteWidget::NavEntry,
 CommandPaletteWidget::navTable() {
   using NavEntry = CommandPaletteWidget::NavEntry;
 
+  // TODO(scarlet): Pull this from rust?
   static const std::array<NavEntry, CommandPaletteWidget::kNavCount> kNav = {{
       {"lb", &CommandPaletteWidget::jumpToLineStart},
       {"lm", &CommandPaletteWidget::jumpToLineMiddle},
@@ -744,10 +726,11 @@ void CommandPaletteWidget::emitCommandRequestFromInput() {
   }
 
   // TODO(scarlet): Allow aliases?
+  const auto availableCommands = AppStateController::getAvailableCommands();
   const bool commandIsKnown =
-      std::any_of(COMMANDS.begin(), COMMANDS.end(),
-                  [&command](const CommandDef &commandDef) {
-                    return commandDef.displayString == command;
+      std::any_of(availableCommands.begin(), availableCommands.end(),
+                  [&command](const neko::CommandFfi &nekoCommand) {
+                    return nekoCommand.display_name == command;
                   });
 
   if (commandIsKnown) {
@@ -1184,10 +1167,14 @@ void CommandPaletteWidget::updateCommandSuggestions(const QString &text) {
   commandSuggestions->clear();
 
   const QString textString = text.trimmed();
-  for (const CommandDef &def : COMMANDS) {
+  const auto availableCommands = AppStateController::getAvailableCommands();
+
+  for (const auto &command : availableCommands) {
+    const QString displayName = QString::fromUtf8(command.display_name);
+
     if (textString.isEmpty() ||
-        def.displayString.contains(textString, Qt::CaseInsensitive)) {
-      commandSuggestions->addItem(def.displayString);
+        displayName.contains(textString, Qt::CaseInsensitive)) {
+      commandSuggestions->addItem(displayName);
     }
   }
 

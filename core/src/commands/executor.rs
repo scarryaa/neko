@@ -56,3 +56,7 @@ pub fn execute_command(
         }
     }
 }
+
+pub fn get_available_commands() -> std::io::Result<Vec<Command>> {
+    Ok(Command::all().to_vec())
+}

@@ -21,8 +21,8 @@ public:
   [[nodiscard]] neko::FileTree &getFileTreeMut() const;
   [[nodiscard]] neko::TabCommandStateFfi
   getTabCommandState(const neko::TabContextFfi &ctx) const;
-  [[nodiscard]] std::vector<
-      neko::TabCommandFfi> static getAvailableTabCommands();
+  static std::vector<neko::TabCommandFfi> getAvailableTabCommands();
+  static std::vector<neko::CommandFfi> getAvailableCommands();
 
   void runTabCommand(const std::string &commandId,
                      const neko::TabContextFfi &ctx);
