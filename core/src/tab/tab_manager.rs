@@ -1,4 +1,4 @@
-use super::{history::TabHistoryManager, model::Tab};
+use super::{ClosedTabInfo, ClosedTabStore, history::TabHistoryManager, model::Tab};
 use crate::Editor;
 use std::{
     io::{Error, ErrorKind},
@@ -18,6 +18,7 @@ pub struct TabManager {
     active_tab_id: usize,
     next_tab_id: usize,
     history_manager: TabHistoryManager,
+    closed_store: ClosedTabStore,
 }
 
 impl TabManager {
@@ -27,6 +28,7 @@ impl TabManager {
             active_tab_id: 0,
             next_tab_id: 0,
             history_manager: TabHistoryManager::new(),
+            closed_store: ClosedTabStore::default(),
         };
 
         state.new_tab(true);
@@ -658,7 +660,7 @@ impl TabManager {
         }
 
         // Try to get the path for this history id from closed_tabs
-        let maybe_path = self.history_manager.closed_path_for(id);
+        let maybe_path = self.closed_store.path_for(id);
 
         // If there is a currently open tab with the same path (even if id is different), target that
         if let Some(ref path) = maybe_path {
@@ -671,6 +673,7 @@ impl TabManager {
 
                 // Update history to point at the new id instead of the old one
                 self.history_manager.remap_id(id, new_id);
+                _ = self.closed_store.take(id);
 
                 return ResolveOutcome::Existing(new_id);
             }
@@ -698,7 +701,7 @@ impl TabManager {
         //                                   (should it be reset to None?)
 
         // If there is recorded tab info, try to reopen it
-        let Some(info) = self.history_manager.take_closed_info(id) else {
+        let Some(info) = self.closed_store.take(id) else {
             return ResolveOutcome::Unresolvable;
         };
 
@@ -713,11 +716,12 @@ impl TabManager {
     }
 
     fn record_closed_tabs(&mut self, ids: &[usize]) {
-        self.history_manager.record_closed_tabs(ids, |id| {
+        self.closed_store.record_closed_tabs(ids, |id| {
             self.tabs
                 .iter()
                 .find(|t| t.get_id() == id)
                 .and_then(|t| t.get_file_path().map(|p| p.to_path_buf()))
+                .map(|path| ClosedTabInfo { path })
         });
     }
 }

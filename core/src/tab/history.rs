@@ -1,20 +1,10 @@
-use std::{collections::HashMap, path::PathBuf};
-
-#[derive(Debug)]
-pub struct ClosedTabInfo {
-    pub path: PathBuf,
-    // title, scroll offsets, cursor pos, etc?
-    // TODO(scarlet): Extract 'reopen closed tab'/jump history into a separate manager?
-}
-
 // TODO(scarlet): Add tests
 #[derive(Debug, Default)]
 pub struct TabHistoryManager {
     /// Tracks last activated tabs by id
     active_tab_history: Vec<usize>,
-    // Index into active_tab_history when navigating
+    /// Index into active_tab_history when navigating
     history_pos: Option<usize>,
-    closed_tabs: HashMap<usize, ClosedTabInfo>,
 }
 
 impl TabHistoryManager {
@@ -22,7 +12,6 @@ impl TabHistoryManager {
         Self {
             active_tab_history: vec![0],
             history_pos: Some(0),
-            closed_tabs: HashMap::new(),
         }
     }
 
@@ -55,21 +44,12 @@ impl TabHistoryManager {
         self.active_tab_history.is_empty()
     }
 
-    pub fn closed_path_for(&self, id: usize) -> Option<PathBuf> {
-        self.closed_tabs.get(&id).map(|info| info.path.clone())
-    }
-
-    pub fn take_closed_info(&mut self, id: usize) -> Option<ClosedTabInfo> {
-        self.closed_tabs.remove(&id)
-    }
-
     pub fn remap_id(&mut self, old_id: usize, new_id: usize) {
         for history_id in &mut self.active_tab_history {
             if *history_id == old_id {
                 *history_id = new_id;
             }
         }
-        self.closed_tabs.remove(&old_id);
     }
 
     pub fn previous_distinct_history_entry(&self, start: usize) -> Option<usize> {
@@ -95,7 +75,6 @@ impl TabHistoryManager {
 
     pub fn remove_id_from_history(&mut self, id: usize) {
         self.active_tab_history.retain(|&h| h != id);
-        self.closed_tabs.remove(&id);
     }
 
     pub fn remove_index_from_history(&mut self, idx: usize) {
@@ -110,22 +89,5 @@ impl TabHistoryManager {
 
     pub fn set_history_pos(&mut self, pos: Option<usize>) {
         self.history_pos = pos;
-    }
-
-    // Closed tab history
-    // TODO(scarlet): Add session restoration persistance? E.g. allowing history navigation even if
-    // history is empty by reopening past tabs
-    pub fn record_closed_tabs<F>(&mut self, ids: &[usize], mut get_path: F)
-    where
-        F: FnMut(usize) -> Option<PathBuf>,
-    {
-        for &id in ids {
-            if let Some(path) = get_path(id) {
-                self.closed_tabs.insert(id, ClosedTabInfo { path });
-            } else {
-                // If there is no path, remove from history
-                self.remove_id_from_history(id);
-            }
-        }
     }
 }
