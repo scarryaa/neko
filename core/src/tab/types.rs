@@ -1,4 +1,4 @@
-use crate::{Selection, text::cursor_manager::CursorEntry};
+use crate::{CursorEntry, Selection};
 use std::path::PathBuf;
 
 #[derive(Debug)]

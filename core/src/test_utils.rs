@@ -1,4 +1,4 @@
-use crate::text::Buffer;
+use super::Buffer;
 
 pub fn create_buffer_from(content: &str) -> Buffer {
     Buffer::from(content)

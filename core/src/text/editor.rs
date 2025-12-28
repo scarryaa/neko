@@ -1,12 +1,8 @@
-use crate::{Buffer, Cursor, Selection};
-
 use super::{
-    Change, ChangeSet, Edit, Transaction, UndoHistory, ViewState,
-    change_set::OpFlags,
-    cursor_manager::{AddCursorDirection, CursorEntry, CursorManager},
-    selection_manager::SelectionManager,
-    width_manager::WidthManager,
+    Change, ChangeSet, CursorManager, Edit, OpFlags, Selection, SelectionManager, Transaction,
+    UndoHistory, ViewState, WidthManager,
 };
+use crate::{AddCursorDirection, Buffer, Cursor, CursorEntry};
 
 enum SelectionMode {
     Clear,
@@ -754,8 +750,6 @@ impl Editor {
 
 #[cfg(test)]
 mod tests {
-    use crate::text::cursor_manager::AddCursorDirection;
-
     use super::*;
 
     #[test]

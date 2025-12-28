@@ -1,10 +1,6 @@
-use crate::AppState;
-use crate::Editor;
-use crate::FileTree;
-use crate::ShortcutsManager;
-use crate::config::ConfigManager;
-use crate::ffi::wrappers::*;
-use crate::theme::ThemeManager;
+use crate::{
+    AppState, ConfigManager, Editor, FileTree, ShortcutsManager, ThemeManager, ffi::wrappers::*,
+};
 
 #[cxx::bridge(namespace = "neko")]
 pub mod ffi {

@@ -1,4 +1,5 @@
-use super::{Buffer, Cursor, Selection};
+use super::Selection;
+use crate::{Buffer, Cursor};
 
 #[derive(Default, Debug)]
 pub struct SelectionManager {

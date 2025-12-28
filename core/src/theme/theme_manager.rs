@@ -1,6 +1,5 @@
-use std::collections::HashMap;
-
 use super::Theme;
+use std::collections::HashMap;
 
 pub struct ThemeManager {
     current_theme: Theme,

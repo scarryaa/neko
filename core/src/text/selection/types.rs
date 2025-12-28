@@ -1,4 +1,4 @@
-use super::{Buffer, Cursor};
+use crate::{Buffer, Cursor};
 
 #[derive(Debug, Default, PartialEq, Eq, Clone)]
 pub struct Selection {

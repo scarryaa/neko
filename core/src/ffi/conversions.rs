@@ -1,11 +1,9 @@
-use std::path::PathBuf;
-
-use super::bridge::ffi::*;
+use super::*;
 use crate::{
-    Command, CommandResult, Config, Cursor, UiIntent,
-    commands::tab::{TabCommandState, TabContext},
-    text::{ChangeSet, cursor_manager::AddCursorDirection},
+    AddCursorDirection, ChangeSet, Command, CommandResult, Config, Cursor, TabCommandState,
+    TabContext, UiIntent,
 };
+use std::path::PathBuf;
 
 impl From<Config> for ConfigSnapshotFfi {
     fn from(c: Config) -> Self {

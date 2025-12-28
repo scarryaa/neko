@@ -1,6 +1,4 @@
-use super::{
-    Cursor, Edit, Editor, change_set::OpFlags, cursor_manager::CursorEntry, editor::DeleteResult,
-};
+use super::{Cursor, CursorEntry, Edit, Editor, OpFlags, editor::DeleteResult};
 
 impl Editor {
     pub fn insert_text(&mut self, text: &str) -> super::ChangeSet {

@@ -1,5 +1,5 @@
 use super::{Command, CommandResult, UiIntent};
-use crate::{AppState, config::ConfigManager, theme::ThemeManager};
+use crate::{AppState, ConfigManager, ThemeManager};
 
 pub fn execute_command(
     cmd: Command,

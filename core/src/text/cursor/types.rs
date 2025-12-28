@@ -1,5 +1,36 @@
-use super::Buffer;
+use crate::Buffer;
 use std::cmp::min;
+
+pub enum AddCursorDirection {
+    Above,
+    Below,
+    At { row: usize, col: usize },
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct CursorEntry {
+    pub id: u64,
+    pub cursor: Cursor,
+    pub column_group: Option<u64>,
+}
+
+impl CursorEntry {
+    pub fn individual(id: u64, cursor: &Cursor) -> Self {
+        CursorEntry {
+            id,
+            cursor: cursor.clone(),
+            column_group: None,
+        }
+    }
+
+    pub fn group(id: u64, cursor: &Cursor, column_group: u64) -> Self {
+        CursorEntry {
+            id,
+            cursor: cursor.clone(),
+            column_group: Some(column_group),
+        }
+    }
+}
 
 #[derive(Debug, Default, Eq, Clone)]
 pub struct Cursor {

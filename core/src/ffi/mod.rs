@@ -1,3 +1,5 @@
-pub mod bridge;
-pub mod conversions;
-pub mod wrappers;
+mod bridge;
+mod conversions;
+mod wrappers;
+
+pub use bridge::ffi::*;

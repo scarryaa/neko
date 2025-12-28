@@ -11,10 +11,16 @@ pub mod text;
 pub mod theme;
 
 pub use app::AppState;
-pub use commands::{Command, CommandResult, UiIntent};
-pub use config::Config;
-pub use file_system::{file_node::FileNode, file_tree::FileTree, operations};
+pub use commands::{
+    Command, CommandResult, UiIntent, execute_command, get_available_tab_commands, run_tab_command,
+    tab::{TabCommandState, TabContext},
+    tab_command_state,
+};
+pub use config::{Config, ConfigManager};
+pub use file_system::{FileNode, FileTree};
 pub use shortcuts::ShortcutsManager;
-pub(crate) use tab::{Tab, TabManager};
-pub use text::{Buffer, Cursor, Editor, Selection};
-pub use theme::Theme;
+pub(crate) use tab::{Tab, TabManager, types::*};
+pub use text::{
+    AddCursorDirection, Buffer, ChangeSet, Cursor, CursorEntry, Editor, Selection, SelectionManager,
+};
+pub use theme::{Theme, ThemeManager};

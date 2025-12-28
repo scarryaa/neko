@@ -1,36 +1,7 @@
-use super::{Buffer, Cursor};
+use super::{AddCursorDirection, Cursor, CursorEntry};
+use crate::Buffer;
 
-#[derive(Debug, Clone, Default)]
-pub struct CursorEntry {
-    pub id: u64,
-    pub cursor: Cursor,
-    pub column_group: Option<u64>,
-}
-
-impl CursorEntry {
-    pub fn individual(id: u64, cursor: &Cursor) -> Self {
-        CursorEntry {
-            id,
-            cursor: cursor.clone(),
-            column_group: None,
-        }
-    }
-
-    pub fn group(id: u64, cursor: &Cursor, column_group: u64) -> Self {
-        CursorEntry {
-            id,
-            cursor: cursor.clone(),
-            column_group: Some(column_group),
-        }
-    }
-}
-
-pub enum AddCursorDirection {
-    Above,
-    Below,
-    At { row: usize, col: usize },
-}
-
+// TODO(scarlet): Add tests
 #[derive(Default, Debug)]
 pub struct CursorManager {
     next_cursor_id: u64,

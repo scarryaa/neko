@@ -1,6 +1,4 @@
-use crate::{
-    Editor, FileTree, Tab, TabManager, config::ConfigManager, tab::types::MoveActiveTabResult,
-};
+use crate::{ConfigManager, Editor, FileTree, MoveActiveTabResult, Tab, TabManager};
 use std::io::Error;
 
 /// Application state.

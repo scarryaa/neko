@@ -1,8 +1,7 @@
 use super::{
-    ClosedTabInfo, ClosedTabStore, MoveActiveTabResult, ScrollOffsets, Tab,
-    history::TabHistoryManager,
+    ClosedTabInfo, ClosedTabStore, MoveActiveTabResult, ScrollOffsets, Tab, TabHistoryManager,
 };
-use crate::{Editor, Selection, text::cursor_manager::CursorEntry};
+use crate::{CursorEntry, Editor, Selection};
 use std::{
     io::{Error, ErrorKind},
     path::{Path, PathBuf},

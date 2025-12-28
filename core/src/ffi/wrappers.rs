@@ -1,12 +1,7 @@
-use super::bridge::ffi::*;
+use super::*;
 use crate::{
-    AppState, Editor, FileTree, ShortcutsManager, Tab,
-    commands::{
-        execute_command,
-        tab::{get_available_tab_commands, run_tab_command, tab_command_state},
-    },
-    config::ConfigManager,
-    theme::ThemeManager,
+    AppState, ConfigManager, Editor, FileTree, ShortcutsManager, Tab, ThemeManager,
+    execute_command, get_available_tab_commands, run_tab_command, tab_command_state,
 };
 use std::path::PathBuf;
 

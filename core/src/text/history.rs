@@ -1,4 +1,4 @@
-use super::{Buffer, Selection, cursor_manager::CursorEntry};
+use super::{Buffer, CursorEntry, Selection};
 
 #[derive(Clone, Debug)]
 pub enum Edit {
