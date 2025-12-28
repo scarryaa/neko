@@ -88,9 +88,8 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
       lineHeight,       firstVisibleLine, lastVisibleLine, verticalOffset,
       horizontalOffset, viewportWidth,    viewportHeight};
 
-  const std::vector<neko::CursorPosition> cursors =
-      editorController->getCursorPositions();
-  const neko::Selection selections = editorController->getSelection();
+  const auto cursors = editorController->getCursorPositions();
+  const auto selections = editorController->getSelection();
   const bool isEmpty = editorController->bufferIsEmpty();
 
   const double fontAscent = fontMetrics.ascent();

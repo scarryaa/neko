@@ -53,10 +53,10 @@ void EditorRenderer::drawSelections(QPainter *painter, const RenderState &state,
   painter->setPen(Qt::transparent);
 
   const auto selection = state.selections;
-  const int startRow = static_cast<int>(selection.start.row);
-  const int endRow = static_cast<int>(selection.end.row);
-  const int startCol = static_cast<int>(selection.start.col);
-  const int endCol = static_cast<int>(selection.end.col);
+  const int startRow = selection.start.row;
+  const int endRow = selection.end.row;
+  const int startCol = selection.start.column;
+  const int endCol = selection.end.column;
 
   if (startRow == endRow) {
     drawSingleLineSelection(painter, state, ctx, startRow, startCol, endCol);
@@ -225,6 +225,6 @@ void EditorRenderer::drawCursors(QPainter *painter, const RenderState &state,
       continue;
     }
 
-    drawCursor(static_cast<int>(cursor.row), static_cast<int>(cursor.col));
+    drawCursor(cursor.row, cursor.column);
   }
 }

@@ -286,10 +286,8 @@ void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
   if (selection.active) {
     wordSelectMode = true;
     lineSelectMode = false;
-    wordAnchorStart = {static_cast<int>(selection.start.row),
-                       static_cast<int>(selection.start.col)};
-    wordAnchorEnd = {static_cast<int>(selection.end.row),
-                     static_cast<int>(selection.end.col)};
+    wordAnchorStart = {selection.start.row, selection.start.column};
+    wordAnchorEnd = {selection.end.row, selection.end.column};
   } else {
     wordSelectMode = false;
     lineSelectMode = false;
@@ -377,9 +375,8 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
       horizontalOffset, viewportWidth,    viewportHeight};
 
   const QStringList lines = editorController->getLines();
-  const std::vector<neko::CursorPosition> cursors =
-      editorController->getCursorPositions();
-  const neko::Selection selections = editorController->getSelection();
+  const auto cursors = editorController->getCursorPositions();
+  const auto selections = editorController->getSelection();
   const bool isEmpty = editorController->isEmpty();
 
   const double fontAscent = fontMetrics.ascent();
@@ -516,8 +513,8 @@ void EditorWidget::scrollToCursor() {
   const int targetRow = static_cast<int>(cursor.row);
   const double lineHeight = fontMetrics.height();
 
-  const QString line = editorController->getLine(static_cast<int>(cursor.row));
-  const QString textBeforeCursor = line.mid(0, static_cast<int>(cursor.col));
+  const QString line = editorController->getLine(cursor.row);
+  const QString textBeforeCursor = line.mid(0, cursor.column);
 
   const double viewportWidth = viewport()->width();
   const double viewportHeight = viewport()->height();

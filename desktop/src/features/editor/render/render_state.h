@@ -1,6 +1,7 @@
 #ifndef RENDER_STATE_H
 #define RENDER_STATE_H
 
+#include "features/editor/types/types.h"
 #include "render_theme.h"
 #include <QFont>
 #include <QString>
@@ -11,8 +12,8 @@
 
 struct RenderState {
   const QStringList lines;
-  const std::vector<neko::CursorPosition> cursors;
-  const neko::Selection selections;
+  const std::vector<Cursor> cursors;
+  const Selection selections;
   const RenderTheme theme;
   const int lineCount;
   const double verticalOffset;

@@ -73,15 +73,15 @@ void WorkspaceCoordinator::cursorPositionClicked() {
     return;
   }
 
-  neko::CursorPosition cursor = editorController->getLastAddedCursor();
+  auto cursor = editorController->getLastAddedCursor();
   int lineCount = editorController->getLineCount();
 
   if (lineCount == 0) {
     return;
   }
 
-  auto maxCol = std::max<size_t>(
-      1, editorController->getLineLength(static_cast<int>(cursor.row)));
+  auto maxCol =
+      std::max<size_t>(1, editorController->getLineLength(cursor.row));
   auto lastLineMaxCol =
       std::max<size_t>(1, editorController->getLineLength(lineCount - 1));
 
@@ -92,8 +92,8 @@ void WorkspaceCoordinator::cursorPositionClicked() {
           .maxColumn = static_cast<int>(maxCol),
           .lastLineMaxColumn = static_cast<int>(lastLineMaxCol),
           .maxRow = lineCount,
-          .currentRow = static_cast<int>(cursor.row),
-          .currentColumn = static_cast<int>(cursor.col),
+          .currentRow = cursor.row,
+          .currentColumn = cursor.column,
       });
 }
 
@@ -533,7 +533,6 @@ void WorkspaceCoordinator::applyInitialState() {
     uiHandles->fileExplorerWidget->hide();
   }
 
-  editorController->refresh();
   uiHandles->editorWidget->setFocus();
 }
 
@@ -639,6 +638,5 @@ void WorkspaceCoordinator::refreshStatusBarCursorInfo() {
   int numberOfCursors =
       static_cast<int>(editorController->getCursorPositions().size());
   uiHandles->statusBarWidget->updateCursorPosition(
-      static_cast<int>(cursorPosition.row),
-      static_cast<int>(cursorPosition.col), numberOfCursors);
+      cursorPosition.row, cursorPosition.column, numberOfCursors);
 }

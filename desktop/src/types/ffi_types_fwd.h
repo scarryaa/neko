@@ -29,6 +29,7 @@ class CommandResultFfi;
 enum class CommandKindFfi : uint8_t;
 
 enum class AddCursorDirectionKind : uint8_t;
+class AddCursorDirectionFfi;
 } // namespace neko
 
 #endif

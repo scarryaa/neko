@@ -47,18 +47,17 @@ void GutterRenderer::drawText(QPainter *painter, const RenderState &state,
       state.measureWidth(QString::number(maxLineNumber));
   const double numWidth = state.measureWidth(QString::number(9));
 
-  const neko::Selection selection = state.selections;
-  const int selectionStartRow = static_cast<int>(selection.start.row);
-  const int selectionEndRow = static_cast<int>(selection.end.row);
-  const int selectionStartCol = static_cast<int>(selection.start.col);
-  const int selectionEndCol = static_cast<int>(selection.end.col);
+  const auto selection = state.selections;
+  const int selectionStartRow = selection.start.row;
+  const int selectionEndRow = selection.end.row;
+  const int selectionStartCol = selection.start.column;
+  const int selectionEndCol = selection.end.column;
   const bool selectionActive = selection.active;
 
   std::vector<uint8_t> rowsWithCursor(state.lineCount, 0);
   for (const auto &cursor : state.cursors) {
-    if (cursor.row >= 0 &&
-        static_cast<const int>(cursor.row) < rowsWithCursor.size()) {
-      rowsWithCursor[static_cast<const int>(cursor.row)] = 1;
+    if (cursor.row >= 0 && cursor.row < rowsWithCursor.size()) {
+      rowsWithCursor[cursor.row] = 1;
     }
   }
 
@@ -82,7 +81,7 @@ void GutterRenderer::drawLineHighlight(QPainter *painter,
   std::vector<int> highlightedLines = std::vector<int>();
   for (const auto cursor : cursors) {
     const int cursorRow = static_cast<int>(cursor.row);
-    const int cursorCol = static_cast<int>(cursor.col);
+    const int cursorCol = static_cast<int>(cursor.column);
 
     if (cursorRow < ctx.firstVisibleLine || cursorRow > ctx.lastVisibleLine) {
       return;

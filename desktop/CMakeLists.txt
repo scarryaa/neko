@@ -122,6 +122,9 @@ qt_add_executable(neko
     src/features/editor/render/editor_render_utils.cpp
     src/features/editor/render/editor_render_utils.h
 
+    # Editor types
+    src/features/editor/types/types.h
+
     # Editor/Gutter Renderers
     src/features/editor/render/editor_renderer.cpp
     src/features/editor/render/editor_renderer.h
