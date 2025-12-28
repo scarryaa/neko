@@ -56,6 +56,7 @@ signals:
   void tabMoved(int fromIndex, int toIndex);
   void
   tabUpdated(const TabPresentation &tab); // updated title/path/pinned/modified
+  void restoreScrollOffsetsForReopenedTab(const TabScrollOffsets &offsets);
   void activeTabChanged(int tabId);
   void allTabsClosed();
 

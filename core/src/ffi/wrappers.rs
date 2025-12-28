@@ -231,20 +231,40 @@ impl AppState {
         delta: i64,
         use_history: bool,
     ) -> MoveActiveTabResult {
-        let (id, reopened) = self.move_active_tab_by(delta, use_history);
+        let result = self.move_active_tab_by(delta, use_history);
 
         // Try to find the tab with this id
-        let snapshot = if let Ok(tab) = self.get_tab(id) {
-            Self::make_tab_snapshot(tab)
-        } else {
-            eprintln!("move_active_tab_by_wrapper: no Tab with id {id} (reopened: {reopened})");
-            TabSnapshot::default()
-        };
+        if let Some(found_id) = result.found_id {
+            let snapshot = if let Ok(tab) = self.get_tab(found_id) {
+                let mut snapshot = Self::make_tab_snapshot(tab);
 
-        MoveActiveTabResult {
-            id: id as u64,
-            reopened,
-            snapshot,
+                // Replace the scroll offsets
+                if let Some(scroll_offsets) = result.scroll_offsets {
+                    snapshot.scroll_offsets =
+                        (scroll_offsets.x as i32, scroll_offsets.y as i32).into();
+                }
+
+                snapshot
+            } else {
+                eprintln!(
+                    "move_active_tab_by_wrapper: no Tab with id {} (reopened: {})",
+                    found_id, result.reopened_tab
+                );
+                TabSnapshot::default()
+            };
+
+            MoveActiveTabResult {
+                id: found_id as u64,
+                reopened: result.reopened_tab,
+                snapshot,
+            }
+        } else {
+            eprintln!("move_active_tab_by_wrapper: no Tab id found");
+            MoveActiveTabResult {
+                id: 0,
+                reopened: false,
+                snapshot: TabSnapshot::default(),
+            }
         }
     }
 

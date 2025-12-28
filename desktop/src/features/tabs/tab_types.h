@@ -3,12 +3,18 @@
 
 #include <QString>
 
+struct TabScrollOffsets {
+  double x;
+  double y;
+};
+
 struct TabPresentation {
   int id;
   QString title;
   QString path;
   bool pinned;
   bool modified;
+  TabScrollOffsets scrollOffsets;
 };
 
 #endif

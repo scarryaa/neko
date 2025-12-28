@@ -1,6 +1,7 @@
 #ifndef WORKSPACE_COORDINATOR_H
 #define WORKSPACE_COORDINATOR_H
 
+#include "features/tabs/tab_types.h"
 class TabController;
 class WorkspaceController;
 class AppStateController;
@@ -62,6 +63,8 @@ public slots:
   void closeTab(int tabId, bool forceClose);
   void tabChanged(int tabId);
   void tabUnpinned(int tabId);
+  void
+  restoreScrollOffsetsForReopenedTab(const TabScrollOffsets &scrollOffsets);
 
 signals:
   void onFileExplorerToggledViaShortcut(bool isOpen);

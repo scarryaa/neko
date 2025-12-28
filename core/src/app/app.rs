@@ -1,4 +1,6 @@
-use crate::{Editor, FileTree, Tab, TabManager, config::ConfigManager};
+use crate::{
+    Editor, FileTree, Tab, TabManager, config::ConfigManager, tab::tab_manager::MoveActiveTabResult,
+};
 use std::io::Error;
 
 /// Application state.
@@ -124,15 +126,38 @@ impl AppState {
         self.tab_manager.close_clean_tabs(history_enabled)
     }
 
-    // Returns the id and a flag indicating whether a closed tab was reopened
-    pub fn move_active_tab_by(&mut self, delta: i64, use_history: bool) -> (usize, bool) {
+    // Returns the id, a flag indicating whether a closed tab was reopened, and the restored scroll
+    // offsets
+    // TODO(scarlet): Make this into a struct later
+    pub fn move_active_tab_by(&mut self, delta: i64, use_history: bool) -> MoveActiveTabResult {
         let auto_reopen_closed_tabs_in_history = self
             .config_manager()
             .get_snapshot()
             .editor
             .auto_reopen_closed_tabs_in_history;
-        self.tab_manager
-            .move_active_tab_by(delta, use_history, auto_reopen_closed_tabs_in_history)
+
+        let result = self.tab_manager.move_active_tab_by(
+            delta,
+            use_history,
+            auto_reopen_closed_tabs_in_history,
+        );
+
+        // Restore cursors, selections for reopened tab
+        if let Some(found_id) = result.found_id {
+            if let Ok(tab) = self.tab_manager.get_tab_mut(found_id) {
+                let editor = tab.get_editor_mut();
+
+                if let Some(ref cursors) = result.cursors {
+                    editor.cursor_manager_mut().set_cursors(cursors.to_vec());
+                }
+
+                if let Some(ref selections) = result.selections {
+                    editor.selection_manager_mut().set_selection(selections);
+                }
+            }
+        }
+
+        result
     }
 
     pub fn pin_tab(&mut self, id: usize) -> Result<(), Error> {

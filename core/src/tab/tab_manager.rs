@@ -1,13 +1,31 @@
 use super::{ClosedTabInfo, ClosedTabStore, history::TabHistoryManager, model::Tab};
-use crate::Editor;
+use crate::{Editor, Selection, text::cursor_manager::CursorEntry};
 use std::{
     io::{Error, ErrorKind},
     path::{Path, PathBuf},
 };
 
+pub struct ScrollOffsets {
+    pub x: usize,
+    pub y: usize,
+}
+
+pub struct MoveActiveTabResult {
+    pub found_id: Option<usize>,
+    pub reopened_tab: bool,
+    pub scroll_offsets: Option<ScrollOffsets>,
+    pub cursors: Option<Vec<CursorEntry>>,
+    pub selections: Option<Selection>,
+}
+
 enum ResolveOutcome {
     Existing(usize),
-    Reopened(usize),
+    Reopened {
+        id: usize,
+        scroll_offsets: (usize, usize),
+        cursors: Vec<CursorEntry>,
+        selections: Selection,
+    },
     Unresolvable,
 }
 
@@ -42,6 +60,17 @@ impl TabManager {
 
     pub fn get_tab(&self, id: usize) -> Result<&Tab, Error> {
         if let Some(tab) = self.tabs.iter().find(|t| t.get_id() == id) {
+            Ok(tab)
+        } else {
+            Err(Error::new(
+                ErrorKind::NotFound,
+                "Tab with given id not found",
+            ))
+        }
+    }
+
+    pub fn get_tab_mut(&mut self, id: usize) -> Result<&mut Tab, Error> {
+        if let Some(tab) = self.tabs.iter_mut().find(|t| t.get_id() == id) {
             Ok(tab)
         } else {
             Err(Error::new(
@@ -289,9 +318,15 @@ impl TabManager {
         delta: i64,
         use_history: bool,
         auto_reopen_closed_tabs_in_history: bool,
-    ) -> (usize, bool) {
+    ) -> MoveActiveTabResult {
         if self.tabs.is_empty() {
-            return (self.active_tab_id, false);
+            return MoveActiveTabResult {
+                found_id: Some(self.active_tab_id),
+                reopened_tab: false,
+                scroll_offsets: None,
+                cursors: None,
+                selections: None,
+            };
         }
 
         let history_enabled = use_history;
@@ -308,12 +343,26 @@ impl TabManager {
             let next_idx = (current_idx + delta).rem_euclid(tab_count) as usize;
             let tab_id = self.tabs[next_idx].get_id();
             self.activate_tab(tab_id);
-            return (tab_id, false);
+
+            // We don't need the cursors, selections, or scroll offsets here since the tab is already open
+            return MoveActiveTabResult {
+                found_id: Some(tab_id),
+                reopened_tab: false,
+                scroll_offsets: None,
+                cursors: None,
+                selections: None,
+            };
         }
 
         // If there are no tabs in history, do nothing
         if self.history_manager.is_empty() || delta == 0 {
-            return (self.active_tab_id, false);
+            return MoveActiveTabResult {
+                found_id: Some(self.active_tab_id),
+                reopened_tab: false,
+                scroll_offsets: None,
+                cursors: None,
+                selections: None,
+            };
         }
 
         // Determine starting index in the visit log
@@ -323,7 +372,13 @@ impl TabManager {
         loop {
             if self.history_manager.is_empty() {
                 self.history_manager.set_history_pos(None);
-                return (self.active_tab_id, false);
+                return MoveActiveTabResult {
+                    found_id: Some(self.active_tab_id),
+                    reopened_tab: false,
+                    scroll_offsets: None,
+                    cursors: None,
+                    selections: None,
+                };
             }
 
             let next_idx_opt = if delta < 0 {
@@ -339,7 +394,13 @@ impl TabManager {
                 Some(i) => i,
                 None => {
                     self.history_manager.set_history_pos(Some(start_idx));
-                    return (self.active_tab_id, false);
+                    return MoveActiveTabResult {
+                        found_id: Some(self.active_tab_id),
+                        reopened_tab: false,
+                        scroll_offsets: None,
+                        cursors: None,
+                        selections: None,
+                    };
                 }
             };
 
@@ -349,12 +410,32 @@ impl TabManager {
                 ResolveOutcome::Existing(id) => {
                     self.active_tab_id = id;
                     self.history_manager.set_history_pos(Some(next_idx));
-                    return (id, false);
+                    return MoveActiveTabResult {
+                        found_id: Some(id),
+                        reopened_tab: false,
+                        scroll_offsets: None,
+                        cursors: None,
+                        selections: None,
+                    };
                 }
-                ResolveOutcome::Reopened(id) => {
+                ResolveOutcome::Reopened {
+                    id,
+                    scroll_offsets,
+                    cursors,
+                    selections,
+                } => {
                     self.active_tab_id = id;
                     self.history_manager.set_history_pos(Some(next_idx));
-                    return (id, true);
+                    return MoveActiveTabResult {
+                        found_id: Some(id),
+                        reopened_tab: true,
+                        scroll_offsets: Some(ScrollOffsets {
+                            x: scroll_offsets.0,
+                            y: scroll_offsets.1,
+                        }),
+                        cursors: Some(cursors),
+                        selections: Some(selections),
+                    };
                 }
                 ResolveOutcome::Unresolvable => {
                     // Drop this entry from history and keep looking
@@ -362,7 +443,13 @@ impl TabManager {
 
                     if self.history_manager.is_empty() {
                         self.history_manager.set_history_pos(None);
-                        return (self.active_tab_id, false);
+                        return MoveActiveTabResult {
+                            found_id: Some(self.active_tab_id),
+                            reopened_tab: false,
+                            scroll_offsets: None,
+                            cursors: None,
+                            selections: None,
+                        };
                     }
 
                     // Adjust start_idx
@@ -712,16 +799,51 @@ impl TabManager {
 
         // Update the tab id in history
         self.history_manager.remap_id(id, new_id);
-        ResolveOutcome::Reopened(new_id)
+
+        // Grab the scroll offsets
+        ResolveOutcome::Reopened {
+            id: new_id,
+            scroll_offsets: info.scroll_offsets,
+            cursors: info.cursors,
+            selections: info.selections,
+        }
     }
 
     fn record_closed_tabs(&mut self, ids: &[usize]) {
         self.closed_store.record_closed_tabs(ids, |id| {
-            self.tabs
-                .iter()
-                .find(|t| t.get_id() == id)
-                .and_then(|t| t.get_file_path().map(|p| p.to_path_buf()))
-                .map(|path| ClosedTabInfo { path })
+            let path: PathBuf;
+            let scroll_offsets: (usize, usize);
+            let cursors: Vec<CursorEntry>;
+            let selections: Selection;
+
+            if let Some(tab) = self.tabs.iter().find(|t| t.get_id() == id) {
+                if let Some(found_path) = tab.get_file_path().map(|p| p.to_path_buf()) {
+                    let found_scroll_offsets = tab.get_scroll_offsets();
+                    scroll_offsets = (
+                        found_scroll_offsets.0 as usize,
+                        found_scroll_offsets.1 as usize,
+                    );
+
+                    path = found_path;
+
+                    let found_cursors = tab.get_editor().cursors();
+                    cursors = found_cursors;
+
+                    let found_selections = tab.get_editor().selection();
+                    selections = found_selections;
+                } else {
+                    return None;
+                }
+            } else {
+                return None;
+            }
+
+            Some(ClosedTabInfo {
+                path,
+                scroll_offsets: (scroll_offsets.0, scroll_offsets.1),
+                cursors,
+                selections,
+            })
         });
     }
 }

@@ -33,6 +33,8 @@ WorkspaceCoordinator::WorkspaceCoordinator(
           &WorkspaceCoordinator::refreshUiForActiveTab);
   connect(tabController, &TabController::allTabsClosed, this,
           [this] { refreshUiForActiveTab(false); });
+  connect(tabController, &TabController::restoreScrollOffsetsForReopenedTab,
+          this, &WorkspaceCoordinator::restoreScrollOffsetsForReopenedTab);
 
   // TabController -> TabBarWidget
   connect(tabController, &TabController::tabOpened, uiHandles->tabBarWidget,
@@ -566,6 +568,14 @@ void WorkspaceCoordinator::restoreScrollOffsetsForActiveTab() {
 
   uiHandles->editorWidget->horizontalScrollBar()->setValue(offsets.x);
   uiHandles->editorWidget->verticalScrollBar()->setValue(offsets.y);
+}
+
+void WorkspaceCoordinator::restoreScrollOffsetsForReopenedTab(
+    const TabScrollOffsets &scrollOffsets) {
+  uiHandles->editorWidget->horizontalScrollBar()->setValue(
+      static_cast<int>(scrollOffsets.x));
+  uiHandles->editorWidget->verticalScrollBar()->setValue(
+      static_cast<int>(scrollOffsets.y));
 }
 
 void WorkspaceCoordinator::refreshUiForActiveTab(bool focusEditor) {
