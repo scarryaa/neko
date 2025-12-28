@@ -1,9 +1,7 @@
 #include "command_palette_widget.h"
-#include "features/command_palette/command_palette_mode.h"
 #include "features/command_palette/current_size_stacked_widget.h"
 #include "features/command_palette/palette_divider.h"
 #include "features/command_palette/palette_frame.h"
-#include "theme/theme_types.h"
 #include "utils/mac_utils.h"
 #include "utils/ui_utils.h"
 #include <QDialog>

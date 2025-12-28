@@ -1,8 +1,8 @@
 #ifndef COMMAND_PALETTE_WIDGET_H
 #define COMMAND_PALETTE_WIDGET_H
 
-#include "features/command_palette/command_palette_mode.h"
-#include "theme/theme_types.h"
+#include "features/command_palette/types/types.h"
+#include "theme/types/types.h"
 #include "types/qt_types_fwd.h"
 #include <QStringList>
 #include <QWidget>

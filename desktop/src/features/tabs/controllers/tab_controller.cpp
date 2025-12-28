@@ -1,5 +1,4 @@
 #include "tab_controller.h"
-#include "features/tabs/tab_types.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 
 TabPresentation TabController::fromSnapshot(const neko::TabSnapshot &tab) {

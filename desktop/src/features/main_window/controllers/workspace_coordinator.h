@@ -1,7 +1,6 @@
 #ifndef WORKSPACE_COORDINATOR_H
 #define WORKSPACE_COORDINATOR_H
 
-#include "features/tabs/tab_types.h"
 class TabController;
 class WorkspaceController;
 class AppStateController;
@@ -12,6 +11,7 @@ class CommandExecutor;
 
 #include "features/main_window/interfaces/close_decision.h"
 #include "features/main_window/interfaces/save_result.h"
+#include "features/tabs/types/types.h"
 #include "types/ffi_types_fwd.h"
 #include <QList>
 #include <QObject>

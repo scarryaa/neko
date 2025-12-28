@@ -98,10 +98,12 @@ qt_add_executable(neko
     src/features/main_window/connections/ui_style_connections.cpp
     src/features/main_window/connections/ui_style_connections.h
 
-    # Theming
+    # Theme 
     src/theme/theme_provider.cpp
     src/theme/theme_provider.h
-    src/theme/theme_types.h
+
+    # Theme Types
+    src/theme/types/types.h
 
     # Title Bar
     src/features/title_bar/title_bar_widget.cpp
@@ -116,22 +118,18 @@ qt_add_executable(neko
     src/features/editor/editor_widget.h
     src/features/editor/gutter_widget.cpp
     src/features/editor/gutter_widget.h
-    src/features/editor/change_mask.h
-    src/features/editor/row_col.h
-    src/features/editor/row_col.h
     src/features/editor/render/editor_render_utils.cpp
     src/features/editor/render/editor_render_utils.h
 
-    # Editor types
+    # Editor Types
     src/features/editor/types/types.h
+    src/features/editor/render/types/types.h
 
     # Editor/Gutter Renderers
     src/features/editor/render/editor_renderer.cpp
     src/features/editor/render/editor_renderer.h
     src/features/editor/render/gutter_renderer.cpp
     src/features/editor/render/gutter_renderer.h
-    src/features/editor/render/render_state.h
-    src/features/editor/render/render_theme.h
 
     # Editor Controller
     src/features/editor/controllers/editor_controller.cpp
@@ -150,11 +148,13 @@ qt_add_executable(neko
     src/features/tabs/tab_bar_widget.h
     src/features/tabs/tab_widget.cpp
     src/features/tabs/tab_widget.h
-    src/features/tabs/tab_types.h
 
     # Tab Controller
     src/features/tabs/controllers/tab_controller.cpp
     src/features/tabs/controllers/tab_controller.h
+
+    # Tab Types
+    src/features/tabs/types/types.h
 
     # Command Palette
     src/features/command_palette/command_palette_widget.cpp
@@ -165,19 +165,22 @@ qt_add_executable(neko
     src/features/command_palette/palette_divider.h
     src/features/command_palette/current_size_stacked_widget.cpp
     src/features/command_palette/current_size_stacked_widget.h
-    src/features/command_palette/command_palette_mode.h
 
-    #Context Menu
+    # Command Palette types
+    src/features/command_palette/types/types.h
+
+    # Context Menu
     src/features/context_menu/context_menu_widget.cpp
     src/features/context_menu/context_menu_widget.h
-    src/features/context_menu/context_menu_item_kind.h
-    src/features/context_menu/context_menu_item.h
     src/features/context_menu/command_registry.cpp
     src/features/context_menu/command_registry.h
     src/features/context_menu/context_menu_registry.cpp
     src/features/context_menu/context_menu_registry.h
     src/features/context_menu/context_menu_frame.cpp
     src/features/context_menu/context_menu_frame.h
+
+    # Context Menu Types
+    src/features/context_menu/types/types.h
 
     # Utils
     src/utils/ui_utils.cpp

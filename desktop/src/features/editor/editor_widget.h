@@ -3,8 +3,7 @@
 
 #include "controllers/editor_controller.h"
 #include "features/editor/render/editor_renderer.h"
-#include "row_col.h"
-#include "theme/theme_types.h"
+#include "theme/types/types.h"
 #include "types/qt_types_fwd.h"
 #include <QFont>
 #include <QFontMetricsF>

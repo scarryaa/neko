@@ -1,4 +1,5 @@
 #include "gutter_renderer.h"
+#include "features/editor/render/editor_render_utils.h"
 #include <QPainter>
 #include <QPointF>
 #include <QString>

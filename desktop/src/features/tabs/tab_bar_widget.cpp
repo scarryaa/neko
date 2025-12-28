@@ -1,7 +1,6 @@
 #include "tab_bar_widget.h"
 #include "features/tabs/controllers/tab_controller.h"
 #include "features/tabs/tab_widget.h"
-#include "theme/theme_types.h"
 #include "utils/ui_utils.h"
 #include <QByteArray>
 #include <QDragEnterEvent>

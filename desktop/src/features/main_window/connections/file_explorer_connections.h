@@ -1,6 +1,7 @@
 #ifndef FILE_EXPLORER_CONNECTIONS_H
 #define FILE_EXPLORER_CONNECTIONS_H
 
+// TODO(scarlet): Centralize these stubs
 class AppConfigService;
 class UiHandles;
 

@@ -319,6 +319,7 @@ QRect TabWidget::modifiedRect() const {
 }
 
 void TabWidget::contextMenuEvent(QContextMenuEvent *event) {
+  // TODO(scarlet): Change from neko:: type
   neko::TabContextFfi ctx{static_cast<uint64_t>(tabId), isPinned, isModified,
                           !path.isEmpty(), path.toStdString()};
   const QVariant variant = QVariant::fromValue(ctx);

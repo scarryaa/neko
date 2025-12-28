@@ -1,5 +1,5 @@
-#ifndef COMMAND_PALETTE_MODE_H
-#define COMMAND_PALETTE_MODE_H
+#ifndef COMMAND_PALETTE_TYPES_H
+#define COMMAND_PALETTE_TYPES_H
 
 #include <cstdint>
 

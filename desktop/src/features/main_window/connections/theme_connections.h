@@ -4,7 +4,7 @@
 class ThemeProvider;
 
 #include "features/main_window/ui_handles.h"
-#include "theme/theme_types.h"
+#include "theme/types/types.h"
 #include <QObject>
 
 class ThemeConnections : public QObject {

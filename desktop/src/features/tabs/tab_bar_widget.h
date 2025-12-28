@@ -7,8 +7,8 @@ class TabController;
 class TabWidget;
 class ThemeProvider;
 
-#include "features/tabs/tab_types.h"
-#include "theme/theme_types.h"
+#include "features/tabs/types/types.h"
+#include "theme/types/types.h"
 #include "types/qt_types_fwd.h"
 #include <QScrollArea>
 #include <QStringList>

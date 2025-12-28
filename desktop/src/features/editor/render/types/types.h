@@ -1,14 +1,31 @@
-#ifndef RENDER_STATE_H
-#define RENDER_STATE_H
+#ifndef EDITOR_RENDERER_TYPES_H
+#define EDITOR_RENDERER_TYPES_H
 
 #include "features/editor/types/types.h"
-#include "render_theme.h"
 #include <QFont>
+#include <QRectF>
 #include <QString>
 #include <QStringList>
 #include <functional>
 #include <neko-core/src/ffi/bridge.rs.h>
 #include <vector>
+
+struct ViewportContext {
+  double lineHeight;
+  int firstVisibleLine;
+  int lastVisibleLine;
+  double verticalOffset;
+  double horizontalOffset;
+  double width;
+  double height;
+};
+
+struct RenderTheme {
+  QString textColor;
+  QString activeLineTextColor;
+  QString accentColor;
+  QString highlightColor;
+};
 
 struct RenderState {
   const QStringList lines;
@@ -28,4 +45,4 @@ struct RenderState {
   const std::function<const double(const QString &str)> measureWidth;
 };
 
-#endif // RENDER_STATE_H
+#endif

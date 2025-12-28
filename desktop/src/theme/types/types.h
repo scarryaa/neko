@@ -115,4 +115,20 @@ struct GutterTheme {
   QString highlightColor;
 };
 
+struct ThemeSnapshot {
+  TitleBarTheme titleBarTheme;
+  FileExplorerTheme fileExplorerTheme;
+  CommandPaletteTheme commandPaletteTheme;
+  TabBarTheme tabBarTheme;
+  TabTheme tabTheme;
+  EditorTheme editorTheme;
+  GutterTheme gutterTheme;
+  StatusBarTheme statusBarTheme;
+  ScrollBarTheme scrollBarTheme;
+  NewTabButtonTheme newTabButtonTheme;
+  SplitterTheme splitterTheme;
+  EmptyStateTheme emptyStateTheme;
+  ContextMenuTheme contextMenuTheme;
+};
+
 #endif

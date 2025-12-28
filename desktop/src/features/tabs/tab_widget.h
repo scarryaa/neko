@@ -6,7 +6,7 @@ class ContextMenuRegistry;
 class ContextMenuWidget;
 class ThemeProvider;
 
-#include "theme/theme_types.h"
+#include "theme/types/types.h"
 #include "types/qt_types_fwd.h"
 #include <QPoint>
 #include <QRect>

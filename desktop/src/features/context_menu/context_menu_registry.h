@@ -1,7 +1,7 @@
 #ifndef CONTEXT_MENU_REGISTRY_H
 #define CONTEXT_MENU_REGISTRY_H
 
-#include "features/context_menu/context_menu_item.h"
+#include "features/context_menu/types/types.h"
 #include <QHash>
 #include <QString>
 #include <QVariant>

@@ -1,5 +1,4 @@
 #include "editor_controller.h"
-#include "features/editor/change_mask.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 #include <QApplication>
 #include <QClipboard>

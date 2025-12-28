@@ -2,8 +2,8 @@
 #define CONTEXT_MENU_WIDGET_H
 
 #include "features/context_menu/context_menu_frame.h"
-#include "features/context_menu/context_menu_item.h"
-#include "theme/theme_types.h"
+#include "features/context_menu/types/types.h"
+#include "theme/types/types.h"
 #include "types/qt_types_fwd.h"
 #include <QPoint>
 #include <QString>

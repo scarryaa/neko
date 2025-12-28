@@ -1,17 +1,7 @@
 #ifndef EDITOR_RENDER_UTILS_H
 #define EDITOR_RENDER_UTILS_H
 
-#include <QRectF>
-
-struct ViewportContext {
-  double lineHeight;
-  int firstVisibleLine;
-  int lastVisibleLine;
-  double verticalOffset;
-  double horizontalOffset;
-  double width;
-  double height;
-};
+#include "features/editor/render/types/types.h"
 
 double getLineTopY(size_t lineIndex, const ViewportContext &ctx);
 

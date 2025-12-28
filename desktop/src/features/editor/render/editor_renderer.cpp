@@ -1,4 +1,5 @@
 #include "editor_renderer.h"
+#include "features/editor/render/editor_render_utils.h"
 #include <QPainter>
 
 void EditorRenderer::paint(QPainter &painter, const RenderState &state,

@@ -1,11 +1,10 @@
 #include "theme/theme_provider.h"
-#include "theme/theme_types.h"
 #include "utils/ui_utils.h"
 
 ThemeProvider::ThemeProvider(const ThemeProviderProps &props, QObject *parent)
     : QObject(parent), themeManager(props.themeManager) {}
 
-ThemeProvider::ThemeSnapshot ThemeProvider::getCurrentThemes() const {
+ThemeSnapshot ThemeProvider::getCurrentThemes() const {
   return {.titleBarTheme = titleBarTheme,
           .fileExplorerTheme = fileExplorerTheme,
           .commandPaletteTheme = commandPaletteTheme,

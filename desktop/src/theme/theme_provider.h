@@ -1,7 +1,7 @@
 #ifndef THEME_PROVIDER_H
 #define THEME_PROVIDER_H
 
-#include "theme/theme_types.h"
+#include "theme/types/types.h"
 #include "types/ffi_types_fwd.h"
 #include <QObject>
 
@@ -11,22 +11,6 @@ class ThemeProvider : public QObject {
 public:
   struct ThemeProviderProps {
     neko::ThemeManager *themeManager;
-  };
-
-  struct ThemeSnapshot {
-    TitleBarTheme titleBarTheme;
-    FileExplorerTheme fileExplorerTheme;
-    CommandPaletteTheme commandPaletteTheme;
-    TabBarTheme tabBarTheme;
-    TabTheme tabTheme;
-    EditorTheme editorTheme;
-    GutterTheme gutterTheme;
-    StatusBarTheme statusBarTheme;
-    ScrollBarTheme scrollBarTheme;
-    NewTabButtonTheme newTabButtonTheme;
-    SplitterTheme splitterTheme;
-    EmptyStateTheme emptyStateTheme;
-    ContextMenuTheme contextMenuTheme;
   };
 
   explicit ThemeProvider(const ThemeProviderProps &props,

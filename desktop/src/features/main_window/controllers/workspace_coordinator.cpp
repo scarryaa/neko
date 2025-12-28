@@ -1,5 +1,4 @@
 #include "workspace_coordinator.h"
-#include "features/command_palette/command_palette_mode.h"
 #include "features/command_palette/command_palette_widget.h"
 #include "features/editor/controllers/editor_controller.h"
 #include "features/editor/editor_widget.h"

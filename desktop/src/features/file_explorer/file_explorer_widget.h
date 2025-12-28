@@ -2,7 +2,7 @@
 #define FILE_EXPLORER_WIDGET_H
 
 #include "features/file_explorer/controllers/file_tree_controller.h"
-#include "theme/theme_types.h"
+#include "theme/types/types.h"
 #include "types/qt_types_fwd.h"
 #include <QFont>
 #include <QFontMetricsF>

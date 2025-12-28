@@ -1,8 +1,7 @@
 #ifndef EDITOR_RENDERER_H
 #define EDITOR_RENDERER_H
 
-#include "editor_render_utils.h"
-#include "render_state.h"
+#include "features/editor/render/types/types.h"
 #include "types/qt_types_fwd.h"
 
 QT_FWD(QPainter)

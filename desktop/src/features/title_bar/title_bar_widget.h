@@ -1,7 +1,7 @@
 #ifndef TITLE_BAR_WIDGET_H
 #define TITLE_BAR_WIDGET_H
 
-#include "theme/theme_types.h"
+#include "theme/types/types.h"
 #include "types/qt_types_fwd.h"
 #include <QPoint>
 #include <QString>

@@ -1,7 +1,7 @@
 #ifndef TAB_CONTROLLER_H
 #define TAB_CONTROLLER_H
 
-#include "features/tabs/tab_types.h"
+#include "features/tabs/types/types.h"
 #include "types/ffi_types_fwd.h"
 #include <QList>
 #include <QObject>

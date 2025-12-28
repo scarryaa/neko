@@ -2,7 +2,7 @@
 #define GUTTER_WIDGET_H
 
 #include "render/gutter_renderer.h"
-#include "theme/theme_types.h"
+#include "theme/types/types.h"
 #include "types/qt_types_fwd.h"
 #include <QFont>
 #include <QFontMetricsF>
