@@ -1,5 +1,5 @@
 use crate::{
-    Editor, FileTree, Tab, TabManager, config::ConfigManager, tab::tab_manager::MoveActiveTabResult,
+    Editor, FileTree, Tab, TabManager, config::ConfigManager, tab::types::MoveActiveTabResult,
 };
 use std::io::Error;
 
@@ -126,9 +126,6 @@ impl AppState {
         self.tab_manager.close_clean_tabs(history_enabled)
     }
 
-    // Returns the id, a flag indicating whether a closed tab was reopened, and the restored scroll
-    // offsets
-    // TODO(scarlet): Make this into a struct later
     pub fn move_active_tab_by(&mut self, delta: i64, use_history: bool) -> MoveActiveTabResult {
         let auto_reopen_closed_tabs_in_history = self
             .config_manager()

@@ -1,0 +1,25 @@
+use crate::{Selection, text::cursor_manager::CursorEntry};
+use std::path::PathBuf;
+
+#[derive(Debug)]
+pub struct ClosedTabInfo {
+    pub path: PathBuf,
+    pub scroll_offsets: (usize, usize),
+    pub cursors: Vec<CursorEntry>,
+    pub selections: Selection,
+}
+
+#[derive(Debug)]
+pub struct ScrollOffsets {
+    pub x: usize,
+    pub y: usize,
+}
+
+#[derive(Debug)]
+pub struct MoveActiveTabResult {
+    pub found_id: Option<usize>,
+    pub reopened_tab: bool,
+    pub scroll_offsets: Option<ScrollOffsets>,
+    pub cursors: Option<Vec<CursorEntry>>,
+    pub selections: Option<Selection>,
+}

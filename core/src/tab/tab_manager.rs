@@ -1,22 +1,12 @@
-use super::{ClosedTabInfo, ClosedTabStore, history::TabHistoryManager, model::Tab};
+use super::{
+    ClosedTabInfo, ClosedTabStore, MoveActiveTabResult, ScrollOffsets, Tab,
+    history::TabHistoryManager,
+};
 use crate::{Editor, Selection, text::cursor_manager::CursorEntry};
 use std::{
     io::{Error, ErrorKind},
     path::{Path, PathBuf},
 };
-
-pub struct ScrollOffsets {
-    pub x: usize,
-    pub y: usize,
-}
-
-pub struct MoveActiveTabResult {
-    pub found_id: Option<usize>,
-    pub reopened_tab: bool,
-    pub scroll_offsets: Option<ScrollOffsets>,
-    pub cursors: Option<Vec<CursorEntry>>,
-    pub selections: Option<Selection>,
-}
 
 enum ResolveOutcome {
     Existing(usize),
@@ -786,6 +776,9 @@ impl TabManager {
         //     active_tab_history = [1, 2, 5] (instead of [1, 2, 3, 4, 5])
         //                                 ^ history_pos = index of 5 => 2
         //                                   (should it be reset to None?)
+        // TODO(scarlet): Update history in the case where, when opening a file and then closing
+        // the tab, moving backwards in history should reopen it (currently we have to move forward
+        // in history to reopen it)
 
         // If there is recorded tab info, try to reopen it
         let Some(info) = self.closed_store.take(id) else {

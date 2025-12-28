@@ -1,8 +1,11 @@
 pub mod closed_tab_store;
 pub mod history;
-pub mod model;
+#[allow(clippy::module_inception)]
+pub mod tab;
 pub mod tab_manager;
+pub mod types;
 
-pub use closed_tab_store::{ClosedTabInfo, ClosedTabStore};
-pub(crate) use model::Tab;
+pub use closed_tab_store::ClosedTabStore;
+pub(crate) use tab::Tab;
 pub use tab_manager::TabManager;
+pub use types::{ClosedTabInfo, MoveActiveTabResult, ScrollOffsets};

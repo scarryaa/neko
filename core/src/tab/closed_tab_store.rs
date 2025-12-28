@@ -1,13 +1,5 @@
-use crate::{Selection, text::cursor_manager::CursorEntry};
+use super::ClosedTabInfo;
 use std::{collections::HashMap, path::PathBuf};
-
-#[derive(Debug)]
-pub struct ClosedTabInfo {
-    pub path: PathBuf,
-    pub scroll_offsets: (usize, usize),
-    pub cursors: Vec<CursorEntry>,
-    pub selections: Selection,
-}
 
 #[derive(Debug, Default)]
 pub struct ClosedTabStore {

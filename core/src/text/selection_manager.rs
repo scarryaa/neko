@@ -2,7 +2,7 @@ use super::{Buffer, Cursor, Selection};
 
 #[derive(Default, Debug)]
 pub struct SelectionManager {
-    // Single shared selection across all cursors; TODO multi-selection per cursor
+    // TODO(scarlet): Implement multi-selection (one selection per cursor)
     pub(crate) selection: Selection,
 }
 
