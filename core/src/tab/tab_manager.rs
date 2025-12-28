@@ -1,7 +1,6 @@
-use super::model::Tab;
+use super::{history::TabHistoryManager, model::Tab};
 use crate::Editor;
 use std::{
-    collections::HashMap,
     io::{Error, ErrorKind},
     path::{Path, PathBuf},
 };
@@ -12,22 +11,13 @@ enum ResolveOutcome {
     Unresolvable,
 }
 
-#[derive(Debug)]
-struct ClosedTabInfo {
-    path: PathBuf,
-    // title, scroll offsets, cursor pos, etc?
-}
-
+// TODO(scarlet): Add tests
 #[derive(Debug)]
 pub struct TabManager {
     tabs: Vec<Tab>,
     active_tab_id: usize,
     next_tab_id: usize,
-    /// Tracks last activated tabs by id
-    active_tab_history: Vec<usize>,
-    // Index into active_tab_history when navigating
-    history_pos: Option<usize>,
-    closed_tabs: HashMap<usize, ClosedTabInfo>,
+    history_manager: TabHistoryManager,
 }
 
 impl TabManager {
@@ -36,9 +26,7 @@ impl TabManager {
             tabs: Vec::new(),
             active_tab_id: 0,
             next_tab_id: 0,
-            active_tab_history: vec![0],
-            history_pos: Some(0),
-            closed_tabs: HashMap::new(),
+            history_manager: TabHistoryManager::new(),
         };
 
         state.new_tab(true);
@@ -322,59 +310,56 @@ impl TabManager {
         }
 
         // If there are no tabs in history, do nothing
-        if self.active_tab_history.is_empty() || delta == 0 {
+        if self.history_manager.is_empty() || delta == 0 {
             return (self.active_tab_id, false);
         }
 
         // Determine starting index in the visit log
-        let mut start_idx = match self.history_pos {
-            None => self.active_tab_history.len() - 1,
-            Some(i) => i,
-        };
-
+        let mut start_idx = self.history_manager.nav_start_index();
         let going_back = delta < 0;
 
         loop {
-            if self.active_tab_history.is_empty() {
-                self.history_pos = None;
+            if self.history_manager.is_empty() {
+                self.history_manager.set_history_pos(None);
                 return (self.active_tab_id, false);
             }
 
             let next_idx_opt = if delta < 0 {
                 // Backwards
-                self.previous_distinct_history_entry(start_idx)
+                self.history_manager
+                    .previous_distinct_history_entry(start_idx)
             } else {
                 // Forwards
-                self.next_distinct_history_entry(start_idx)
+                self.history_manager.next_distinct_history_entry(start_idx)
             };
 
             let next_idx = match next_idx_opt {
                 Some(i) => i,
                 None => {
-                    self.history_pos = Some(start_idx);
+                    self.history_manager.set_history_pos(Some(start_idx));
                     return (self.active_tab_id, false);
                 }
             };
 
-            let original_tab_id = self.active_tab_history[next_idx];
+            let original_tab_id = self.history_manager.id_at(next_idx);
 
             match self.resolve_history_target(original_tab_id, auto_reopen_closed_tabs_in_history) {
                 ResolveOutcome::Existing(id) => {
                     self.active_tab_id = id;
-                    self.history_pos = Some(next_idx);
+                    self.history_manager.set_history_pos(Some(next_idx));
                     return (id, false);
                 }
                 ResolveOutcome::Reopened(id) => {
                     self.active_tab_id = id;
-                    self.history_pos = Some(next_idx);
+                    self.history_manager.set_history_pos(Some(next_idx));
                     return (id, true);
                 }
                 ResolveOutcome::Unresolvable => {
                     // Drop this entry from history and keep looking
-                    self.active_tab_history.remove(next_idx);
+                    self.history_manager.remove_index_from_history(next_idx);
 
-                    if self.active_tab_history.is_empty() {
-                        self.history_pos = None;
+                    if self.history_manager.is_empty() {
+                        self.history_manager.set_history_pos(None);
                         return (self.active_tab_id, false);
                     }
 
@@ -382,7 +367,7 @@ impl TabManager {
                     if going_back {
                         start_idx = next_idx.saturating_sub(1);
                     } else {
-                        start_idx = next_idx.min(self.active_tab_history.len() - 1);
+                        start_idx = next_idx.min(self.history_manager.history_len() - 1);
                     }
 
                     continue;
@@ -619,43 +604,16 @@ impl TabManager {
     }
 
     // History ops
-    fn previous_distinct_history_entry(&self, start: usize) -> Option<usize> {
-        if start == 0 {
-            return None;
-        }
-        let current = self.active_tab_history[start];
-        (0..start)
-            .rev()
-            .find(|&i| self.active_tab_history[i] != current)
-    }
-
-    fn next_distinct_history_entry(&self, start: usize) -> Option<usize> {
-        let len = self.active_tab_history.len();
-        if start + 1 >= len {
-            return None;
-        }
-        let current = self.active_tab_history[start];
-        (start + 1..len).find(|&i| self.active_tab_history[i] != current)
-    }
-
-    fn remove_tabs_from_history(&mut self, ids: &Vec<usize>) {
-        for id in ids {
-            self.active_tab_history.retain(|&i| i != *id);
-        }
-    }
-
     fn activate_tab(&mut self, id: usize) {
         if self.active_tab_id == id {
             return;
         }
 
         self.active_tab_id = id;
-        if self.active_tab_history.last().copied() != Some(id) {
-            self.active_tab_history.push(id);
-        }
+        self.history_manager.record_id(id);
 
         // Explicit activation cancels history navigation mode
-        self.history_pos = None;
+        self.history_manager.set_history_pos(None);
     }
 
     fn activate_tab_no_history(&mut self, id: usize) {
@@ -666,20 +624,19 @@ impl TabManager {
         // No tabs left
         if self.tabs.is_empty() {
             self.active_tab_id = 0;
-            self.history_pos = None;
+            self.history_manager.set_history_pos(None);
             return;
         }
 
-        if history_enabled && !self.active_tab_history.is_empty() {
+        if history_enabled && !self.history_manager.is_empty() {
             // Walk history backwards and pick the most recent tab that still exists
             if let Some(idx) = self
-                .active_tab_history
-                .iter()
-                .rposition(|id| self.tabs.iter().any(|t| t.get_id() == *id))
+                .history_manager
+                .last_matching(|id| self.tabs.iter().any(|t| t.get_id() == id))
             {
-                let id = self.active_tab_history[idx];
+                let id = self.history_manager.id_at(idx);
                 self.active_tab_id = id;
-                self.history_pos = Some(idx);
+                self.history_manager.set_history_pos(Some(idx));
                 return;
             }
         }
@@ -687,7 +644,7 @@ impl TabManager {
         // If history is disabled or no valid entry was found,
         // pick the last tab in the list
         self.active_tab_id = self.tabs.last().unwrap().get_id();
-        self.history_pos = None;
+        self.history_manager.set_history_pos(None);
     }
 
     fn resolve_history_target(
@@ -701,20 +658,19 @@ impl TabManager {
         }
 
         // Try to get the path for this history id from closed_tabs
-        let maybe_path = self.closed_tabs.get(&id).map(|info| info.path.clone());
+        let maybe_path = self.history_manager.closed_path_for(id);
 
         // If there is a currently open tab with the same path (even if id is different), target that
         if let Some(ref path) = maybe_path {
-            if let Some(tab) = self.tabs.iter().find(|t| t.get_file_path() == Some(path)) {
+            if let Some(tab) = self
+                .tabs
+                .iter()
+                .find(|t| t.get_file_path() == Some(&path.clone()))
+            {
                 let new_id = tab.get_id();
 
                 // Update history to point at the new id instead of the old one
-                for history_id in &mut self.active_tab_history {
-                    if *history_id == id {
-                        *history_id = new_id;
-                    }
-                }
-                self.closed_tabs.remove(&id);
+                self.history_manager.remap_id(id, new_id);
 
                 return ResolveOutcome::Existing(new_id);
             }
@@ -725,8 +681,24 @@ impl TabManager {
             return ResolveOutcome::Unresolvable;
         }
 
+        // TODO(scarlet): Update history in the case where we go backwards a few tabs and then do a
+        // new action (e.g. tab opened)
+        //
+        // Ex.
+        // - open tabs [1, 2, 3, 4]
+        //     active_tab_history = [1, 2, 3, 4]
+        //                                       ^ history_pos = None
+        // - navigate backwards in history to tab 2
+        //     active_tab_history = [1, 2, 3, 4]
+        //                              ^ history_pos = index of 2 => 1
+        // - open a new tab 5 while history_pos points at tab 2
+        //     => should truncate [3, 4], append 5
+        //     active_tab_history = [1, 2, 5] (instead of [1, 2, 3, 4, 5])
+        //                                 ^ history_pos = index of 5 => 2
+        //                                   (should it be reset to None?)
+
         // If there is recorded tab info, try to reopen it
-        let Some(info) = self.closed_tabs.remove(&id) else {
+        let Some(info) = self.history_manager.take_closed_info(id) else {
             return ResolveOutcome::Unresolvable;
         };
 
@@ -735,35 +707,18 @@ impl TabManager {
             return ResolveOutcome::Unresolvable;
         }
 
-        // Update the tab id
-        for history_id in &mut self.active_tab_history {
-            if *history_id == id {
-                *history_id = new_id;
-            }
-        }
-
+        // Update the tab id in history
+        self.history_manager.remap_id(id, new_id);
         ResolveOutcome::Reopened(new_id)
     }
 
-    // Closed tab history
-    // TODO(scarlet): Add session restoration persistance? E.g. allowing history navigation even if
-    // history is empty by reopening past tabs
     fn record_closed_tabs(&mut self, ids: &[usize]) {
-        for id in ids {
-            if let Some(tab) = self.tabs.iter().find(|t| t.get_id() == *id) {
-                if let Some(path) = tab.get_file_path() {
-                    self.closed_tabs.insert(
-                        *id,
-                        ClosedTabInfo {
-                            path: path.to_path_buf(),
-                        },
-                    );
-                } else {
-                    // If there is no path, remove from history
-                    self.remove_tabs_from_history(&vec![*id]);
-                }
-            }
-        }
+        self.history_manager.record_closed_tabs(ids, |id| {
+            self.tabs
+                .iter()
+                .find(|t| t.get_id() == id)
+                .and_then(|t| t.get_file_path().map(|p| p.to_path_buf()))
+        });
     }
 }
 
