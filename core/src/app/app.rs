@@ -1,6 +1,10 @@
 use crate::{Editor, FileTree, Tab, TabManager, config::ConfigManager};
 use std::io::Error;
 
+/// Application state.
+///
+/// Acts primarily as a facade over [`TabManager`] and [`FileTree`],
+/// delegating most tab and file-tree operations to those components.
 #[derive(Debug)]
 pub struct AppState {
     file_tree: FileTree,

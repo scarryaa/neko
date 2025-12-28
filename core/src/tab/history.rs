@@ -4,6 +4,7 @@ use std::{collections::HashMap, path::PathBuf};
 pub struct ClosedTabInfo {
     pub path: PathBuf,
     // title, scroll offsets, cursor pos, etc?
+    // TODO(scarlet): Extract 'reopen closed tab'/jump history into a separate manager?
 }
 
 // TODO(scarlet): Add tests

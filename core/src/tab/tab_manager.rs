@@ -11,7 +11,7 @@ enum ResolveOutcome {
     Unresolvable,
 }
 
-// TODO(scarlet): Add tests
+// TODO(scarlet): Add more tests
 #[derive(Debug)]
 pub struct TabManager {
     tabs: Vec<Tab>,
