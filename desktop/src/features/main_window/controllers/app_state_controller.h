@@ -42,6 +42,9 @@ public:
   void runTabCommand(const std::string &commandId,
                      const neko::TabContextFfi &ctx);
 
+  bool saveTab(int tabId);
+  bool saveTabAs(int tabId, const std::string &path);
+
 private:
   neko::AppState *appState;
 };

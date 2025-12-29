@@ -68,6 +68,7 @@ MainWindow::MainWindow(QWidget *parent)
 
   workspaceController = new WorkspaceController(
       {.tabController = tabController,
+       .appStateController = appStateController,
        .workspaceUi = WorkspaceUi{
            .promptSaveAsPath =
                [this](std::optional<QString> initialDirectory,

@@ -324,11 +324,6 @@ pub mod ffi {
         pub(crate) fn move_tab_wrapper(self: &mut AppState, from: usize, to: usize) -> bool;
         #[cxx_name = "open_file"]
         pub(crate) fn open_file_wrapper(self: &mut AppState, path: &str) -> FileOpenResult;
-        #[cxx_name = "save_active_tab"]
-        pub(crate) fn save_active_tab_wrapper(self: &mut AppState) -> bool;
-        #[cxx_name = "save_active_tab_and_set_path"]
-        pub(crate) fn save_active_tab_and_set_path_wrapper(self: &mut AppState, path: &str)
-        -> bool;
         #[cxx_name = "move_active_tab_by"]
         pub fn move_active_tab_by_wrapper(
             self: &mut AppState,
@@ -339,14 +334,10 @@ pub mod ffi {
         pub(crate) fn pin_tab_wrapper(self: &mut AppState, id: usize) -> PinTabResult;
         #[cxx_name = "unpin_tab"]
         pub(crate) fn unpin_tab_wrapper(self: &mut AppState, id: usize) -> PinTabResult;
-        #[cxx_name = "save_tab_with_id"]
-        pub(crate) fn save_tab_with_id_wrapper(self: &mut AppState, id: usize) -> bool;
-        #[cxx_name = "save_tab_with_id_and_set_path"]
-        pub(crate) fn save_tab_with_id_and_set_path_wrapper(
-            self: &mut AppState,
-            id: usize,
-            path: &str,
-        ) -> bool;
+        #[cxx_name = "save_tab"]
+        pub(crate) fn save_tab_wrapper(self: &mut AppState, id: usize) -> bool;
+        #[cxx_name = "save_tab_as"]
+        pub(crate) fn save_tab_as_wrapper(self: &mut AppState, id: usize, path: &str) -> bool;
         #[cxx_name = "set_tab_scroll_offsets"]
         pub(crate) fn set_tab_scroll_offsets_wrapper(
             self: &mut AppState,

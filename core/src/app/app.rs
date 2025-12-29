@@ -1,7 +1,9 @@
 use crate::{
     Config, ConfigManager, Editor, FileTree, JumpHistory, MoveActiveTabResult, Tab, TabManager,
 };
-use std::io::Error;
+use std::{io::Error, path::PathBuf};
+
+use super::DocumentManager;
 
 /// Application state.
 ///
@@ -191,37 +193,56 @@ impl AppState {
         self.tab_manager.open_file(path)
     }
 
-    pub fn save_active_tab(&mut self) -> Result<(), std::io::Error> {
-        self.tab_manager.save_active_tab()
-    }
+    pub fn save_tab(&mut self, id: usize) -> Result<(), std::io::Error> {
+        let tab = self.tab_manager.get_tab_mut(id)?;
 
-    pub fn save_active_tab_and_set_path(&mut self, path: &str) -> Result<(), std::io::Error> {
-        self.tab_manager.save_active_tab_and_set_path(path)
-    }
+        let path: PathBuf = tab
+            .get_file_path()
+            .ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    "Tab has no associated file path",
+                )
+            })?
+            .to_path_buf();
+        let content = tab.get_editor().buffer().get_text();
 
-    pub fn save_tab_with_id(&mut self, id: usize) -> Result<(), Error> {
-        let result = self.tab_manager.save_tab_with_id(id);
+        DocumentManager::save_to_path(&path, &content)?;
+        tab.set_original_content(content);
 
-        if result.is_ok() {
-            if let Ok(tab) = self.tab_manager.get_tab(id) {
-                if let Some(path) = tab.get_file_path() {
-                    if path == ConfigManager::get_config_path() {
-                        // Refresh config if tab with config path was saved in the editor
-                        // TODO(scarlet): Run a file watcher or call reload before writing via
-                        // update fn to accommodate external changes eventually
-                        if let Err(e) = self.config_manager().reload_from_disk() {
-                            eprintln!("Failed to reload config: {e}");
-                        }
-                    }
-                }
+        // Refresh config if tab with config path was saved in the editor
+        if path == ConfigManager::get_config_path() {
+            // TODO(scarlet): Run a file watcher or call reload before writing via
+            // update fn to accommodate external changes eventually
+            if let Err(e) = self.config_manager().reload_from_disk() {
+                eprintln!("Failed to reload config: {e}");
             }
         }
 
-        result
+        Ok(())
     }
 
-    pub fn save_tab_with_id_and_set_path(&mut self, id: usize, path: &str) -> Result<(), Error> {
-        self.tab_manager.save_tab_with_id_and_set_path(id, path)
+    pub fn save_tab_as(&mut self, id: usize, path: &str) -> Result<(), std::io::Error> {
+        if path.is_empty() {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "Path cannot be empty",
+            ));
+        }
+
+        let tab = self.tab_manager.get_tab_mut(id)?;
+        let content = tab.get_editor().buffer().get_text();
+        let path_buf = PathBuf::from(path);
+
+        DocumentManager::save_to_path(&path_buf, &content)?;
+        tab.set_original_content(content);
+        tab.set_file_path(Some(path.to_string()));
+
+        if let Some(filename) = path_buf.file_name() {
+            tab.set_title(&filename.to_string_lossy());
+        }
+
+        Ok(())
     }
 
     pub fn get_file_tree(&self) -> &FileTree {
@@ -261,5 +282,50 @@ impl AppState {
             "config_manager pointer is null"
         );
         unsafe { &*self.config_manager }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn save_tab_returns_error_when_tabs_are_empty() {
+        let c = ConfigManager::new();
+        let mut app = AppState::new(&c, Some("")).unwrap();
+
+        let _ = app.close_tab(0);
+        let result = app.save_tab(0);
+
+        assert!(result.is_err())
+    }
+
+    #[test]
+    fn save_tab_returns_error_when_there_is_no_current_file() {
+        let c = ConfigManager::new();
+        let mut app = AppState::new(&c, Some("")).unwrap();
+        let result = app.save_tab(0);
+
+        assert!(result.is_err())
+    }
+
+    #[test]
+    fn save_tab_as_returns_error_when_provided_path_is_empty() {
+        let c = ConfigManager::new();
+        let mut app = AppState::new(&c, Some("")).unwrap();
+        let result = app.save_tab_as(0, "");
+
+        assert!(result.is_err())
+    }
+
+    #[test]
+    fn save_tab_as_returns_error_when_tabs_are_empty() {
+        let c = ConfigManager::new();
+        let mut app = AppState::new(&c, Some("")).unwrap();
+
+        let _ = app.close_tab(0);
+        let result = app.save_tab_as(0, "path");
+
+        assert!(result.is_err())
     }
 }

@@ -274,6 +274,7 @@ void WorkspaceCoordinator::fileSaved(bool saveAs) {
 
     if (success) {
       uiHandles->tabBarWidget->setTabModified(activeId, false);
+      tabController->tabSaved(activeId);
     }
   }
 }

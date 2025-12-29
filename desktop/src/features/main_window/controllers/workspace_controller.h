@@ -2,6 +2,7 @@
 #define WORKSPACE_CONTROLLER_H
 
 class TabController;
+class AppStateController;
 
 #include "features/main_window/interfaces/workspace_ui.h"
 #include <QList>
@@ -11,6 +12,7 @@ class WorkspaceController {
 public:
   struct WorkspaceControllerProps {
     TabController *tabController;
+    AppStateController *appStateController;
     WorkspaceUi workspaceUi;
   };
 
@@ -33,6 +35,7 @@ private:
   bool closeMany(const QList<int> &ids, bool forceClose,
                  const std::function<void()> &closeAction);
 
+  AppStateController *appStateController;
   TabController *tabController;
   WorkspaceUi workspaceUi;
 };

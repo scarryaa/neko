@@ -1,4 +1,5 @@
 #include "workspace_controller.h"
+#include "features/main_window/controllers/app_state_controller.h"
 #include "features/tabs/controllers/tab_controller.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 #include <QFileInfo>
@@ -6,7 +7,9 @@
 #include <QString>
 
 WorkspaceController::WorkspaceController(const WorkspaceControllerProps &props)
-    : tabController(props.tabController), workspaceUi(props.workspaceUi) {}
+    : tabController(props.tabController),
+      appStateController(props.appStateController),
+      workspaceUi(props.workspaceUi) {}
 
 QList<int> WorkspaceController::closeLeft(int tabId, bool forceClose) {
   auto ids = tabController->getCloseLeftTabIds(tabId);
@@ -94,7 +97,7 @@ bool WorkspaceController::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
   }
 
   if (!path.isEmpty() && !isSaveAs) {
-    return tabController->saveTabWithId(tabId);
+    return appStateController->saveTab(tabId);
   }
 
   QString initialDir;
@@ -114,7 +117,7 @@ bool WorkspaceController::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
     return false;
   }
 
-  return tabController->saveTabWithIdAndSetPath(tabId, filePath.toStdString());
+  return appStateController->saveTabAs(tabId, filePath.toStdString());
 }
 
 std::optional<std::string>

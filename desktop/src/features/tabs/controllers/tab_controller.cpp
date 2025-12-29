@@ -136,6 +136,15 @@ void TabController::fileOpened(const neko::TabSnapshot &snapshot) {
   emit tabUpdated(presentation);
 }
 
+void TabController::tabSaved(int tabId) {
+  const auto snapshotMaybe = appState->get_tab_snapshot(tabId);
+
+  if (snapshotMaybe.found) {
+    auto presentation = fromSnapshot(snapshotMaybe.snapshot);
+    emit tabUpdated(presentation);
+  }
+}
+
 bool TabController::closeTab(int tabId) {
   if (appState == nullptr) {
     return false;
@@ -364,15 +373,6 @@ void TabController::setActiveTab(int tabId) {
   appState->set_active_tab(tabId);
 
   emit activeTabChanged(tabId);
-}
-
-bool TabController::saveTabWithId(int tabId) const {
-  return appState->save_tab_with_id(tabId);
-}
-
-bool TabController::saveTabWithIdAndSetPath(int tabId,
-                                            const std::string &path) const {
-  return appState->save_tab_with_id_and_set_path(tabId, path);
 }
 
 void TabController::setTabScrollOffsets(

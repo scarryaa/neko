@@ -71,3 +71,11 @@ void AppStateController::runTabCommand(const std::string &commandId,
                                        const neko::TabContextFfi &ctx) {
   neko::run_tab_command(*appState, commandId, ctx);
 }
+
+bool AppStateController::saveTab(int tabId) {
+  return appState->save_tab(tabId);
+}
+
+bool AppStateController::saveTabAs(int tabId, const std::string &path) {
+  return appState->save_tab_as(tabId, path);
+}

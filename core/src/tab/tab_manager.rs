@@ -552,6 +552,7 @@ impl TabManager {
         Ok(())
     }
 
+    // TODO(scarlet): Move this out of TabManager
     pub fn open_file(&mut self, path: &str) -> Result<usize, std::io::Error> {
         // Check if file is already open
         if self
@@ -584,94 +585,6 @@ impl TabManager {
         }
 
         Ok(self.active_tab_id)
-    }
-
-    // TODO: Extract duplicated logic in the save_active_tab_* methods
-    pub fn save_active_tab(&mut self) -> Result<(), std::io::Error> {
-        let tab = self
-            .tabs
-            .iter_mut()
-            .find(|t| t.get_id() == self.active_tab_id)
-            .ok_or_else(|| Error::new(ErrorKind::NotFound, "No active tab"))?;
-
-        let maybe_file_path = tab.get_file_path();
-        let path = maybe_file_path
-            .as_ref()
-            .ok_or_else(|| Error::new(ErrorKind::NotFound, "No current file"))?;
-
-        let content = tab.get_editor().buffer().get_text();
-        std::fs::write(path, &content)?;
-
-        tab.set_original_content(content.clone());
-
-        Ok(())
-    }
-
-    pub fn save_active_tab_and_set_path(&mut self, path: &str) -> Result<(), std::io::Error> {
-        if path.is_empty() {
-            return Err(Error::new(ErrorKind::InvalidInput, "Path cannot be empty"));
-        }
-
-        let tab = self
-            .tabs
-            .iter_mut()
-            .find(|t| t.get_id() == self.active_tab_id)
-            .ok_or_else(|| Error::new(ErrorKind::NotFound, "No active tab"))?;
-
-        let content = tab.get_editor().buffer().get_text();
-        tab.set_original_content(content.clone());
-        std::fs::write(path, content)?;
-        tab.set_file_path(Some(path.to_string()));
-
-        if let Some(filename) = PathBuf::from(path).file_name() {
-            tab.set_title(&filename.to_string_lossy());
-        }
-
-        Ok(())
-    }
-
-    pub fn save_tab_with_id(&mut self, id: usize) -> Result<(), Error> {
-        let tab = self
-            .tabs
-            .iter_mut()
-            .find(|t| t.get_id() == id)
-            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
-
-        let path: PathBuf = tab
-            .get_file_path()
-            .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "Tab path is missing"))?
-            .to_path_buf();
-
-        let content = tab.get_editor().buffer().get_text();
-
-        std::fs::write(&path, &content)?;
-
-        tab.set_original_content(content);
-
-        if let Some(filename) = path.file_name() {
-            tab.set_title(&filename.to_string_lossy());
-        }
-
-        Ok(())
-    }
-
-    pub fn save_tab_with_id_and_set_path(&mut self, id: usize, path: &str) -> Result<(), Error> {
-        let tab = self
-            .tabs
-            .iter_mut()
-            .find(|t| t.get_id() == id)
-            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
-
-        let content = tab.get_editor().buffer().get_text();
-        tab.set_original_content(content.clone());
-        std::fs::write(path, content)?;
-        tab.set_file_path(Some(path.to_string()));
-
-        if let Some(filename) = PathBuf::from(path).file_name() {
-            tab.set_title(&filename.to_string_lossy());
-        }
-
-        Ok(())
     }
 
     fn get_next_tab_id(&mut self) -> usize {
@@ -884,40 +797,6 @@ mod test {
         tm.tabs[1].set_file_path(Some("test".to_string()));
 
         let result = tm.open_file("test");
-
-        assert!(result.is_err())
-    }
-
-    #[test]
-    fn save_active_tab_returns_error_when_tabs_are_empty() {
-        let mut tm = TabManager::new().unwrap();
-        let _ = tm.close_tab(0, false);
-        let result = tm.save_active_tab();
-
-        assert!(result.is_err())
-    }
-
-    #[test]
-    fn save_active_tab_returns_error_when_there_is_no_current_file() {
-        let mut tm = TabManager::new().unwrap();
-        let result = tm.save_active_tab();
-
-        assert!(result.is_err())
-    }
-
-    #[test]
-    fn save_active_tab_and_set_path_returns_error_when_provided_path_is_empty() {
-        let mut tm = TabManager::new().unwrap();
-        let result = tm.save_active_tab_and_set_path("");
-
-        assert!(result.is_err())
-    }
-
-    #[test]
-    fn save_active_tab_and_set_path_returns_error_when_tabs_are_empty() {
-        let mut tm = TabManager::new().unwrap();
-        let _ = tm.close_tab(0, false);
-        let result = tm.save_active_tab_and_set_path("");
 
         assert!(result.is_err())
     }

@@ -127,14 +127,6 @@ impl AppState {
         }
     }
 
-    pub(crate) fn save_active_tab_wrapper(&mut self) -> bool {
-        self.save_active_tab().is_ok()
-    }
-
-    pub(crate) fn save_active_tab_and_set_path_wrapper(&mut self, path: &str) -> bool {
-        self.save_active_tab_and_set_path(path).is_ok()
-    }
-
     pub(crate) fn new_tab_wrapper(self: &mut AppState) -> NewTabResult {
         let (id, index) = self.new_tab(true);
         let tab = self.get_tab(id).unwrap();
@@ -216,6 +208,14 @@ impl AppState {
             Ok(closed_ids) => self.build_close_many_result(true, closed_ids),
             Err(_) => self.build_close_many_result(false, vec![]),
         }
+    }
+
+    pub(crate) fn save_tab_wrapper(&mut self, id: usize) -> bool {
+        self.save_tab(id).is_ok()
+    }
+
+    pub(crate) fn save_tab_as_wrapper(&mut self, id: usize, path: &str) -> bool {
+        self.save_tab_as(id, path).is_ok()
     }
 
     pub(crate) fn move_tab_wrapper(&mut self, from: usize, to: usize) -> bool {
@@ -352,14 +352,6 @@ impl AppState {
             to_index,
             snapshot,
         }
-    }
-
-    pub(crate) fn save_tab_with_id_wrapper(&mut self, id: usize) -> bool {
-        self.save_tab_with_id(id).is_ok()
-    }
-
-    pub(crate) fn save_tab_with_id_and_set_path_wrapper(&mut self, id: usize, path: &str) -> bool {
-        self.save_tab_with_id_and_set_path(id, path).is_ok()
     }
 
     pub(crate) fn set_tab_scroll_offsets_wrapper(

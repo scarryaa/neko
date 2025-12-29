@@ -40,15 +40,13 @@ public:
   bool moveTabBy(int delta, bool useHistory);
   bool moveTab(int fromIndex, int toIndex);
   void setActiveTab(int tabId);
-  [[nodiscard]] bool saveTabWithId(int tabId) const;
-  [[nodiscard]] bool saveTabWithIdAndSetPath(int tabId,
-                                             const std::string &path) const;
   void setTabScrollOffsets(int tabId, const neko::ScrollOffsetFfi &newOffsets);
   void notifyTabOpenedFromCore(int tabId);
 
   // NOLINTNEXTLINE(readability-redundant-access-specifiers)
 public slots:
   void fileOpened(const neko::TabSnapshot &snapshot);
+  void tabSaved(int tabId);
 
 signals:
   void tabOpened(const TabPresentation &tab, int index);
