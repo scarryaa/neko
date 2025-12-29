@@ -2,6 +2,12 @@ use super::{DocumentTarget, JumpCommand, LineTarget};
 use crate::AppState;
 
 pub fn execute_jump_command(cmd: JumpCommand, app_state: &mut AppState) {
+    let should_record = !matches!(cmd, JumpCommand::ToLastTarget);
+
+    if should_record {
+        app_state.jump_history.store(cmd.clone());
+    }
+
     match cmd {
         JumpCommand::ToPosition { row, column } => {
             if let Some(editor) = app_state.get_active_editor_mut() {
@@ -73,7 +79,9 @@ pub fn execute_jump_command(cmd: JumpCommand, app_state: &mut AppState) {
             }
         },
         JumpCommand::ToLastTarget => {
-            // TODO(scarlet)
+            if let Some(command) = app_state.jump_history.last() {
+                execute_jump_command(command.clone(), app_state);
+            }
         }
     }
 }

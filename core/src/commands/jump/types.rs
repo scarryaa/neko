@@ -1,5 +1,20 @@
 use std::{fmt::Display, str::FromStr};
 
+#[derive(Default, Clone, Debug)]
+pub struct JumpHistory {
+    pub previous_jump_command: Option<JumpCommand>,
+}
+
+impl JumpHistory {
+    pub fn store(&mut self, command: JumpCommand) {
+        self.previous_jump_command = Some(command);
+    }
+
+    pub fn last(&self) -> Option<&JumpCommand> {
+        self.previous_jump_command.as_ref()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum LineTarget {
     Start,

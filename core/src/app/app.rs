@@ -1,4 +1,4 @@
-use crate::{ConfigManager, Editor, FileTree, MoveActiveTabResult, Tab, TabManager};
+use crate::{ConfigManager, Editor, FileTree, JumpHistory, MoveActiveTabResult, Tab, TabManager};
 use std::io::Error;
 
 /// Application state.
@@ -10,6 +10,7 @@ pub struct AppState {
     file_tree: FileTree,
     config_manager: *const ConfigManager,
     tab_manager: TabManager,
+    pub jump_history: JumpHistory,
 }
 
 impl AppState {
@@ -21,6 +22,7 @@ impl AppState {
             file_tree: FileTree::new(root_path)?,
             config_manager,
             tab_manager: TabManager::new()?,
+            jump_history: JumpHistory::default(),
         })
     }
 

@@ -128,7 +128,7 @@ void WorkspaceCoordinator::commandPaletteGoToPosition(
     const auto adjustedRow = static_cast<std::int64_t>(clampedRow - 1);
     const auto adjustedColumn = static_cast<std::int64_t>(clampedCol - 1);
 
-    neko::JumpCommandFfi command{
+    neko::JumpCommandFfi jumpCommand{
         .kind = neko::JumpCommandKindFfi::ToPosition,
         .row = adjustedRow,
         .column = adjustedColumn,
@@ -136,25 +136,28 @@ void WorkspaceCoordinator::commandPaletteGoToPosition(
         .document_target = neko::DocumentTargetFfi::Start,
     };
 
-    appStateController->executeJumpCommand(command);
-    uiHandles->editorWidget->setFocus();
-    return;
+    appStateController->executeJumpCommand(jumpCommand);
+  } else {
+    // Special jump commands
+    const auto jumpCommands = AppStateController::getAvailableJumpCommands();
+    const auto foundJumpCommand = std::find_if(
+        jumpCommands.begin(), jumpCommands.end(), [&](const auto &command) {
+          return jumpCommandKey == QString::fromUtf8(command.key);
+        });
+
+    if (foundJumpCommand == jumpCommands.end()) {
+      // Unknown jump command
+      return;
+    }
+
+    appStateController->executeJumpCommand(*foundJumpCommand);
   }
 
-  // Special jump commands
-  const auto jumpCommands = AppStateController::getAvailableJumpCommands();
-  const auto foundJumpCommand = std::find_if(
-      jumpCommands.begin(), jumpCommands.end(), [&](const auto &command) {
-        return jumpCommandKey == QString::fromUtf8(command.key);
-      });
-
-  if (foundJumpCommand == jumpCommands.end()) {
-    // Unknown jump command
-    return;
-  }
-
-  appStateController->executeJumpCommand(*foundJumpCommand);
+  // TODO(scarlet): Turn these into signals?
   uiHandles->editorWidget->setFocus();
+  uiHandles->editorWidget->onCursorChanged();
+  uiHandles->gutterWidget->onCursorChanged();
+  refreshStatusBarCursorInfo();
 }
 
 void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
