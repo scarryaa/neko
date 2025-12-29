@@ -96,13 +96,48 @@ void WorkspaceCoordinator::cursorPositionClicked() {
       });
 }
 
-void WorkspaceCoordinator::commandPaletteGoToPosition(int row, int col) {
+void WorkspaceCoordinator::commandPaletteGoToPosition(
+    const QString &jumpCommandKey, uint64_t row, uint64_t column,
+    bool isPosition) {
   const auto snapshot = tabController->getTabsSnapshot();
   if (!snapshot.active_present) {
     return;
   }
 
-  editorController->moveTo(row, col, true);
+  if (isPosition) {
+    const uint64_t adjustedRow =
+        std::max(static_cast<uint64_t>(0), row - static_cast<uint64_t>(1));
+    const uint64_t adjustedColumn =
+        std::max(static_cast<uint64_t>(0), column - static_cast<uint64_t>(1));
+
+    neko::JumpCommandFfi command{
+        .kind = neko::JumpCommandKindFfi::ToPosition,
+        .row = static_cast<std::uint64_t>(adjustedRow),
+        .column = static_cast<std::uint64_t>(adjustedColumn),
+        .line_target = neko::LineTargetFfi::Start,
+        .document_target = neko::DocumentTargetFfi::Start,
+    };
+
+    appStateController->executeJumpCommand(command);
+    uiHandles->editorWidget->setFocus();
+    return;
+  }
+
+  const auto jumpCommands = AppStateController::getAvailableJumpCommands();
+  const auto foundJumpCommand = std::find_if(
+      jumpCommands.begin(), jumpCommands.end(), [&](const auto &command) {
+        return jumpCommandKey == QString::fromUtf8(command.key);
+      });
+
+  if (foundJumpCommand == jumpCommands.end()) {
+    // Unknown jump command
+    return;
+  }
+
+  // It's a special jump command
+  const auto &command = *foundJumpCommand;
+
+  appStateController->executeJumpCommand(command);
   uiHandles->editorWidget->setFocus();
 }
 

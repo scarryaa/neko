@@ -1,8 +1,8 @@
 use super::*;
 use crate::{
     AppState, ConfigManager, Editor, FileTree, ShortcutsManager, Tab, ThemeManager,
-    commands::get_available_commands, execute_command, get_available_tab_commands, run_tab_command,
-    tab_command_state,
+    commands::{execute_jump_command, get_available_commands, get_available_jump_commands},
+    execute_command, get_available_tab_commands, run_tab_command, tab_command_state,
 };
 use std::path::PathBuf;
 
@@ -721,6 +721,7 @@ impl FileTree {
     }
 }
 
+// Command palette commands
 pub(crate) fn execute_command_wrapper(
     cmd: CommandFfi,
     config: &mut ConfigManager,
@@ -728,6 +729,14 @@ pub(crate) fn execute_command_wrapper(
     app: &mut AppState,
 ) -> CommandResultFfi {
     execute_command(cmd.into(), config, theme, app).into()
+}
+
+pub fn get_available_commands_wrapper() -> Vec<CommandFfi> {
+    let Ok(commands) = get_available_commands() else {
+        return Vec::new();
+    };
+
+    commands.into_iter().map(|cmd| cmd.into()).collect()
 }
 
 pub(crate) fn new_command(
@@ -742,6 +751,24 @@ pub(crate) fn new_command(
         kind,
         argument,
     }
+}
+
+// Jump commands
+pub(crate) fn execute_jump_command_wrapper(cmd: JumpCommandFfi, app_state: &mut AppState) {
+    let Ok(command) = cmd.clone().try_into() else {
+        eprintln!("Invalid JumpCommandFfi from C++: {cmd:?}");
+        return;
+    };
+
+    execute_jump_command(command, app_state);
+}
+
+pub(crate) fn get_available_jump_commands_wrapper() -> Vec<JumpCommandFfi> {
+    let Ok(commands) = get_available_jump_commands() else {
+        return Vec::new();
+    };
+
+    commands.into_iter().map(|cmd| cmd.into()).collect()
 }
 
 // Tab commands
@@ -768,14 +795,6 @@ pub(crate) fn run_tab_command_wrapper(
     ctx: TabContextFfi,
 ) -> bool {
     run_tab_command(app_state, id, &ctx.into()).is_ok()
-}
-
-pub fn get_available_commands_wrapper() -> Vec<CommandFfi> {
-    let Ok(commands) = get_available_commands() else {
-        return Vec::new();
-    };
-
-    commands.into_iter().map(|cmd| cmd.into()).collect()
 }
 
 pub fn get_available_tab_commands_wrapper() -> Vec<TabCommandFfi> {

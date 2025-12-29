@@ -83,6 +83,41 @@ pub mod ffi {
         pub intents: Vec<UiIntentFfi>,
     }
 
+    #[derive(Debug)]
+    pub enum JumpCommandKindFfi {
+        ToPosition,
+        ToLine,
+        ToDocument,
+        ToLastTarget,
+    }
+
+    #[derive(Debug)]
+    enum LineTargetFfi {
+        Start,
+        Middle,
+        End,
+    }
+
+    #[derive(Debug)]
+    enum DocumentTargetFfi {
+        Start,
+        Middle,
+        End,
+        Quarter,
+        ThreeQuarters,
+    }
+
+    #[derive(Debug, Clone)]
+    pub struct JumpCommandFfi {
+        pub key: String,
+        pub display_name: String,
+        pub kind: JumpCommandKindFfi,
+        pub row: u64,
+        pub column: u64,
+        pub line_target: LineTargetFfi,
+        pub document_target: DocumentTargetFfi,
+    }
+
     struct EditorConfigFfi {
         font_size: u32,
         font_family: String,
@@ -465,6 +500,12 @@ pub mod ffi {
         ) -> CommandFfi;
         #[cxx_name = "get_available_commands"]
         pub(crate) fn get_available_commands_wrapper() -> Vec<CommandFfi>;
+
+        // Jump commands
+        #[cxx_name = "execute_jump_command"]
+        pub(crate) fn execute_jump_command_wrapper(cmd: JumpCommandFfi, app_state: &mut AppState);
+        #[cxx_name = "get_available_jump_commands"]
+        pub(crate) fn get_available_jump_commands_wrapper() -> Vec<JumpCommandFfi>;
 
         // Tab commands
         pub(crate) fn get_tab_command_state(app_state: &AppState, id: u64) -> TabCommandStateFfi;

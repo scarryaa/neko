@@ -38,7 +38,7 @@ private:
                                       const QString &borderColor);
   static void setSpacerHeight(QSpacerItem *spacer, int height);
   static void setVisibilityIfNotNull(QWidget *widget, bool visible);
-  static const NavEntry *findNav(std::string_view key);
+  // static const NavEntry *findNav(std::string_view key);
 
 public:
   struct CommandPaletteProps {
@@ -58,7 +58,8 @@ public slots:
   void updateFont(const QFont &newFont);
 
 signals:
-  void goToPositionRequested(int row, int col);
+  void goToPositionRequested(const QString &jumpCommand, uint64_t row,
+                             uint64_t column, bool isPosition);
   void commandRequested(const QString &command);
 
 protected:
@@ -77,8 +78,6 @@ private:
   };
 
   static constexpr std::string_view kLastJumpKey = "ls";
-  static constexpr int kNavCount = 9;
-  static const std::array<NavEntry, kNavCount> &navTable();
 
   void setUpWindow();
   void buildUi();
@@ -102,16 +101,7 @@ private:
                         int lineCount, int lastLineMaxCol);
   void adjustShortcutsAfterToggle(bool checked);
 
-  void processJumpAndClose(int row, int column);
-  void jumpToLineStart();
-  void jumpToLineEnd();
-  void jumpToLineMiddle();
-  void jumpToDocumentStart();
-  void jumpToDocumentMiddle();
-  void jumpToDocumentQuarter();
-  void jumpToDocumentThreeQuarters();
-  void jumpToDocumentEnd();
-  void jumpToLastTarget();
+  void processJumpAndClose(const QString &jumpCommand);
 
   bool handleJumpHistoryNavigation(const QKeyEvent *event);
   void saveJumpHistoryEntry(const QString &entry);

@@ -12,7 +12,8 @@ pub mod theme;
 
 pub use app::AppState;
 pub use commands::{
-    Command, CommandResult, UiIntent, execute_command, get_available_tab_commands, run_tab_command,
+    Command, CommandResult, DocumentTarget, JumpCommand, LineTarget, UiIntent, execute_command,
+    get_available_tab_commands, run_tab_command,
     tab::{TabCommandState, TabContext},
     tab_command_state,
 };

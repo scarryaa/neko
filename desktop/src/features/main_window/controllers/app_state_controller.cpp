@@ -33,6 +33,24 @@ std::vector<neko::CommandFfi> AppStateController::getAvailableCommands() {
   return commands;
 }
 
+std::vector<neko::JumpCommandFfi>
+AppStateController::getAvailableJumpCommands() {
+  auto rawCommands = neko::get_available_jump_commands();
+  std::vector<neko::JumpCommandFfi> commands = {};
+  commands.reserve(commands.size());
+
+  for (const auto &command : rawCommands) {
+    commands.push_back(command);
+  }
+
+  return commands;
+}
+
+void AppStateController::executeJumpCommand(
+    const neko::JumpCommandFfi &jumpCommand) {
+  neko::execute_jump_command(jumpCommand, *appState);
+}
+
 std::vector<neko::TabCommandFfi> AppStateController::getAvailableTabCommands() {
   auto rawCommands = neko::get_available_tab_commands();
   std::vector<neko::TabCommandFfi> commands = {};

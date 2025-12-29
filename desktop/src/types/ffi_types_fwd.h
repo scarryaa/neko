@@ -18,16 +18,21 @@ class ScrollOffsetFfi;
 class TabsSnapshot;
 class TabSnapshot;
 
-class TabCommandFfi;
-class TabContextFfi;
-class TabCommandStateFfi;
-
 class FileOpenResult;
 class MoveActiveTabResult;
 
 class CommandFfi;
 class CommandResultFfi;
 enum class CommandKindFfi : uint8_t;
+
+class JumpCommandFfi;
+enum class JumpCommandKindFfi : uint8_t;
+enum class LineTargetFfi : uint8_t;
+enum class DocumentTargetFfi : uint8_t;
+
+class TabCommandFfi;
+class TabContextFfi;
+class TabCommandStateFfi;
 
 enum class AddCursorDirectionKind : uint8_t;
 class AddCursorDirectionFfi;

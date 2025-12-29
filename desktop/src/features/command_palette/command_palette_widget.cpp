@@ -94,28 +94,6 @@ constexpr char commandSuggestionStyle[] = // NOLINT
 } // namespace k
 } // namespace
 
-const std::array<CommandPaletteWidget::NavEntry,
-                 CommandPaletteWidget::kNavCount> &
-CommandPaletteWidget::navTable() {
-  using NavEntry = CommandPaletteWidget::NavEntry;
-
-  // TODO(scarlet): Pull this from rust?
-  static const std::array<NavEntry, CommandPaletteWidget::kNavCount> kNav = {{
-      {"lb", &CommandPaletteWidget::jumpToLineStart},
-      {"lm", &CommandPaletteWidget::jumpToLineMiddle},
-      {"le", &CommandPaletteWidget::jumpToLineEnd},
-      {"db", &CommandPaletteWidget::jumpToDocumentStart},
-      {"dm", &CommandPaletteWidget::jumpToDocumentMiddle},
-      {"de", &CommandPaletteWidget::jumpToDocumentEnd},
-      {"dh", &CommandPaletteWidget::jumpToDocumentQuarter},
-      {"dt", &CommandPaletteWidget::jumpToDocumentThreeQuarters},
-      {CommandPaletteWidget::kLastJumpKey,
-       &CommandPaletteWidget::jumpToLastTarget},
-  }};
-
-  return kNav;
-}
-
 // Static methods
 QSpacerItem *CommandPaletteWidget::buildSpacer(const int height) {
   return new QSpacerItem(0, height, QSizePolicy::Minimum, QSizePolicy::Fixed);
@@ -144,17 +122,6 @@ void CommandPaletteWidget::setVisibilityIfNotNull(QWidget *widget,
   if (widget != nullptr) {
     widget->setVisible(visible);
   }
-}
-
-const CommandPaletteWidget::NavEntry *
-CommandPaletteWidget::findNav(std::string_view key) {
-  for (const auto &entry : navTable()) {
-    if (entry.key == key) {
-      return &entry;
-    }
-  }
-
-  return nullptr;
 }
 
 CommandPaletteWidget::CommandPaletteWidget(const CommandPaletteProps &props,
@@ -376,15 +343,15 @@ QWidget *CommandPaletteWidget::buildShortcutsContainer(QWidget *parent) {
 
   // NOLINTNEXTLINE
   const ShortcutRow rows[] = {
-      {navTable()[0].key, "current line beginning"},  // NOLINT
-      {navTable()[1].key, "current line middle"},     // NOLINT
-      {navTable()[2].key, "current line end"},        // NOLINT
-      {navTable()[3].key, "document beginning"},      // NOLINT
-      {navTable()[4].key, "document middle"},         // NOLINT
-      {navTable()[5].key, "document end"},            // NOLINT
-      {navTable()[6].key, "document quarter"},        // NOLINT
-      {navTable()[7].key, "document three-quarters"}, // NOLINT
-      {navTable()[8].key, "last jumped-to position"}, // NOLINT
+      {"", "current line beginning"},  // NOLINT
+      {"", "current line middle"},     // NOLINT
+      {"", "current line end"},        // NOLINT
+      {"", "document beginning"},      // NOLINT
+      {"", "document middle"},         // NOLINT
+      {"", "document end"},            // NOLINT
+      {"", "document quarter"},        // NOLINT
+      {"", "document three-quarters"}, // NOLINT
+      {"", "last jumped-to position"}, // NOLINT
   };
 
   const QFontMetrics fontMetrics(font);
@@ -746,6 +713,7 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
     return;
   }
 
+  // TODO(scarlet): Allow aliases?
   const QString text = jumpInput->text().trimmed();
   if (text.isEmpty()) {
     close();
@@ -754,34 +722,19 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
 
   const QStringList parts = text.split(':', Qt::SkipEmptyParts);
   bool okRow = false;
-  bool okCol = true;
+  bool okColumn = true;
 
-  // TODO(scarlet): Allow aliases?
-  const QString &value = text;
+  uint64_t row = parts.value(0).toLongLong(&okRow);
+  uint64_t column = parts.size() > 1 ? parts.value(1).toLongLong(&okColumn) : 1;
+  const bool looksNumeric = okRow && okColumn;
+  const uint64_t effectiveMaxLine = std::max(
+      static_cast<uint64_t>(1), static_cast<uint64_t>(jumpState.maxLineCount));
 
-  if (const auto *entry = findNav(text.toStdString())) {
-    if (entry->key != kLastJumpKey) {
-      saveJumpHistoryEntry(text);
-    }
-
-    (this->*(entry->fn))();
-    return;
-  }
-
-  int row = parts.value(0).toInt(&okRow);
-  int col = parts.size() > 1 ? parts.value(1).toInt(&okCol) : 1;
-
-  if (!okRow || !okCol || row < 0 || col < 0) {
-    close();
-    return;
-  }
-
-  const int effectiveMaxLine = std::max(1, jumpState.maxLineCount);
-  row = std::clamp(row, 1, effectiveMaxLine);
-  col = std::max(1, col);
+  row = std::clamp(row, static_cast<uint64_t>(1), effectiveMaxLine);
+  column = std::max(static_cast<uint64_t>(1), column);
 
   saveJumpHistoryEntry(text);
-  emit goToPositionRequested(row - 1, col - 1);
+  emit goToPositionRequested(text, row, column, looksNumeric);
   close();
 }
 
@@ -831,64 +784,6 @@ void CommandPaletteWidget::adjustShortcutsAfterToggle(const bool checked) {
   shortcutsContainer->updateGeometry();
   showJumpShortcuts = checked;
   this->adjustSize();
-}
-
-void CommandPaletteWidget::processJumpAndClose(int row, int column) {
-  emit goToPositionRequested(row, column);
-  close();
-}
-
-void CommandPaletteWidget::jumpToLineStart() {
-  processJumpAndClose(jumpState.currentRow, 0);
-}
-
-void CommandPaletteWidget::jumpToLineEnd() {
-  processJumpAndClose(jumpState.currentRow, jumpState.maxColumn);
-}
-
-void CommandPaletteWidget::jumpToLineMiddle() {
-  processJumpAndClose(jumpState.currentRow, jumpState.maxColumn / 2);
-}
-
-void CommandPaletteWidget::jumpToDocumentStart() { processJumpAndClose(0, 0); }
-
-void CommandPaletteWidget::jumpToDocumentMiddle() {
-  processJumpAndClose(jumpState.maxRow / 2, jumpState.currentColumn);
-}
-
-void CommandPaletteWidget::jumpToDocumentQuarter() {
-  processJumpAndClose(jumpState.maxRow / 4, jumpState.currentColumn);
-}
-
-void CommandPaletteWidget::jumpToDocumentThreeQuarters() {
-  processJumpAndClose((jumpState.maxRow / 4) * 3, jumpState.currentColumn);
-}
-
-void CommandPaletteWidget::jumpToDocumentEnd() {
-  processJumpAndClose(jumpState.maxRow, jumpState.lastLineMaxColumn);
-}
-
-void CommandPaletteWidget::jumpToLastTarget() {
-  if ((jumpInput == nullptr) || historyState.jumpHistory.isEmpty()) {
-    close();
-    return;
-  }
-
-  const QString lsKey = QString::fromLatin1(
-      kLastJumpKey.data(), static_cast<int>(kLastJumpKey.size()));
-  for (int i = static_cast<int>(historyState.jumpHistory.size()) - 1; i >= 0;
-       --i) {
-    const auto &entry = historyState.jumpHistory.at(i);
-    if (entry.trimmed() == lsKey) {
-      continue;
-    }
-
-    jumpInput->setText(entry);
-    emitJumpRequestFromInput();
-    return;
-  }
-
-  close();
 }
 
 QLabel *CommandPaletteWidget::buildCurrentLineLabel(QWidget *parent,

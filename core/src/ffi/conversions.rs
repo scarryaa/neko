@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
-    AddCursorDirection, ChangeSet, Command, CommandResult, Config, Cursor, TabCommandState,
-    TabContext, UiIntent,
+    AddCursorDirection, ChangeSet, Command, CommandResult, Config, Cursor, DocumentTarget,
+    JumpCommand, LineTarget, TabCommandState, TabContext, UiIntent,
 };
 use std::path::PathBuf;
 
@@ -193,6 +193,125 @@ impl From<CommandResultFfi> for CommandResult {
     }
 }
 
+// Jump Conversions
+impl TryFrom<LineTargetFfi> for LineTarget {
+    type Error = &'static str;
+
+    fn try_from(value: LineTargetFfi) -> Result<Self, Self::Error> {
+        Ok(match value {
+            LineTargetFfi::Start => LineTarget::Start,
+            LineTargetFfi::Middle => LineTarget::Middle,
+            LineTargetFfi::End => LineTarget::End,
+            _ => return Err("Unknown LineTargetFfi value"),
+        })
+    }
+}
+
+impl TryFrom<DocumentTargetFfi> for DocumentTarget {
+    type Error = &'static str;
+
+    fn try_from(value: DocumentTargetFfi) -> Result<Self, Self::Error> {
+        Ok(match value {
+            DocumentTargetFfi::Start => DocumentTarget::Start,
+            DocumentTargetFfi::Middle => DocumentTarget::Middle,
+            DocumentTargetFfi::End => DocumentTarget::End,
+            DocumentTargetFfi::Quarter => DocumentTarget::Quarter,
+            DocumentTargetFfi::ThreeQuarters => DocumentTarget::ThreeQuarters,
+            _ => return Err("Unknown DocumentTargetFfi value"),
+        })
+    }
+}
+
+impl TryFrom<JumpCommandFfi> for JumpCommand {
+    type Error = &'static str;
+
+    fn try_from(cmd: JumpCommandFfi) -> Result<Self, Self::Error> {
+        Ok(match cmd.kind {
+            JumpCommandKindFfi::ToPosition => JumpCommand::ToPosition {
+                row: usize::try_from(cmd.row).unwrap_or(usize::MAX),
+                column: usize::try_from(cmd.column).unwrap_or(usize::MAX),
+            },
+            JumpCommandKindFfi::ToLine => {
+                JumpCommand::ToLine(LineTarget::try_from(cmd.line_target)?)
+            }
+            JumpCommandKindFfi::ToDocument => {
+                JumpCommand::ToDocument(DocumentTarget::try_from(cmd.document_target)?)
+            }
+            JumpCommandKindFfi::ToLastTarget => JumpCommand::ToLastTarget,
+            _ => return Err("Unknown jump command kind"),
+        })
+    }
+}
+
+impl From<LineTarget> for LineTargetFfi {
+    fn from(target: LineTarget) -> Self {
+        match target {
+            LineTarget::Start => LineTargetFfi::Start,
+            LineTarget::Middle => LineTargetFfi::Middle,
+            LineTarget::End => LineTargetFfi::End,
+        }
+    }
+}
+
+impl From<DocumentTarget> for DocumentTargetFfi {
+    fn from(target: DocumentTarget) -> Self {
+        match target {
+            DocumentTarget::Start => DocumentTargetFfi::Start,
+            DocumentTarget::Middle => DocumentTargetFfi::Middle,
+            DocumentTarget::End => DocumentTargetFfi::End,
+            DocumentTarget::Quarter => DocumentTargetFfi::Quarter,
+            DocumentTarget::ThreeQuarters => DocumentTargetFfi::ThreeQuarters,
+        }
+    }
+}
+
+impl From<JumpCommand> for JumpCommandFfi {
+    fn from(command: JumpCommand) -> Self {
+        match command {
+            JumpCommand::ToLine(ref target) => JumpCommandFfi {
+                key: command.key().unwrap().to_string(),
+                display_name: command.to_string(),
+                kind: JumpCommandKindFfi::ToLine,
+                row: 0,
+                column: 0,
+                line_target: LineTargetFfi::from(target.clone()),
+                document_target: DocumentTargetFfi::Start,
+            },
+
+            JumpCommand::ToDocument(ref target) => JumpCommandFfi {
+                key: command.key().unwrap().to_string(),
+                display_name: command.to_string(),
+                kind: JumpCommandKindFfi::ToDocument,
+                row: 0,
+                column: 0,
+                line_target: LineTargetFfi::Start,
+                document_target: DocumentTargetFfi::from(target.clone()),
+            },
+
+            JumpCommand::ToPosition { row, column } => JumpCommandFfi {
+                key: command.key().unwrap().to_string(),
+                display_name: command.to_string(),
+                kind: JumpCommandKindFfi::ToPosition,
+                row: row as u64,
+                column: column as u64,
+                line_target: LineTargetFfi::Start,
+                document_target: DocumentTargetFfi::Start,
+            },
+
+            JumpCommand::ToLastTarget => JumpCommandFfi {
+                key: command.key().unwrap().to_string(),
+                display_name: command.to_string(),
+                kind: JumpCommandKindFfi::ToLastTarget,
+                row: 0,
+                column: 0,
+                line_target: LineTargetFfi::Start,
+                document_target: DocumentTargetFfi::Start,
+            },
+        }
+    }
+}
+
+// Tab Command Conversions
 impl From<TabCommandState> for TabCommandStateFfi {
     fn from(command_state: TabCommandState) -> Self {
         Self {

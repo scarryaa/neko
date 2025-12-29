@@ -56,7 +56,8 @@ public slots:
   void openConfig();
 
   void cursorPositionClicked();
-  void commandPaletteGoToPosition(int row, int col);
+  void commandPaletteGoToPosition(const QString &jumpCommandKey, uint64_t row,
+                                  uint64_t column, bool isPosition);
   void commandPaletteCommand(const QString &command);
 
   void newTab();
