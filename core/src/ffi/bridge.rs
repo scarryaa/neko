@@ -59,6 +59,8 @@ pub mod ffi {
         FileExplorerToggle,
         ChangeTheme,
         OpenConfig,
+        JumpManagement,
+        NoOp,
     }
 
     struct CommandFfi {
@@ -72,12 +74,15 @@ pub mod ffi {
         ToggleFileExplorer,
         ApplyTheme,
         OpenConfig,
+        ShowJumpAliases,
     }
 
+    // TODO(scarlet): Figure out a better system than adding a new field for each type
     struct UiIntentFfi {
         pub kind: UiIntentKindFfi,
         pub argument_str: String,
         pub argument_u64: u64,
+        pub jump_aliases: Vec<JumpAliasInfoFfi>,
     }
 
     struct CommandResultFfi {
@@ -117,6 +122,14 @@ pub mod ffi {
         pub column: i64,
         pub line_target: LineTargetFfi,
         pub document_target: DocumentTargetFfi,
+    }
+
+    #[derive(Debug)]
+    struct JumpAliasInfoFfi {
+        pub name: String,
+        pub spec: String,
+        pub description: String,
+        pub is_builtin: bool,
     }
 
     struct EditorConfigFfi {

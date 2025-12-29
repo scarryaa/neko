@@ -1,7 +1,6 @@
 #ifndef WORKSPACE_COORDINATOR_H
 #define WORKSPACE_COORDINATOR_H
 
-#include "features/command_palette/types/types.h"
 class TabController;
 class WorkspaceController;
 class AppStateController;
@@ -10,6 +9,7 @@ class EditorController;
 class AppConfigService;
 class CommandExecutor;
 
+#include "features/command_palette/types/types.h"
 #include "features/main_window/interfaces/close_decision.h"
 #include "features/main_window/interfaces/save_result.h"
 #include "features/tabs/types/types.h"
@@ -60,7 +60,7 @@ public slots:
   void cursorPositionClicked();
   void commandPaletteGoToPosition(const QString &jumpCommandKey, int64_t row,
                                   int64_t column, bool isPosition);
-  void commandPaletteCommand(const QString &command);
+  void commandPaletteCommand(const QString &key, const QString &fullText);
 
   void newTab();
   void closeTab(int tabId, bool forceClose);

@@ -1,21 +1,68 @@
-use super::{DocumentTarget, JumpCommand, LineTarget, resolve_jump_key};
-use crate::AppState;
+use super::{
+    DocumentTarget, JumpAliasInfo, JumpCommand, JumpManagementCommand, JumpManagementResult,
+    LineTarget, resolve_jump_key,
+};
+use crate::{AppState, ConfigManager};
 
 pub fn execute_jump_key(key: String, app_state: &mut AppState) {
-    let config = app_state.get_config_snapshot();
-    if let Some(cmd) = resolve_jump_key(&key, &config) {
-        execute_jump_command(cmd, app_state);
+    let config_snapshot = app_state.get_config_snapshot();
+
+    if let Some(command) = resolve_jump_key(&key, &config_snapshot) {
+        execute_jump_command(command, app_state);
     }
 }
 
-pub fn execute_jump_command(cmd: JumpCommand, app_state: &mut AppState) {
-    let should_record = !matches!(cmd, JumpCommand::ToLastTarget);
+pub fn execute_jump_management_command(
+    command: JumpManagementCommand,
+    config_manager: &mut ConfigManager,
+) -> Result<JumpManagementResult, std::io::Error> {
+    match command {
+        JumpManagementCommand::AddAlias { name, spec } => {
+            config_manager.update(|config| {
+                config.jump.aliases.insert(name, spec);
+            });
+            Ok(JumpManagementResult::None)
+        }
+        JumpManagementCommand::RemoveAlias { name } => {
+            config_manager.update(|config| {
+                config.jump.aliases.remove(&name);
+            });
+            Ok(JumpManagementResult::None)
+        }
+        JumpManagementCommand::ListAliases => {
+            let config = config_manager.get_snapshot();
+            let aliases = config
+                .jump
+                .aliases
+                .iter()
+                .map(|(name, spec)| {
+                    let description = JumpCommand::from_spec(spec)
+                        .map(|command| command.to_string())
+                        .unwrap_or_else(|| spec.clone());
+
+                    JumpAliasInfo {
+                        name: name.to_string(),
+                        spec: spec.to_string(),
+                        description,
+                        is_builtin: false,
+                    }
+                })
+                .collect();
+
+            Ok(JumpManagementResult::Aliases(aliases))
+        }
+    }
+}
+
+pub fn execute_jump_command(command: JumpCommand, app_state: &mut AppState) {
+    let should_record = !matches!(command, JumpCommand::ToLastTarget);
 
     if should_record {
-        app_state.jump_history.store(cmd.clone());
+        app_state.jump_history.store(command.clone());
     }
 
-    match cmd {
+    match command {
+        // TODO(scarlet): Reduce repetition here?
         JumpCommand::ToPosition { row, column } => {
             if let Some(editor) = app_state.get_active_editor_mut() {
                 editor.move_to(row, column, true);

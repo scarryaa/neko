@@ -2,7 +2,7 @@ use super::JumpCommand;
 use crate::Config;
 
 pub fn resolve_jump_key(key: &str, config: &Config) -> Option<JumpCommand> {
-    // Built-ins
+    // Builtins
     if let Some(cmd) = JumpCommand::from_spec(key) {
         return Some(cmd);
     }

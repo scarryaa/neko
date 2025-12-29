@@ -34,6 +34,17 @@ bool isPrevNavKey(const QKeyEvent *event) {
          (shiftHeld && key == Qt::Key_Tab);
 }
 
+QString templatePrefix(const QString &label) {
+  // Find first '<' and take everything before it
+  const int idx = static_cast<int>(label.indexOf('<'));
+
+  if (idx <= 0) {
+    return label.trimmed();
+  }
+
+  return label.left(idx).trimmed();
+}
+
 bool isNextNavKey(const QKeyEvent *event) {
   const int key = event->key();
   const auto mods = event->modifiers();
@@ -665,25 +676,76 @@ void CommandPaletteWidget::emitCommandRequestFromInput() {
     return;
   }
 
-  const QString command = commandInput->text().trimmed();
-  if (command.isEmpty()) {
+  const QString text = commandInput->text().trimmed();
+  if (text.isEmpty()) {
     close();
     return;
   }
 
   // TODO(scarlet): Allow aliases?
   const auto availableCommands = AppStateController::getAvailableCommands();
-  const bool commandIsKnown =
-      std::any_of(availableCommands.begin(), availableCommands.end(),
-                  [&command](const neko::CommandFfi &nekoCommand) {
-                    return nekoCommand.display_name == command;
-                  });
 
-  if (commandIsKnown) {
-    saveCommandHistoryEntry(command);
-    emit commandRequested(command);
+  // If a suggestion is highlighted, use its stored key
+  if (commandSuggestions != nullptr &&
+      commandSuggestions->currentItem() != nullptr) {
+    auto *item = commandSuggestions->currentItem();
+    const QString key = item->data(Qt::UserRole).toString();
+
+    saveCommandHistoryEntry(text);
+    emit commandRequested(key, text);
+    close();
+    return;
   }
 
+  // Try exact match on label (for non-parameterized commands)
+  const auto exactMatch =
+      std::find_if(availableCommands.begin(), availableCommands.end(),
+                   [&text](const neko::CommandFfi &nekoCommand) {
+                     const QString label =
+                         QString::fromUtf8(nekoCommand.display_name);
+
+                     return label.compare(text, Qt::CaseInsensitive) == 0;
+                   });
+
+  if (exactMatch != availableCommands.end()) {
+    const QString key = QString::fromUtf8(exactMatch->key);
+    saveCommandHistoryEntry(text);
+    emit commandRequested(key, text);
+    close();
+    return;
+  }
+
+  // Try template-prefix match (for commands like "jump: add alias
+  // <name>:<spec>")
+  // TODO(scarlet): Adjust the Command Palette suggestions for add/remove alias
+  // so it triggers another "page"/palette where the user can enter the
+  // <name>:<spec>, rather than just sending the command verbatim when pressing
+  // enter.
+  const auto templateMatch = std::find_if(
+      availableCommands.begin(), availableCommands.end(),
+      // TODO(scarlet): Change this so it does not depend on neko::CommandFfi
+      [&text](const neko::CommandFfi &nekoCommand) {
+        const QString label = QString::fromUtf8(nekoCommand.display_name);
+        const QString prefix = templatePrefix(label);
+
+        if (prefix.isEmpty()) {
+          return false;
+        }
+
+        return text.startsWith(prefix, Qt::CaseInsensitive);
+      });
+
+  if (templateMatch != availableCommands.end()) {
+    const QString key = QString::fromUtf8(templateMatch->key);
+
+    saveCommandHistoryEntry(text);
+    emit commandRequested(key, text);
+    close();
+    return;
+  }
+
+  // Unknown Command
+  qDebug() << "Unknown command palette command: " << text;
   close();
 }
 
@@ -692,7 +754,6 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
     return;
   }
 
-  // TODO(scarlet): Allow aliases?
   const QString text = jumpInput->text().trimmed();
   if (text.isEmpty()) {
     close();
@@ -1037,12 +1098,13 @@ void CommandPaletteWidget::updateCommandSuggestions(const QString &text) {
   const QString textString = text.trimmed();
   const auto availableCommands = AppStateController::getAvailableCommands();
 
-  for (const auto &command : availableCommands) {
-    const QString displayName = QString::fromUtf8(command.display_name);
+  for (const auto &cmd : availableCommands) {
+    const QString label = QString::fromUtf8(cmd.display_name);
 
     if (textString.isEmpty() ||
-        displayName.contains(textString, Qt::CaseInsensitive)) {
-      commandSuggestions->addItem(displayName);
+        label.contains(textString, Qt::CaseInsensitive)) {
+      auto *item = new QListWidgetItem(label, commandSuggestions);
+      item->setData(Qt::UserRole, QString::fromUtf8(cmd.key));
     }
   }
 

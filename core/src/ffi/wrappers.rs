@@ -728,7 +728,13 @@ pub(crate) fn execute_command_wrapper(
     theme: &mut ThemeManager,
     app: &mut AppState,
 ) -> CommandResultFfi {
-    execute_command(cmd.into(), config, theme, app).into()
+    if let Ok(result) = execute_command(cmd.into(), config, theme, app) {
+        result.into()
+    } else {
+        CommandResultFfi {
+            intents: Vec::new(),
+        }
+    }
 }
 
 pub fn get_available_commands_wrapper() -> Vec<CommandFfi> {

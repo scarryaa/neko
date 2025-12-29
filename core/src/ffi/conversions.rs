@@ -1,7 +1,8 @@
 use super::*;
 use crate::{
     AddCursorDirection, ChangeSet, Command, CommandResult, Config, Cursor, DocumentTarget,
-    JumpCommand, LineTarget, TabCommandState, TabContext, UiIntent,
+    JumpCommand, JumpManagementCommand, LineTarget, TabCommandState, TabContext, UiIntent,
+    commands::JumpAliasInfo,
 };
 use std::path::PathBuf;
 
@@ -99,6 +100,13 @@ impl From<UiIntentFfi> for UiIntent {
             UiIntentKindFfi::ApplyTheme => UiIntent::ApplyTheme {
                 name: intent.argument_str,
             },
+            UiIntentKindFfi::ShowJumpAliases => UiIntent::ShowJumpAliases {
+                aliases: intent
+                    .jump_aliases
+                    .into_iter()
+                    .map(|alias| alias.into())
+                    .collect(),
+            },
             // Should not happen
             _ => UiIntent::ToggleFileExplorer,
         }
@@ -112,17 +120,33 @@ impl From<UiIntent> for UiIntentFfi {
                 kind: UiIntentKindFfi::ToggleFileExplorer,
                 argument_str: String::new(),
                 argument_u64: 0,
+                jump_aliases: Vec::new(),
             },
             UiIntent::ApplyTheme { name } => UiIntentFfi {
                 kind: UiIntentKindFfi::ApplyTheme,
                 argument_str: name,
                 argument_u64: 0,
+                jump_aliases: Vec::new(),
             },
             UiIntent::OpenConfig { id, path } => UiIntentFfi {
                 kind: UiIntentKindFfi::OpenConfig,
                 argument_str: path,
                 argument_u64: id as u64,
+                jump_aliases: Vec::new(),
             },
+            UiIntent::ShowJumpAliases { aliases } => {
+                let aliases_ffi = aliases
+                    .iter()
+                    .map(|alias| JumpAliasInfoFfi::from(alias.clone()))
+                    .collect();
+
+                UiIntentFfi {
+                    kind: UiIntentKindFfi::ShowJumpAliases,
+                    argument_str: String::new(),
+                    argument_u64: 0,
+                    jump_aliases: aliases_ffi,
+                }
+            }
         }
     }
 }
@@ -133,12 +157,23 @@ impl From<CommandFfi> for Command {
             CommandKindFfi::FileExplorerToggle => Command::FileExplorerToggle,
             CommandKindFfi::ChangeTheme => Command::ChangeTheme(command.argument),
             CommandKindFfi::OpenConfig => Command::OpenConfig,
-            // Should not happen
+            CommandKindFfi::JumpManagement => {
+                // Try to decode
+                if let Some(command) =
+                    JumpManagementCommand::decode(&command.key, command.argument.clone())
+                {
+                    Command::JumpManagement(command)
+                } else {
+                    eprintln!(
+                        "Failed to decode JumpManagementCommand from key='{}', arg='{}'",
+                        command.key, command.argument
+                    );
+                    Command::NoOp
+                }
+            }
             _ => {
-                eprintln!(
-                    "Conversion from CommandFfi to Command failed: defaulting to FileExplorerToggle"
-                );
-                Command::FileExplorerToggle
+                eprintln!("Conversion from CommandFfi to Command failed: defaulting to NoOp");
+                Command::NoOp
             }
         }
     }
@@ -164,6 +199,18 @@ impl From<Command> for CommandFfi {
                 display_name: command.to_string(),
                 kind: CommandKindFfi::OpenConfig,
                 argument: String::new(),
+            },
+            Command::JumpManagement(ref command) => CommandFfi {
+                key: command.key().to_string(),
+                display_name: command.to_string(),
+                kind: CommandKindFfi::JumpManagement,
+                argument: command.encode_argument(),
+            },
+            Command::NoOp => CommandFfi {
+                key: "".to_string(),
+                display_name: "".to_string(),
+                kind: CommandKindFfi::NoOp,
+                argument: "".to_string(),
             },
         }
     }
@@ -307,6 +354,29 @@ impl From<JumpCommand> for JumpCommandFfi {
                 line_target: LineTargetFfi::Start,
                 document_target: DocumentTargetFfi::Start,
             },
+        }
+    }
+}
+
+// Jump Alias Command Conversions
+impl From<JumpAliasInfo> for JumpAliasInfoFfi {
+    fn from(alias_info: JumpAliasInfo) -> Self {
+        Self {
+            name: alias_info.name,
+            spec: alias_info.spec,
+            description: alias_info.description,
+            is_builtin: alias_info.is_builtin,
+        }
+    }
+}
+
+impl From<JumpAliasInfoFfi> for JumpAliasInfo {
+    fn from(alias_info: JumpAliasInfoFfi) -> Self {
+        Self {
+            name: alias_info.name,
+            spec: alias_info.spec,
+            description: alias_info.description,
+            is_builtin: alias_info.is_builtin,
         }
     }
 }

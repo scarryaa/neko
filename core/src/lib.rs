@@ -12,9 +12,10 @@ pub mod theme;
 
 pub use app::AppState;
 pub use commands::{
-    Command, CommandResult, DocumentTarget, JumpCommand, JumpHistory, LineTarget, UiIntent,
-    execute_command, execute_jump_command, execute_jump_key, get_available_commands,
-    get_available_jump_commands, get_available_tab_commands, run_tab_command,
+    Command, CommandResult, DocumentTarget, JumpCommand, JumpHistory, JumpManagementCommand,
+    JumpManagementResult, LineTarget, UiIntent, execute_command, execute_jump_command,
+    execute_jump_key, get_available_commands, get_available_jump_commands,
+    get_available_tab_commands, run_tab_command,
     tab::{TabCommandState, TabContext},
     tab_command_state,
 };

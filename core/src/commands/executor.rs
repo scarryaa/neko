@@ -1,4 +1,6 @@
-use super::{Command, CommandResult, UiIntent};
+use super::{
+    Command, CommandResult, JumpManagementResult, UiIntent, execute_jump_management_command,
+};
 use crate::{AppState, ConfigManager, ThemeManager};
 
 pub fn execute_command(
@@ -6,23 +8,23 @@ pub fn execute_command(
     config: &mut ConfigManager,
     theme: &mut ThemeManager,
     app: &mut AppState,
-) -> CommandResult {
+) -> Result<CommandResult, std::io::Error> {
     match cmd {
         Command::FileExplorerToggle => {
             let new_state = !config.get_snapshot().file_explorer.shown;
             config.update(|c| c.file_explorer.shown = new_state);
 
-            CommandResult {
+            Ok(CommandResult {
                 intents: vec![UiIntent::ToggleFileExplorer],
-            }
+            })
         }
         Command::ChangeTheme(name) => {
             theme.set_theme(&name);
             config.update(|c| c.current_theme = name.clone());
 
-            CommandResult {
+            Ok(CommandResult {
                 intents: vec![UiIntent::ApplyTheme { name }],
-            }
+            })
         }
         Command::OpenConfig => {
             // TODO(scarlet): Improve the flow here, i.e. make new_tab + open_file atomic
@@ -47,13 +49,29 @@ pub fn execute_command(
                 app.open_file(&config_path_str).unwrap_or_default()
             };
 
-            CommandResult {
+            Ok(CommandResult {
                 intents: vec![UiIntent::OpenConfig {
                     id: id as i64,
                     path: config_path_str,
                 }],
-            }
+            })
         }
+        Command::JumpManagement(cmd) => {
+            let result = execute_jump_management_command(cmd, config)?;
+
+            // TODO(scarlet): Show a toast for add/remove aliases?
+            let intents = match result {
+                JumpManagementResult::None => Vec::new(),
+                JumpManagementResult::Aliases(aliases) => {
+                    vec![UiIntent::ShowJumpAliases { aliases }]
+                }
+            };
+
+            Ok(CommandResult { intents })
+        }
+        Command::NoOp => Ok(CommandResult {
+            intents: Vec::new(),
+        }),
     }
 }
 

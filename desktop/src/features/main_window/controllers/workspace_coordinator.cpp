@@ -148,21 +148,34 @@ void WorkspaceCoordinator::commandPaletteGoToPosition(
   refreshStatusBarCursorInfo();
 }
 
-void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
-  rust::String key;
+void WorkspaceCoordinator::commandPaletteCommand(const QString &key,
+                                                 const QString &fullText) {
+  rust::String rustKey;
   rust::String displayName;
   neko::CommandKindFfi kind;
   rust::String argument;
 
   const auto commands = AppStateController::getAvailableCommands();
   for (const auto &nekoCommand : commands) {
-    if (command == nekoCommand.display_name) {
-      key = nekoCommand.key;
+    if (key == QString::fromUtf8(nekoCommand.key)) {
+      rustKey = nekoCommand.key;
       displayName = nekoCommand.display_name;
       kind = nekoCommand.kind;
-      argument = nekoCommand.argument;
+
+      if (kind == neko::CommandKindFfi::JumpManagement) {
+        argument = rust::String(fullText.toStdString());
+      } else {
+        argument = nekoCommand.argument;
+      }
+
       break;
     }
+  }
+
+  if (rustKey.size() == 0) {
+    qDebug() << "commandPaletteCommand: unknown key" << key
+             << "fullText:" << fullText;
+    return;
   }
 
   const auto beforeSnapshot = tabController->getTabsSnapshot();
@@ -170,7 +183,7 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
     saveScrollOffsetsForActiveTab();
   }
 
-  auto result = commandExecutor->execute(key, displayName, kind, argument);
+  auto result = commandExecutor->execute(rustKey, displayName, kind, argument);
 
   for (auto &intent : result.intents) {
     switch (intent.kind) {
@@ -180,7 +193,7 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
     case neko::UiIntentKindFfi::ApplyTheme:
       emit themeChanged(std::string(intent.argument_str.c_str()));
       break;
-    case neko::UiIntentKindFfi::OpenConfig:
+    case neko::UiIntentKindFfi::OpenConfig: {
       // TODO(scarlet): Avoid duplicating the fileSelected logic here
       const int tabId = static_cast<int>(intent.argument_u64);
       const std::string &path = std::string(intent.argument_str);
@@ -194,6 +207,11 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &command) {
       }
 
       tabController->notifyTabOpenedFromCore(tabId);
+      break;
+    }
+    case neko::UiIntentKindFfi::ShowJumpAliases:
+      const auto aliases = intent.jump_aliases;
+      // TODO(scarlet): Show jump aliases
       break;
     }
   }
@@ -276,6 +294,7 @@ void WorkspaceCoordinator::handleTabCommand(const std::string &commandId,
   }
   const int tabId = static_cast<int>(ctx.id);
 
+  // TODO(scarlet): Avoid matching on hardcoded command ids
   if (commandId == "tab.close") {
     closeTab(tabId, forceClose);
   } else if (commandId == "tab.closeOthers") {

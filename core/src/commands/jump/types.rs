@@ -1,5 +1,130 @@
 use std::{fmt::Display, str::FromStr};
 
+#[derive(Debug)]
+pub enum JumpManagementResult {
+    None,
+    Aliases(Vec<JumpAliasInfo>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum JumpManagementCommand {
+    AddAlias { name: String, spec: String },
+    RemoveAlias { name: String },
+    ListAliases,
+}
+
+impl JumpManagementCommand {
+    fn parse_add_alias(argument: &str) -> Option<Self> {
+        // Normalize to "name:spec"
+        let mut normalized_argument = argument.trim();
+
+        // Strip "jump:"
+        if let Some(rest) = normalized_argument.strip_prefix("jump:") {
+            normalized_argument = rest.trim();
+        }
+
+        // Strip "add alias"
+        if let Some(rest) = normalized_argument.strip_prefix("add alias") {
+            normalized_argument = rest.trim();
+        }
+
+        // Should be "name:spec"
+        let (name, spec) = normalized_argument.split_once(':')?;
+
+        Some(JumpManagementCommand::AddAlias {
+            name: name.trim().to_string(),
+            spec: spec.trim().to_string(),
+        })
+    }
+
+    fn parse_remove_alias(argument: &str) -> Option<Self> {
+        let mut normalized_argument = argument.trim();
+
+        // Strip "jump:"
+        if let Some(rest) = normalized_argument.strip_prefix("jump:") {
+            normalized_argument = rest.trim();
+        }
+
+        // Strip "remove alias"
+        if let Some(rest) = normalized_argument.strip_prefix("remove alias") {
+            normalized_argument = rest.trim();
+        }
+
+        if normalized_argument.is_empty() {
+            return None;
+        }
+
+        // Should be "name"
+        Some(JumpManagementCommand::RemoveAlias {
+            name: normalized_argument.to_string(),
+        })
+    }
+
+    pub fn key(&self) -> &'static str {
+        match self {
+            JumpManagementCommand::AddAlias { .. } => "Jump::AddAlias",
+            JumpManagementCommand::RemoveAlias { .. } => "Jump::RemoveAlias",
+            JumpManagementCommand::ListAliases => "Jump::ListAliases",
+        }
+    }
+
+    pub fn encode_argument(&self) -> String {
+        match self {
+            JumpManagementCommand::AddAlias { name, spec } => {
+                format!("{name}:{spec}")
+            }
+            JumpManagementCommand::RemoveAlias { name } => name.clone(),
+            JumpManagementCommand::ListAliases => String::new(),
+        }
+    }
+
+    pub fn all() -> Vec<Self> {
+        vec![
+            JumpManagementCommand::ListAliases,
+            JumpManagementCommand::AddAlias {
+                name: "<name>".into(),
+                spec: "<spec>".into(),
+            },
+            JumpManagementCommand::RemoveAlias {
+                name: "<name>".into(),
+            },
+        ]
+    }
+
+    pub fn decode(key: &str, argument: String) -> Option<Self> {
+        match key {
+            "Jump::AddAlias" => Self::parse_add_alias(&argument),
+            "Jump::RemoveAlias" => Self::parse_remove_alias(&argument),
+            "Jump::ListAliases" => Some(JumpManagementCommand::ListAliases),
+            _ => None,
+        }
+    }
+}
+
+impl Display for JumpManagementCommand {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            JumpManagementCommand::AddAlias { name, spec } => {
+                write!(f, "jump: add alias {name}:{spec}")
+            }
+            JumpManagementCommand::RemoveAlias { name } => {
+                write!(f, "jump: remove alias {name}")
+            }
+            JumpManagementCommand::ListAliases => {
+                write!(f, "jump: list aliases")
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct JumpAliasInfo {
+    pub name: String,        // "db"
+    pub spec: String,        // "doc.start"
+    pub description: String, // "document beginning"
+    pub is_builtin: bool,    // "true"
+}
+
 #[derive(Default, Clone, Debug)]
 pub struct JumpHistory {
     pub previous_jump_command: Option<JumpCommand>,

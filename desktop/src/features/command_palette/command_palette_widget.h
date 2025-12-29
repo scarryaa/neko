@@ -60,7 +60,7 @@ public slots:
 signals:
   void goToPositionRequested(const QString &jumpCommand, int64_t row,
                              int64_t column, bool isPosition);
-  void commandRequested(const QString &command);
+  void commandRequested(const QString &key, const QString &fullText);
 
 protected:
   void showEvent(QShowEvent *event) override;
