@@ -13,10 +13,6 @@ impl Default for ConfigManager {
     }
 }
 
-// TODO(scarlet): If the user edits the config while the app is running, and then executes a
-// command which updates the config (like 'toggle file explorer'), it will overwrite their changes
-// with the config that was loaded on app startup. Make it so when the config is edited/saved by the user,
-// it is reloaded.
 // TODO(scarlet): Add validation for config schema? E.g. currently if the user adds a key under
 // the jump section like 'invalid_key': 'unknown_command', nothing happens and it is ignored.
 // Ideally display a warning in-editor.
@@ -66,6 +62,20 @@ impl ConfigManager {
                 eprintln!("Failed to parse config {}: {e}", path.display());
                 None
             }
+        }
+    }
+
+    pub fn reload_from_disk(&self) -> Result<(), std::io::Error> {
+        match Self::load_from_disk(&self.file_path) {
+            Some(cfg) => {
+                let mut inner = self.inner.write().unwrap();
+                *inner = cfg;
+                Ok(())
+            }
+            None => Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("Config file {} not found", self.file_path.display()),
+            )),
         }
     }
 

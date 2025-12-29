@@ -200,7 +200,24 @@ impl AppState {
     }
 
     pub fn save_tab_with_id(&mut self, id: usize) -> Result<(), Error> {
-        self.tab_manager.save_tab_with_id(id)
+        let result = self.tab_manager.save_tab_with_id(id);
+
+        if result.is_ok() {
+            if let Ok(tab) = self.tab_manager.get_tab(id) {
+                if let Some(path) = tab.get_file_path() {
+                    if path == ConfigManager::get_config_path() {
+                        // Refresh config if tab with config path was saved in the editor
+                        // TODO(scarlet): Run a file watcher or call reload before writing via
+                        // update fn to accommodate external changes eventually
+                        if let Err(e) = self.config_manager().reload_from_disk() {
+                            eprintln!("Failed to reload config: {e}");
+                        }
+                    }
+                }
+            }
+        }
+
+        result
     }
 
     pub fn save_tab_with_id_and_set_path(&mut self, id: usize, path: &str) -> Result<(), Error> {
@@ -228,6 +245,15 @@ impl AppState {
     }
 
     // Utility
+    pub fn with_editor<F>(&mut self, mut f: F)
+    where
+        F: FnMut(&mut Editor),
+    {
+        if let Some(editor) = self.get_active_editor_mut() {
+            f(editor);
+        }
+    }
+
     fn config_manager(&self) -> &ConfigManager {
         // SAFETY: C++ must ensure ConfigManager outlives AppState
         assert!(
