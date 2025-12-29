@@ -51,6 +51,10 @@ void AppStateController::executeJumpCommand(
   neko::execute_jump_command(jumpCommand, *appState);
 }
 
+void AppStateController::executeJumpKey(const QString &key) {
+  neko::execute_jump_key(key.toStdString(), *appState);
+}
+
 std::vector<neko::TabCommandFfi> AppStateController::getAvailableTabCommands() {
   auto rawCommands = neko::get_available_tab_commands();
   std::vector<neko::TabCommandFfi> commands = {};

@@ -1,4 +1,6 @@
-use crate::{ConfigManager, Editor, FileTree, JumpHistory, MoveActiveTabResult, Tab, TabManager};
+use crate::{
+    Config, ConfigManager, Editor, FileTree, JumpHistory, MoveActiveTabResult, Tab, TabManager,
+};
 use std::io::Error;
 
 /// Application state.
@@ -65,6 +67,10 @@ impl AppState {
 
     pub fn get_close_right_tab_ids(&self, id: usize) -> Result<Vec<usize>, Error> {
         self.tab_manager.get_close_right_tab_ids(id)
+    }
+
+    pub fn get_config_snapshot(&self) -> Config {
+        unsafe { &*self.config_manager }.get_snapshot()
     }
 
     // Setters

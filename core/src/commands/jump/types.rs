@@ -79,6 +79,22 @@ impl JumpCommand {
             JumpCommand::ToLastTarget,
         ]
     }
+
+    pub fn from_spec(spec: &str) -> Option<Self> {
+        match spec {
+            "line.start" => Some(JumpCommand::ToLine(LineTarget::Start)),
+            "line.middle" => Some(JumpCommand::ToLine(LineTarget::Middle)),
+            "line.end" => Some(JumpCommand::ToLine(LineTarget::End)),
+
+            "doc.start" => Some(JumpCommand::ToDocument(DocumentTarget::Start)),
+            "doc.middle" => Some(JumpCommand::ToDocument(DocumentTarget::Middle)),
+            "doc.end" => Some(JumpCommand::ToDocument(DocumentTarget::End)),
+            "doc.quarter" => Some(JumpCommand::ToDocument(DocumentTarget::Quarter)),
+            "doc.three_quarters" => Some(JumpCommand::ToDocument(DocumentTarget::ThreeQuarters)),
+
+            _ => None,
+        }
+    }
 }
 
 impl FromStr for JumpCommand {

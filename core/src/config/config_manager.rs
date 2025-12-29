@@ -13,6 +13,13 @@ impl Default for ConfigManager {
     }
 }
 
+// TODO(scarlet): If the user edits the config while the app is running, and then executes a
+// command which updates the config (like 'toggle file explorer'), it will overwrite their changes
+// with the config that was loaded on app startup. Make it so when the config is edited/saved by the user,
+// it is reloaded.
+// TODO(scarlet): Add validation for config schema? E.g. if the user adds a key under
+// the jump section like 'invalid_key': 'unknown_command', nothing happens and it is ignored.
+// Ideally display a warning in-editor.
 impl ConfigManager {
     pub fn new() -> Self {
         let file_path = Self::get_config_path();
@@ -47,8 +54,14 @@ impl ConfigManager {
         }
 
         let content = fs::read_to_string(path).ok()?;
+
         match serde_json::from_str::<Config>(&content) {
-            Ok(cfg) => Some(cfg),
+            Ok(mut cfg) => {
+                // Merge/backfill jump aliases
+                cfg.ensure_jump_defaults();
+
+                Some(cfg)
+            }
             Err(e) => {
                 eprintln!("Failed to parse config {}: {e}", path.display());
                 None

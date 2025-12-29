@@ -1,5 +1,6 @@
 use crate::Theme;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
@@ -77,6 +78,31 @@ impl Default for TerminalConfig {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
+pub struct JumpConfig {
+    /// User-defined jump aliases; e.g. "db" -> "doc.start".
+    pub aliases: HashMap<String, String>,
+}
+
+impl Default for JumpConfig {
+    fn default() -> Self {
+        let mut aliases = HashMap::new();
+
+        aliases.insert("lb".into(), "line.start".into());
+        aliases.insert("lm".into(), "line.middle".into());
+        aliases.insert("le".into(), "line.end".into());
+
+        aliases.insert("db".into(), "doc.start".into());
+        aliases.insert("dm".into(), "doc.middle".into());
+        aliases.insert("de".into(), "doc.end".into());
+        aliases.insert("dh".into(), "doc.quarter".into());
+        aliases.insert("dt".into(), "doc.three_quarters".into());
+
+        Self { aliases }
+    }
+}
+
 // TODO(scarlet): Update config on app open. Currently it only updates when config is modified by
 // the app (e.g. toggling the file explorer)
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -87,6 +113,7 @@ pub struct Config {
     pub interface: InterfaceConfig,
     pub terminal: TerminalConfig,
     pub current_theme: String,
+    pub jump: JumpConfig,
 }
 
 impl Default for Config {
@@ -96,7 +123,17 @@ impl Default for Config {
             file_explorer: FileExplorerConfig::default(),
             interface: InterfaceConfig::default(),
             terminal: TerminalConfig::default(),
+            jump: JumpConfig::default(),
             current_theme: Theme::default().name,
+        }
+    }
+}
+
+impl Config {
+    pub fn ensure_jump_defaults(&mut self) {
+        let defaults = JumpConfig::default().aliases;
+        for (k, v) in defaults {
+            self.jump.aliases.entry(k).or_insert(v);
         }
     }
 }

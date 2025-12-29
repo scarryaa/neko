@@ -37,6 +37,7 @@ public:
   static std::vector<neko::JumpCommandFfi> getAvailableJumpCommands();
 
   void executeJumpCommand(const neko::JumpCommandFfi &jumpCommand);
+  void executeJumpKey(const QString &key);
 
   void runTabCommand(const std::string &commandId,
                      const neko::TabContextFfi &ctx);

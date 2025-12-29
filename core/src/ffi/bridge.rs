@@ -1,5 +1,6 @@
 use crate::{
-    AppState, ConfigManager, Editor, FileTree, ShortcutsManager, ThemeManager, ffi::wrappers::*,
+    AppState, ConfigManager, Editor, FileTree, ShortcutsManager, ThemeManager, execute_jump_key,
+    ffi::wrappers::*,
 };
 
 #[cxx::bridge(namespace = "neko")]
@@ -504,6 +505,7 @@ pub mod ffi {
         // Jump commands
         #[cxx_name = "execute_jump_command"]
         pub(crate) fn execute_jump_command_wrapper(cmd: JumpCommandFfi, app_state: &mut AppState);
+        pub(crate) fn execute_jump_key(key: String, app_state: &mut AppState);
         #[cxx_name = "get_available_jump_commands"]
         pub(crate) fn get_available_jump_commands_wrapper() -> Vec<JumpCommandFfi>;
 

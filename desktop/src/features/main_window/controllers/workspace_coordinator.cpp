@@ -138,19 +138,7 @@ void WorkspaceCoordinator::commandPaletteGoToPosition(
 
     appStateController->executeJumpCommand(jumpCommand);
   } else {
-    // Special jump commands
-    const auto jumpCommands = AppStateController::getAvailableJumpCommands();
-    const auto foundJumpCommand = std::find_if(
-        jumpCommands.begin(), jumpCommands.end(), [&](const auto &command) {
-          return jumpCommandKey == QString::fromUtf8(command.key);
-        });
-
-    if (foundJumpCommand == jumpCommands.end()) {
-      // Unknown jump command
-      return;
-    }
-
-    appStateController->executeJumpCommand(*foundJumpCommand);
+    appStateController->executeJumpKey(jumpCommandKey);
   }
 
   // TODO(scarlet): Turn these into signals?

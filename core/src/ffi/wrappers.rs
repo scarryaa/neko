@@ -1,8 +1,8 @@
 use super::*;
 use crate::{
     AppState, ConfigManager, Editor, FileTree, ShortcutsManager, Tab, ThemeManager,
-    commands::{execute_jump_command, get_available_commands, get_available_jump_commands},
-    execute_command, get_available_tab_commands, run_tab_command, tab_command_state,
+    execute_command, execute_jump_command, get_available_commands, get_available_jump_commands,
+    get_available_tab_commands, run_tab_command, tab_command_state,
 };
 use std::path::PathBuf;
 

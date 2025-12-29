@@ -1,5 +1,12 @@
-use super::{DocumentTarget, JumpCommand, LineTarget};
+use super::{DocumentTarget, JumpCommand, LineTarget, resolve_jump_key};
 use crate::AppState;
+
+pub fn execute_jump_key(key: String, app_state: &mut AppState) {
+    let config = app_state.get_config_snapshot();
+    if let Some(cmd) = resolve_jump_key(&key, &config) {
+        execute_jump_command(cmd, app_state);
+    }
+}
 
 pub fn execute_jump_command(cmd: JumpCommand, app_state: &mut AppState) {
     let should_record = !matches!(cmd, JumpCommand::ToLastTarget);
