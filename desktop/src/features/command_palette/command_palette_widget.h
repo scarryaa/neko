@@ -38,12 +38,12 @@ private:
                                       const QString &borderColor);
   static void setSpacerHeight(QSpacerItem *spacer, int height);
   static void setVisibilityIfNotNull(QWidget *widget, bool visible);
-  // static const NavEntry *findNav(std::string_view key);
 
 public:
   struct CommandPaletteProps {
     QFont font;
     CommandPaletteTheme theme;
+    std::vector<ShortcutHintRow> jumpHints;
   };
 
   explicit CommandPaletteWidget(const CommandPaletteProps &props,
@@ -58,8 +58,8 @@ public slots:
   void updateFont(const QFont &newFont);
 
 signals:
-  void goToPositionRequested(const QString &jumpCommand, uint64_t row,
-                             uint64_t column, bool isPosition);
+  void goToPositionRequested(const QString &jumpCommand, int64_t row,
+                             int64_t column, bool isPosition);
   void commandRequested(const QString &command);
 
 protected:
@@ -121,6 +121,7 @@ private:
 
   CommandPaletteTheme theme;
   QFont font;
+  std::vector<ShortcutHintRow> shortcutRows;
 
   CurrentSizeStackedWidget *pages;
   PaletteFrame *mainFrame;

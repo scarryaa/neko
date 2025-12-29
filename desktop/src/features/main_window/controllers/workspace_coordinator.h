@@ -1,6 +1,7 @@
 #ifndef WORKSPACE_COORDINATOR_H
 #define WORKSPACE_COORDINATOR_H
 
+#include "features/command_palette/types/types.h"
 class TabController;
 class WorkspaceController;
 class AppStateController;
@@ -41,6 +42,7 @@ public:
   void revealActiveTab();
   void moveTabBy(int delta, bool useHistory);
 
+  [[nodiscard]] static std::vector<ShortcutHintRow> buildJumpHintRows();
   std::optional<std::string> requestFileExplorerDirectory();
   void fileSaved(bool saveAs);
   void openFile();
@@ -56,8 +58,8 @@ public slots:
   void openConfig();
 
   void cursorPositionClicked();
-  void commandPaletteGoToPosition(const QString &jumpCommandKey, uint64_t row,
-                                  uint64_t column, bool isPosition);
+  void commandPaletteGoToPosition(const QString &jumpCommandKey, int64_t row,
+                                  int64_t column, bool isPosition);
   void commandPaletteCommand(const QString &command);
 
   void newTab();

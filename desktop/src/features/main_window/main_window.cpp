@@ -215,6 +215,7 @@ void MainWindow::setupWidgets(neko::Editor *editor,
   neko::FileTree *fileTree = &appStateController->getFileTreeMut();
   auto *fileTreeController =
       new FileTreeController({.fileTree = fileTree}, this);
+  const auto jumpHints = WorkspaceCoordinator::buildJumpHintRows();
 
   emptyStateWidget = new QWidget(this);
   titleBarWidget = new TitleBarWidget(
@@ -224,9 +225,11 @@ void MainWindow::setupWidgets(neko::Editor *editor,
                               .font = fonts.fileExplorerFont,
                               .theme = themes.fileExplorerTheme},
                              this);
-  commandPaletteWidget = new CommandPaletteWidget(
-      {.font = fonts.commandPaletteFont, .theme = themes.commandPaletteTheme},
-      this);
+  commandPaletteWidget =
+      new CommandPaletteWidget({.font = fonts.commandPaletteFont,
+                                .theme = themes.commandPaletteTheme,
+                                .jumpHints = jumpHints},
+                               this);
   editorWidget = new EditorWidget({.editorController = editorController,
                                    .font = fonts.editorFont,
                                    .theme = themes.editorTheme},

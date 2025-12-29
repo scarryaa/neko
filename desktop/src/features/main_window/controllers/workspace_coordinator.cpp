@@ -96,8 +96,23 @@ void WorkspaceCoordinator::cursorPositionClicked() {
       });
 }
 
+std::vector<ShortcutHintRow> WorkspaceCoordinator::buildJumpHintRows() {
+  std::vector<ShortcutHintRow> result;
+  const auto jumpCommands = AppStateController::getAvailableJumpCommands();
+
+  result.reserve(jumpCommands.size());
+  for (const auto &cmd : jumpCommands) {
+    result.push_back({
+        QString::fromUtf8(cmd.key),
+        QString::fromUtf8(cmd.display_name),
+    });
+  }
+
+  return result;
+}
+
 void WorkspaceCoordinator::commandPaletteGoToPosition(
-    const QString &jumpCommandKey, uint64_t row, uint64_t column,
+    const QString &jumpCommandKey, int64_t row, int64_t column,
     bool isPosition) {
   const auto snapshot = tabController->getTabsSnapshot();
   if (!snapshot.active_present) {
@@ -105,15 +120,18 @@ void WorkspaceCoordinator::commandPaletteGoToPosition(
   }
 
   if (isPosition) {
-    const uint64_t adjustedRow =
-        std::max(static_cast<uint64_t>(0), row - static_cast<uint64_t>(1));
-    const uint64_t adjustedColumn =
-        std::max(static_cast<uint64_t>(0), column - static_cast<uint64_t>(1));
+    const int lineCount = editorController->getLineCount();
+    const int64_t maxLine = std::max<int64_t>(1, lineCount);
+
+    const int64_t clampedRow = std::clamp<int64_t>(row, 1, maxLine);
+    const int64_t clampedCol = std::max<int64_t>(1, column);
+    const auto adjustedRow = static_cast<std::int64_t>(clampedRow - 1);
+    const auto adjustedColumn = static_cast<std::int64_t>(clampedCol - 1);
 
     neko::JumpCommandFfi command{
         .kind = neko::JumpCommandKindFfi::ToPosition,
-        .row = static_cast<std::uint64_t>(adjustedRow),
-        .column = static_cast<std::uint64_t>(adjustedColumn),
+        .row = adjustedRow,
+        .column = adjustedColumn,
         .line_target = neko::LineTargetFfi::Start,
         .document_target = neko::DocumentTargetFfi::Start,
     };
@@ -123,6 +141,7 @@ void WorkspaceCoordinator::commandPaletteGoToPosition(
     return;
   }
 
+  // Special jump commands
   const auto jumpCommands = AppStateController::getAvailableJumpCommands();
   const auto foundJumpCommand = std::find_if(
       jumpCommands.begin(), jumpCommands.end(), [&](const auto &command) {
@@ -134,10 +153,7 @@ void WorkspaceCoordinator::commandPaletteGoToPosition(
     return;
   }
 
-  // It's a special jump command
-  const auto &command = *foundJumpCommand;
-
-  appStateController->executeJumpCommand(command);
+  appStateController->executeJumpCommand(*foundJumpCommand);
   uiHandles->editorWidget->setFocus();
 }
 
@@ -538,9 +554,6 @@ void WorkspaceCoordinator::closeOtherTabs(int tabId, bool forceClose) {
 void WorkspaceCoordinator::applyInitialState() {
   const auto snapshot = tabController->getTabsSnapshot();
 
-  // NOTE: Not currently needed, might be needed in the future?
-  // uiHandles->tabBarWidget->clear();
-
   int index = 0;
   for (const auto &tab : snapshot.tabs) {
     TabPresentation presentation;
@@ -622,7 +635,7 @@ void WorkspaceCoordinator::refreshUiForActiveTab(bool focusEditor) {
     return;
   }
 
-  // IMPORTANT: set active editor before re-showing widgets, otherwise
+  // IMPORTANT: Set active editor before re-showing widgets, otherwise
   // Qt layout triggers a resize event (which queries the line count with the
   // old editor reference)
   neko::Editor &activeEditor = appStateController->getActiveEditorMut();

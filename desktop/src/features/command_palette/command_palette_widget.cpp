@@ -126,7 +126,8 @@ void CommandPaletteWidget::setVisibilityIfNotNull(QWidget *widget,
 
 CommandPaletteWidget::CommandPaletteWidget(const CommandPaletteProps &props,
                                            QWidget *parent)
-    : QWidget(parent), theme(props.theme), font(props.font) {
+    : QWidget(parent), theme(props.theme), font(props.font),
+      shortcutRows(props.jumpHints) {
   setFont(font);
   setUpWindow();
   buildUi();
@@ -336,31 +337,12 @@ void CommandPaletteWidget::adjustPosition() {
 }
 
 QWidget *CommandPaletteWidget::buildShortcutsContainer(QWidget *parent) {
-  struct ShortcutRow {
-    std::string_view code;
-    const char *desc;
-  };
-
-  // NOLINTNEXTLINE
-  const ShortcutRow rows[] = {
-      {"", "current line beginning"},  // NOLINT
-      {"", "current line middle"},     // NOLINT
-      {"", "current line end"},        // NOLINT
-      {"", "document beginning"},      // NOLINT
-      {"", "document middle"},         // NOLINT
-      {"", "document end"},            // NOLINT
-      {"", "document quarter"},        // NOLINT
-      {"", "document three-quarters"}, // NOLINT
-      {"", "last jumped-to position"}, // NOLINT
-  };
-
   const QFontMetrics fontMetrics(font);
   int codeColumnWidth = 0;
-  for (const auto &row : rows) {
-    const QString codeStr =
-        QString::fromLatin1(row.code.data(), static_cast<int>(row.code.size()));
+
+  for (const auto &row : shortcutRows) {
     codeColumnWidth =
-        std::max(codeColumnWidth, fontMetrics.horizontalAdvance(codeStr));
+        std::max(codeColumnWidth, fontMetrics.horizontalAdvance(row.code));
   }
   codeColumnWidth += fontMetrics.horizontalAdvance("  ");
 
@@ -376,17 +358,15 @@ QWidget *CommandPaletteWidget::buildShortcutsContainer(QWidget *parent) {
                                 QSizePolicy::Fixed, QSizePolicy::Fixed);
   };
 
-  for (const auto &row : rows) {
+  for (const auto &row : shortcutRows) {
     auto *rowWidget = new QWidget(shortcutsContainer);
     auto *rowLayout = new QHBoxLayout(rowWidget);
     rowLayout->setContentsMargins(k::commandRowHorizontalContentMargin, 0,
                                   k::commandRowHorizontalContentMargin, 0);
     rowLayout->setSpacing(4);
 
-    const QString codeStr =
-        QString::fromLatin1(row.code.data(), static_cast<int>(row.code.size()));
     auto *codeLabel =
-        UiUtils::createLabel(codeStr, hintStyle, font, rowWidget, false,
+        UiUtils::createLabel(row.code, hintStyle, font, rowWidget, false,
                              QSizePolicy::Fixed, QSizePolicy::Fixed);
     codeLabel->setMinimumWidth(
         static_cast<int>(codeColumnWidth / k::codeLabelWidthDivider));
@@ -396,8 +376,9 @@ QWidget *CommandPaletteWidget::buildShortcutsContainer(QWidget *parent) {
                              QSizePolicy::Fixed, QSizePolicy::Fixed);
     dashLabel->setMinimumWidth(
         static_cast<int>(codeColumnWidth / k::dashLabelWidthDivider));
+
     auto *descLabel =
-        UiUtils::createLabel(row.desc, hintStyle, font, rowWidget, false,
+        UiUtils::createLabel(row.description, hintStyle, font, rowWidget, false,
                              QSizePolicy::Fixed, QSizePolicy::Fixed);
 
     rowLayout->addWidget(codeLabel);
@@ -411,8 +392,6 @@ QWidget *CommandPaletteWidget::buildShortcutsContainer(QWidget *parent) {
 }
 
 QWidget *CommandPaletteWidget::buildShortcutsRow(QWidget *parent) {
-  // QFont font = makeInterfaceFont(k::jumpFontSize);
-
   auto *shortcutsRow = new QWidget(jumpPage);
 
   auto *shortcutsRowLayout = new QHBoxLayout(shortcutsRow);
@@ -724,14 +703,9 @@ void CommandPaletteWidget::emitJumpRequestFromInput() {
   bool okRow = false;
   bool okColumn = true;
 
-  uint64_t row = parts.value(0).toLongLong(&okRow);
-  uint64_t column = parts.size() > 1 ? parts.value(1).toLongLong(&okColumn) : 1;
+  int64_t row = parts.value(0).toLongLong(&okRow);
+  int64_t column = parts.size() > 1 ? parts.value(1).toLongLong(&okColumn) : 1;
   const bool looksNumeric = okRow && okColumn;
-  const uint64_t effectiveMaxLine = std::max(
-      static_cast<uint64_t>(1), static_cast<uint64_t>(jumpState.maxLineCount));
-
-  row = std::clamp(row, static_cast<uint64_t>(1), effectiveMaxLine);
-  column = std::max(static_cast<uint64_t>(1), column);
 
   saveJumpHistoryEntry(text);
   emit goToPositionRequested(text, row, column, looksNumeric);
@@ -748,7 +722,6 @@ void CommandPaletteWidget::updateJumpUiFromState() {
       std::clamp(jumpState.currentColumn, 0, std::max(1, jumpState.maxColumn));
 
   jumpInput->setPlaceholderText(QString("%1:%2").arg(row0 + 1).arg(col0 + 1));
-
   currentLineLabel->setText(QString("Current line: %1 of %2 (column %3)")
                                 .arg(row0 + 1)
                                 .arg(jumpState.maxLineCount)

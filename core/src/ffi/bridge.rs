@@ -112,8 +112,8 @@ pub mod ffi {
         pub key: String,
         pub display_name: String,
         pub kind: JumpCommandKindFfi,
-        pub row: u64,
-        pub column: u64,
+        pub row: i64,
+        pub column: i64,
         pub line_target: LineTargetFfi,
         pub document_target: DocumentTargetFfi,
     }

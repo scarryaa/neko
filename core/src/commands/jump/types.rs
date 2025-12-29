@@ -94,16 +94,16 @@ impl Display for JumpCommand {
             JumpCommand::ToPosition { row, column } => {
                 write!(f, "go to {}:{}", row + 1, column + 1)
             }
-            JumpCommand::ToLine(LineTarget::Start) => write!(f, "go to line: start"),
-            JumpCommand::ToLine(LineTarget::Middle) => write!(f, "go to line: middle"),
-            JumpCommand::ToLine(LineTarget::End) => write!(f, "go to line: end"),
+            JumpCommand::ToLine(LineTarget::Start) => write!(f, "line beginning"),
+            JumpCommand::ToLine(LineTarget::Middle) => write!(f, "line middle"),
+            JumpCommand::ToLine(LineTarget::End) => write!(f, "line end"),
 
-            JumpCommand::ToDocument(DocumentTarget::Start) => write!(f, "go to document: start"),
-            JumpCommand::ToDocument(DocumentTarget::Middle) => write!(f, "go to document: middle"),
-            JumpCommand::ToDocument(DocumentTarget::End) => write!(f, "go to document: end"),
-            JumpCommand::ToDocument(DocumentTarget::Quarter) => write!(f, "go to document: 1/4"),
+            JumpCommand::ToDocument(DocumentTarget::Start) => write!(f, "document beginning"),
+            JumpCommand::ToDocument(DocumentTarget::Middle) => write!(f, "document middle"),
+            JumpCommand::ToDocument(DocumentTarget::End) => write!(f, "document end"),
+            JumpCommand::ToDocument(DocumentTarget::Quarter) => write!(f, "document 1/4"),
             JumpCommand::ToDocument(DocumentTarget::ThreeQuarters) => {
-                write!(f, "go to document: 3/4")
+                write!(f, "document 3/4")
             }
 
             JumpCommand::ToLastTarget => write!(f, "repeat last jump"),
