@@ -2,8 +2,8 @@
 #include "features/command_palette/command_palette_widget.h"
 #include "features/editor/editor_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
-#include "features/main_window/controllers/app_config_service.h"
 #include "features/main_window/controllers/ui_style_manager.h"
+#include "features/main_window/services/app_config_service.h"
 
 UiStyleConnections::UiStyleConnections(const UiStyleConnectionsProps &props,
                                        QObject *parent)

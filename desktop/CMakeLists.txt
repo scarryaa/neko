@@ -77,16 +77,16 @@ qt_add_executable(neko
     src/features/main_window/controllers/command_manager.h
     src/features/main_window/controllers/shortcuts_manager.cpp
     src/features/main_window/controllers/shortcuts_manager.h
-    src/features/main_window/controllers/app_config_service.cpp
-    src/features/main_window/controllers/app_config_service.h
     src/features/main_window/controllers/ui_style_manager.cpp
     src/features/main_window/controllers/ui_style_manager.h
     src/features/main_window/controllers/command_executor.cpp
     src/features/main_window/controllers/command_executor.h
 
-    # Dialog Service
+    # Main Window Services
     src/features/main_window/services/dialog_service.cpp
     src/features/main_window/services/dialog_service.h
+    src/features/main_window/services/app_config_service.cpp
+    src/features/main_window/services/app_config_service.h
 
     # Workspace Coordinator Flows
     src/features/main_window/flows/tab_flows.cpp

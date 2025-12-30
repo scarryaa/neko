@@ -1,5 +1,5 @@
 #include "command_executor.h"
-#include "features/main_window/controllers/app_config_service.h"
+#include "features/main_window/services/app_config_service.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 
 CommandExecutor::CommandExecutor(const CommandExecutorProps &props)

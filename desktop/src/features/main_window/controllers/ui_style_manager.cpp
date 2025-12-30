@@ -1,5 +1,5 @@
 #include "features/main_window/controllers/ui_style_manager.h"
-#include "app_config_service.h"
+#include "features/main_window/services/app_config_service.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 #include "utils/ui_utils.h"
 

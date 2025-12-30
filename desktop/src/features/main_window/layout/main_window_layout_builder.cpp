@@ -1,6 +1,6 @@
 #include "main_window_layout_builder.h"
-#include "features/main_window/controllers/app_config_service.h"
 #include "features/main_window/controllers/ui_style_manager.h"
+#include "features/main_window/services/app_config_service.h"
 #include "theme/theme_provider.h"
 #include "utils/ui_utils.h"
 #include <QHBoxLayout>
