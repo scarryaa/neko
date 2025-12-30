@@ -21,12 +21,16 @@
 
 WorkspaceCoordinator::WorkspaceCoordinator(
     const WorkspaceCoordinatorProps &props, QObject *parent)
-    : workspaceController(props.workspaceController),
-      tabController(props.tabController),
+    : tabController(props.tabController),
       appStateController(props.appStateController),
       appConfigService(props.appConfigService),
       editorController(props.editorController), uiHandles(props.uiHandles),
       commandExecutor(props.commandExecutor), workspaceUi(props.workspaceUi),
+      tabFlows({.tabController = props.tabController,
+                .appStateController = props.appStateController,
+                .editorController = props.editorController,
+                .workspaceUi = props.workspaceUi,
+                .uiHandles = props.uiHandles}),
       QObject(parent) {
   // TabController -> WorkspaceCoordinator
   connect(tabController, &TabController::activeTabChanged, this,
@@ -34,41 +38,43 @@ WorkspaceCoordinator::WorkspaceCoordinator(
   connect(tabController, &TabController::allTabsClosed, this,
           [this] { refreshUiForActiveTab(false); });
   connect(tabController, &TabController::restoreScrollOffsetsForReopenedTab,
-          this, &WorkspaceCoordinator::restoreScrollOffsetsForReopenedTab);
+          this, [this](const TabScrollOffsets &scrollOffsets) {
+            tabFlows.restoreScrollOffsetsForReopenedTab(scrollOffsets);
+          });
 
   // TabController -> TabBarWidget
-  connect(tabController, &TabController::tabOpened, uiHandles->tabBarWidget,
+  connect(tabController, &TabController::tabOpened, uiHandles.tabBarWidget,
           &TabBarWidget::addTab);
-  connect(tabController, &TabController::tabClosed, uiHandles->tabBarWidget,
+  connect(tabController, &TabController::tabClosed, uiHandles.tabBarWidget,
           &TabBarWidget::removeTab);
-  connect(tabController, &TabController::tabMoved, uiHandles->tabBarWidget,
+  connect(tabController, &TabController::tabMoved, uiHandles.tabBarWidget,
           [this](int fromIndex, int toIndex) {
-            uiHandles->tabBarWidget->moveTab(fromIndex, toIndex);
-            uiHandles->editorWidget->setFocus();
+            uiHandles.tabBarWidget->moveTab(fromIndex, toIndex);
+            uiHandles.editorWidget->setFocus();
           });
-  connect(tabController, &TabController::tabUpdated, uiHandles->tabBarWidget,
+  connect(tabController, &TabController::tabUpdated, uiHandles.tabBarWidget,
           &TabBarWidget::updateTab);
   connect(tabController, &TabController::activeTabChanged,
-          uiHandles->tabBarWidget, &TabBarWidget::setCurrentTabId);
+          uiHandles.tabBarWidget, &TabBarWidget::setCurrentTabId);
 
   // WorkspaceCoordinator -> TabController
   connect(this, &WorkspaceCoordinator::fileOpened, tabController,
           &TabController::fileOpened);
 
-  neko::Editor &activeEditor = appStateController->getActiveEditorMut();
+  auto &activeEditor = appStateController->getActiveEditorMut();
   setActiveEditor(&activeEditor);
 }
 
 void WorkspaceCoordinator::fileExplorerToggled() {
-  const bool shouldShow = uiHandles->fileExplorerWidget->isHidden();
-  uiHandles->fileExplorerWidget->setVisible(shouldShow);
+  const bool shouldShow = uiHandles.fileExplorerWidget->isHidden();
+  uiHandles.fileExplorerWidget->setVisible(shouldShow);
 
   auto snapshot = appConfigService->getSnapshot();
   snapshot.file_explorer.shown = shouldShow;
   appConfigService->setFileExplorerShown(shouldShow);
 
   emit onFileExplorerToggledViaShortcut(
-      !uiHandles->fileExplorerWidget->isHidden());
+      !uiHandles.fileExplorerWidget->isHidden());
 }
 
 void WorkspaceCoordinator::cursorPositionClicked() {
@@ -77,19 +83,19 @@ void WorkspaceCoordinator::cursorPositionClicked() {
     return;
   }
 
-  auto cursor = editorController->getLastAddedCursor();
-  int lineCount = editorController->getLineCount();
+  const auto cursor = editorController->getLastAddedCursor();
+  const int lineCount = editorController->getLineCount();
 
   if (lineCount == 0) {
     return;
   }
 
-  auto maxCol =
-      std::max<size_t>(1, editorController->getLineLength(cursor.row));
-  auto lastLineMaxCol =
-      std::max<size_t>(1, editorController->getLineLength(lineCount - 1));
+  const auto maxCol =
+      std::max<std::size_t>(1, editorController->getLineLength(cursor.row));
+  const auto lastLineMaxCol =
+      std::max<std::size_t>(1, editorController->getLineLength(lineCount - 1));
 
-  uiHandles->commandPaletteWidget->showPalette(
+  uiHandles.commandPaletteWidget->showPalette(
       CommandPaletteMode::Jump,
       {
           .maxLineCount = lineCount,
@@ -157,9 +163,9 @@ void WorkspaceCoordinator::commandPaletteGoToPosition(
   }
 
   // TODO(scarlet): Turn these into signals?
-  uiHandles->editorWidget->setFocus();
-  uiHandles->editorWidget->onCursorChanged();
-  uiHandles->gutterWidget->onCursorChanged();
+  uiHandles.editorWidget->setFocus();
+  uiHandles.editorWidget->onCursorChanged();
+  uiHandles.gutterWidget->onCursorChanged();
   refreshStatusBarCursorInfo();
 }
 
@@ -195,7 +201,7 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &key,
 
   const auto beforeSnapshot = tabController->getTabsSnapshot();
   if (beforeSnapshot.active_present) {
-    saveScrollOffsetsForActiveTab();
+    tabFlows.saveScrollOffsetsForActiveTab();
   }
 
   auto result = commandExecutor->execute(rustKey, displayName, kind, argument);
@@ -209,7 +215,6 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &key,
       emit themeChanged(std::string(intent.argument_str.c_str()));
       break;
     case neko::UiIntentKindFfi::OpenConfig: {
-      // TODO(scarlet): Avoid duplicating the fileSelected logic here
       const int tabId = static_cast<int>(intent.argument_u64);
       const std::string &path = std::string(intent.argument_str);
 
@@ -224,10 +229,11 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &key,
       tabController->notifyTabOpenedFromCore(tabId);
       break;
     }
-    case neko::UiIntentKindFfi::ShowJumpAliases:
-      const auto aliases = intent.jump_aliases;
+    case neko::UiIntentKindFfi::ShowJumpAliases: {
+      // const auto aliases = intent.jump_aliases;
       // TODO(scarlet): Show jump aliases
       break;
+    }
     }
   }
 }
@@ -273,7 +279,7 @@ void WorkspaceCoordinator::fileSelected(const std::string &path,
   {
     const auto snapshot = tabController->getTabsSnapshot();
     if (snapshot.active_present) {
-      saveScrollOffsetsForActiveTab();
+      tabFlows.saveScrollOffsetsForActiveTab();
     }
 
     // If file already open, just activate it
@@ -299,21 +305,11 @@ void WorkspaceCoordinator::fileSelected(const std::string &path,
 }
 
 void WorkspaceCoordinator::fileSaved(bool saveAs) {
-  const auto snapshot = tabController->getTabsSnapshot();
-
-  if (snapshot.active_present) {
-    const int activeId = static_cast<int>(snapshot.active_id);
-    const bool success = saveTabWithPromptIfNeeded(activeId, saveAs);
-
-    if (success) {
-      uiHandles->tabBarWidget->setTabModified(activeId, false);
-      tabController->tabSaved(activeId);
-    }
-  }
+  tabFlows.fileSaved(saveAs);
 }
 
 void WorkspaceCoordinator::openConfig() {
-  auto configPath = appConfigService->getConfigPath();
+  const auto configPath = appConfigService->getConfigPath();
 
   if (!configPath.empty()) {
     fileSelected(configPath, true);
@@ -323,136 +319,112 @@ void WorkspaceCoordinator::openConfig() {
 void WorkspaceCoordinator::handleTabCommand(const std::string &commandId,
                                             const neko::TabContextFfi &ctx,
                                             bool forceClose) {
-  if (commandId.empty()) {
-    return;
-  }
-
-  const int tabId = static_cast<int>(ctx.id);
-
-  // TODO(scarlet): Avoid matching on hardcoded command ids
-  if (commandId == "tab.close") {
-    closeTabs(neko::CloseTabOperationTypeFfi::Single, tabId, forceClose);
-  } else if (commandId == "tab.closeOthers") {
-    closeTabs(neko::CloseTabOperationTypeFfi::Others, tabId, forceClose);
-  } else if (commandId == "tab.closeLeft") {
-    closeTabs(neko::CloseTabOperationTypeFfi::Left, tabId, forceClose);
-  } else if (commandId == "tab.closeRight") {
-    closeTabs(neko::CloseTabOperationTypeFfi::Right, tabId, forceClose);
-  } else if (commandId == "tab.closeAll") {
-    closeTabs(neko::CloseTabOperationTypeFfi::All, 0, forceClose);
-  } else if (commandId == "tab.closeClean") {
-    closeTabs(neko::CloseTabOperationTypeFfi::Clean, 0, forceClose);
-  } else if (commandId == "tab.copyPath") {
-    tabCopyPath(tabId);
-  } else if (commandId == "tab.reveal") {
-    tabReveal("tab.reveal", ctx);
-  } else if (commandId == "tab.pin") {
-    tabTogglePin(tabId, ctx.is_pinned);
-  }
+  tabFlows.handleTabCommand(commandId, ctx, forceClose);
 }
 
-void WorkspaceCoordinator::tabCopyPath(int tabId) {
-  const auto snapshot = tabController->getTabsSnapshot();
-  QString path = QString();
-  for (const auto &tab : snapshot.tabs) {
-    if (tab.id == tabId) {
-      path = QString::fromUtf8(tab.path);
-    }
-  }
-
-  if (path.isEmpty()) {
-    return;
-  }
-
-  QApplication::clipboard()->setText(path);
+void WorkspaceCoordinator::copyTabPath(int tabId) {
+  tabFlows.copyTabPath(tabId);
 }
 
 void WorkspaceCoordinator::tabTogglePin(int tabId, bool tabIsPinned) {
-  if (tabIsPinned) {
-    tabController->unpinTab(tabId);
-  } else {
-    tabController->pinTab(tabId);
-  }
+  tabFlows.tabTogglePin(tabId, tabIsPinned);
 }
 
-void WorkspaceCoordinator::tabReveal(const std::string &commandId,
-                                     const neko::TabContextFfi &ctx) {
-  if (commandId.empty() || !ctx.file_path_present) {
+void WorkspaceCoordinator::newTab() { tabFlows.newTab(); }
+
+void WorkspaceCoordinator::tabChanged(int tabId) { tabFlows.tabChanged(tabId); }
+
+void WorkspaceCoordinator::tabUnpinned(int tabId) {
+  tabFlows.tabUnpinned(tabId);
+}
+
+void WorkspaceCoordinator::bufferChanged() { tabFlows.bufferChanged(); }
+
+SaveResult WorkspaceCoordinator::saveTab(int tabId, bool isSaveAs) {
+  return tabFlows.saveTab(tabId, isSaveAs);
+}
+
+void WorkspaceCoordinator::revealActiveTab() {
+  const auto snapshot = tabController->getTabsSnapshot();
+  if (!snapshot.active_present) {
     return;
   }
 
-  appStateController->runTabCommand(commandId, ctx, false);
-
-  // Show File Explorer if hidden
-  if (uiHandles->fileExplorerWidget->isHidden()) {
-    fileExplorerToggled();
-  }
-  emit tabRevealedInFileExplorer();
-}
-
-void WorkspaceCoordinator::newTab() {
-  saveScrollOffsetsForActiveTab();
-
-  tabController->addTab();
-}
-
-void WorkspaceCoordinator::tabChanged(int tabId) {
-  saveScrollOffsetsForActiveTab();
-  tabController->setActiveTab(tabId);
-}
-
-void WorkspaceCoordinator::tabUnpinned(int tabId) {
-  tabController->unpinTab(tabId);
-}
-
-void WorkspaceCoordinator::bufferChanged() {
-  const auto snapshot = tabController->getTabsSnapshot();
-  int activeId = static_cast<int>(snapshot.active_id);
-
-  bool modified = false;
+  neko::TabContextFfi ctx;
   for (const auto &tab : snapshot.tabs) {
-    if (tab.id == activeId) {
-      modified = tab.modified;
+    if (tab.id == snapshot.active_id) {
+      ctx.id = tab.id;
+      ctx.is_pinned = tab.pinned;
+      ctx.is_modified = tab.modified;
+      ctx.file_path_present = tab.path_present;
+      ctx.file_path = tab.path;
       break;
     }
   }
 
-  uiHandles->tabBarWidget->setTabModified(activeId, modified);
+  handleTabCommand("tab.reveal", ctx, false);
 }
 
+void WorkspaceCoordinator::moveTabBy(int delta, bool useHistory) {
+  tabFlows.moveTabBy(delta, useHistory);
+}
+
+// TODO(scarlet): Wrap the neko:: type eventually so it doesn't leak into
+// widgets
+void WorkspaceCoordinator::closeTabs(
+    neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
+    bool forceClose) {
+  tabFlows.closeTabs(operationType, anchorTabId, forceClose);
+}
+
+void WorkspaceCoordinator::applyInitialState() {
+  const auto snapshot = tabController->getTabsSnapshot();
+
+  int index = 0;
+  for (const auto &tab : snapshot.tabs) {
+    TabPresentation presentation;
+    presentation.id = static_cast<int>(tab.id);
+    presentation.title = QString::fromUtf8(tab.title);
+    presentation.path = QString::fromUtf8(tab.path);
+    presentation.pinned = tab.pinned;
+    presentation.modified = tab.modified;
+
+    uiHandles.tabBarWidget->addTab(presentation, index++);
+  }
+
+  if (snapshot.active_present) {
+    uiHandles.tabBarWidget->setCurrentTabId(
+        static_cast<int>(snapshot.active_id));
+  }
+
+  refreshStatusBarCursorInfo();
+
+  auto cfg = appConfigService->getSnapshot();
+  if (!cfg.file_explorer.shown) {
+    uiHandles.fileExplorerWidget->hide();
+  }
+
+  uiHandles.editorWidget->setFocus();
+}
+
+// TODO(scarlet): Merge this with workspaceUi.confirmCloseTabs?
 CloseDecision
 WorkspaceCoordinator::showTabCloseConfirmationDialog(const QList<int> &ids) {
   if (ids.isEmpty()) {
     return CloseDecision::DontSave;
   }
 
-  const auto snapshot = tabController->getTabsSnapshot();
-
-  QSet<int> idSet;
-  idSet.reserve(ids.size());
-  for (int tabId : ids) {
-    idSet.insert(tabId);
-  }
-
-  int modifiedCount = 0;
-  for (const auto &tab : snapshot.tabs) {
-    const int tabId = static_cast<int>(tab.id);
-
-    if (idSet.contains(tabId) && tab.modified) {
-      modifiedCount++;
-    }
-  }
-
+  const auto modifiedCount = tabFlows.getModifiedTabCount(ids);
   if (modifiedCount == 0) {
     return CloseDecision::DontSave;
   }
 
-  bool multipleModifiedTabs = modifiedCount > 1;
+  const bool multipleModifiedTabs = modifiedCount > 1;
   QMessageBox box(QMessageBox::Warning, tr("Close Tabs"),
                   tr("%1 tab%2 unsaved edits.")
                       .arg(modifiedCount)
                       .arg(multipleModifiedTabs ? "s have" : " has"),
-                  QMessageBox::NoButton, uiHandles->window);
+                  QMessageBox::NoButton, uiHandles.window);
 
   auto *saveBtn = box.addButton(tr(multipleModifiedTabs ? "Save all" : "Save"),
                                 QMessageBox::AcceptRole);
@@ -477,285 +449,48 @@ WorkspaceCoordinator::showTabCloseConfirmationDialog(const QList<int> &ids) {
   return CloseDecision::Cancel;
 }
 
-SaveResult WorkspaceCoordinator::saveTab(int tabId, bool isSaveAs) {
-  if (saveTabWithPromptIfNeeded(tabId, isSaveAs)) {
-    uiHandles->tabBarWidget->setTabModified(tabId, false);
-
-    return SaveResult::Saved;
-  }
-
-  qDebug() << "Save as failed";
-  return SaveResult::Failed;
-}
-
-void WorkspaceCoordinator::revealActiveTab() {
-  const auto snapshot = tabController->getTabsSnapshot();
-  if (!snapshot.active_present) {
-    return;
-  }
-
-  neko::TabContextFfi ctx{};
-  for (const auto &tab : snapshot.tabs) {
-    if (tab.id == snapshot.active_id) {
-      ctx.id = tab.id;
-      ctx.is_pinned = tab.pinned;
-      ctx.is_modified = tab.modified;
-      ctx.file_path_present = tab.path_present;
-      ctx.file_path = tab.path;
-      break;
-    }
-  }
-
-  handleTabCommand("tab.reveal", ctx, false);
-}
-
-void WorkspaceCoordinator::moveTabBy(int delta, bool useHistory) {
-  tabController->moveTabBy(delta, useHistory);
-}
-
-// TODO(scarlet): Wrap the neko:: type eventually so it doesn't leak into
-// widgets
-void WorkspaceCoordinator::closeTabs(
-    neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
-    bool forceClose) {
-  auto snapshot = tabController->getTabsSnapshot();
-  if (!snapshot.active_present) {
-    // Close the window if there are no tabs
-    QApplication::quit();
-    return;
-  }
-
-  saveScrollOffsetsForActiveTab();
-
-  const bool closePinned =
-      (operationType == neko::CloseTabOperationTypeFfi::Single) && forceClose;
-  auto ids =
-      tabController->getCloseTabIds(operationType, anchorTabId, closePinned);
-
-  if (!ids.empty()) {
-    handleTabsClosed();
-  }
-
-  closeManyTabs(
-      ids, forceClose, [this, anchorTabId, operationType, closePinned]() {
-        tabController->closeTabs(operationType, anchorTabId, closePinned);
-      });
-}
-
-bool WorkspaceCoordinator::closeManyTabs(
-    const QList<int> &ids, bool forceClose,
-    const std::function<void()> &closeAction) {
-  if (ids.isEmpty()) {
-    return false;
-  }
-
-  const auto snapshot = tabController->getTabsSnapshot();
-
-  QHash<int, bool> modifiedById;
-  modifiedById.reserve(static_cast<int>(snapshot.tabs.size()));
-  for (const auto &tab : snapshot.tabs) {
-    modifiedById.insert(static_cast<int>(tab.id), tab.modified);
-  }
-
-  auto isModified = [&](int tabId) -> bool {
-    auto maybeModifiedTab = modifiedById.constFind(tabId);
-    return maybeModifiedTab != modifiedById.constEnd()
-               ? maybeModifiedTab.value()
-               : false;
-  };
-
-  QList<int> modifiedIds;
-  modifiedIds.reserve(ids.size());
-  for (int tabId : ids) {
-    if (isModified(tabId)) {
-      modifiedIds.append(tabId);
-    }
-  }
-
-  if (!forceClose && !modifiedIds.isEmpty()) {
-    if (modifiedIds.size() == 1) {
-      workspaceUi.focusTab(modifiedIds.first());
-    }
-
-    switch (workspaceUi.confirmCloseTabs(ids)) {
-    case CloseDecision::Save:
-      for (int tabId : modifiedIds) {
-        workspaceUi.focusTab(tabId);
-
-        if (!saveTabWithPromptIfNeeded(tabId, false)) {
-          return false;
-        }
-      }
-      break;
-    case CloseDecision::DontSave:
-      break;
-    case CloseDecision::Cancel:
-      return false;
-    }
-  }
-
-  closeAction();
-  return true;
-}
-
-bool WorkspaceCoordinator::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
-  const auto snapshot = tabController->getTabsSnapshot();
-  QString fileName;
-  QString path;
-
-  for (const auto &tab : snapshot.tabs) {
-    if (tab.id == tabId) {
-      path = QString::fromUtf8(tab.path);
-      fileName = QString::fromUtf8(tab.title);
-      break;
-    }
-  }
-
-  if (!path.isEmpty() && !isSaveAs) {
-    return appStateController->saveTab(tabId);
-  }
-
-  QString initialDir;
-  if (!path.isEmpty()) {
-    QFileInfo info(path);
-
-    if (info.isDir()) {
-      initialDir = info.absoluteFilePath();
-    } else {
-      initialDir = info.absolutePath();
-    }
-  }
-
-  const QString filePath = workspaceUi.promptSaveAsPath(initialDir, fileName);
-
-  if (filePath.isEmpty()) {
-    return false;
-  }
-
-  return appStateController->saveTabAs(tabId, filePath.toStdString());
-}
-
-void WorkspaceCoordinator::applyInitialState() {
-  const auto snapshot = tabController->getTabsSnapshot();
-
-  int index = 0;
-  for (const auto &tab : snapshot.tabs) {
-    TabPresentation presentation;
-    presentation.id = static_cast<int>(tab.id);
-    presentation.title = QString::fromUtf8(tab.title);
-    presentation.path = QString::fromUtf8(tab.path);
-    presentation.pinned = tab.pinned;
-    presentation.modified = tab.modified;
-
-    uiHandles->tabBarWidget->addTab(presentation, index++);
-  }
-
-  if (snapshot.active_present) {
-    uiHandles->tabBarWidget->setCurrentTabId(
-        static_cast<int>(snapshot.active_id));
-  }
-
-  refreshStatusBarCursorInfo();
-
-  auto cfg = appConfigService->getSnapshot();
-  if (!cfg.file_explorer.shown) {
-    uiHandles->fileExplorerWidget->hide();
-  }
-
-  uiHandles->editorWidget->setFocus();
-}
-
-void WorkspaceCoordinator::saveScrollOffsetsForActiveTab() {
-  const auto snapshot = tabController->getTabsSnapshot();
-
-  if (!snapshot.active_present) {
-    return;
-  }
-
-  int activeId = static_cast<int>(snapshot.active_id);
-  double horizontalScrollOffset =
-      uiHandles->editorWidget->horizontalScrollBar()->value();
-  double verticalScrollOffset =
-      uiHandles->editorWidget->verticalScrollBar()->value();
-  neko::ScrollOffsetFfi scrollOffsets = {
-      static_cast<int32_t>(horizontalScrollOffset),
-      static_cast<int32_t>(verticalScrollOffset)};
-
-  tabController->setTabScrollOffsets(activeId, scrollOffsets);
-}
-
-void WorkspaceCoordinator::restoreScrollOffsetsForActiveTab() {
-  const auto snapshot = tabController->getTabsSnapshot();
-
-  neko::ScrollOffsetFfi offsets;
-  for (const auto &tab : snapshot.tabs) {
-    if (tab.id == snapshot.active_id) {
-      offsets = tab.scroll_offsets;
-    }
-  }
-
-  uiHandles->editorWidget->horizontalScrollBar()->setValue(offsets.x);
-  uiHandles->editorWidget->verticalScrollBar()->setValue(offsets.y);
-}
-
-void WorkspaceCoordinator::restoreScrollOffsetsForReopenedTab(
-    const TabScrollOffsets &scrollOffsets) {
-  uiHandles->editorWidget->horizontalScrollBar()->setValue(
-      static_cast<int>(scrollOffsets.x));
-  uiHandles->editorWidget->verticalScrollBar()->setValue(
-      static_cast<int>(scrollOffsets.y));
-}
-
 void WorkspaceCoordinator::refreshUiForActiveTab(bool focusEditor) {
   const auto snapshot = tabController->getTabsSnapshot();
 
   if (!snapshot.active_present) {
-    uiHandles->tabBarContainerWidget->hide();
-    uiHandles->editorWidget->hide();
-    uiHandles->gutterWidget->hide();
-    uiHandles->emptyStateWidget->show();
-    uiHandles->fileExplorerWidget->setFocus();
-
+    uiHandles.tabBarContainerWidget->hide();
+    uiHandles.editorWidget->hide();
+    uiHandles.gutterWidget->hide();
+    uiHandles.emptyStateWidget->show();
+    uiHandles.fileExplorerWidget->setFocus();
     return;
   }
 
   // IMPORTANT: Set active editor before re-showing widgets, otherwise
   // Qt layout triggers a resize event (which queries the line count with the
   // old editor reference)
-  neko::Editor &activeEditor = appStateController->getActiveEditorMut();
+  auto &activeEditor = appStateController->getActiveEditorMut();
   setActiveEditor(&activeEditor);
 
-  uiHandles->emptyStateWidget->hide();
-  uiHandles->tabBarContainerWidget->show();
-  uiHandles->editorWidget->show();
-  uiHandles->gutterWidget->show();
-  uiHandles->statusBarWidget->showCursorPositionInfo();
+  uiHandles.emptyStateWidget->hide();
+  uiHandles.tabBarContainerWidget->show();
+  uiHandles.editorWidget->show();
+  uiHandles.gutterWidget->show();
+  uiHandles.statusBarWidget->showCursorPositionInfo();
 
-  uiHandles->editorWidget->updateDimensions();
-  uiHandles->editorWidget->redraw();
-  uiHandles->gutterWidget->updateDimensions();
-  uiHandles->gutterWidget->redraw();
+  uiHandles.editorWidget->updateDimensions();
+  uiHandles.editorWidget->redraw();
+  uiHandles.gutterWidget->updateDimensions();
+  uiHandles.gutterWidget->redraw();
 
-  restoreScrollOffsetsForActiveTab();
+  tabFlows.restoreScrollOffsetsForActiveTab();
   refreshStatusBarCursorInfo();
 
   if (focusEditor) {
-    uiHandles->editorWidget->setFocus();
+    uiHandles.editorWidget->setFocus();
   }
-}
-
-void WorkspaceCoordinator::handleTabsClosed() {
-  const auto snapshot = tabController->getTabsSnapshot();
-  const int newTabCount = static_cast<int>(snapshot.tabs.size());
-
-  uiHandles->statusBarWidget->onTabClosed(newTabCount);
 }
 
 void WorkspaceCoordinator::setActiveEditor(neko::Editor *editor) {
   editorController->setEditor(editor);
 
-  uiHandles->editorWidget->setEditorController(editorController);
-  uiHandles->gutterWidget->setEditorController(editorController);
+  uiHandles.editorWidget->setEditorController(editorController);
+  uiHandles.gutterWidget->setEditorController(editorController);
 }
 
 void WorkspaceCoordinator::refreshStatusBarCursorInfo() {
@@ -763,9 +498,10 @@ void WorkspaceCoordinator::refreshStatusBarCursorInfo() {
     return;
   }
 
-  auto cursorPosition = editorController->getLastAddedCursor();
-  int numberOfCursors =
+  const auto cursorPosition = editorController->getLastAddedCursor();
+  const int numberOfCursors =
       static_cast<int>(editorController->getCursorPositions().size());
-  uiHandles->statusBarWidget->updateCursorPosition(
+
+  uiHandles.statusBarWidget->updateCursorPosition(
       cursorPosition.row, cursorPosition.column, numberOfCursors);
 }

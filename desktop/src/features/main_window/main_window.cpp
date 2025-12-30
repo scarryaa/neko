@@ -111,13 +111,12 @@ MainWindow::MainWindow(QWidget *parent)
                 emptyStateNewTabButton};
 
   workspaceCoordinator = new WorkspaceCoordinator(
-      {.workspaceController = workspaceController,
-       .tabController = tabController,
+      {.tabController = tabController,
        .appStateController = appStateController,
        .editorController = editorController,
        .appConfigService = appConfigService,
        .commandExecutor = commandExecutor,
-       .uiHandles = &uiHandles,
+       .uiHandles = uiHandles,
        .workspaceUi = WorkspaceUi{
            .promptSaveAsPath =
                [this](std::optional<QString> initialDirectory,

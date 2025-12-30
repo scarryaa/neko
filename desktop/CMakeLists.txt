@@ -37,7 +37,10 @@ set(SKIP_UIC_SOURCES
   src/features/main_window/connections/workspace_connections.cpp
   src/features/main_window/controllers/shortcuts_manager.cpp
   src/features/main_window/controllers/workspace_coordinator.cpp
+  src/features/main_window/controllers/workspace_coordinator.h
   src/features/main_window/main_window.h
+  src/features/main_window/flows/tab_flows.cpp
+  src/features/main_window/flows/tab_flows.h
 )
 
 set_source_files_properties(
@@ -81,6 +84,10 @@ qt_add_executable(neko
     src/features/main_window/controllers/ui_style_manager.h
     src/features/main_window/controllers/command_executor.cpp
     src/features/main_window/controllers/command_executor.h
+
+    # Workspace Coordinator Flows
+    src/features/main_window/flows/tab_flows.cpp
+    src/features/main_window/flows/tab_flows.h
 
     # Widget Connections
     src/features/main_window/connections/editor_connections.cpp
@@ -202,6 +209,10 @@ target_link_libraries(neko
         Qt::Widgets
         neko_core
         ${PLATFORM_LIBS}
+)
+
+target_compile_definitions(neko PRIVATE
+    $<$<CONFIG:Release>:QT_NO_DEBUG_OUTPUT>
 )
 
 target_include_directories(neko PRIVATE

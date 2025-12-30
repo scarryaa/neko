@@ -1,35 +1,38 @@
 #ifndef WORKSPACE_COORDINATOR_H
 #define WORKSPACE_COORDINATOR_H
 
+#include "features/command_palette/types/types.h"
+#include "features/main_window/flows/tab_flows.h"
+#include "features/main_window/interfaces/close_decision.h"
+#include "features/main_window/interfaces/save_result.h"
+#include "features/main_window/interfaces/workspace_ui.h"
+#include "features/main_window/ui_handles.h"
+#include "types/ffi_types_fwd.h"
+#include <QList>
+#include <QObject>
+#include <optional>
+#include <string>
+#include <vector>
+
 class TabController;
-class WorkspaceController;
 class AppStateController;
-class UiHandles;
 class EditorController;
 class AppConfigService;
 class CommandExecutor;
 
-#include "features/command_palette/types/types.h"
-#include "features/main_window/interfaces/close_decision.h"
-#include "features/main_window/interfaces/save_result.h"
-#include "features/main_window/interfaces/workspace_ui.h"
-#include "features/tabs/types/types.h"
-#include "types/ffi_types_fwd.h"
-#include <QList>
-#include <QObject>
-
+// WorkspaceCoordinator wires together controllers, flows, and widgets.
+// It owns TabFlows (tab-specific workflows) and coordinates UI updates.
 class WorkspaceCoordinator : public QObject {
   Q_OBJECT
 
 public:
   struct WorkspaceCoordinatorProps {
-    WorkspaceController *workspaceController;
     TabController *tabController;
     AppStateController *appStateController;
     EditorController *editorController;
     AppConfigService *appConfigService;
     CommandExecutor *commandExecutor;
-    const UiHandles *uiHandles;
+    const UiHandles uiHandles;
     const WorkspaceUi workspaceUi;
   };
 
@@ -37,40 +40,43 @@ public:
                                 QObject *parent = nullptr);
   ~WorkspaceCoordinator() override = default;
 
-  void closeTabs(neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
-                 bool forceClose);
+  // Tab commands & navigation
   void handleTabCommand(const std::string &commandId,
                         const neko::TabContextFfi &ctx, bool forceClose);
-  CloseDecision showTabCloseConfirmationDialog(const QList<int> &ids);
-  SaveResult saveTab(int tabId, bool isSaveAs);
+  void closeTabs(neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
+                 bool forceClose);
+  void newTab();
   void revealActiveTab();
   void moveTabBy(int delta, bool useHistory);
 
+  // Save / close flows
+  CloseDecision showTabCloseConfirmationDialog(const QList<int> &ids);
+  SaveResult saveTab(int tabId, bool isSaveAs);
+  void fileSaved(bool saveAs);
+
+  // File / config actions
+  void openFile();
+  void applyInitialState();
+  void openConfig();
+  void fileSelected(const std::string &path, bool focusEditor);
+
+  // Utilities
   [[nodiscard]] std::optional<std::string> requestFileExplorerDirectory() const;
   [[nodiscard]] static std::vector<ShortcutHintRow> buildJumpHintRows();
-  void fileSaved(bool saveAs);
-  void openFile();
-
-  void applyInitialState();
 
   // NOLINTNEXTLINE(readability-redundant-access-specifiers)
 public slots:
+  // Buffer / tab change events
   void bufferChanged();
+  void tabChanged(int tabId);
+  void tabUnpinned(int tabId);
 
+  // View toggles & palette interactions
   void fileExplorerToggled();
-  void fileSelected(const std::string &path, bool focusEditor);
-  void openConfig();
-
   void cursorPositionClicked();
   void commandPaletteGoToPosition(const QString &jumpCommandKey, int64_t row,
                                   int64_t column, bool isPosition);
   void commandPaletteCommand(const QString &key, const QString &fullText);
-
-  void newTab();
-  void tabChanged(int tabId);
-  void tabUnpinned(int tabId);
-  void
-  restoreScrollOffsetsForReopenedTab(const TabScrollOffsets &scrollOffsets);
 
 signals:
   void onFileExplorerToggledViaShortcut(bool isOpen);
@@ -79,28 +85,22 @@ signals:
   void fileOpened(const neko::TabSnapshot &tabSnapshot);
 
 private:
-  void tabCopyPath(int tabId);
+  // Helpers
+  void copyTabPath(int tabId);
   void tabTogglePin(int tabId, bool tabIsPinned);
-  void tabReveal(const std::string &commandId, const neko::TabContextFfi &ctx);
-  bool closeManyTabs(const QList<int> &ids, bool forceClose,
-                     const std::function<void()> &closeAction);
-  bool saveTabWithPromptIfNeeded(int tabId, bool isSaveAs);
-
-  void saveScrollOffsetsForActiveTab();
-  void restoreScrollOffsetsForActiveTab();
   void refreshUiForActiveTab(bool focusEditor);
-  void handleTabsClosed();
   void setActiveEditor(neko::Editor *editor);
   void refreshStatusBarCursorInfo();
 
-  WorkspaceController *workspaceController;
+  TabFlows tabFlows;
+
   TabController *tabController;
   AppStateController *appStateController;
   AppConfigService *appConfigService;
   EditorController *editorController;
   CommandExecutor *commandExecutor;
   WorkspaceUi workspaceUi;
-  const UiHandles *uiHandles;
+  const UiHandles uiHandles;
 };
 
-#endif
+#endif // WORKSPACE_COORDINATOR_H
