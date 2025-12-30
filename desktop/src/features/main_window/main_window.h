@@ -20,7 +20,6 @@ class UiStyleManager;
 
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
-#include "features/main_window/interfaces/core_services.h"
 #include "types/qt_types_fwd.h"
 #include "ui_handles.h"
 #include <QMainWindow>
