@@ -64,7 +64,7 @@ MainWindow::MainWindow(QWidget *parent)
   neko::Editor *editor = &appController->getActiveEditorMut();
   editorController = new EditorController({.editor = editor});
 
-  auto *tabController = new TabController({.appState = &*appState});
+  auto *tabController = new TabController({.tabCoreApi = appController});
 
   appConfigService =
       new AppConfigService({.configManager = &*configManager}, this);

@@ -15,17 +15,17 @@ TabPresentation TabController::fromSnapshot(const neko::TabSnapshot &tab) {
 }
 
 TabController::TabController(const TabControllerProps &props)
-    : appState(props.appState) {}
+    : tabCoreApi(props.tabCoreApi) {}
 
 neko::TabsSnapshot TabController::getTabsSnapshot() {
-  return appState->get_tabs_snapshot();
+  return tabCoreApi->getTabsSnapshot();
 }
 
 QList<int>
 TabController::getCloseTabIds(neko::CloseTabOperationTypeFfi operationType,
                               int anchorTabId, bool closePinned) const {
   auto rawIds =
-      appState->get_close_tab_ids(operationType, anchorTabId, closePinned);
+      tabCoreApi->getCloseTabIds(operationType, anchorTabId, closePinned);
 
   QList<int> ids = QList<int>();
   ids.reserve(static_cast<int>(rawIds.size()));
@@ -38,11 +38,11 @@ TabController::getCloseTabIds(neko::CloseTabOperationTypeFfi operationType,
 }
 
 int TabController::addTab() {
-  if (appState == nullptr) {
+  if (tabCoreApi == nullptr) {
     return -1;
   }
 
-  auto result = appState->new_tab();
+  auto result = tabCoreApi->newTab();
   int newTabId = static_cast<int>(result.id);
   int newTabIndex = static_cast<int>(result.index);
   auto presentation = fromSnapshot(result.snapshot);
@@ -55,7 +55,7 @@ int TabController::addTab() {
 // TODO(scarlet): Figure out a unified/better solution than separate 'core ->
 // cpp' signals?
 void TabController::notifyTabOpenedFromCore(int tabId) {
-  if (appState == nullptr) {
+  if (tabCoreApi == nullptr) {
     return;
   }
 
@@ -88,7 +88,7 @@ void TabController::fileOpened(const neko::TabSnapshot &snapshot) {
 }
 
 void TabController::tabSaved(int tabId) {
-  const auto snapshotMaybe = appState->get_tab_snapshot(tabId);
+  const auto snapshotMaybe = tabCoreApi->getTabSnapshot(tabId);
 
   if (snapshotMaybe.found) {
     auto presentation = fromSnapshot(snapshotMaybe.snapshot);
@@ -98,12 +98,12 @@ void TabController::tabSaved(int tabId) {
 
 bool TabController::closeTabs(neko::CloseTabOperationTypeFfi operationType,
                               int anchorTabId, bool closePinned) {
-  if (appState == nullptr) {
+  if (tabCoreApi == nullptr) {
     // TODO(scarlet): Show error?
     return false;
   }
 
-  auto result = appState->close_tabs(operationType, anchorTabId, closePinned);
+  auto result = tabCoreApi->closeTabs(operationType, anchorTabId, closePinned);
   if (result.closed_ids.empty()) {
     return false;
   }
@@ -122,11 +122,11 @@ bool TabController::closeTabs(neko::CloseTabOperationTypeFfi operationType,
 }
 
 bool TabController::pinTab(int tabId) {
-  if (appState == nullptr) {
+  if (tabCoreApi == nullptr) {
     return false;
   }
 
-  auto result = appState->pin_tab(tabId);
+  auto result = tabCoreApi->pinTab(tabId);
   if (!result.success) {
     return false;
   }
@@ -143,11 +143,11 @@ bool TabController::pinTab(int tabId) {
 }
 
 bool TabController::unpinTab(int tabId) {
-  if (appState == nullptr) {
+  if (tabCoreApi == nullptr) {
     return false;
   }
 
-  auto result = appState->unpin_tab(tabId);
+  auto result = tabCoreApi->unpinTab(tabId);
   if (!result.success) {
     return false;
   }
@@ -164,12 +164,11 @@ bool TabController::unpinTab(int tabId) {
 }
 
 bool TabController::moveTabBy(int delta, bool useHistory) {
-  if (appState == nullptr) {
+  if (tabCoreApi == nullptr) {
     return false;
   }
 
-  neko::MoveActiveTabResult result =
-      appState->move_active_tab_by(delta, useHistory);
+  neko::MoveActiveTabResult result = tabCoreApi->moveTabBy(delta, useHistory);
   int tabId = static_cast<int>(result.id);
   TabScrollOffsets offsets;
 
@@ -202,11 +201,11 @@ bool TabController::moveTabBy(int delta, bool useHistory) {
 }
 
 bool TabController::moveTab(int fromIndex, int toIndex) {
-  if (appState == nullptr) {
+  if (tabCoreApi == nullptr) {
     return false;
   }
 
-  if (!appState->move_tab(fromIndex, toIndex)) {
+  if (!tabCoreApi->moveTab(fromIndex, toIndex)) {
     return false;
   }
 
@@ -215,16 +214,16 @@ bool TabController::moveTab(int fromIndex, int toIndex) {
 }
 
 void TabController::setActiveTab(int tabId) {
-  if (appState == nullptr) {
+  if (tabCoreApi == nullptr) {
     return;
   }
 
-  appState->set_active_tab(tabId);
+  tabCoreApi->setActiveTab(tabId);
 
   emit activeTabChanged(tabId);
 }
 
 void TabController::setTabScrollOffsets(
     int tabId, const neko::ScrollOffsetFfi &newOffsets) {
-  appState->set_tab_scroll_offsets(tabId, newOffsets);
+  tabCoreApi->setTabScrollOffsets(tabId, newOffsets);
 }

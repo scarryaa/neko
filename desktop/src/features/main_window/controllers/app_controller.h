@@ -1,11 +1,12 @@
 #ifndef APP_STATE_CONTROLLER_H
 #define APP_STATE_CONTROLLER_H
 
+#include "core/api/tab_core_api.h"
 #include <QObject>
 #include <neko-core/src/ffi/bridge.rs.h>
 #include <vector>
 
-class AppController : public QObject {
+class AppController : public QObject, public ITabCoreApi {
   Q_OBJECT
 
 public:
@@ -26,6 +27,24 @@ public:
 
   explicit AppController(const AppControllerProps &props);
   ~AppController() override = default;
+
+  // ITabCoreApi
+  neko::TabsSnapshot getTabsSnapshot() override;
+  std::vector<int> getCloseTabIds(neko::CloseTabOperationTypeFfi operationType,
+                                  int anchorTabId, bool closePinned) override;
+  neko::NewTabResult newTab() override;
+  neko::MoveActiveTabResult moveTabBy(int delta, bool useHistory) override;
+  bool moveTab(int fromIndex, int toIndex) override;
+  neko::PinTabResult pinTab(int tabId) override;
+  neko::PinTabResult unpinTab(int tabId) override;
+  neko::CloseManyTabsResult
+  closeTabs(neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
+            bool closePinned) override;
+  neko::TabSnapshotMaybe getTabSnapshot(int tabId) override;
+  void setActiveTab(int tabId) override;
+  void setTabScrollOffsets(int tabId,
+                           const neko::ScrollOffsetFfi &offsets) override;
+  // End ITabCoreApi
 
   neko::FileOpenResult openFile(const std::string &path);
   [[nodiscard]] neko::Editor &getActiveEditorMut() const;

@@ -4,6 +4,56 @@
 AppController::AppController(const AppControllerProps &props)
     : appState(props.appState) {}
 
+// TabCoreAPI
+neko::TabsSnapshot AppController::getTabsSnapshot() {
+  return appState->get_tabs_snapshot();
+}
+
+std::vector<int>
+AppController::getCloseTabIds(neko::CloseTabOperationTypeFfi operationType,
+                              int anchorTabId, bool closePinned) {
+  const auto result =
+      appState->get_close_tab_ids(operationType, anchorTabId, closePinned);
+  return {result.begin(), result.end()};
+}
+
+neko::NewTabResult AppController::newTab() { return appState->new_tab(); }
+
+neko::MoveActiveTabResult AppController::moveTabBy(int delta, bool useHistory) {
+  return appState->move_active_tab_by(delta, useHistory);
+}
+
+bool AppController::moveTab(int fromIndex, int toIndex) {
+  return appState->move_tab(fromIndex, toIndex);
+}
+
+neko::PinTabResult AppController::pinTab(int tabId) {
+  return appState->pin_tab(tabId);
+}
+
+neko::PinTabResult AppController::unpinTab(int tabId) {
+  return appState->unpin_tab(tabId);
+}
+
+neko::CloseManyTabsResult
+AppController::closeTabs(neko::CloseTabOperationTypeFfi operationType,
+                         int anchorTabId, bool closePinned) {
+  return appState->close_tabs(operationType, anchorTabId, closePinned);
+}
+
+neko::TabSnapshotMaybe AppController::getTabSnapshot(int tabId) {
+  return appState->get_tab_snapshot(tabId);
+}
+
+void AppController::setActiveTab(int tabId) { appState->set_active_tab(tabId); }
+
+void AppController::setTabScrollOffsets(int tabId,
+                                        const neko::ScrollOffsetFfi &offsets) {
+  appState->set_tab_scroll_offsets(tabId, offsets);
+}
+
+// End TabCoreAPI
+
 neko::FileOpenResult AppController::openFile(const std::string &path) {
   return appState->open_file(path);
 }

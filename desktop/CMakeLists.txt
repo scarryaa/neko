@@ -105,6 +105,9 @@ qt_add_executable(neko
     src/features/main_window/connections/ui_style_connections.cpp
     src/features/main_window/connections/ui_style_connections.h
 
+    # Core APIs
+    src/core/api/tab_core_api.h
+
     # Theme 
     src/theme/theme_provider.cpp
     src/theme/theme_provider.h

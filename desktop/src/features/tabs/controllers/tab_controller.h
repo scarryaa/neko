@@ -1,6 +1,7 @@
 #ifndef TAB_CONTROLLER_H
 #define TAB_CONTROLLER_H
 
+#include "core/api/tab_core_api.h"
 #include "features/tabs/types/types.h"
 #include "types/ffi_types_fwd.h"
 #include <QList>
@@ -11,7 +12,7 @@ class TabController : public QObject {
 
 public:
   struct TabControllerProps {
-    neko::AppState *appState;
+    ITabCoreApi *tabCoreApi;
   };
 
   explicit TabController(const TabControllerProps &props);
@@ -53,7 +54,7 @@ signals:
 private:
   static TabPresentation fromSnapshot(const neko::TabSnapshot &tab);
 
-  neko::AppState *appState;
+  ITabCoreApi *tabCoreApi;
 };
 
 #endif

@@ -17,6 +17,10 @@ class ThemeManager;
 class ScrollOffsetFfi;
 class TabsSnapshot;
 class TabSnapshot;
+class TabSnapshotMaybe;
+class PinTabResult;
+class NewTabResult;
+class CloseManyTabsResult;
 
 class FileOpenResult;
 class MoveActiveTabResult;
