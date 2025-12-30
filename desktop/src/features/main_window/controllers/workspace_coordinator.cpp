@@ -25,13 +25,12 @@ WorkspaceCoordinator::WorkspaceCoordinator(
       appStateController(props.appStateController),
       appConfigService(props.appConfigService),
       editorController(props.editorController), uiHandles(props.uiHandles),
-      commandExecutor(props.commandExecutor), workspaceUi(props.workspaceUi),
+      commandExecutor(props.commandExecutor),
       tabFlows({.tabController = props.tabController,
                 .appStateController = props.appStateController,
                 .editorController = props.editorController,
-                .workspaceUi = props.workspaceUi,
                 .uiHandles = props.uiHandles}),
-      QObject(parent) {
+      dialogService(props.dialogService), QObject(parent) {
   // TabController -> WorkspaceCoordinator
   connect(tabController, &TabController::activeTabChanged, this,
           &WorkspaceCoordinator::refreshUiForActiveTab);
@@ -124,7 +123,8 @@ std::vector<ShortcutHintRow> WorkspaceCoordinator::buildJumpHintRows() {
 
 std::optional<std::string>
 WorkspaceCoordinator::requestFileExplorerDirectory() const {
-  const QString dir = workspaceUi.promptFileExplorerDirectory();
+  const QString dir =
+      DialogService::promptFileExplorerDirectory(uiHandles.window);
   if (dir.isEmpty()) {
     return std::nullopt;
   }
@@ -259,7 +259,8 @@ void WorkspaceCoordinator::openFile() {
     initialDir = info.isDir() ? info.absoluteFilePath() : info.absolutePath();
   }
 
-  const QString filePath = workspaceUi.openFile(initialDir);
+  const QString filePath =
+      DialogService::openFile(initialDir, uiHandles.window);
   if (filePath.isEmpty()) {
     return;
   }
@@ -332,13 +333,13 @@ void WorkspaceCoordinator::tabTogglePin(int tabId, bool tabIsPinned) {
 
 void WorkspaceCoordinator::newTab() { tabFlows.newTab(); }
 
-void WorkspaceCoordinator::tabChanged(int tabId) { tabFlows.tabChanged(tabId); }
-
 void WorkspaceCoordinator::tabUnpinned(int tabId) {
   tabFlows.tabUnpinned(tabId);
 }
 
 void WorkspaceCoordinator::bufferChanged() { tabFlows.bufferChanged(); }
+
+void WorkspaceCoordinator::tabChanged(int tabId) { tabFlows.tabChanged(tabId); }
 
 SaveResult WorkspaceCoordinator::saveTab(int tabId, bool isSaveAs) {
   return tabFlows.saveTab(tabId, isSaveAs);
@@ -405,48 +406,6 @@ void WorkspaceCoordinator::applyInitialState() {
   }
 
   uiHandles.editorWidget->setFocus();
-}
-
-// TODO(scarlet): Merge this with workspaceUi.confirmCloseTabs?
-CloseDecision
-WorkspaceCoordinator::showTabCloseConfirmationDialog(const QList<int> &ids) {
-  if (ids.isEmpty()) {
-    return CloseDecision::DontSave;
-  }
-
-  const auto modifiedCount = tabFlows.getModifiedTabCount(ids);
-  if (modifiedCount == 0) {
-    return CloseDecision::DontSave;
-  }
-
-  const bool multipleModifiedTabs = modifiedCount > 1;
-  QMessageBox box(QMessageBox::Warning, tr("Close Tabs"),
-                  tr("%1 tab%2 unsaved edits.")
-                      .arg(modifiedCount)
-                      .arg(multipleModifiedTabs ? "s have" : " has"),
-                  QMessageBox::NoButton, uiHandles.window);
-
-  auto *saveBtn = box.addButton(tr(multipleModifiedTabs ? "Save all" : "Save"),
-                                QMessageBox::AcceptRole);
-  auto *dontSaveBtn =
-      box.addButton(tr(multipleModifiedTabs ? "Discard all" : "Don't Save"),
-                    QMessageBox::DestructiveRole);
-  auto *cancelBtn = box.addButton(QMessageBox::Cancel);
-
-  box.setDefaultButton(cancelBtn);
-  box.setEscapeButton(cancelBtn);
-
-  box.exec();
-
-  if (box.clickedButton() == saveBtn) {
-    return CloseDecision::Save;
-  }
-
-  if (box.clickedButton() == dontSaveBtn) {
-    return CloseDecision::DontSave;
-  }
-
-  return CloseDecision::Cancel;
 }
 
 void WorkspaceCoordinator::refreshUiForActiveTab(bool focusEditor) {

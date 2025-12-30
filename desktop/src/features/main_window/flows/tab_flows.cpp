@@ -2,7 +2,7 @@
 #include "features/editor/editor_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/controllers/app_state_controller.h"
-#include "features/main_window/interfaces/workspace_ui.h"
+#include "features/main_window/interfaces/close_decision.h"
 #include "features/main_window/ui_handles.h"
 #include "features/status_bar/status_bar_widget.h"
 #include "features/tabs/controllers/tab_controller.h"
@@ -20,8 +20,8 @@
 TabFlows::TabFlows(const TabFlowsProps &props)
     : tabController(props.tabController),
       appStateController(props.appStateController),
-      editorController(props.editorController), workspaceUi(props.workspaceUi),
-      uiHandles(props.uiHandles) {}
+      editorController(props.editorController), uiHandles(props.uiHandles),
+      dialogService(props.dialogService) {}
 
 void TabFlows::handleTabCommand(const std::string &commandId,
                                 const neko::TabContextFfi &ctx,
@@ -166,6 +166,7 @@ void TabFlows::handleTabsClosed() {
   uiHandles.statusBarWidget->onTabClosed(newTabCount);
 }
 
+// TODO(scarlet): Move this to TabController?
 int TabFlows::getModifiedTabCount(const QList<int> &ids) {
   const auto snapshot = tabController->getTabsSnapshot();
 
@@ -219,7 +220,8 @@ bool TabFlows::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
     initialDir = info.isDir() ? info.absoluteFilePath() : info.absolutePath();
   }
 
-  const QString filePath = workspaceUi.promptSaveAsPath(initialDir, fileName);
+  const QString filePath =
+      DialogService::promptSaveAsPath(initialDir, fileName, uiHandles.window);
   if (filePath.isEmpty()) {
     return false;
   }
@@ -258,13 +260,15 @@ bool TabFlows::closeManyTabs(const QList<int> &ids, bool forceClose,
 
   if (!forceClose && !modifiedIds.isEmpty()) {
     if (modifiedIds.size() == 1) {
-      workspaceUi.focusTab(modifiedIds.first());
+      tabChanged(modifiedIds.first());
     }
 
-    switch (workspaceUi.confirmCloseTabs(ids)) {
+    int modifiedCount = getModifiedTabCount(ids);
+    switch (DialogService::showTabCloseConfirmationDialog(ids, modifiedCount,
+                                                          uiHandles.window)) {
     case CloseDecision::Save:
       for (int tabId : modifiedIds) {
-        workspaceUi.focusTab(tabId);
+        tabChanged(modifiedIds.first());
 
         if (!saveTabWithPromptIfNeeded(tabId, false)) {
           return false;

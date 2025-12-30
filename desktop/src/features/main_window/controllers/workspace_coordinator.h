@@ -3,9 +3,8 @@
 
 #include "features/command_palette/types/types.h"
 #include "features/main_window/flows/tab_flows.h"
-#include "features/main_window/interfaces/close_decision.h"
 #include "features/main_window/interfaces/save_result.h"
-#include "features/main_window/interfaces/workspace_ui.h"
+#include "features/main_window/services/dialog_service.h"
 #include "features/main_window/ui_handles.h"
 #include "types/ffi_types_fwd.h"
 #include <QList>
@@ -20,8 +19,8 @@ class EditorController;
 class AppConfigService;
 class CommandExecutor;
 
-// WorkspaceCoordinator wires together controllers, flows, and widgets.
-// It owns TabFlows (tab-specific workflows) and coordinates UI updates.
+/// \class WorkspaceCoordinator
+/// \brief Wires together controllers, flows, and widgets.
 class WorkspaceCoordinator : public QObject {
   Q_OBJECT
 
@@ -33,7 +32,7 @@ public:
     AppConfigService *appConfigService;
     CommandExecutor *commandExecutor;
     const UiHandles uiHandles;
-    const WorkspaceUi workspaceUi;
+    DialogService *dialogService;
   };
 
   explicit WorkspaceCoordinator(const WorkspaceCoordinatorProps &props,
@@ -50,7 +49,6 @@ public:
   void moveTabBy(int delta, bool useHistory);
 
   // Save / close flows
-  CloseDecision showTabCloseConfirmationDialog(const QList<int> &ids);
   SaveResult saveTab(int tabId, bool isSaveAs);
   void fileSaved(bool saveAs);
 
@@ -93,13 +91,13 @@ private:
   void refreshStatusBarCursorInfo();
 
   TabFlows tabFlows;
+  DialogService *dialogService;
 
   TabController *tabController;
   AppStateController *appStateController;
   AppConfigService *appConfigService;
   EditorController *editorController;
   CommandExecutor *commandExecutor;
-  WorkspaceUi workspaceUi;
   const UiHandles uiHandles;
 };
 

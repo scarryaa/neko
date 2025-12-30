@@ -7,7 +7,7 @@
 #include <QList>
 
 #include "features/main_window/interfaces/save_result.h"
-#include "features/main_window/interfaces/workspace_ui.h"
+#include "features/main_window/services/dialog_service.h"
 #include "features/main_window/ui_handles.h"
 #include "features/tabs/types/types.h"
 #include "types/ffi_types_fwd.h"
@@ -16,17 +16,18 @@ class TabController;
 class AppStateController;
 class EditorController;
 
-// TabFlows orchestrates tab-related workflows that involve multiple
-// controllers and UI pieces (dialogs, status bar, tab bar, etc.).
-// It does not own widgets; it just uses UiHandles and WorkspaceUi.
+/// \class TabFlows
+/// \brief Orchestrates tab-related workflows that involve multiple controllers
+/// and UI pieces (dialogs, status bar, tab bar, etc.). It is internal to
+/// WorkspaceCoordinator.
 class TabFlows {
 public:
   struct TabFlowsProps {
     TabController *tabController;
     AppStateController *appStateController;
     EditorController *editorController;
-    const WorkspaceUi workspaceUi;
     const UiHandles uiHandles;
+    DialogService *dialogService;
   };
 
   explicit TabFlows(const TabFlowsProps &props);
@@ -70,8 +71,9 @@ private:
   TabController *tabController;
   AppStateController *appStateController;
   EditorController *editorController;
-  const WorkspaceUi workspaceUi;
+
   const UiHandles uiHandles;
+  DialogService *dialogService;
 
   bool closeManyTabs(const QList<int> &ids, bool forceClose,
                      const std::function<void()> &closeAction);

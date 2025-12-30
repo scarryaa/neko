@@ -64,7 +64,6 @@ qt_add_executable(neko
     src/features/main_window/ui_handles.h
 
     # Main Window Interfaces
-    src/features/main_window/interfaces/workspace_ui.h
     src/features/main_window/interfaces/close_decision.h
     src/features/main_window/interfaces/save_result.h
     src/features/main_window/interfaces/core_services.h
@@ -84,6 +83,10 @@ qt_add_executable(neko
     src/features/main_window/controllers/ui_style_manager.h
     src/features/main_window/controllers/command_executor.cpp
     src/features/main_window/controllers/command_executor.h
+
+    # Dialog Service
+    src/features/main_window/services/dialog_service.cpp
+    src/features/main_window/services/dialog_service.h
 
     # Workspace Coordinator Flows
     src/features/main_window/flows/tab_flows.cpp

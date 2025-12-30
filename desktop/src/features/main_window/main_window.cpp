@@ -110,68 +110,18 @@ MainWindow::MainWindow(QWidget *parent)
                 titleBarWidget,        mainSplitter,         newTabButton,
                 emptyStateNewTabButton};
 
+  auto *dialogService = new DialogService(this);
+
   workspaceCoordinator = new WorkspaceCoordinator(
-      {.tabController = tabController,
-       .appStateController = appStateController,
-       .editorController = editorController,
-       .appConfigService = appConfigService,
-       .commandExecutor = commandExecutor,
-       .uiHandles = uiHandles,
-       .workspaceUi = WorkspaceUi{
-           .promptSaveAsPath =
-               [this](std::optional<QString> initialDirectory,
-                      std::optional<QString> initialFileName) -> QString {
-             QString baseDir;
-
-             if (initialDirectory && !initialDirectory->isEmpty()) {
-               QFileInfo info(*initialDirectory);
-
-               baseDir =
-                   info.isDir() ? info.absoluteFilePath() : info.absolutePath();
-             } else {
-               baseDir = QDir::homePath();
-             }
-
-             QString initialPath = baseDir;
-             if (initialFileName && !initialFileName->isEmpty()) {
-               initialPath = QDir(baseDir).filePath(*initialFileName);
-             }
-
-             return QFileDialog::getSaveFileName(this, tr("Save As"),
-                                                 initialPath);
-           },
-           .focusTab =
-               [tabController, this](int tabId) {
-                 workspaceCoordinator->tabChanged(tabId);
-               },
-           .confirmCloseTabs =
-               [this](const QList<int> &ids) {
-                 return workspaceCoordinator->showTabCloseConfirmationDialog(
-                     ids);
-               },
-           .promptFileExplorerDirectory =
-               [this]() {
-                 return QFileDialog::getExistingDirectory(
-                     this, tr("Select a directory"), QDir::homePath(),
-                     QFileDialog::ShowDirsOnly |
-                         QFileDialog::DontResolveSymlinks);
-               },
-           .openFile =
-               [this](std::optional<QString> initialDirectory) -> QString {
-             QString baseDir;
-
-             if (initialDirectory && !initialDirectory->isEmpty()) {
-               QFileInfo info(*initialDirectory);
-               baseDir =
-                   info.isDir() ? info.absoluteFilePath() : info.absolutePath();
-             } else {
-               baseDir = QDir::homePath();
-             }
-
-             return QFileDialog::getOpenFileName(this, tr("Open a file"),
-                                                 baseDir);
-           },
-       }},
+      {
+          .tabController = tabController,
+          .appStateController = appStateController,
+          .editorController = editorController,
+          .appConfigService = appConfigService,
+          .commandExecutor = commandExecutor,
+          .uiHandles = uiHandles,
+          .dialogService = dialogService,
+      },
       this);
 
   auto *commandManager = new CommandManager(CommandManager::CommandManagerProps{
