@@ -21,6 +21,7 @@
 #include "features/main_window/controllers/ui_style_manager.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
 #include "features/main_window/layout/main_window_layout_builder.h"
+#include "features/main_window/services/dialog_service.h"
 #include "features/status_bar/status_bar_widget.h"
 #include "features/tabs/controllers/tab_controller.h"
 #include "features/tabs/tab_bar_widget.h"
@@ -120,7 +121,6 @@ MainWindow::MainWindow(QWidget *parent)
           .appConfigService = appConfigService,
           .commandExecutor = commandExecutor,
           .uiHandles = uiHandles,
-          .dialogService = dialogService,
       },
       this);
 

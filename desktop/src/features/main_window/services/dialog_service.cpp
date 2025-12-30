@@ -8,6 +8,8 @@
 
 DialogService::DialogService(QObject *parent) : QObject(parent) {}
 
+// TODO(scarlet): Fix dialogs (like showTabCloseConfirmationDialog) appearing in
+// the center of the screen and not the center of the app window
 QString DialogService::promptFileExplorerDirectory(QWidget *parent) {
   return QFileDialog::getExistingDirectory(
       parent, tr("Select a directory"), QDir::homePath(),

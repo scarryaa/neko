@@ -1,16 +1,13 @@
 #ifndef TAB_FLOWS_H
 #define TAB_FLOWS_H
 
-#include <functional>
-#include <string>
-
-#include <QList>
-
 #include "features/main_window/interfaces/save_result.h"
-#include "features/main_window/services/dialog_service.h"
 #include "features/main_window/ui_handles.h"
 #include "features/tabs/types/types.h"
 #include "types/ffi_types_fwd.h"
+#include <QList>
+#include <functional>
+#include <string>
 
 class TabController;
 class AppStateController;
@@ -27,7 +24,6 @@ public:
     AppStateController *appStateController;
     EditorController *editorController;
     const UiHandles uiHandles;
-    DialogService *dialogService;
   };
 
   explicit TabFlows(const TabFlowsProps &props);
@@ -71,9 +67,7 @@ private:
   TabController *tabController;
   AppStateController *appStateController;
   EditorController *editorController;
-
   const UiHandles uiHandles;
-  DialogService *dialogService;
 
   bool closeManyTabs(const QList<int> &ids, bool forceClose,
                      const std::function<void()> &closeAction);

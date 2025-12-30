@@ -7,6 +7,7 @@
 #include "features/main_window/controllers/app_config_service.h"
 #include "features/main_window/controllers/app_state_controller.h"
 #include "features/main_window/controllers/command_executor.h"
+#include "features/main_window/services/dialog_service.h"
 #include "features/main_window/ui_handles.h"
 #include "features/status_bar/status_bar_widget.h"
 #include "features/tabs/controllers/tab_controller.h"
@@ -30,7 +31,7 @@ WorkspaceCoordinator::WorkspaceCoordinator(
                 .appStateController = props.appStateController,
                 .editorController = props.editorController,
                 .uiHandles = props.uiHandles}),
-      dialogService(props.dialogService), QObject(parent) {
+      QObject(parent) {
   // TabController -> WorkspaceCoordinator
   connect(tabController, &TabController::activeTabChanged, this,
           &WorkspaceCoordinator::refreshUiForActiveTab);

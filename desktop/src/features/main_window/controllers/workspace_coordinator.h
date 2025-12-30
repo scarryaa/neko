@@ -4,7 +4,6 @@
 #include "features/command_palette/types/types.h"
 #include "features/main_window/flows/tab_flows.h"
 #include "features/main_window/interfaces/save_result.h"
-#include "features/main_window/services/dialog_service.h"
 #include "features/main_window/ui_handles.h"
 #include "types/ffi_types_fwd.h"
 #include <QList>
@@ -32,7 +31,6 @@ public:
     AppConfigService *appConfigService;
     CommandExecutor *commandExecutor;
     const UiHandles uiHandles;
-    DialogService *dialogService;
   };
 
   explicit WorkspaceCoordinator(const WorkspaceCoordinatorProps &props,
@@ -91,7 +89,6 @@ private:
   void refreshStatusBarCursorInfo();
 
   TabFlows tabFlows;
-  DialogService *dialogService;
 
   TabController *tabController;
   AppStateController *appStateController;

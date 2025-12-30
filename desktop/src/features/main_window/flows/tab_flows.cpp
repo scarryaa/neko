@@ -2,7 +2,7 @@
 #include "features/editor/editor_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/controllers/app_state_controller.h"
-#include "features/main_window/interfaces/close_decision.h"
+#include "features/main_window/services/dialog_service.h"
 #include "features/main_window/ui_handles.h"
 #include "features/status_bar/status_bar_widget.h"
 #include "features/tabs/controllers/tab_controller.h"
@@ -20,8 +20,7 @@
 TabFlows::TabFlows(const TabFlowsProps &props)
     : tabController(props.tabController),
       appStateController(props.appStateController),
-      editorController(props.editorController), uiHandles(props.uiHandles),
-      dialogService(props.dialogService) {}
+      editorController(props.editorController), uiHandles(props.uiHandles) {}
 
 void TabFlows::handleTabCommand(const std::string &commandId,
                                 const neko::TabContextFfi &ctx,
