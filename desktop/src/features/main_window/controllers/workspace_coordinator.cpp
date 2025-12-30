@@ -7,7 +7,6 @@
 #include "features/main_window/controllers/app_config_service.h"
 #include "features/main_window/controllers/app_state_controller.h"
 #include "features/main_window/controllers/command_executor.h"
-#include "features/main_window/controllers/workspace_controller.h"
 #include "features/main_window/ui_handles.h"
 #include "features/status_bar/status_bar_widget.h"
 #include "features/tabs/controllers/tab_controller.h"
@@ -15,6 +14,7 @@
 #include "neko-core/src/ffi/bridge.rs.h"
 #include <QApplication>
 #include <QClipboard>
+#include <QFileInfo>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QScrollBar>
@@ -26,7 +26,8 @@ WorkspaceCoordinator::WorkspaceCoordinator(
       appStateController(props.appStateController),
       appConfigService(props.appConfigService),
       editorController(props.editorController), uiHandles(props.uiHandles),
-      commandExecutor(props.commandExecutor), QObject(parent) {
+      commandExecutor(props.commandExecutor), workspaceUi(props.workspaceUi),
+      QObject(parent) {
   // TabController -> WorkspaceCoordinator
   connect(tabController, &TabController::activeTabChanged, this,
           &WorkspaceCoordinator::refreshUiForActiveTab);
@@ -113,6 +114,16 @@ std::vector<ShortcutHintRow> WorkspaceCoordinator::buildJumpHintRows() {
   }
 
   return result;
+}
+
+std::optional<std::string>
+WorkspaceCoordinator::requestFileExplorerDirectory() const {
+  const QString dir = workspaceUi.promptFileExplorerDirectory();
+  if (dir.isEmpty()) {
+    return std::nullopt;
+  }
+
+  return dir.toStdString();
 }
 
 void WorkspaceCoordinator::commandPaletteGoToPosition(
@@ -236,7 +247,20 @@ void WorkspaceCoordinator::openFile() {
     }
   }
 
-  const auto result = workspaceController->openFile(startingPath);
+  QString initialDir;
+  if (!startingPath.isEmpty()) {
+    QFileInfo info(startingPath);
+    initialDir = info.isDir() ? info.absoluteFilePath() : info.absolutePath();
+  }
+
+  const QString filePath = workspaceUi.openFile(initialDir);
+  if (filePath.isEmpty()) {
+    return;
+  }
+
+  auto targetTabId = tabController->addTab();
+  const auto result =
+      appStateController->openFile(targetTabId, filePath.toStdString());
 
   if (result.success) {
     emit fileOpened(result.snapshot);
@@ -279,7 +303,7 @@ void WorkspaceCoordinator::fileSaved(bool saveAs) {
 
   if (snapshot.active_present) {
     const int activeId = static_cast<int>(snapshot.active_id);
-    const bool success = workspaceController->saveTab(activeId, saveAs);
+    const bool success = saveTabWithPromptIfNeeded(activeId, saveAs);
 
     if (success) {
       uiHandles->tabBarWidget->setTabModified(activeId, false);
@@ -453,13 +477,8 @@ WorkspaceCoordinator::showTabCloseConfirmationDialog(const QList<int> &ids) {
   return CloseDecision::Cancel;
 }
 
-std::optional<std::string>
-WorkspaceCoordinator::requestFileExplorerDirectory() {
-  return workspaceController->requestFileExplorerDirectory();
-}
-
 SaveResult WorkspaceCoordinator::saveTab(int tabId, bool isSaveAs) {
-  if (workspaceController->saveTab(tabId, isSaveAs)) {
+  if (saveTabWithPromptIfNeeded(tabId, isSaveAs)) {
     uiHandles->tabBarWidget->setTabModified(tabId, false);
 
     return SaveResult::Saved;
@@ -508,11 +527,112 @@ void WorkspaceCoordinator::closeTabs(
 
   saveScrollOffsetsForActiveTab();
 
+  const bool closePinned =
+      (operationType == neko::CloseTabOperationTypeFfi::Single) && forceClose;
   auto ids =
-      workspaceController->closeTabs(operationType, anchorTabId, forceClose);
+      tabController->getCloseTabIds(operationType, anchorTabId, closePinned);
+
   if (!ids.empty()) {
     handleTabsClosed();
   }
+
+  closeManyTabs(
+      ids, forceClose, [this, anchorTabId, operationType, closePinned]() {
+        tabController->closeTabs(operationType, anchorTabId, closePinned);
+      });
+}
+
+bool WorkspaceCoordinator::closeManyTabs(
+    const QList<int> &ids, bool forceClose,
+    const std::function<void()> &closeAction) {
+  if (ids.isEmpty()) {
+    return false;
+  }
+
+  const auto snapshot = tabController->getTabsSnapshot();
+
+  QHash<int, bool> modifiedById;
+  modifiedById.reserve(static_cast<int>(snapshot.tabs.size()));
+  for (const auto &tab : snapshot.tabs) {
+    modifiedById.insert(static_cast<int>(tab.id), tab.modified);
+  }
+
+  auto isModified = [&](int tabId) -> bool {
+    auto maybeModifiedTab = modifiedById.constFind(tabId);
+    return maybeModifiedTab != modifiedById.constEnd()
+               ? maybeModifiedTab.value()
+               : false;
+  };
+
+  QList<int> modifiedIds;
+  modifiedIds.reserve(ids.size());
+  for (int tabId : ids) {
+    if (isModified(tabId)) {
+      modifiedIds.append(tabId);
+    }
+  }
+
+  if (!forceClose && !modifiedIds.isEmpty()) {
+    if (modifiedIds.size() == 1) {
+      workspaceUi.focusTab(modifiedIds.first());
+    }
+
+    switch (workspaceUi.confirmCloseTabs(ids)) {
+    case CloseDecision::Save:
+      for (int tabId : modifiedIds) {
+        workspaceUi.focusTab(tabId);
+
+        if (!saveTabWithPromptIfNeeded(tabId, false)) {
+          return false;
+        }
+      }
+      break;
+    case CloseDecision::DontSave:
+      break;
+    case CloseDecision::Cancel:
+      return false;
+    }
+  }
+
+  closeAction();
+  return true;
+}
+
+bool WorkspaceCoordinator::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
+  const auto snapshot = tabController->getTabsSnapshot();
+  QString fileName;
+  QString path;
+
+  for (const auto &tab : snapshot.tabs) {
+    if (tab.id == tabId) {
+      path = QString::fromUtf8(tab.path);
+      fileName = QString::fromUtf8(tab.title);
+      break;
+    }
+  }
+
+  if (!path.isEmpty() && !isSaveAs) {
+    return appStateController->saveTab(tabId);
+  }
+
+  QString initialDir;
+  if (!path.isEmpty()) {
+    QFileInfo info(path);
+
+    if (info.isDir()) {
+      initialDir = info.absoluteFilePath();
+    } else {
+      initialDir = info.absolutePath();
+    }
+  }
+
+  const QString filePath = workspaceUi.promptSaveAsPath(initialDir, fileName);
+
+  if (filePath.isEmpty()) {
+    return false;
+  }
+
+  return appStateController->saveTabAs(tabId, filePath.toStdString());
 }
 
 void WorkspaceCoordinator::applyInitialState() {

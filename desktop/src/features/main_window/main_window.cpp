@@ -19,7 +19,6 @@
 #include "features/main_window/controllers/command_manager.h"
 #include "features/main_window/controllers/shortcuts_manager.h"
 #include "features/main_window/controllers/ui_style_manager.h"
-#include "features/main_window/controllers/workspace_controller.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
 #include "features/main_window/layout/main_window_layout_builder.h"
 #include "features/status_bar/status_bar_widget.h"
@@ -66,9 +65,59 @@ MainWindow::MainWindow(QWidget *parent)
 
   auto *tabController = new TabController({.appState = &*appState});
 
-  workspaceController = new WorkspaceController(
-      {.tabController = tabController,
+  appConfigService =
+      new AppConfigService({.configManager = &*configManager}, this);
+  auto *commandExecutor =
+      new CommandExecutor({.configManager = &*configManager,
+                           .themeManager = &*themeManager,
+                           .appState = &*appState,
+                           .appConfigService = appConfigService});
+  themeProvider = new ThemeProvider({.themeManager = &*themeManager}, this);
+  uiStyleManager = new UiStyleManager(
+      {.appConfigService = appConfigService, .themeProvider = themeProvider},
+      this);
+
+  applyTheme();
+  setupWidgets(editor, tabController, appStateController);
+
+  // Layout
+  MainWindowLayoutBuilder layoutBuilder(
+      {.themeProvider = themeProvider,
+       .uiStyleManager = uiStyleManager,
+       .appConfigService = &*appConfigService},
+      this);
+
+  auto layoutResult =
+      layoutBuilder.build({.titleBarWidget = titleBarWidget,
+                           .tabBarWidget = tabBarWidget,
+                           .editorWidget = editorWidget,
+                           .gutterWidget = gutterWidget,
+                           .fileExplorerWidget = fileExplorerWidget,
+                           .statusBarWidget = statusBarWidget});
+
+  setCentralWidget(layoutResult.centralWidget);
+
+  tabBarContainer = layoutResult.tabBarContainer;
+  newTabButton = layoutResult.newTabButton;
+  emptyStateWidget = layoutResult.emptyStateWidget;
+  emptyStateNewTabButton = layoutResult.emptyStateNewTabButton;
+  mainSplitter = layoutResult.mainSplitter;
+
+  uiHandles =
+      UiHandles{editorWidget,          gutterWidget,         tabBarWidget,
+                tabBarContainer,       emptyStateWidget,     fileExplorerWidget,
+                statusBarWidget,       commandPaletteWidget, this->window(),
+                titleBarWidget,        mainSplitter,         newTabButton,
+                emptyStateNewTabButton};
+
+  workspaceCoordinator = new WorkspaceCoordinator(
+      {.workspaceController = workspaceController,
+       .tabController = tabController,
        .appStateController = appStateController,
+       .editorController = editorController,
+       .appConfigService = appConfigService,
+       .commandExecutor = commandExecutor,
+       .uiHandles = &uiHandles,
        .workspaceUi = WorkspaceUi{
            .promptSaveAsPath =
                [this](std::optional<QString> initialDirectory,
@@ -123,63 +172,7 @@ MainWindow::MainWindow(QWidget *parent)
              return QFileDialog::getOpenFileName(this, tr("Open a file"),
                                                  baseDir);
            },
-       }});
-
-  appConfigService =
-      new AppConfigService({.configManager = &*configManager}, this);
-  auto *commandExecutor =
-      new CommandExecutor({.configManager = &*configManager,
-                           .themeManager = &*themeManager,
-                           .appState = &*appState,
-                           .appConfigService = appConfigService});
-  themeProvider = new ThemeProvider({.themeManager = &*themeManager}, this);
-  uiStyleManager = new UiStyleManager(
-      {.appConfigService = appConfigService, .themeProvider = themeProvider},
-      this);
-
-  applyTheme();
-  setupWidgets(editor, tabController, appStateController);
-
-  // Layout
-  MainWindowLayoutBuilder layoutBuilder(
-      {.themeProvider = themeProvider,
-       .uiStyleManager = uiStyleManager,
-       .appConfigService = &*appConfigService},
-      this);
-
-  auto layoutResult =
-      layoutBuilder.build({.titleBarWidget = titleBarWidget,
-                           .tabBarWidget = tabBarWidget,
-                           .editorWidget = editorWidget,
-                           .gutterWidget = gutterWidget,
-                           .fileExplorerWidget = fileExplorerWidget,
-                           .statusBarWidget = statusBarWidget});
-
-  setCentralWidget(layoutResult.centralWidget);
-
-  tabBarContainer = layoutResult.tabBarContainer;
-  newTabButton = layoutResult.newTabButton;
-  emptyStateWidget = layoutResult.emptyStateWidget;
-  emptyStateNewTabButton = layoutResult.emptyStateNewTabButton;
-  mainSplitter = layoutResult.mainSplitter;
-
-  uiHandles =
-      UiHandles{editorWidget,          gutterWidget,         tabBarWidget,
-                tabBarContainer,       emptyStateWidget,     fileExplorerWidget,
-                statusBarWidget,       commandPaletteWidget, this->window(),
-                titleBarWidget,        mainSplitter,         newTabButton,
-                emptyStateNewTabButton};
-
-  workspaceCoordinator = new WorkspaceCoordinator(
-      {
-          .workspaceController = workspaceController,
-          .tabController = tabController,
-          .appStateController = appStateController,
-          .editorController = editorController,
-          .appConfigService = appConfigService,
-          .commandExecutor = commandExecutor,
-          .uiHandles = &uiHandles,
-      },
+       }},
       this);
 
   auto *commandManager = new CommandManager(CommandManager::CommandManagerProps{

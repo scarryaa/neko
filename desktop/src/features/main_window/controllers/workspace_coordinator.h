@@ -12,6 +12,7 @@ class CommandExecutor;
 #include "features/command_palette/types/types.h"
 #include "features/main_window/interfaces/close_decision.h"
 #include "features/main_window/interfaces/save_result.h"
+#include "features/main_window/interfaces/workspace_ui.h"
 #include "features/tabs/types/types.h"
 #include "types/ffi_types_fwd.h"
 #include <QList>
@@ -29,6 +30,7 @@ public:
     AppConfigService *appConfigService;
     CommandExecutor *commandExecutor;
     const UiHandles *uiHandles;
+    const WorkspaceUi workspaceUi;
   };
 
   explicit WorkspaceCoordinator(const WorkspaceCoordinatorProps &props,
@@ -44,8 +46,8 @@ public:
   void revealActiveTab();
   void moveTabBy(int delta, bool useHistory);
 
+  [[nodiscard]] std::optional<std::string> requestFileExplorerDirectory() const;
   [[nodiscard]] static std::vector<ShortcutHintRow> buildJumpHintRows();
-  std::optional<std::string> requestFileExplorerDirectory();
   void fileSaved(bool saveAs);
   void openFile();
 
@@ -80,6 +82,9 @@ private:
   void tabCopyPath(int tabId);
   void tabTogglePin(int tabId, bool tabIsPinned);
   void tabReveal(const std::string &commandId, const neko::TabContextFfi &ctx);
+  bool closeManyTabs(const QList<int> &ids, bool forceClose,
+                     const std::function<void()> &closeAction);
+  bool saveTabWithPromptIfNeeded(int tabId, bool isSaveAs);
 
   void saveScrollOffsetsForActiveTab();
   void restoreScrollOffsetsForActiveTab();
@@ -94,6 +99,7 @@ private:
   AppConfigService *appConfigService;
   EditorController *editorController;
   CommandExecutor *commandExecutor;
+  WorkspaceUi workspaceUi;
   const UiHandles *uiHandles;
 };
 
