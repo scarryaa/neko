@@ -79,3 +79,16 @@ bool AppStateController::saveTab(int tabId) {
 bool AppStateController::saveTabAs(int tabId, const std::string &path) {
   return appState->save_tab_as(tabId, path);
 }
+
+neko::FileOpenResult AppStateController::openFile(int tabId,
+                                                  const std::string &path) {
+  auto openResult = appState->open_file(path);
+
+  if (!openResult.success) {
+    // Roll back the added tab
+    appState->close_tab(tabId);
+    return openResult;
+  }
+
+  return openResult;
+}

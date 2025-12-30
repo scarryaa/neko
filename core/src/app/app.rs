@@ -1,9 +1,11 @@
+use super::DocumentManager;
 use crate::{
     Config, ConfigManager, Editor, FileTree, JumpHistory, MoveActiveTabResult, Tab, TabManager,
 };
-use std::{io::Error, path::PathBuf};
-
-use super::DocumentManager;
+use std::{
+    io::Error,
+    path::{Path, PathBuf},
+};
 
 /// Application state.
 ///
@@ -141,23 +143,48 @@ impl AppState {
             .editor
             .auto_reopen_closed_tabs_in_history;
 
-        let result = self.tab_manager.move_active_tab_by(
+        let mut result = self.tab_manager.move_active_tab_by(
             delta,
             use_history,
             auto_reopen_closed_tabs_in_history,
         );
 
-        // Restore cursors, selections for reopened tab
-        if let Some(found_id) = result.found_id {
-            if let Ok(tab) = self.tab_manager.get_tab_mut(found_id) {
-                let editor = tab.get_editor_mut();
+        if result.reopened_tab {
+            if let Some(path) = &result.reopen_path {
+                let (new_id, _) = self.tab_manager.new_tab(false);
 
-                if let Some(ref cursors) = result.cursors {
-                    editor.cursor_manager_mut().set_cursors(cursors.to_vec());
-                }
+                if self.open_file(&path.to_string_lossy()).is_ok() {
+                    let _ = self.tab_manager.set_active_tab(new_id);
 
-                if let Some(ref selections) = result.selections {
-                    editor.selection_manager_mut().set_selection(selections);
+                    if let Some(old_id) = result.found_id {
+                        // Update the tab id in history
+                        self.tab_manager
+                            .get_history_manager_mut()
+                            .remap_id(old_id, new_id);
+                    }
+
+                    // Set the found_id to the new tab id
+                    result.found_id = Some(new_id);
+
+                    // Restore cursors, selections for reopened tab
+                    if let Ok(tab) = self.tab_manager.get_tab_mut(new_id) {
+                        let editor = tab.get_editor_mut();
+
+                        if let Some(ref cursors) = result.cursors {
+                            editor.cursor_manager_mut().set_cursors(cursors.to_vec());
+                        }
+
+                        if let Some(ref selections) = result.selections {
+                            editor.selection_manager_mut().set_selection(selections);
+                        }
+                    }
+                } else {
+                    // Reopen failed, clear reopened flag
+                    result.reopened_tab = false;
+                    result.reopen_path = None;
+                    result.scroll_offsets = None;
+                    result.cursors = None;
+                    result.selections = None;
                 }
             }
         }
@@ -189,8 +216,42 @@ impl AppState {
         self.tab_manager.move_tab(from, to)
     }
 
+    // TODO(scarlet): Extract open/save/save as into a service?
     pub fn open_file(&mut self, path: &str) -> Result<usize, std::io::Error> {
-        self.tab_manager.open_file(path)
+        // Check if file is already open
+        if self
+            .tab_manager
+            .get_tabs()
+            .iter()
+            .any(|t| t.get_file_path().as_ref().and_then(|p| p.to_str()) == Some(path))
+        {
+            return Err(Error::new(
+                std::io::ErrorKind::AlreadyExists,
+                "File with given path already open",
+            ));
+        }
+
+        let content = std::fs::read_to_string(path)?;
+        let active_tab_id = self.tab_manager.get_active_tab_id();
+
+        if let Some(t) = self
+            .tab_manager
+            .get_tabs_mut()
+            .iter_mut()
+            .find(|t| t.get_id() == active_tab_id)
+        {
+            t.get_editor_mut().load_file(&content);
+            t.set_original_content(content);
+            t.set_file_path(Some(path.into()));
+            t.set_title(
+                Path::new(path)
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or(path),
+            );
+        }
+
+        Ok(active_tab_id)
     }
 
     pub fn save_tab(&mut self, id: usize) -> Result<(), std::io::Error> {
@@ -326,6 +387,18 @@ mod test {
         let _ = app.close_tab(0);
         let result = app.save_tab_as(0, "path");
 
+        assert!(result.is_err())
+    }
+
+    #[test]
+    fn open_file_returns_error_when_file_is_already_open() {
+        let c = ConfigManager::new();
+        let mut app = AppState::new(&c, Some("")).unwrap();
+
+        app.tab_manager.new_tab(true);
+        app.tab_manager.get_tabs_mut()[1].set_file_path(Some("test".to_string()));
+
+        let result = app.open_file("test");
         assert!(result.is_err())
     }
 }

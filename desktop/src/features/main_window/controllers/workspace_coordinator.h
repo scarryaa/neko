@@ -73,6 +73,7 @@ signals:
   void onFileExplorerToggledViaShortcut(bool isOpen);
   void themeChanged(const std::string &themeName);
   void tabRevealedInFileExplorer();
+  void fileOpened(const neko::TabSnapshot &tabSnapshot);
 
 private:
   void tabCopyPath(int tabId);

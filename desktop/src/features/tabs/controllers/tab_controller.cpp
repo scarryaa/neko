@@ -300,20 +300,6 @@ bool TabController::unpinTab(int tabId) {
   return true;
 }
 
-bool TabController::openFile(int tabId, const std::string &path) {
-  auto result = appState->open_file(path);
-  if (!result.success) {
-    // Roll back the added tab
-    auto result = appState->close_tab(tabId);
-    return false;
-  }
-
-  auto presentation = fromSnapshot(result.snapshot);
-  emit tabUpdated(presentation);
-
-  return true;
-}
-
 bool TabController::moveTabBy(int delta, bool useHistory) {
   if (appState == nullptr) {
     return false;

@@ -11,6 +11,14 @@ WorkspaceController::WorkspaceController(const WorkspaceControllerProps &props)
       appStateController(props.appStateController),
       workspaceUi(props.workspaceUi) {}
 
+neko::FileOpenResult WorkspaceController::makeFailedOpenResult() {
+  neko::FileOpenResult result{};
+  result.success = false;
+  result.snapshot = {};
+
+  return result;
+}
+
 QList<int> WorkspaceController::closeLeft(int tabId, bool forceClose) {
   auto ids = tabController->getCloseLeftTabIds(tabId);
   closeMany(ids, forceClose,
@@ -60,7 +68,8 @@ QList<int> WorkspaceController::closeTab(int tabId, bool forceClose) {
   return ids;
 }
 
-bool WorkspaceController::openFile(const QString &startingPath) {
+neko::FileOpenResult
+WorkspaceController::openFile(const QString &startingPath) {
   QString initialDir;
 
   if (!startingPath.isEmpty()) {
@@ -70,13 +79,11 @@ bool WorkspaceController::openFile(const QString &startingPath) {
 
   const QString filePath = workspaceUi.openFile(initialDir);
   if (filePath.isEmpty()) {
-    return false;
+    return makeFailedOpenResult();
   }
 
-  const auto snapshot = tabController->getTabsSnapshot();
   auto targetTabId = tabController->addTab();
-
-  return tabController->openFile(targetTabId, filePath.toStdString());
+  return appStateController->openFile(targetTabId, filePath.toStdString());
 }
 
 bool WorkspaceController::saveTab(int tabId, bool forceSaveAs) {

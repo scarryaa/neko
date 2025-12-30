@@ -50,6 +50,10 @@ WorkspaceCoordinator::WorkspaceCoordinator(
   connect(tabController, &TabController::activeTabChanged,
           uiHandles->tabBarWidget, &TabBarWidget::setCurrentTabId);
 
+  // WorkspaceCoordinator -> TabController
+  connect(this, &WorkspaceCoordinator::fileOpened, tabController,
+          &TabController::fileOpened);
+
   neko::Editor &activeEditor = appStateController->getActiveEditorMut();
   setActiveEditor(&activeEditor);
 }
@@ -232,7 +236,11 @@ void WorkspaceCoordinator::openFile() {
     }
   }
 
-  workspaceController->openFile(startingPath);
+  const auto result = workspaceController->openFile(startingPath);
+
+  if (result.success) {
+    emit fileOpened(result.snapshot);
+  }
 }
 
 void WorkspaceCoordinator::fileSelected(const std::string &path,

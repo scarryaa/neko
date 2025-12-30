@@ -44,6 +44,7 @@ public:
 
   bool saveTab(int tabId);
   bool saveTabAs(int tabId, const std::string &path);
+  neko::FileOpenResult openFile(int tabId, const std::string &path);
 
 private:
   neko::AppState *appState;

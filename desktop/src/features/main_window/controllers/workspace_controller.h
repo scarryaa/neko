@@ -5,6 +5,7 @@ class TabController;
 class AppStateController;
 
 #include "features/main_window/interfaces/workspace_ui.h"
+#include "types/ffi_types_fwd.h"
 #include <QList>
 #include <functional>
 
@@ -26,7 +27,7 @@ public:
   QList<int> closeAll(bool forceClose);
   QList<int> closeClean();
 
-  bool openFile(const QString &startingPath);
+  neko::FileOpenResult openFile(const QString &startingPath);
   bool saveTab(int tabId, bool forceSaveAs);
   bool saveTabWithPromptIfNeeded(int tabId, bool isSaveAs);
   [[nodiscard]] std::optional<std::string> requestFileExplorerDirectory() const;
@@ -34,6 +35,7 @@ public:
 private:
   bool closeMany(const QList<int> &ids, bool forceClose,
                  const std::function<void()> &closeAction);
+  static neko::FileOpenResult makeFailedOpenResult();
 
   AppStateController *appStateController;
   TabController *tabController;

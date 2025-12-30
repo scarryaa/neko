@@ -4,16 +4,14 @@ use super::{
 use crate::{CursorEntry, Editor, Selection};
 use std::{
     io::{Error, ErrorKind},
-    path::{Path, PathBuf},
+    path::PathBuf,
 };
 
-enum ResolveOutcome {
+pub enum ResolveOutcome {
     Existing(usize),
-    Reopened {
-        id: usize,
-        scroll_offsets: (usize, usize),
-        cursors: Vec<CursorEntry>,
-        selections: Selection,
+    NeedsReopen {
+        original_id: usize,
+        info: ClosedTabInfo,
     },
     Unresolvable,
 }
@@ -43,8 +41,20 @@ impl TabManager {
     }
 
     // Getters
+    pub fn get_history_manager(&self) -> &TabHistoryManager {
+        &self.history_manager
+    }
+
+    pub fn get_history_manager_mut(&mut self) -> &mut TabHistoryManager {
+        &mut self.history_manager
+    }
+
     pub fn get_tabs(&self) -> &Vec<Tab> {
         &self.tabs
+    }
+
+    pub fn get_tabs_mut(&mut self) -> &mut Vec<Tab> {
+        &mut self.tabs
     }
 
     pub fn get_tab(&self, id: usize) -> Result<&Tab, Error> {
@@ -301,7 +311,7 @@ impl TabManager {
         Ok(ids)
     }
 
-    // Returns the id and a flag indicating whether a closed tab was reopened
+    // TODO(scarlet): Break this fn down
     pub fn move_active_tab_by(
         &mut self,
         delta: i64,
@@ -315,6 +325,7 @@ impl TabManager {
                 scroll_offsets: None,
                 cursors: None,
                 selections: None,
+                reopen_path: None,
             };
         }
 
@@ -340,6 +351,7 @@ impl TabManager {
                 scroll_offsets: None,
                 cursors: None,
                 selections: None,
+                reopen_path: None,
             };
         }
 
@@ -351,6 +363,7 @@ impl TabManager {
                 scroll_offsets: None,
                 cursors: None,
                 selections: None,
+                reopen_path: None,
             };
         }
 
@@ -367,6 +380,7 @@ impl TabManager {
                     scroll_offsets: None,
                     cursors: None,
                     selections: None,
+                    reopen_path: None,
                 };
             }
 
@@ -389,6 +403,7 @@ impl TabManager {
                         scroll_offsets: None,
                         cursors: None,
                         selections: None,
+                        reopen_path: None,
                     };
                 }
             };
@@ -405,25 +420,25 @@ impl TabManager {
                         scroll_offsets: None,
                         cursors: None,
                         selections: None,
+                        reopen_path: None,
                     };
                 }
-                ResolveOutcome::Reopened {
-                    id,
-                    scroll_offsets,
-                    cursors,
-                    selections,
+                ResolveOutcome::NeedsReopen {
+                    original_id: id,
+                    info,
                 } => {
-                    self.active_tab_id = id;
                     self.history_manager.set_history_pos(Some(next_idx));
+
                     return MoveActiveTabResult {
                         found_id: Some(id),
                         reopened_tab: true,
                         scroll_offsets: Some(ScrollOffsets {
-                            x: scroll_offsets.0,
-                            y: scroll_offsets.1,
+                            x: info.scroll_offsets.0,
+                            y: info.scroll_offsets.1,
                         }),
-                        cursors: Some(cursors),
-                        selections: Some(selections),
+                        cursors: Some(info.cursors),
+                        selections: Some(info.selections),
+                        reopen_path: Some(info.path.clone()),
                     };
                 }
                 ResolveOutcome::Unresolvable => {
@@ -438,6 +453,7 @@ impl TabManager {
                             scroll_offsets: None,
                             cursors: None,
                             selections: None,
+                            reopen_path: None,
                         };
                     }
 
@@ -552,41 +568,6 @@ impl TabManager {
         Ok(())
     }
 
-    // TODO(scarlet): Move this out of TabManager
-    pub fn open_file(&mut self, path: &str) -> Result<usize, std::io::Error> {
-        // Check if file is already open
-        if self
-            .tabs
-            .iter()
-            .any(|t| t.get_file_path().as_ref().and_then(|p| p.to_str()) == Some(path))
-        {
-            return Err(Error::new(
-                ErrorKind::AlreadyExists,
-                "File with given path already open",
-            ));
-        }
-
-        let content = std::fs::read_to_string(path)?;
-
-        if let Some(t) = self
-            .tabs
-            .iter_mut()
-            .find(|t| t.get_id() == self.active_tab_id)
-        {
-            t.get_editor_mut().load_file(&content);
-            t.set_original_content(content);
-            t.set_file_path(Some(path.into()));
-            t.set_title(
-                Path::new(path)
-                    .file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or(path),
-            );
-        }
-
-        Ok(self.active_tab_id)
-    }
-
     fn get_next_tab_id(&mut self) -> usize {
         let id = self.next_tab_id;
         self.next_tab_id += 1;
@@ -692,25 +673,14 @@ impl TabManager {
         // the tab, moving backwards in history should reopen it (currently we have to move forward
         // in history to reopen it)
 
-        // If there is recorded tab info, try to reopen it
+        // If there is recorded tab info, pass it along
         let Some(info) = self.closed_store.take(id) else {
             return ResolveOutcome::Unresolvable;
         };
 
-        let (new_id, _) = self.new_tab(false);
-        if self.open_file(&info.path.to_string_lossy()).is_err() {
-            return ResolveOutcome::Unresolvable;
-        }
-
-        // Update the tab id in history
-        self.history_manager.remap_id(id, new_id);
-
-        // Grab the scroll offsets
-        ResolveOutcome::Reopened {
-            id: new_id,
-            scroll_offsets: info.scroll_offsets,
-            cursors: info.cursors,
-            selections: info.selections,
+        ResolveOutcome::NeedsReopen {
+            original_id: id,
+            info,
         }
     }
 
@@ -786,17 +756,6 @@ mod test {
     fn set_active_tab_returns_error_when_id_not_found() {
         let mut tm = TabManager::new().unwrap();
         let result = tm.set_active_tab(1);
-
-        assert!(result.is_err())
-    }
-
-    #[test]
-    fn open_file_returns_error_when_file_is_already_open() {
-        let mut tm = TabManager::new().unwrap();
-        tm.new_tab(true);
-        tm.tabs[1].set_file_path(Some("test".to_string()));
-
-        let result = tm.open_file("test");
 
         assert!(result.is_err())
     }

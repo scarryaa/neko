@@ -22,4 +22,5 @@ pub struct MoveActiveTabResult {
     pub scroll_offsets: Option<ScrollOffsets>,
     pub cursors: Option<Vec<CursorEntry>>,
     pub selections: Option<Selection>,
+    pub reopen_path: Option<PathBuf>,
 }
