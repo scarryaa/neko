@@ -266,7 +266,8 @@ void WorkspaceCoordinator::fileSelected(const std::string &path,
   auto result = appStateController->openFile(path);
 
   if (!result.success) {
-    tabController->closeTab(newTabId);
+    tabController->closeTabs(neko::CloseTabOperationTypeFfi::Single, newTabId,
+                             false);
     return;
   }
 
@@ -301,21 +302,22 @@ void WorkspaceCoordinator::handleTabCommand(const std::string &commandId,
   if (commandId.empty()) {
     return;
   }
+
   const int tabId = static_cast<int>(ctx.id);
 
   // TODO(scarlet): Avoid matching on hardcoded command ids
   if (commandId == "tab.close") {
-    closeTab(tabId, forceClose);
+    closeTabs(neko::CloseTabOperationTypeFfi::Single, tabId, forceClose);
   } else if (commandId == "tab.closeOthers") {
-    closeOtherTabs(tabId, forceClose);
+    closeTabs(neko::CloseTabOperationTypeFfi::Others, tabId, forceClose);
   } else if (commandId == "tab.closeLeft") {
-    closeLeftTabs(tabId, forceClose);
+    closeTabs(neko::CloseTabOperationTypeFfi::Left, tabId, forceClose);
   } else if (commandId == "tab.closeRight") {
-    closeRightTabs(tabId, forceClose);
+    closeTabs(neko::CloseTabOperationTypeFfi::Right, tabId, forceClose);
   } else if (commandId == "tab.closeAll") {
-    closeAllTabs(forceClose);
+    closeTabs(neko::CloseTabOperationTypeFfi::All, 0, forceClose);
   } else if (commandId == "tab.closeClean") {
-    closeCleanTabs();
+    closeTabs(neko::CloseTabOperationTypeFfi::Clean, 0, forceClose);
   } else if (commandId == "tab.copyPath") {
     tabCopyPath(tabId);
   } else if (commandId == "tab.reveal") {
@@ -355,7 +357,7 @@ void WorkspaceCoordinator::tabReveal(const std::string &commandId,
     return;
   }
 
-  appStateController->runTabCommand(commandId, ctx);
+  appStateController->runTabCommand(commandId, ctx, false);
 
   // Show File Explorer if hidden
   if (uiHandles->fileExplorerWidget->isHidden()) {
@@ -492,79 +494,22 @@ void WorkspaceCoordinator::moveTabBy(int delta, bool useHistory) {
   tabController->moveTabBy(delta, useHistory);
 }
 
-void WorkspaceCoordinator::closeTab(int tabId, bool forceClose) {
-  auto close = [this](int tabId, bool forceClose) {
-    // Save current scroll offset before closing
-    saveScrollOffsetsForActiveTab();
-
-    auto ids = workspaceController->closeTab(tabId, forceClose);
-    if (!ids.empty()) {
-      handleTabsClosed();
-    }
-  };
-
+// TODO(scarlet): Wrap the neko:: type eventually so it doesn't leak into
+// widgets
+void WorkspaceCoordinator::closeTabs(
+    neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
+    bool forceClose) {
   auto snapshot = tabController->getTabsSnapshot();
   if (!snapshot.active_present) {
-    // Close the window
+    // Close the window if there are no tabs
     QApplication::quit();
     return;
   }
 
-  bool isPinned = false;
-  for (const auto &tab : snapshot.tabs) {
-    if (tabId == tab.id) {
-      isPinned = tab.pinned;
-    }
-  }
-
-  if (isPinned && !forceClose) {
-    return;
-  }
-
-  close(tabId, forceClose && !isPinned);
-}
-
-void WorkspaceCoordinator::closeLeftTabs(int tabId, bool forceClose) {
   saveScrollOffsetsForActiveTab();
 
-  auto ids = workspaceController->closeLeft(tabId, forceClose);
-  if (!ids.empty()) {
-    handleTabsClosed();
-  }
-}
-
-void WorkspaceCoordinator::closeRightTabs(int tabId, bool forceClose) {
-  saveScrollOffsetsForActiveTab();
-
-  auto ids = workspaceController->closeRight(tabId, forceClose);
-  if (!ids.empty()) {
-    handleTabsClosed();
-  }
-}
-
-void WorkspaceCoordinator::closeAllTabs(bool forceClose) {
-  saveScrollOffsetsForActiveTab();
-
-  auto ids = workspaceController->closeAll(forceClose);
-  if (!ids.empty()) {
-    handleTabsClosed();
-  }
-}
-
-void WorkspaceCoordinator::closeCleanTabs() {
-  saveScrollOffsetsForActiveTab();
-
-  auto ids = workspaceController->closeClean();
-  if (!ids.empty()) {
-    handleTabsClosed();
-  }
-}
-
-void WorkspaceCoordinator::closeOtherTabs(int tabId, bool forceClose) {
-  saveScrollOffsetsForActiveTab();
-
-  auto ids = workspaceController->closeOthers(tabId, forceClose);
-
+  auto ids =
+      workspaceController->closeTabs(operationType, anchorTabId, forceClose);
   if (!ids.empty()) {
     handleTabsClosed();
   }

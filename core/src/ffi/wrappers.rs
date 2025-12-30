@@ -33,29 +33,14 @@ impl AppState {
             .expect("Attempted to access mutable editor but failed")
     }
 
-    pub fn get_close_other_tab_ids_wrapper(&self, id: usize) -> Vec<usize> {
-        self.get_close_other_tab_ids(id)
+    pub fn get_close_tab_ids_wrapper(
+        &self,
+        operation_type: CloseTabOperationTypeFfi,
+        anchor_tab_id: usize,
+        close_pinned: bool,
+    ) -> Vec<usize> {
+        self.get_close_tab_ids(operation_type.into(), anchor_tab_id, close_pinned)
             .expect("Unable to get 'close other' tab ids")
-    }
-
-    pub fn get_close_left_tab_ids_wrapper(&self, id: usize) -> Vec<usize> {
-        self.get_close_left_tab_ids(id)
-            .expect("Unable to get 'close left' tab ids")
-    }
-
-    pub fn get_close_right_tab_ids_wrapper(&self, id: usize) -> Vec<usize> {
-        self.get_close_right_tab_ids(id)
-            .expect("Unable to get 'close right' tab ids")
-    }
-
-    pub fn get_close_all_tab_ids_wrapper(&self) -> Vec<usize> {
-        self.get_close_all_tab_ids()
-            .expect("Unable to get 'close all' tab ids")
-    }
-
-    pub fn get_close_clean_tab_ids_wrapper(&self) -> Vec<usize> {
-        self.get_close_clean_tab_ids()
-            .expect("Unable to get 'close clean' tab ids")
     }
 
     fn make_tab_snapshot(tab: &Tab) -> TabSnapshot {
@@ -138,23 +123,6 @@ impl AppState {
         }
     }
 
-    pub(crate) fn close_tab_wrapper(&mut self, id: usize) -> CloseTabResult {
-        let closed = self.close_tab(id).is_ok();
-
-        let any_tabs_left = !self.get_tabs().is_empty();
-        let active_id = if any_tabs_left {
-            self.get_active_tab_id() as u64
-        } else {
-            0
-        };
-
-        CloseTabResult {
-            closed,
-            has_active: any_tabs_left,
-            active_id,
-        }
-    }
-
     fn build_close_many_result(
         &self,
         success: bool,
@@ -175,36 +143,13 @@ impl AppState {
         }
     }
 
-    pub(crate) fn close_other_tabs_wrapper(&mut self, id: usize) -> CloseManyTabsResult {
-        match self.close_other_tabs(id) {
-            Ok(closed_ids) => self.build_close_many_result(true, closed_ids),
-            Err(_) => self.build_close_many_result(false, vec![]),
-        }
-    }
-
-    pub(crate) fn close_left_tabs_wrapper(&mut self, id: usize) -> CloseManyTabsResult {
-        match self.close_left_tabs(id) {
-            Ok(closed_ids) => self.build_close_many_result(true, closed_ids),
-            Err(_) => self.build_close_many_result(false, vec![]),
-        }
-    }
-
-    pub(crate) fn close_right_tabs_wrapper(&mut self, id: usize) -> CloseManyTabsResult {
-        match self.close_right_tabs(id) {
-            Ok(closed_ids) => self.build_close_many_result(true, closed_ids),
-            Err(_) => self.build_close_many_result(false, vec![]),
-        }
-    }
-
-    pub(crate) fn close_all_tabs_wrapper(&mut self) -> CloseManyTabsResult {
-        match self.close_all_tabs() {
-            Ok(closed_ids) => self.build_close_many_result(true, closed_ids),
-            Err(_) => self.build_close_many_result(false, vec![]),
-        }
-    }
-
-    pub(crate) fn close_clean_tabs_wrapper(&mut self) -> CloseManyTabsResult {
-        match self.close_clean_tabs() {
+    pub(crate) fn close_tabs_wrapper(
+        self: &mut AppState,
+        operation_type: CloseTabOperationTypeFfi,
+        anchor_tab_id: usize,
+        close_pinned: bool,
+    ) -> CloseManyTabsResult {
+        match self.close_tabs(operation_type.into(), anchor_tab_id, close_pinned) {
             Ok(closed_ids) => self.build_close_many_result(true, closed_ids),
             Err(_) => self.build_close_many_result(false, vec![]),
         }
@@ -791,8 +736,9 @@ pub(crate) fn run_tab_command_wrapper(
     app_state: &mut AppState,
     id: &str,
     ctx: TabContextFfi,
+    close_pinned: bool,
 ) -> bool {
-    run_tab_command(app_state, id, &ctx.into()).is_ok()
+    run_tab_command(app_state, id, &ctx.into(), close_pinned).is_ok()
 }
 
 pub fn get_available_tab_commands_wrapper() -> Vec<TabCommandFfi> {

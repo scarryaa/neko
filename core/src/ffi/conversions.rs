@@ -1,8 +1,8 @@
 use super::*;
 use crate::{
-    AddCursorDirection, ChangeSet, Command, CommandResult, Config, Cursor, DocumentTarget,
-    JumpCommand, JumpManagementCommand, LineTarget, TabCommandState, TabContext, UiIntent,
-    commands::JumpAliasInfo,
+    AddCursorDirection, ChangeSet, CloseTabOperationType, Command, CommandResult, Config, Cursor,
+    DocumentTarget, JumpCommand, JumpManagementCommand, LineTarget, TabCommandState, TabContext,
+    UiIntent, commands::JumpAliasInfo,
 };
 use std::path::PathBuf;
 
@@ -57,6 +57,35 @@ impl From<ChangeSet> for ChangeSetFfi {
             line_count_after: cs.line_count_after as u32,
             dirty_first_row: cs.dirty_first_row.map(|v| v as i32).unwrap_or(-1),
             dirty_last_row: cs.dirty_last_row.map(|v| v as i32).unwrap_or(-1),
+        }
+    }
+}
+
+impl From<CloseTabOperationType> for CloseTabOperationTypeFfi {
+    fn from(operation_type: CloseTabOperationType) -> Self {
+        match operation_type {
+            CloseTabOperationType::Single => CloseTabOperationTypeFfi::Single,
+            CloseTabOperationType::Left => CloseTabOperationTypeFfi::Left,
+            CloseTabOperationType::Right => CloseTabOperationTypeFfi::Right,
+            CloseTabOperationType::Others => CloseTabOperationTypeFfi::Others,
+            CloseTabOperationType::Clean => CloseTabOperationTypeFfi::Clean,
+            CloseTabOperationType::All => CloseTabOperationTypeFfi::All,
+        }
+    }
+}
+
+impl From<CloseTabOperationTypeFfi> for CloseTabOperationType {
+    fn from(operation_type: CloseTabOperationTypeFfi) -> Self {
+        match operation_type {
+            CloseTabOperationTypeFfi::Single => Self::Single,
+            CloseTabOperationTypeFfi::Left => Self::Left,
+            CloseTabOperationTypeFfi::Right => Self::Right,
+            CloseTabOperationTypeFfi::Others => Self::Others,
+            CloseTabOperationTypeFfi::Clean => Self::Clean,
+            CloseTabOperationTypeFfi::All => Self::All,
+            _ => unreachable!(
+                "Conversion from CloseTabOperationTypeFfi to CloseTabOperationType failed"
+            ),
         }
     }
 }

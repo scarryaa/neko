@@ -5,7 +5,6 @@
 #include "types/ffi_types_fwd.h"
 #include <QList>
 #include <QObject>
-#include <string>
 
 class TabController : public QObject {
   Q_OBJECT
@@ -19,21 +18,15 @@ public:
   ~TabController() override = default;
 
   // Getters
-  [[nodiscard]] QList<int> getCloseOtherTabIds(int tabId) const;
-  [[nodiscard]] QList<int> getCloseLeftTabIds(int tabId) const;
-  [[nodiscard]] QList<int> getCloseRightTabIds(int tabId) const;
-  [[nodiscard]] QList<int> getCloseAllTabIds() const;
-  [[nodiscard]] QList<int> getCloseCleanTabIds() const;
+  [[nodiscard]] QList<int>
+  getCloseTabIds(neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
+                 bool closePinned) const;
   neko::TabsSnapshot getTabsSnapshot();
 
   // Setters
   int addTab();
-  bool closeTab(int tabId);
-  bool closeAllTabs();
-  bool closeCleanTabs();
-  bool closeOtherTabs(int tabId);
-  bool closeLeftTabs(int tabId);
-  bool closeRightTabs(int tabId);
+  bool closeTabs(neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
+                 bool closePinned);
   bool pinTab(int tabId);
   bool unpinTab(int tabId);
   bool moveTabBy(int delta, bool useHistory);

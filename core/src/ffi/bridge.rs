@@ -38,6 +38,15 @@ pub mod ffi {
         dirty_last_row: i32,
     }
 
+    enum CloseTabOperationTypeFfi {
+        Single,
+        Left,
+        Right,
+        Others,
+        Clean,
+        All,
+    }
+
     enum AddCursorDirectionKind {
         Above,
         Below,
@@ -283,42 +292,25 @@ pub mod ffi {
         pub(crate) fn get_active_editor_mut_wrapper(self: &mut AppState) -> &mut Editor;
         pub(crate) fn get_file_tree(self: &AppState) -> &FileTree;
         pub(crate) fn get_file_tree_mut(self: &mut AppState) -> &mut FileTree;
-        #[cxx_name = "get_close_other_tab_ids"]
-        pub(crate) fn get_close_other_tab_ids_wrapper(self: &AppState, id: usize) -> Vec<usize>;
-        #[cxx_name = "get_close_left_tab_ids"]
-        pub(crate) fn get_close_left_tab_ids_wrapper(self: &AppState, id: usize) -> Vec<usize>;
-        #[cxx_name = "get_close_right_tab_ids"]
-        pub(crate) fn get_close_right_tab_ids_wrapper(self: &AppState, id: usize) -> Vec<usize>;
-        #[cxx_name = "get_close_all_tab_ids"]
-        pub(crate) fn get_close_all_tab_ids_wrapper(self: &AppState) -> Vec<usize>;
-        #[cxx_name = "get_close_clean_tab_ids"]
-        pub(crate) fn get_close_clean_tab_ids_wrapper(self: &AppState) -> Vec<usize>;
+        #[cxx_name = "get_close_tab_ids"]
+        pub(crate) fn get_close_tab_ids_wrapper(
+            self: &mut AppState,
+            operation_type: CloseTabOperationTypeFfi,
+            anchor_id: usize,
+            close_pinned: bool,
+        ) -> Vec<usize>;
         pub(crate) fn get_tabs_snapshot(self: &AppState) -> TabsSnapshot;
         pub(crate) fn get_tab_snapshot(self: &AppState, id: usize) -> TabSnapshotMaybe;
 
         #[cxx_name = "new_tab"]
         pub(crate) fn new_tab_wrapper(self: &mut AppState) -> NewTabResult;
-        #[cxx_name = "close_tab"]
-        pub(crate) fn close_tab_wrapper(self: &mut AppState, id: usize) -> CloseTabResult;
-        #[cxx_name = "close_other_tabs"]
-        pub(crate) fn close_other_tabs_wrapper(
+        #[cxx_name = "close_tabs"]
+        pub(crate) fn close_tabs_wrapper(
             self: &mut AppState,
-            id: usize,
+            operation_type: CloseTabOperationTypeFfi,
+            anchor_tab_id: usize,
+            close_pinned: bool,
         ) -> CloseManyTabsResult;
-        #[cxx_name = "close_left_tabs"]
-        pub(crate) fn close_left_tabs_wrapper(
-            self: &mut AppState,
-            id: usize,
-        ) -> CloseManyTabsResult;
-        #[cxx_name = "close_right_tabs"]
-        pub(crate) fn close_right_tabs_wrapper(
-            self: &mut AppState,
-            id: usize,
-        ) -> CloseManyTabsResult;
-        #[cxx_name = "close_all_tabs"]
-        pub(crate) fn close_all_tabs_wrapper(self: &mut AppState) -> CloseManyTabsResult;
-        #[cxx_name = "close_clean_tabs"]
-        pub(crate) fn close_clean_tabs_wrapper(self: &mut AppState) -> CloseManyTabsResult;
         pub(crate) fn set_active_tab(self: &mut AppState, id: usize) -> Result<()>;
         #[cxx_name = "move_tab"]
         pub(crate) fn move_tab_wrapper(self: &mut AppState, from: usize, to: usize) -> bool;
@@ -520,6 +512,7 @@ pub mod ffi {
             app_state: &mut AppState,
             id: &str,
             ctx: TabContextFfi,
+            close_pinned: bool,
         ) -> bool;
         #[cxx_name = "get_available_tab_commands"]
         pub(crate) fn get_available_tab_commands_wrapper() -> Vec<TabCommandFfi>;

@@ -45,16 +45,18 @@ void ShortcutsManager::populateShortcutMetadata() {
           "Tab::Close",
           [this]() {
             const auto snapshot = tabController->getTabsSnapshot();
-            workspaceCoordinator->closeTab(static_cast<int>(snapshot.active_id),
-                                           false);
+            workspaceCoordinator->closeTabs(
+                neko::CloseTabOperationTypeFfi::Single,
+                static_cast<int>(snapshot.active_id), false);
           },
       },
       {
           "Tab::ForceClose",
           [this]() {
             const auto snapshot = tabController->getTabsSnapshot();
-            workspaceCoordinator->closeTab(static_cast<int>(snapshot.active_id),
-                                           true);
+            workspaceCoordinator->closeTabs(
+                neko::CloseTabOperationTypeFfi::Single,
+                static_cast<int>(snapshot.active_id), true);
           },
       },
       {

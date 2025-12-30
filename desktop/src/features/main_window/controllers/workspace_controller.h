@@ -20,12 +20,8 @@ public:
   explicit WorkspaceController(const WorkspaceControllerProps &props);
   ~WorkspaceController() = default;
 
-  QList<int> closeLeft(int tabId, bool forceClose);
-  QList<int> closeRight(int tabId, bool forceClose);
-  QList<int> closeOthers(int tabId, bool forceClose);
-  QList<int> closeTab(int tabId, bool forceClose);
-  QList<int> closeAll(bool forceClose);
-  QList<int> closeClean();
+  QList<int> closeTabs(neko::CloseTabOperationTypeFfi operationType, int tabId,
+                       bool forceClose);
 
   neko::FileOpenResult openFile(const QString &startingPath);
   bool saveTab(int tabId, bool forceSaveAs);

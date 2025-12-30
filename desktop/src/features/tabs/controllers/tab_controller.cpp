@@ -21,60 +21,11 @@ neko::TabsSnapshot TabController::getTabsSnapshot() {
   return appState->get_tabs_snapshot();
 }
 
-QList<int> TabController::getCloseOtherTabIds(int tabId) const {
-  auto rawIds = appState->get_close_other_tab_ids(tabId);
-
-  QList<int> ids = QList<int>();
-  ids.reserve(static_cast<int>(rawIds.size()));
-
-  for (uint64_t rawId : rawIds) {
-    ids.append(static_cast<int>(rawId));
-  }
-
-  return ids;
-}
-
-QList<int> TabController::getCloseAllTabIds() const {
-  auto rawIds = appState->get_close_all_tab_ids();
-
-  QList<int> ids = QList<int>();
-  ids.reserve(static_cast<int>(rawIds.size()));
-
-  for (uint64_t rawId : rawIds) {
-    ids.append(static_cast<int>(rawId));
-  }
-
-  return ids;
-}
-
-QList<int> TabController::getCloseCleanTabIds() const {
-  auto rawIds = appState->get_close_clean_tab_ids();
-
-  QList<int> ids = QList<int>();
-  ids.reserve(static_cast<int>(rawIds.size()));
-
-  for (uint64_t rawId : rawIds) {
-    ids.append(static_cast<int>(rawId));
-  }
-
-  return ids;
-}
-
-QList<int> TabController::getCloseLeftTabIds(int tabId) const {
-  auto rawIds = appState->get_close_left_tab_ids(tabId);
-
-  QList<int> ids = QList<int>();
-  ids.reserve(static_cast<int>(rawIds.size()));
-
-  for (uint64_t rawId : rawIds) {
-    ids.append(static_cast<int>(rawId));
-  }
-
-  return ids;
-}
-
-QList<int> TabController::getCloseRightTabIds(int tabId) const {
-  auto rawIds = appState->get_close_right_tab_ids(tabId);
+QList<int>
+TabController::getCloseTabIds(neko::CloseTabOperationTypeFfi operationType,
+                              int anchorTabId, bool closePinned) const {
+  auto rawIds =
+      appState->get_close_tab_ids(operationType, anchorTabId, closePinned);
 
   QList<int> ids = QList<int>();
   ids.reserve(static_cast<int>(rawIds.size()));
@@ -145,35 +96,19 @@ void TabController::tabSaved(int tabId) {
   }
 }
 
-bool TabController::closeTab(int tabId) {
+bool TabController::closeTabs(neko::CloseTabOperationTypeFfi operationType,
+                              int anchorTabId, bool closePinned) {
   if (appState == nullptr) {
-    return false;
-  }
-
-  auto result = appState->close_tab(tabId);
-  if (!result.closed) {
-    return false;
-  }
-
-  emit tabClosed(tabId);
-
-  if (result.has_active) {
-    emit activeTabChanged(static_cast<int>(result.active_id));
-  } else {
-    emit allTabsClosed();
-  }
-
-  return true;
-}
-
-bool TabController::closeAllTabs() {
-  auto result = appState->close_all_tabs();
-  if (!result.success) {
     // TODO(scarlet): Show error?
     return false;
   }
 
-  for (auto closedTabId : result.closed_ids) {
+  auto result = appState->close_tabs(operationType, anchorTabId, closePinned);
+  if (result.closed_ids.empty()) {
+    return false;
+  }
+
+  for (const auto closedTabId : result.closed_ids) {
     emit tabClosed(static_cast<int>(closedTabId));
   }
 
@@ -181,78 +116,6 @@ bool TabController::closeAllTabs() {
     emit activeTabChanged(static_cast<int>(result.active_id));
   } else {
     emit allTabsClosed();
-  }
-
-  return true;
-}
-
-bool TabController::closeCleanTabs() {
-  auto result = appState->close_clean_tabs();
-  if (!result.success) {
-    // TODO(scarlet): Show error?
-    return false;
-  }
-
-  for (auto closedTabId : result.closed_ids) {
-    emit tabClosed(static_cast<int>(closedTabId));
-  }
-
-  if (result.has_active) {
-    emit activeTabChanged(static_cast<int>(result.active_id));
-  }
-
-  return true;
-}
-
-bool TabController::closeOtherTabs(int tabId) {
-  auto result = appState->close_other_tabs(tabId);
-  if (!result.success) {
-    // TODO(scarlet): Show error?
-    return false;
-  }
-
-  for (auto closedTabId : result.closed_ids) {
-    emit tabClosed(static_cast<int>(closedTabId));
-  }
-
-  if (result.has_active) {
-    emit activeTabChanged(static_cast<int>(result.active_id));
-  }
-
-  return true;
-}
-
-bool TabController::closeLeftTabs(int tabId) {
-  auto result = appState->close_left_tabs(tabId);
-  if (!result.success) {
-    // TODO(scarlet): Show error?
-    return false;
-  }
-
-  for (auto closedTabId : result.closed_ids) {
-    emit tabClosed(static_cast<int>(closedTabId));
-  }
-
-  if (result.has_active) {
-    emit activeTabChanged(static_cast<int>(result.active_id));
-  }
-
-  return true;
-}
-
-bool TabController::closeRightTabs(int tabId) {
-  auto result = appState->close_right_tabs(tabId);
-  if (!result.success) {
-    // TODO(scarlet): Show error?
-    return false;
-  }
-
-  for (auto closedTabId : result.closed_ids) {
-    emit tabClosed(static_cast<int>(closedTabId));
-  }
-
-  if (result.has_active) {
-    emit activeTabChanged(static_cast<int>(result.active_id));
   }
 
   return true;

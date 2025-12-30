@@ -1,6 +1,16 @@
 use crate::{CursorEntry, Selection};
 use std::path::PathBuf;
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum CloseTabOperationType {
+    Single,
+    Left,
+    Right,
+    Others,
+    Clean,
+    All,
+}
+
 #[derive(Debug)]
 pub struct ClosedTabInfo {
     pub path: PathBuf,

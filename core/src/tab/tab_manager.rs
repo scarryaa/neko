@@ -1,7 +1,7 @@
 use super::{
     ClosedTabInfo, ClosedTabStore, MoveActiveTabResult, ScrollOffsets, Tab, TabHistoryManager,
 };
-use crate::{CursorEntry, Editor, Selection};
+use crate::{CloseTabOperationType, CursorEntry, Editor, Selection};
 use std::{
     io::{Error, ErrorKind},
     path::PathBuf,
@@ -107,66 +107,52 @@ impl TabManager {
         }
     }
 
-    pub fn get_close_other_tab_ids(&self, id: usize) -> Result<Vec<usize>, Error> {
-        if !self.tabs.iter().any(|t| t.get_id() == id) {
-            return Err(Error::new(
-                ErrorKind::NotFound,
-                "Tab with given id not found",
-            ));
+    pub fn get_close_tab_ids(
+        &self,
+        operation_type: CloseTabOperationType,
+        anchor_tab_id: usize,
+        close_pinned: bool,
+    ) -> Result<Vec<usize>, Error> {
+        use CloseTabOperationType::*;
+
+        let anchor_index = match operation_type {
+            Single | Others | Left | Right => self
+                .tabs
+                .iter()
+                .position(|t| t.get_id() == anchor_tab_id)
+                .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?,
+            All | Clean => 0, // No anchor needed
+        };
+
+        let mut ids = Vec::new();
+        for (idx, tab) in self.tabs.iter().enumerate() {
+            let id = tab.get_id();
+            let is_anchor = id == anchor_tab_id;
+            let is_pinned = tab.get_is_pinned();
+
+            // Pinned tabs handling:
+            // - For a single tab close op: may close the anchor tab, even if it is pinned,
+            //   if close_pinned is true && is_anchor is true
+            // - For the other ops: never close pinned tabs
+            if is_pinned && !(matches!(operation_type, Single) && is_anchor && close_pinned) {
+                continue;
+            }
+
+            let include = match operation_type {
+                Single => is_anchor,
+                Others => !is_anchor,
+                Left => idx < anchor_index,
+                Right => idx > anchor_index,
+                All => true,
+                Clean => !tab.get_modified(),
+            };
+
+            if include {
+                ids.push(id);
+            }
         }
 
-        Ok(self
-            .tabs
-            .iter()
-            .filter(|t| t.get_id() != id && !t.get_is_pinned())
-            .map(|t| t.get_id())
-            .collect())
-    }
-
-    pub fn get_close_all_tab_ids(&self) -> Result<Vec<usize>, Error> {
-        Ok(self
-            .tabs
-            .iter()
-            .filter(|t| !t.get_is_pinned())
-            .map(|t| t.get_id())
-            .collect())
-    }
-
-    pub fn get_close_clean_tab_ids(&self) -> Result<Vec<usize>, Error> {
-        Ok(self
-            .tabs
-            .iter()
-            .filter(|t| !t.get_is_pinned() && !t.get_modified())
-            .map(|t| t.get_id())
-            .collect())
-    }
-
-    pub fn get_close_left_tab_ids(&self, id: usize) -> Result<Vec<usize>, Error> {
-        let index = self
-            .tabs
-            .iter()
-            .position(|t| t.get_id() == id)
-            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
-
-        Ok(self.tabs[..index]
-            .iter()
-            .filter(|t| !t.get_is_pinned())
-            .map(|t| t.get_id())
-            .collect())
-    }
-
-    pub fn get_close_right_tab_ids(&self, id: usize) -> Result<Vec<usize>, Error> {
-        let index = self
-            .tabs
-            .iter()
-            .position(|t| t.get_id() == id)
-            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
-
-        Ok(self.tabs[index + 1..]
-            .iter()
-            .filter(|t| !t.get_is_pinned())
-            .map(|t| t.get_id())
-            .collect())
+        Ok(ids)
     }
 
     // Setters
@@ -200,113 +186,25 @@ impl TabManager {
         }
     }
 
-    // TODO(scarlet): Reduce duplication in 'close_*' methods
-    pub fn close_other_tabs(
+    pub fn close_tabs(
         &mut self,
-        id: usize,
+        operation_type: CloseTabOperationType,
+        anchor_tab_id: usize,
         history_enabled: bool,
+        close_pinned: bool,
     ) -> Result<Vec<usize>, Error> {
-        // Get the IDs that will be closed
-        let ids = self.get_close_other_tab_ids(id)?;
-
-        let exists = self.tabs.iter().any(|t| t.get_id() == id);
-        if !exists {
-            return Err(Error::new(
-                ErrorKind::NotFound,
-                "Tab with given id not found",
-            ));
+        let ids = self.get_close_tab_ids(operation_type, anchor_tab_id, close_pinned)?;
+        if ids.is_empty() {
+            return Ok(ids);
         }
 
         self.record_closed_tabs(&ids);
 
-        self.tabs.retain(|t| t.get_is_pinned() || t.get_id() == id);
-        self.switch_to_last_active_tab(history_enabled);
+        let id_set: std::collections::HashSet<usize> = ids.iter().copied().collect();
+        self.tabs.retain(|t| !id_set.contains(&t.get_id()));
 
+        self.switch_to_last_active_tab(history_enabled);
         self.tabs.sort_by_key(|t| !t.get_is_pinned());
-
-        Ok(ids)
-    }
-
-    pub fn close_left_tabs(
-        &mut self,
-        id: usize,
-        history_enabled: bool,
-    ) -> Result<Vec<usize>, Error> {
-        // Get the IDs that will be closed
-        let ids = self.get_close_left_tab_ids(id)?;
-
-        let index = self
-            .tabs
-            .iter()
-            .position(|t| t.get_id() == id)
-            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
-
-        self.record_closed_tabs(&ids);
-
-        let mut i = 0usize;
-        self.tabs.retain(|t| {
-            let keep = i >= index || t.get_is_pinned();
-            i += 1;
-            keep
-        });
-        self.switch_to_last_active_tab(history_enabled);
-
-        self.tabs.sort_by_key(|t| !t.get_is_pinned());
-
-        Ok(ids)
-    }
-
-    pub fn close_right_tabs(
-        &mut self,
-        id: usize,
-        history_enabled: bool,
-    ) -> Result<Vec<usize>, Error> {
-        // Get the IDs that will be closed
-        let ids = self.get_close_right_tab_ids(id)?;
-
-        let index = self
-            .tabs
-            .iter()
-            .position(|t| t.get_id() == id)
-            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
-
-        self.record_closed_tabs(&ids);
-
-        let mut i = 0usize;
-        self.tabs.retain(|t| {
-            let keep = i <= index || t.get_is_pinned();
-            i += 1;
-            keep
-        });
-        self.switch_to_last_active_tab(history_enabled);
-
-        self.tabs.sort_by_key(|t| !t.get_is_pinned());
-
-        Ok(ids)
-    }
-
-    pub fn close_all_tabs(&mut self, history_enabled: bool) -> Result<Vec<usize>, Error> {
-        // Get the IDs that will be closed
-        let ids = self.get_close_all_tab_ids()?;
-
-        self.record_closed_tabs(&ids);
-
-        // Remove all non-pinned tabs, keeping order of pinned ones
-        self.tabs.retain(|t| t.get_is_pinned());
-        self.switch_to_last_active_tab(history_enabled);
-
-        Ok(ids)
-    }
-
-    pub fn close_clean_tabs(&mut self, history_enabled: bool) -> Result<Vec<usize>, Error> {
-        // Get the IDs that will be closed
-        let ids = self.get_close_clean_tab_ids()?;
-
-        self.record_closed_tabs(&ids);
-
-        // Remove all clean non-pinned tabs, keeping order of pinned ones
-        self.tabs.retain(|t| t.get_is_pinned() || t.get_modified());
-        self.switch_to_last_active_tab(history_enabled);
 
         Ok(ids)
     }

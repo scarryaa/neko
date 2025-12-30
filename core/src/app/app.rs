@@ -1,6 +1,7 @@
 use super::DocumentManager;
 use crate::{
-    Config, ConfigManager, Editor, FileTree, JumpHistory, MoveActiveTabResult, Tab, TabManager,
+    CloseTabOperationType, Config, ConfigManager, Editor, FileTree, JumpHistory,
+    MoveActiveTabResult, Tab, TabManager,
 };
 use std::{
     io::Error,
@@ -53,24 +54,14 @@ impl AppState {
         self.tab_manager.get_active_editor_mut()
     }
 
-    pub fn get_close_other_tab_ids(&self, id: usize) -> Result<Vec<usize>, Error> {
-        self.tab_manager.get_close_other_tab_ids(id)
-    }
-
-    pub fn get_close_all_tab_ids(&self) -> Result<Vec<usize>, Error> {
-        self.tab_manager.get_close_all_tab_ids()
-    }
-
-    pub fn get_close_clean_tab_ids(&self) -> Result<Vec<usize>, Error> {
-        self.tab_manager.get_close_clean_tab_ids()
-    }
-
-    pub fn get_close_left_tab_ids(&self, id: usize) -> Result<Vec<usize>, Error> {
-        self.tab_manager.get_close_left_tab_ids(id)
-    }
-
-    pub fn get_close_right_tab_ids(&self, id: usize) -> Result<Vec<usize>, Error> {
-        self.tab_manager.get_close_right_tab_ids(id)
+    pub fn get_close_tab_ids(
+        &self,
+        operation_type: CloseTabOperationType,
+        anchor_tab_id: usize,
+        close_pinned: bool,
+    ) -> Result<Vec<usize>, Error> {
+        self.tab_manager
+            .get_close_tab_ids(operation_type, anchor_tab_id, close_pinned)
     }
 
     pub fn get_config_snapshot(&self) -> Config {
@@ -82,58 +73,20 @@ impl AppState {
         self.tab_manager.new_tab(add_to_history)
     }
 
-    pub fn close_tab(&mut self, id: usize) -> Result<(), Error> {
+    pub fn close_tabs(
+        &mut self,
+        operation_type: CloseTabOperationType,
+        anchor_tab_id: usize,
+        close_pinned: bool,
+    ) -> Result<Vec<usize>, Error> {
         let history_enabled = self
             .config_manager()
             .get_snapshot()
             .editor
             .switch_to_last_visited_tab_on_close;
-        self.tab_manager.close_tab(id, history_enabled)
-    }
 
-    pub fn close_other_tabs(&mut self, id: usize) -> Result<Vec<usize>, Error> {
-        let history_enabled = self
-            .config_manager()
-            .get_snapshot()
-            .editor
-            .switch_to_last_visited_tab_on_close;
-        self.tab_manager.close_other_tabs(id, history_enabled)
-    }
-
-    pub fn close_left_tabs(&mut self, id: usize) -> Result<Vec<usize>, Error> {
-        let history_enabled = self
-            .config_manager()
-            .get_snapshot()
-            .editor
-            .switch_to_last_visited_tab_on_close;
-        self.tab_manager.close_left_tabs(id, history_enabled)
-    }
-
-    pub fn close_right_tabs(&mut self, id: usize) -> Result<Vec<usize>, Error> {
-        let history_enabled = self
-            .config_manager()
-            .get_snapshot()
-            .editor
-            .switch_to_last_visited_tab_on_close;
-        self.tab_manager.close_right_tabs(id, history_enabled)
-    }
-
-    pub fn close_all_tabs(&mut self) -> Result<Vec<usize>, Error> {
-        let history_enabled = self
-            .config_manager()
-            .get_snapshot()
-            .editor
-            .switch_to_last_visited_tab_on_close;
-        self.tab_manager.close_all_tabs(history_enabled)
-    }
-
-    pub fn close_clean_tabs(&mut self) -> Result<Vec<usize>, Error> {
-        let history_enabled = self
-            .config_manager()
-            .get_snapshot()
-            .editor
-            .switch_to_last_visited_tab_on_close;
-        self.tab_manager.close_clean_tabs(history_enabled)
+        self.tab_manager
+            .close_tabs(operation_type, anchor_tab_id, history_enabled, close_pinned)
     }
 
     pub fn move_active_tab_by(&mut self, delta: i64, use_history: bool) -> MoveActiveTabResult {
@@ -355,7 +308,7 @@ mod test {
         let c = ConfigManager::new();
         let mut app = AppState::new(&c, Some("")).unwrap();
 
-        let _ = app.close_tab(0);
+        let _ = app.close_tabs(CloseTabOperationType::Single, 0, false);
         let result = app.save_tab(0);
 
         assert!(result.is_err())
@@ -384,7 +337,7 @@ mod test {
         let c = ConfigManager::new();
         let mut app = AppState::new(&c, Some("")).unwrap();
 
-        let _ = app.close_tab(0);
+        let _ = app.close_tabs(CloseTabOperationType::Single, 0, false);
         let result = app.save_tab_as(0, "path");
 
         assert!(result.is_err())

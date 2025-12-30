@@ -40,7 +40,7 @@ public:
   void executeJumpKey(const QString &key);
 
   void runTabCommand(const std::string &commandId,
-                     const neko::TabContextFfi &ctx);
+                     const neko::TabContextFfi &ctx, bool closePinned);
 
   bool saveTab(int tabId);
   bool saveTabAs(int tabId, const std::string &path);

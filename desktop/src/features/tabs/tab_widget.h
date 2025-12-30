@@ -7,6 +7,7 @@ class ContextMenuWidget;
 class ThemeProvider;
 
 #include "theme/types/types.h"
+#include "types/ffi_types_fwd.h"
 #include "types/qt_types_fwd.h"
 #include <QPoint>
 #include <QRect>
@@ -51,7 +52,8 @@ public:
 
 signals:
   void clicked(int tabId);
-  void closeRequested(int tabId, bool bypassConfirmation);
+  void closeRequested(neko::CloseTabOperationTypeFfi operationType, int tabId,
+                      bool bypassConfirmation);
   void unpinRequested(int tabId);
 
 protected:

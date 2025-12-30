@@ -17,6 +17,7 @@
 #include <QPixmap>
 #include <QSize>
 #include <QVariant>
+#include <neko-core/src/ffi/bridge.rs.h>
 
 TabWidget::TabWidget(const TabProps &props, QWidget *parent)
     : QWidget(parent), font(props.font), themeProvider(props.themeProvider),
@@ -184,7 +185,8 @@ void TabWidget::mousePressEvent(QMouseEvent *event) {
       if (isPinned) {
         emit unpinRequested(tabId);
       } else {
-        emit closeRequested(tabId, shiftHeld);
+        emit closeRequested(neko::CloseTabOperationTypeFfi::Single, tabId,
+                            shiftHeld);
       }
       event->accept();
       return;
@@ -251,7 +253,8 @@ void TabWidget::mouseReleaseEvent(QMouseEvent *event) {
       middleClickPending = false;
 
       if (!isPinned && rect().contains(event->pos())) {
-        emit closeRequested(tabId, shiftPressed);
+        emit closeRequested(neko::CloseTabOperationTypeFfi::Single, tabId,
+                            shiftPressed);
       }
     }
 

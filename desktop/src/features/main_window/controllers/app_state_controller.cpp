@@ -68,8 +68,9 @@ std::vector<neko::TabCommandFfi> AppStateController::getAvailableTabCommands() {
 }
 
 void AppStateController::runTabCommand(const std::string &commandId,
-                                       const neko::TabContextFfi &ctx) {
-  neko::run_tab_command(*appState, commandId, ctx);
+                                       const neko::TabContextFfi &ctx,
+                                       bool closePinned) {
+  neko::run_tab_command(*appState, commandId, ctx, closePinned);
 }
 
 bool AppStateController::saveTab(int tabId) {
@@ -86,7 +87,7 @@ neko::FileOpenResult AppStateController::openFile(int tabId,
 
   if (!openResult.success) {
     // Roll back the added tab
-    appState->close_tab(tabId);
+    appState->close_tabs(neko::CloseTabOperationTypeFfi::Single, tabId, false);
     return openResult;
   }
 

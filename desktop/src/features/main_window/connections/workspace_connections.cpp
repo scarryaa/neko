@@ -13,7 +13,7 @@ WorkspaceConnections::WorkspaceConnections(
 
   // WorkspaceCoordinator -> TabBarWidget
   connect(uiHandles.tabBarWidget, &TabBarWidget::tabCloseRequested,
-          workspaceCoordinator, &WorkspaceCoordinator::closeTab);
+          workspaceCoordinator, &WorkspaceCoordinator::closeTabs);
   connect(uiHandles.tabBarWidget, &TabBarWidget::currentChanged,
           workspaceCoordinator, &WorkspaceCoordinator::tabChanged);
   connect(uiHandles.tabBarWidget, &TabBarWidget::tabUnpinRequested,

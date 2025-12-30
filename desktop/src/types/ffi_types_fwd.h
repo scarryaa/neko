@@ -35,6 +35,7 @@ class TabContextFfi;
 class TabCommandStateFfi;
 
 enum class AddCursorDirectionKind : uint8_t;
+enum class CloseTabOperationTypeFfi : uint8_t;
 class AddCursorDirectionFfi;
 } // namespace neko
 

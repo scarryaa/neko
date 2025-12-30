@@ -9,6 +9,7 @@ class ThemeProvider;
 
 #include "features/tabs/types/types.h"
 #include "theme/types/types.h"
+#include "types/ffi_types_fwd.h"
 #include "types/qt_types_fwd.h"
 #include <QScrollArea>
 #include <QStringList>
@@ -49,7 +50,8 @@ public slots:
 
 signals:
   void currentChanged(int tabId);
-  void tabCloseRequested(int tabId, bool bypassConfirmation = false);
+  void tabCloseRequested(neko::CloseTabOperationTypeFfi operationType,
+                         int tabId, bool bypassConfirmation = false);
   void newTabRequested();
   void tabUnpinRequested(int tabId);
 

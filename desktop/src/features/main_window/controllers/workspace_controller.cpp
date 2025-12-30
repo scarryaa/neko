@@ -19,53 +19,21 @@ neko::FileOpenResult WorkspaceController::makeFailedOpenResult() {
   return result;
 }
 
-QList<int> WorkspaceController::closeLeft(int tabId, bool forceClose) {
-  auto ids = tabController->getCloseLeftTabIds(tabId);
-  closeMany(ids, forceClose,
-            [this, tabId]() { tabController->closeLeftTabs(tabId); });
-
-  return ids;
-}
-
-QList<int> WorkspaceController::closeRight(int tabId, bool forceClose) {
-  auto ids = tabController->getCloseRightTabIds(tabId);
-  closeMany(ids, forceClose,
-            [this, tabId]() { tabController->closeRightTabs(tabId); });
-
-  return ids;
-}
-
-QList<int> WorkspaceController::closeOthers(int tabId, bool forceClose) {
-  auto ids = tabController->getCloseOtherTabIds(tabId);
-  closeMany(ids, forceClose,
-            [this, tabId]() { tabController->closeOtherTabs(tabId); });
-
-  return ids;
-}
-
-QList<int> WorkspaceController::closeAll(bool forceClose) {
-  auto ids = tabController->getCloseAllTabIds();
-  closeMany(ids, forceClose, [this]() { tabController->closeAllTabs(); });
-
-  return ids;
-}
-
-QList<int> WorkspaceController::closeClean() {
-  auto ids = tabController->getCloseCleanTabIds();
-  closeMany(ids, false, [this]() { tabController->closeCleanTabs(); });
-
-  return ids;
-}
-
 // TODO(scarlet): Refocus editor on tab click
-QList<int> WorkspaceController::closeTab(int tabId, bool forceClose) {
-  auto ids = QList<int>();
-  ids.push_back(tabId);
+QList<int>
+WorkspaceController::closeTabs(neko::CloseTabOperationTypeFfi operationType,
+                               int tabId, bool forceClose) {
+  const bool closePinned =
+      (operationType == neko::CloseTabOperationTypeFfi::Single) && forceClose;
+  auto idsToClose =
+      tabController->getCloseTabIds(operationType, tabId, closePinned);
 
-  closeMany(ids, forceClose,
-            [this, tabId]() { tabController->closeTab(tabId); });
+  closeMany(idsToClose, forceClose,
+            [this, tabId, operationType, closePinned]() {
+              tabController->closeTabs(operationType, tabId, closePinned);
+            });
 
-  return ids;
+  return idsToClose;
 }
 
 neko::FileOpenResult

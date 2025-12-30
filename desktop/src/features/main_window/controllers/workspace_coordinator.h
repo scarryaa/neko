@@ -35,6 +35,8 @@ public:
                                 QObject *parent = nullptr);
   ~WorkspaceCoordinator() override = default;
 
+  void closeTabs(neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
+                 bool forceClose);
   void handleTabCommand(const std::string &commandId,
                         const neko::TabContextFfi &ctx, bool forceClose);
   CloseDecision showTabCloseConfirmationDialog(const QList<int> &ids);
@@ -63,7 +65,6 @@ public slots:
   void commandPaletteCommand(const QString &key, const QString &fullText);
 
   void newTab();
-  void closeTab(int tabId, bool forceClose);
   void tabChanged(int tabId);
   void tabUnpinned(int tabId);
   void
@@ -79,11 +80,6 @@ private:
   void tabCopyPath(int tabId);
   void tabTogglePin(int tabId, bool tabIsPinned);
   void tabReveal(const std::string &commandId, const neko::TabContextFfi &ctx);
-  void closeLeftTabs(int tabId, bool forceClose);
-  void closeRightTabs(int tabId, bool forceClose);
-  void closeOtherTabs(int tabId, bool forceClose);
-  void closeAllTabs(bool forceClose);
-  void closeCleanTabs();
 
   void saveScrollOffsetsForActiveTab();
   void restoreScrollOffsetsForActiveTab();

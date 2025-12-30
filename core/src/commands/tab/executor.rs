@@ -1,5 +1,5 @@
 use super::{TabCommand, TabCommandState, TabContext};
-use crate::AppState;
+use crate::{AppState, CloseTabOperationType};
 
 pub fn tab_command_state(app_state: &AppState, id: usize) -> std::io::Result<TabCommandState> {
     let tabs = app_state.get_tabs();
@@ -12,10 +12,18 @@ pub fn tab_command_state(app_state: &AppState, id: usize) -> std::io::Result<Tab
     let is_pinned = tab.get_is_pinned();
     let has_path = tab.get_file_path().is_some();
 
-    let can_close_others = !app_state.get_close_other_tab_ids(id)?.is_empty();
-    let can_close_left = !app_state.get_close_left_tab_ids(id)?.is_empty();
-    let can_close_right = !app_state.get_close_right_tab_ids(id)?.is_empty();
-    let can_close_clean = !app_state.get_close_clean_tab_ids()?.is_empty();
+    let can_close_others = !app_state
+        .get_close_tab_ids(CloseTabOperationType::Others, id, false)?
+        .is_empty();
+    let can_close_left = !app_state
+        .get_close_tab_ids(CloseTabOperationType::Left, id, false)?
+        .is_empty();
+    let can_close_right = !app_state
+        .get_close_tab_ids(CloseTabOperationType::Right, id, false)?
+        .is_empty();
+    let can_close_clean = !app_state
+        .get_close_tab_ids(CloseTabOperationType::Clean, 0, false)?
+        .is_empty();
 
     Ok(TabCommandState {
         can_close: true,
@@ -34,43 +42,43 @@ pub fn run_tab_command(
     app_state: &mut AppState,
     id: &str,
     ctx: &TabContext,
+    close_pinned: bool,
 ) -> std::io::Result<()> {
+    use CloseTabOperationType::*;
+    use TabCommand::*;
+
     let command: TabCommand = id.parse().map_err(|_| {
         std::io::Error::new(std::io::ErrorKind::InvalidInput, "Unknown tab command")
     })?;
 
     match command {
-        TabCommand::Close => {
-            app_state.close_tab(ctx.id)?;
+        tab_command @ (Close | CloseOthers | CloseLeft | CloseRight | CloseAll | CloseClean) => {
+            let (operation_type, allow_pinned_close) = match tab_command {
+                Close => (Single, true),
+                CloseOthers => (Others, false),
+                CloseLeft => (Left, false),
+                CloseRight => (Right, false),
+                CloseAll => (All, false),
+                CloseClean => (Clean, false),
+                _ => unreachable!("Pattern above guarantees only close variants"),
+            };
+
+            let _closed_ids =
+                app_state.close_tabs(operation_type, ctx.id, allow_pinned_close && close_pinned)?;
         }
-        TabCommand::CloseOthers => {
-            app_state.close_other_tabs(ctx.id)?;
-        }
-        TabCommand::CloseLeft => {
-            app_state.close_left_tabs(ctx.id)?;
-        }
-        TabCommand::CloseRight => {
-            app_state.close_right_tabs(ctx.id)?;
-        }
-        TabCommand::CloseAll => {
-            app_state.close_all_tabs()?;
-        }
-        TabCommand::CloseClean => {
-            app_state.close_clean_tabs()?;
-        }
-        TabCommand::Pin => {
+        Pin => {
             if ctx.is_pinned {
                 app_state.unpin_tab(ctx.id)?;
             } else {
                 app_state.pin_tab(ctx.id)?;
             }
         }
-        TabCommand::Reveal => {
+        Reveal => {
             if let Some(path) = ctx.file_path.as_deref() {
                 app_state.reveal_in_file_tree(&path.to_string_lossy());
             }
         }
-        TabCommand::CopyPath => {
+        CopyPath => {
             // Implemented by UI
         }
     }
