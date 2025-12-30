@@ -4,7 +4,7 @@
 class CommandRegistry;
 class ContextMenuRegistry;
 class WorkspaceCoordinator;
-class AppStateController;
+class AppController;
 
 #include "types/qt_types_fwd.h"
 #include <QApplication>
@@ -17,7 +17,7 @@ public:
     CommandRegistry *commandRegistry;
     ContextMenuRegistry *contextMenuRegistry;
     WorkspaceCoordinator *workspaceCoordinator;
-    AppStateController *appStateController;
+    AppController *appController;
   };
 
   explicit CommandManager(const CommandManagerProps &props);
@@ -32,7 +32,7 @@ private:
   CommandRegistry *commandRegistry;
   WorkspaceCoordinator *workspaceCoordinator;
   ContextMenuRegistry *contextMenuRegistry;
-  AppStateController *appStateController;
+  AppController *appController;
 };
 
 #endif

@@ -1,5 +1,5 @@
 #include "main_window.h"
-#include "controllers/app_state_controller.h"
+#include "controllers/app_controller.h"
 #include "features/command_palette/command_palette_widget.h"
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
@@ -59,9 +59,9 @@ MainWindow::MainWindow(QWidget *parent)
   commandRegistry = CommandRegistry();
   contextMenuRegistry = ContextMenuRegistry();
 
-  auto *appStateController = new AppStateController({.appState = &*appState});
+  auto *appController = new AppController({.appState = &*appState});
 
-  neko::Editor *editor = &appStateController->getActiveEditorMut();
+  neko::Editor *editor = &appController->getActiveEditorMut();
   editorController = new EditorController({.editor = editor});
 
   auto *tabController = new TabController({.appState = &*appState});
@@ -79,7 +79,7 @@ MainWindow::MainWindow(QWidget *parent)
       this);
 
   applyTheme();
-  setupWidgets(editor, tabController, appStateController);
+  setupWidgets(editor, tabController, appController);
 
   // Layout
   MainWindowLayoutBuilder layoutBuilder(
@@ -116,7 +116,7 @@ MainWindow::MainWindow(QWidget *parent)
   workspaceCoordinator = new WorkspaceCoordinator(
       {
           .tabController = tabController,
-          .appStateController = appStateController,
+          .appController = appController,
           .editorController = editorController,
           .appConfigService = appConfigService,
           .commandExecutor = commandExecutor,
@@ -128,7 +128,7 @@ MainWindow::MainWindow(QWidget *parent)
       .commandRegistry = &commandRegistry,
       .contextMenuRegistry = &contextMenuRegistry,
       .workspaceCoordinator = workspaceCoordinator,
-      .appStateController = appStateController,
+      .appController = appController,
   });
 
   auto *qtShortcutsManager = new ShortcutsManager(
@@ -149,13 +149,13 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::setupWidgets(neko::Editor *editor,
                               TabController *tabController,
-                              AppStateController *appStateController) {
+                              AppController *appController) {
   auto themes = themeProvider->getCurrentThemes();
   auto fonts = uiStyleManager->getCurrentFonts();
   auto snapshot = appConfigService->getSnapshot();
   const bool fileExplorerShown = snapshot.file_explorer.shown;
 
-  neko::FileTree *fileTree = &appStateController->getFileTreeMut();
+  neko::FileTree *fileTree = &appController->getFileTreeMut();
   auto *fileTreeController =
       new FileTreeController({.fileTree = fileTree}, this);
   const auto jumpHints = WorkspaceCoordinator::buildJumpHintRows();

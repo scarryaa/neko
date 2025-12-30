@@ -1,7 +1,7 @@
 #include "command_manager.h"
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
-#include "features/main_window/controllers/app_state_controller.h"
+#include "features/main_window/controllers/app_controller.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 #include <cstdint>
@@ -80,7 +80,7 @@ CommandManager::CommandManager(const CommandManagerProps &props)
     : commandRegistry(props.commandRegistry),
       contextMenuRegistry(props.contextMenuRegistry),
       workspaceCoordinator(props.workspaceCoordinator),
-      appStateController(props.appStateController) {
+      appController(props.appController) {
   qRegisterMetaType<neko::TabContextFfi>("TabContext");
 
   registerProviders();
@@ -132,10 +132,10 @@ void CommandManager::registerCommands() {
 
 void CommandManager::registerProviders() {
   contextMenuRegistry->registerProvider("tab", [this](const QVariant &variant) {
-    auto availableCommands = AppStateController::getAvailableTabCommands();
+    auto availableCommands = AppController::getAvailableTabCommands();
 
     const auto ctx = variant.value<neko::TabContextFfi>();
-    const auto state = appStateController->getTabCommandState(ctx);
+    const auto state = appController->getTabCommandState(ctx);
     QVector<ContextMenuItem> items;
 
     QSet<QString> availableIds;

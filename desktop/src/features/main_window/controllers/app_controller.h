@@ -5,11 +5,11 @@
 #include <neko-core/src/ffi/bridge.rs.h>
 #include <vector>
 
-class AppStateController : public QObject {
+class AppController : public QObject {
   Q_OBJECT
 
 public:
-  struct AppStateControllerProps {
+  struct AppControllerProps {
     neko::AppState *appState;
   };
 
@@ -24,8 +24,8 @@ public:
     neko::LineTargetFfi lineTarget;
   };
 
-  explicit AppStateController(const AppStateControllerProps &props);
-  ~AppStateController() override = default;
+  explicit AppController(const AppControllerProps &props);
+  ~AppController() override = default;
 
   neko::FileOpenResult openFile(const std::string &path);
   [[nodiscard]] neko::Editor &getActiveEditorMut() const;

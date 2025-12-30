@@ -5,7 +5,7 @@
 #include "features/editor/gutter_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/controllers/app_config_service.h"
-#include "features/main_window/controllers/app_state_controller.h"
+#include "features/main_window/controllers/app_controller.h"
 #include "features/main_window/controllers/command_executor.h"
 #include "features/main_window/services/dialog_service.h"
 #include "features/main_window/ui_handles.h"
@@ -22,13 +22,12 @@
 
 WorkspaceCoordinator::WorkspaceCoordinator(
     const WorkspaceCoordinatorProps &props, QObject *parent)
-    : tabController(props.tabController),
-      appStateController(props.appStateController),
+    : tabController(props.tabController), appController(props.appController),
       appConfigService(props.appConfigService),
       editorController(props.editorController), uiHandles(props.uiHandles),
       commandExecutor(props.commandExecutor),
       tabFlows({.tabController = props.tabController,
-                .appStateController = props.appStateController,
+                .appController = props.appController,
                 .editorController = props.editorController,
                 .uiHandles = props.uiHandles}),
       QObject(parent) {
@@ -61,7 +60,7 @@ WorkspaceCoordinator::WorkspaceCoordinator(
   connect(this, &WorkspaceCoordinator::fileOpened, tabController,
           &TabController::fileOpened);
 
-  auto &activeEditor = appStateController->getActiveEditorMut();
+  auto &activeEditor = appController->getActiveEditorMut();
   setActiveEditor(&activeEditor);
 }
 
@@ -109,7 +108,7 @@ void WorkspaceCoordinator::cursorPositionClicked() {
 
 std::vector<ShortcutHintRow> WorkspaceCoordinator::buildJumpHintRows() {
   std::vector<ShortcutHintRow> result;
-  const auto jumpCommands = AppStateController::getAvailableJumpCommands();
+  const auto jumpCommands = AppController::getAvailableJumpCommands();
 
   result.reserve(jumpCommands.size());
   for (const auto &cmd : jumpCommands) {
@@ -158,9 +157,9 @@ void WorkspaceCoordinator::commandPaletteGoToPosition(
         .document_target = neko::DocumentTargetFfi::Start,
     };
 
-    appStateController->executeJumpCommand(jumpCommand);
+    appController->executeJumpCommand(jumpCommand);
   } else {
-    appStateController->executeJumpKey(jumpCommandKey);
+    appController->executeJumpKey(jumpCommandKey);
   }
 
   // TODO(scarlet): Turn these into signals?
@@ -177,7 +176,7 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &key,
   neko::CommandKindFfi kind;
   rust::String argument;
 
-  const auto commands = AppStateController::getAvailableCommands();
+  const auto commands = AppController::getAvailableCommands();
   for (const auto &nekoCommand : commands) {
     if (key == QString::fromUtf8(nekoCommand.key)) {
       rustKey = nekoCommand.key;
@@ -268,7 +267,7 @@ void WorkspaceCoordinator::openFile() {
 
   auto targetTabId = tabController->addTab();
   const auto result =
-      appStateController->openFile(targetTabId, filePath.toStdString());
+      appController->openFile(targetTabId, filePath.toStdString());
 
   if (result.success) {
     emit fileOpened(result.snapshot);
@@ -295,7 +294,7 @@ void WorkspaceCoordinator::fileSelected(const std::string &path,
 
   // Otherwise, create a tab, open file into it, rollback on failure
   const int newTabId = tabController->addTab();
-  auto result = appStateController->openFile(path);
+  auto result = appController->openFile(path);
 
   if (!result.success) {
     tabController->closeTabs(neko::CloseTabOperationTypeFfi::Single, newTabId,
@@ -424,7 +423,7 @@ void WorkspaceCoordinator::refreshUiForActiveTab(bool focusEditor) {
   // IMPORTANT: Set active editor before re-showing widgets, otherwise
   // Qt layout triggers a resize event (which queries the line count with the
   // old editor reference)
-  auto &activeEditor = appStateController->getActiveEditorMut();
+  auto &activeEditor = appController->getActiveEditorMut();
   setActiveEditor(&activeEditor);
 
   uiHandles.emptyStateWidget->hide();

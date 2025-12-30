@@ -13,7 +13,7 @@
 #include <vector>
 
 class TabController;
-class AppStateController;
+class AppController;
 class EditorController;
 class AppConfigService;
 class CommandExecutor;
@@ -26,7 +26,7 @@ class WorkspaceCoordinator : public QObject {
 public:
   struct WorkspaceCoordinatorProps {
     TabController *tabController;
-    AppStateController *appStateController;
+    AppController *appController;
     EditorController *editorController;
     AppConfigService *appConfigService;
     CommandExecutor *commandExecutor;
@@ -91,7 +91,7 @@ private:
   TabFlows tabFlows;
 
   TabController *tabController;
-  AppStateController *appStateController;
+  AppController *appController;
   AppConfigService *appConfigService;
   EditorController *editorController;
   CommandExecutor *commandExecutor;

@@ -2,7 +2,7 @@
 #include "features/command_palette/current_size_stacked_widget.h"
 #include "features/command_palette/palette_divider.h"
 #include "features/command_palette/palette_frame.h"
-#include "features/main_window/controllers/app_state_controller.h"
+#include "features/main_window/controllers/app_controller.h"
 #include "utils/mac_utils.h"
 #include "utils/ui_utils.h"
 #include <QDialog>
@@ -683,7 +683,7 @@ void CommandPaletteWidget::emitCommandRequestFromInput() {
   }
 
   // TODO(scarlet): Allow aliases?
-  const auto availableCommands = AppStateController::getAvailableCommands();
+  const auto availableCommands = AppController::getAvailableCommands();
 
   // If a suggestion is highlighted, use its stored key
   if (commandSuggestions != nullptr &&
@@ -1096,7 +1096,7 @@ void CommandPaletteWidget::updateCommandSuggestions(const QString &text) {
   commandSuggestions->clear();
 
   const QString textString = text.trimmed();
-  const auto availableCommands = AppStateController::getAvailableCommands();
+  const auto availableCommands = AppController::getAvailableCommands();
 
   for (const auto &cmd : availableCommands) {
     const QString label = QString::fromUtf8(cmd.display_name);

@@ -14,7 +14,7 @@ class EditorWidget;
 class CommandPaletteWidget;
 class FileExplorerWidget;
 class TabController;
-class AppStateController;
+class AppController;
 class AppConfigService;
 class UiStyleManager;
 
@@ -37,7 +37,7 @@ public:
 
 private:
   void setupWidgets(neko::Editor *editor, TabController *tabController,
-                    AppStateController *appStateController);
+                    AppController *appController);
   void applyTheme();
   void connectSignals();
 

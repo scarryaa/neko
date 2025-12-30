@@ -10,7 +10,7 @@
 #include <string>
 
 class TabController;
-class AppStateController;
+class AppController;
 class EditorController;
 
 /// \class TabFlows
@@ -21,7 +21,7 @@ class TabFlows {
 public:
   struct TabFlowsProps {
     TabController *tabController;
-    AppStateController *appStateController;
+    AppController *appController;
     EditorController *editorController;
     const UiHandles uiHandles;
   };
@@ -65,7 +65,7 @@ public:
 
 private:
   TabController *tabController;
-  AppStateController *appStateController;
+  AppController *appController;
   EditorController *editorController;
   const UiHandles uiHandles;
 

@@ -69,8 +69,8 @@ qt_add_executable(neko
     src/features/main_window/interfaces/core_services.h
 
     # Main Window Controllers
-    src/features/main_window/controllers/app_state_controller.cpp
-    src/features/main_window/controllers/app_state_controller.h
+    src/features/main_window/controllers/app_controller.cpp
+    src/features/main_window/controllers/app_controller.h
     src/features/main_window/controllers/workspace_coordinator.cpp
     src/features/main_window/controllers/workspace_coordinator.h
     src/features/main_window/controllers/command_manager.cpp
