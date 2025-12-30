@@ -10,14 +10,14 @@ DialogService::DialogService(QObject *parent) : QObject(parent) {}
 
 // TODO(scarlet): Fix dialogs (like showTabCloseConfirmationDialog) appearing in
 // the center of the screen and not the center of the app window
-QString DialogService::promptFileExplorerDirectory(QWidget *parent) {
+QString DialogService::openDirectorySelectionDialog(QWidget *parent) {
   return QFileDialog::getExistingDirectory(
       parent, tr("Select a directory"), QDir::homePath(),
       QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
 }
 
-QString DialogService::openFile(const std::optional<QString> &initialDirectory,
-                                QWidget *parent) {
+QString DialogService::openFileSelectionDialog(
+    const std::optional<QString> &initialDirectory, QWidget *parent) {
   QString baseDir;
 
   if (initialDirectory && !initialDirectory->isEmpty()) {
@@ -30,8 +30,9 @@ QString DialogService::openFile(const std::optional<QString> &initialDirectory,
   return QFileDialog::getOpenFileName(parent, tr("Open a file"), baseDir);
 }
 
-CloseDecision DialogService::showTabCloseConfirmationDialog(
-    const QList<int> &ids, int modifiedCount, QWidget *parent) {
+CloseDecision DialogService::openCloseConfirmationDialog(const QList<int> &ids,
+                                                         int modifiedCount,
+                                                         QWidget *parent) {
   if (ids.isEmpty() || modifiedCount == 0) {
     return CloseDecision::DontSave;
   }
@@ -66,7 +67,7 @@ CloseDecision DialogService::showTabCloseConfirmationDialog(
   return CloseDecision::Cancel;
 }
 
-QString DialogService::promptSaveAsPath(std::optional<QString> initialDirectory,
+QString DialogService::openSaveAsDialog(std::optional<QString> initialDirectory,
                                         std::optional<QString> initialFileName,
                                         QWidget *parent) {
   QString baseDir;

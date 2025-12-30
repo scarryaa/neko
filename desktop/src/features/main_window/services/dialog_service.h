@@ -20,13 +20,14 @@ public:
   explicit DialogService(QObject *parent = nullptr);
   ~DialogService() override = default;
 
-  [[nodiscard]] static QString promptFileExplorerDirectory(QWidget *parent);
+  [[nodiscard]] static QString openDirectorySelectionDialog(QWidget *parent);
   [[nodiscard]] static QString
-  openFile(const std::optional<QString> &initialDirectory, QWidget *parent);
-  static CloseDecision showTabCloseConfirmationDialog(const QList<int> &ids,
-                                                      int modifiedCount,
-                                                      QWidget *parent);
-  static QString promptSaveAsPath(std::optional<QString> initialDirectory,
+  openFileSelectionDialog(const std::optional<QString> &initialDirectory,
+                          QWidget *parent);
+  static CloseDecision openCloseConfirmationDialog(const QList<int> &ids,
+                                                   int modifiedCount,
+                                                   QWidget *parent);
+  static QString openSaveAsDialog(std::optional<QString> initialDirectory,
                                   std::optional<QString> initialFileName,
                                   QWidget *parent);
 };

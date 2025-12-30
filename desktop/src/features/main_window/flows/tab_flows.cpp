@@ -220,7 +220,7 @@ bool TabFlows::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
   }
 
   const QString filePath =
-      DialogService::promptSaveAsPath(initialDir, fileName, uiHandles.window);
+      DialogService::openSaveAsDialog(initialDir, fileName, uiHandles.window);
   if (filePath.isEmpty()) {
     return false;
   }
@@ -263,8 +263,8 @@ bool TabFlows::closeManyTabs(const QList<int> &ids, bool forceClose,
     }
 
     int modifiedCount = getModifiedTabCount(ids);
-    switch (DialogService::showTabCloseConfirmationDialog(ids, modifiedCount,
-                                                          uiHandles.window)) {
+    switch (DialogService::openCloseConfirmationDialog(ids, modifiedCount,
+                                                       uiHandles.window)) {
     case CloseDecision::Save:
       for (int tabId : modifiedIds) {
         tabChanged(modifiedIds.first());

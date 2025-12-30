@@ -125,7 +125,7 @@ std::vector<ShortcutHintRow> WorkspaceCoordinator::buildJumpHintRows() {
 std::optional<std::string>
 WorkspaceCoordinator::requestFileExplorerDirectory() const {
   const QString dir =
-      DialogService::promptFileExplorerDirectory(uiHandles.window);
+      DialogService::openDirectorySelectionDialog(uiHandles.window);
   if (dir.isEmpty()) {
     return std::nullopt;
   }
@@ -261,7 +261,7 @@ void WorkspaceCoordinator::openFile() {
   }
 
   const QString filePath =
-      DialogService::openFile(initialDir, uiHandles.window);
+      DialogService::openFileSelectionDialog(initialDir, uiHandles.window);
   if (filePath.isEmpty()) {
     return;
   }
