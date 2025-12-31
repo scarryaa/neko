@@ -1,8 +1,8 @@
-use super::{
-    Change, ChangeSet, CursorManager, Edit, OpFlags, Selection, SelectionManager, Transaction,
-    UndoHistory, ViewState, WidthManager,
+use super::{CursorManager, Edit, Transaction, UndoHistory, ViewState, WidthManager};
+use crate::{
+    AddCursorDirection, Buffer, Change, ChangeSet, Cursor, CursorEntry, OpFlags, Selection,
+    SelectionManager,
 };
-use crate::{AddCursorDirection, Buffer, Cursor, CursorEntry};
 
 enum SelectionMode {
     Clear,

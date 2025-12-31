@@ -1,4 +1,4 @@
-use super::Theme;
+use crate::Theme;
 use std::collections::HashMap;
 
 pub struct ThemeManager {

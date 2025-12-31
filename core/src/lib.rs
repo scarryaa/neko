@@ -1,7 +1,7 @@
 pub mod app;
 pub mod commands;
 pub mod config;
-pub mod ffi;
+mod ffi;
 pub mod file_system;
 pub mod shortcuts;
 pub mod tab;
@@ -12,20 +12,19 @@ pub mod theme;
 
 pub use app::{AppState, FileIoManager};
 pub use commands::{
-    Command, CommandResult, DocumentTarget, JumpCommand, JumpHistory, JumpManagementCommand,
-    JumpManagementResult, LineTarget, UiIntent, execute_command, execute_jump_command,
-    execute_jump_key, get_available_commands, get_available_jump_commands,
-    get_available_tab_commands, run_tab_command,
-    tab::{TabCommandState, TabContext},
-    tab_command_state,
+    Command, CommandResult, DocumentTarget, JumpAliasInfo, JumpCommand, JumpHistory,
+    JumpManagementCommand, JumpManagementResult, LineTarget, TabCommand, TabCommandState,
+    TabContext, UiIntent, execute_command, execute_jump_command, execute_jump_key,
+    execute_jump_management_command, get_available_commands, get_available_jump_commands,
+    get_available_tab_commands, run_tab_command, tab_command_state,
 };
 pub use config::{Config, ConfigManager};
 pub use file_system::{FileNode, FileTree};
-pub use shortcuts::ShortcutsManager;
-pub(crate) use tab::{Tab, TabManager, types::*};
+pub use shortcuts::{Shortcut, ShortcutsManager};
+pub use tab::{Tab, TabManager, types::*};
 pub use text::{
     AddCursorDirection, Buffer, ChangeSet, Cursor, CursorEntry, Document, DocumentId,
-    DocumentManager, Editor, Selection, SelectionManager, View, ViewId, ViewManager,
+    DocumentManager, Editor, Selection, SelectionManager, View, ViewId, ViewManager, Viewport,
     document::error_types::*, types::*,
 };
 pub use theme::{Theme, ThemeManager};

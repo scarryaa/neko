@@ -1,4 +1,4 @@
-use super::{Buffer, CursorEntry, Selection};
+use crate::{Buffer, CursorEntry, Selection};
 
 #[derive(Clone, Debug)]
 pub enum Edit {

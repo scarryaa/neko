@@ -1,5 +1,4 @@
-use super::JumpCommand;
-use crate::Config;
+use crate::{Config, JumpCommand};
 
 pub fn resolve_jump_key(key: &str, config: &Config) -> Option<JumpCommand> {
     // Builtins

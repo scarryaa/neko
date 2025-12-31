@@ -9,5 +9,5 @@ pub use jump::{
     JumpManagementResult, LineTarget, execute_jump_command, execute_jump_key,
     execute_jump_management_command, get_available_jump_commands,
 };
-pub use tab::{get_available_tab_commands, run_tab_command, tab_command_state};
+pub use tab::{get_available_tab_commands, run_tab_command, tab_command_state, types::*};
 pub use types::{Command, CommandResult, UiIntent};

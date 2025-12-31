@@ -1,4 +1,4 @@
-use super::{JumpAliasInfo, JumpManagementCommand};
+use crate::{JumpAliasInfo, JumpManagementCommand};
 use std::{fmt::Display, str::FromStr};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

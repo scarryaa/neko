@@ -1,11 +1,9 @@
-use crate::{Buffer, Document, DocumentError, DocumentId, FileIoManager};
+use crate::{Buffer, Document, DocumentError, DocumentId, DocumentResult, FileIoManager};
 use std::{
     collections::HashMap,
     fs,
     path::{Path, PathBuf},
 };
-
-use super::DocumentResult;
 
 /// Manages a collection of open [`Document`]s.
 ///

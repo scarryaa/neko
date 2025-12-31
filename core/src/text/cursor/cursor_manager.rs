@@ -1,5 +1,4 @@
-use super::{AddCursorDirection, Cursor, CursorEntry};
-use crate::Buffer;
+use crate::{AddCursorDirection, Buffer, Cursor, CursorEntry};
 
 // TODO(scarlet): Add tests
 #[derive(Default, Debug)]

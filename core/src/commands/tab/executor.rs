@@ -1,5 +1,4 @@
-use super::{TabCommand, TabCommandState, TabContext};
-use crate::{AppState, CloseTabOperationType};
+use crate::{AppState, CloseTabOperationType, TabCommand, TabCommandState, TabContext};
 
 pub fn tab_command_state(
     app_state: &AppState,

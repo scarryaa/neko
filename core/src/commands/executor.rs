@@ -1,7 +1,7 @@
-use super::{
-    Command, CommandResult, JumpManagementResult, UiIntent, execute_jump_management_command,
+use crate::{
+    AppState, Command, CommandResult, ConfigManager, JumpManagementResult, ThemeManager, UiIntent,
+    execute_jump_management_command,
 };
-use crate::{AppState, ConfigManager, ThemeManager};
 use std::io::{Error, ErrorKind};
 
 pub fn execute_command(

@@ -1,5 +1,4 @@
-use super::{View, ViewId, Viewport};
-use crate::{DocumentId, Editor};
+use crate::{DocumentId, Editor, View, ViewId, Viewport};
 use std::collections::HashMap;
 
 /// Manages a collection of current [`View`]s.

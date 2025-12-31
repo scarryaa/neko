@@ -1,8 +1,8 @@
-use super::{
-    DocumentTarget, JumpAliasInfo, JumpCommand, JumpManagementCommand, JumpManagementResult,
-    LineTarget, resolve_jump_key,
+use super::resolve_jump_key;
+use crate::{
+    AppState, ConfigManager, DocumentTarget, JumpAliasInfo, JumpCommand, JumpManagementCommand,
+    JumpManagementResult, LineTarget,
 };
-use crate::{AppState, ConfigManager};
 
 pub fn execute_jump_key(key: String, app_state: &mut AppState) {
     let config_snapshot = app_state.get_config_snapshot();

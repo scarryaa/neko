@@ -1,4 +1,4 @@
-use super::FileNode;
+use crate::FileNode;
 use std::{
     collections::{HashMap, HashSet},
     fs::{self},

@@ -1,4 +1,4 @@
-use super::ClosedTabInfo;
+use crate::ClosedTabInfo;
 use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Debug, Default)]

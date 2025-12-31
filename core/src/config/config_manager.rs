@@ -1,4 +1,4 @@
-use super::Config;
+use crate::Config;
 use std::{fs, path::PathBuf, sync::RwLock};
 
 #[derive(Debug)]

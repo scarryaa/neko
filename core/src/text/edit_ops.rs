@@ -1,4 +1,5 @@
-use super::{Buffer, Cursor, CursorEntry, Edit, Editor, OpFlags, editor::DeleteResult};
+use super::{DeleteResult, Edit};
+use crate::{Buffer, Cursor, CursorEntry, Editor, OpFlags};
 
 impl Editor {
     pub fn insert_text(&mut self, buffer: &mut Buffer, text: &str) -> super::ChangeSet {

@@ -1,8 +1,8 @@
 use super::*;
 use crate::{
     AddCursorDirection, ChangeSet, CloseTabOperationType, Command, CommandResult, Config, Cursor,
-    DocumentTarget, JumpCommand, JumpManagementCommand, LineTarget, TabCommandState, TabContext,
-    UiIntent, commands::JumpAliasInfo,
+    DocumentTarget, JumpAliasInfo, JumpCommand, JumpManagementCommand, LineTarget, TabCommandState,
+    TabContext, UiIntent,
 };
 use std::path::PathBuf;
 

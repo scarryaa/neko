@@ -1,4 +1,5 @@
-use super::{Shortcut, Shortcuts};
+use super::Shortcuts;
+use crate::Shortcut;
 use std::{fs, path::PathBuf, sync::RwLock};
 
 pub struct ShortcutsManager {
