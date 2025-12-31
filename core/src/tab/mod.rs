@@ -9,4 +9,6 @@ use closed_tab_store::ClosedTabStore;
 use history::TabHistoryManager;
 pub use tab::Tab;
 pub use tab_manager::TabManager;
-pub use types::{CloseTabOperationType, ClosedTabInfo, MoveActiveTabResult, ScrollOffsets};
+pub use types::{
+    CloseTabOperationType, ClosedTabInfo, MoveActiveTabResult, ScrollOffsets, TabResult,
+};

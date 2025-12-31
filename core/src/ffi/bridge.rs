@@ -1,6 +1,6 @@
 use crate::{
-    AppState, ConfigManager, Editor, FileTree, ShortcutsManager, ThemeManager, execute_jump_key,
-    ffi::wrappers::*,
+    AppState, Buffer, ConfigManager, Editor, FileTree, ShortcutsManager, ThemeManager,
+    execute_jump_key, ffi::wrappers::*,
 };
 
 #[cxx::bridge(namespace = "neko")]
@@ -283,6 +283,7 @@ pub mod ffi {
         type ThemeManager;
         type Editor;
         type FileTree;
+        type Buffer;
 
         // AppState
         fn new_app_state(root_path: &str, config_manager: &ConfigManager) -> Result<Box<AppState>>;
@@ -296,11 +297,11 @@ pub mod ffi {
         pub(crate) fn get_close_tab_ids_wrapper(
             self: &mut AppState,
             operation_type: CloseTabOperationTypeFfi,
-            anchor_id: usize,
+            anchor_id: u64,
             close_pinned: bool,
-        ) -> Vec<usize>;
+        ) -> Vec<u64>;
         pub(crate) fn get_tabs_snapshot(self: &AppState) -> TabsSnapshot;
-        pub(crate) fn get_tab_snapshot(self: &AppState, id: usize) -> TabSnapshotMaybe;
+        pub(crate) fn get_tab_snapshot(self: &AppState, id: u64) -> TabSnapshotMaybe;
 
         #[cxx_name = "new_tab"]
         pub(crate) fn new_tab_wrapper(self: &mut AppState) -> NewTabResult;
@@ -308,10 +309,11 @@ pub mod ffi {
         pub(crate) fn close_tabs_wrapper(
             self: &mut AppState,
             operation_type: CloseTabOperationTypeFfi,
-            anchor_tab_id: usize,
+            anchor_tab_id: u64,
             close_pinned: bool,
         ) -> CloseManyTabsResult;
-        pub(crate) fn set_active_tab(self: &mut AppState, id: usize) -> Result<()>;
+        #[cxx_name = "set_active_tab"]
+        pub(crate) fn set_active_tab_wrapper(self: &mut AppState, id: u64) -> Result<()>;
         #[cxx_name = "move_tab"]
         pub(crate) fn move_tab_wrapper(self: &mut AppState, from: usize, to: usize) -> bool;
         #[cxx_name = "open_file"]
@@ -323,17 +325,17 @@ pub mod ffi {
             use_history: bool,
         ) -> MoveActiveTabResult;
         #[cxx_name = "pin_tab"]
-        pub(crate) fn pin_tab_wrapper(self: &mut AppState, id: usize) -> PinTabResult;
+        pub(crate) fn pin_tab_wrapper(self: &mut AppState, id: u64) -> PinTabResult;
         #[cxx_name = "unpin_tab"]
-        pub(crate) fn unpin_tab_wrapper(self: &mut AppState, id: usize) -> PinTabResult;
+        pub(crate) fn unpin_tab_wrapper(self: &mut AppState, id: u64) -> PinTabResult;
         #[cxx_name = "save_tab"]
-        pub(crate) fn save_tab_wrapper(self: &mut AppState, id: usize) -> bool;
+        pub(crate) fn save_tab_wrapper(self: &mut AppState, id: u64) -> bool;
         #[cxx_name = "save_tab_as"]
-        pub(crate) fn save_tab_as_wrapper(self: &mut AppState, id: usize, path: &str) -> bool;
+        pub(crate) fn save_tab_as_wrapper(self: &mut AppState, id: u64, path: &str) -> bool;
         #[cxx_name = "set_tab_scroll_offsets"]
         pub(crate) fn set_tab_scroll_offsets_wrapper(
             self: &mut AppState,
-            id: usize,
+            id: u64,
             new_offsets: ScrollOffsetFfi,
         ) -> bool;
 
@@ -369,46 +371,62 @@ pub mod ffi {
         #[cxx_name = "move_to"]
         pub(crate) fn move_to_wrapper(
             self: &mut Editor,
+            buffer: &mut Buffer,
             row: usize,
             col: usize,
             clear_selection: bool,
         ) -> ChangeSetFfi;
         #[cxx_name = "select_to"]
-        pub(crate) fn select_to_wrapper(self: &mut Editor, row: usize, col: usize) -> ChangeSetFfi;
+        pub(crate) fn select_to_wrapper(
+            self: &mut Editor,
+            buffer: &mut Buffer,
+            row: usize,
+            col: usize,
+        ) -> ChangeSetFfi;
         #[cxx_name = "move_left"]
-        pub(crate) fn move_left_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn move_left_wrapper(self: &mut Editor, buffer: &mut Buffer) -> ChangeSetFfi;
         #[cxx_name = "move_right"]
-        pub(crate) fn move_right_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn move_right_wrapper(self: &mut Editor, buffer: &mut Buffer) -> ChangeSetFfi;
         #[cxx_name = "move_up"]
-        pub(crate) fn move_up_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn move_up_wrapper(self: &mut Editor, buffer: &mut Buffer) -> ChangeSetFfi;
         #[cxx_name = "move_down"]
-        pub(crate) fn move_down_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn move_down_wrapper(self: &mut Editor, buffer: &mut Buffer) -> ChangeSetFfi;
         #[cxx_name = "insert_text"]
-        pub(crate) fn insert_text_wrapper(self: &mut Editor, text: &str) -> ChangeSetFfi;
+        pub(crate) fn insert_text_wrapper(
+            self: &mut Editor,
+            buffer: &mut Buffer,
+            text: &str,
+        ) -> ChangeSetFfi;
         #[cxx_name = "insert_newline"]
-        pub(crate) fn insert_newline_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn insert_newline_wrapper(
+            self: &mut Editor,
+            buffer: &mut Buffer,
+        ) -> ChangeSetFfi;
         #[cxx_name = "insert_tab"]
-        pub(crate) fn insert_tab_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn insert_tab_wrapper(self: &mut Editor, buffer: &mut Buffer) -> ChangeSetFfi;
         #[cxx_name = "backspace"]
-        pub(crate) fn backspace_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn backspace_wrapper(self: &mut Editor, buffer: &mut Buffer) -> ChangeSetFfi;
         #[cxx_name = "delete_forwards"]
-        pub(crate) fn delete_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn delete_wrapper(self: &mut Editor, buffer: &mut Buffer) -> ChangeSetFfi;
         #[cxx_name = "select_all"]
-        pub(crate) fn select_all_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn select_all_wrapper(self: &mut Editor, buffer: &mut Buffer) -> ChangeSetFfi;
         #[cxx_name = "select_left"]
-        pub(crate) fn select_left_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn select_left_wrapper(self: &mut Editor, buffer: &mut Buffer) -> ChangeSetFfi;
         #[cxx_name = "select_right"]
-        pub(crate) fn select_right_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn select_right_wrapper(self: &mut Editor, buffer: &mut Buffer) -> ChangeSetFfi;
         #[cxx_name = "select_up"]
-        pub(crate) fn select_up_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn select_up_wrapper(self: &mut Editor, buffer: &mut Buffer) -> ChangeSetFfi;
         #[cxx_name = "select_down"]
-        pub(crate) fn select_down_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn select_down_wrapper(self: &mut Editor, buffer: &mut Buffer) -> ChangeSetFfi;
         #[cxx_name = "clear_selection"]
-        pub(crate) fn clear_selection_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn clear_selection_wrapper(
+            self: &mut Editor,
+            buffer: &mut Buffer,
+        ) -> ChangeSetFfi;
         #[cxx_name = "undo"]
-        pub(crate) fn undo_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn undo_wrapper(self: &mut Editor, buffer: &mut Buffer) -> ChangeSetFfi;
         #[cxx_name = "redo"]
-        pub(crate) fn redo_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn redo_wrapper(self: &mut Editor, buffer: &mut Buffer) -> ChangeSetFfi;
         pub(crate) fn get_max_width(self: &Editor) -> f64;
         #[cxx_name = "set_line_width"]
         pub(crate) fn update_line_width(self: &mut Editor, line_idx: usize, line_width: f64);
@@ -419,13 +437,18 @@ pub mod ffi {
         pub(crate) fn get_cursor_positions(self: &Editor) -> Vec<CursorPosition>;
         pub(crate) fn get_selection(self: &mut Editor) -> Selection;
         pub(crate) fn copy(self: &Editor) -> String;
-        pub(crate) fn paste(self: &mut Editor, text: &str) -> ChangeSetFfi;
+        pub(crate) fn paste(self: &mut Editor, buffer: &mut Buffer, text: &str) -> ChangeSetFfi;
         #[cxx_name = "add_cursor"]
-        pub(crate) fn add_cursor_wrapper(self: &mut Editor, direction: AddCursorDirectionFfi);
+        pub(crate) fn add_cursor_wrapper(
+            self: &mut Editor,
+            buffer: &mut Buffer,
+            direction: AddCursorDirectionFfi,
+        );
         pub(crate) fn remove_cursor(self: &mut Editor, row: usize, col: usize);
         pub(crate) fn cursor_exists_at(self: &Editor, row: usize, col: usize) -> bool;
         #[cxx_name = "clear_cursors"]
-        pub(crate) fn clear_cursors_wrapper(self: &mut Editor) -> ChangeSetFfi;
+        pub(crate) fn clear_cursors_wrapper(self: &mut Editor, buffer: &mut Buffer)
+        -> ChangeSetFfi;
         pub(crate) fn has_active_selection(self: &Editor) -> bool;
         pub(crate) fn cursor_exists_at_row(self: &Editor, row: usize) -> bool;
         #[cxx_name = "get_active_cursor_index"]
@@ -434,18 +457,20 @@ pub mod ffi {
         #[cxx_name = "get_number_of_selections"]
         pub(crate) fn number_of_selections(self: &Editor) -> usize;
         #[cxx_name = "get_line_length"]
-        pub(crate) fn line_length(self: &Editor, row: usize) -> usize;
+        pub(crate) fn line_length(self: &Editor, buffer: &Buffer, row: usize) -> usize;
         #[cxx_name = "get_lines"]
-        pub(crate) fn lines(self: &Editor) -> Vec<String>;
+        pub(crate) fn lines(self: &Editor, buffer: &Buffer) -> Vec<String>;
         #[cxx_name = "select_word"]
         pub(crate) fn select_word_wrapper(
             self: &mut Editor,
+            buffer: &mut Buffer,
             row: usize,
             col: usize,
         ) -> ChangeSetFfi;
         #[cxx_name = "select_word_drag"]
         pub(crate) fn select_word_drag_wrapper(
             self: &mut Editor,
+            buffer: &mut Buffer,
             anchor_start_row: usize,
             anchor_start_col: usize,
             anchor_end_row: usize,
@@ -456,10 +481,11 @@ pub mod ffi {
         #[cxx_name = "select_line_drag"]
         pub(crate) fn select_line_drag_wrapper(
             self: &mut Editor,
+            buffer: &mut Buffer,
             anchor_row: usize,
             row: usize,
         ) -> ChangeSetFfi;
-        pub(crate) fn buffer_is_empty(self: &Editor) -> bool;
+        pub(crate) fn buffer_is_empty(self: &Editor, buffer: &Buffer) -> bool;
 
         // FileTree
         #[cxx_name = "set_root_dir"]

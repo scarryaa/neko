@@ -1,6 +1,8 @@
 use crate::{CursorEntry, Selection};
 use std::{fmt, num::NonZeroU64, path::PathBuf};
 
+pub type TabResult<T> = std::result::Result<T, TabError>;
+
 #[derive(Debug)]
 pub enum MoveTabError {
     InvalidIndex { from: usize, to: usize },
@@ -30,6 +32,8 @@ pub enum TabError {
     NotFound(TabId),
     Move(MoveTabError),
 }
+
+impl TabError {}
 
 impl fmt::Display for TabError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -62,6 +66,12 @@ impl TabId {
 impl From<TabId> for u64 {
     fn from(id: TabId) -> Self {
         id.0.get()
+    }
+}
+
+impl From<u64> for TabId {
+    fn from(id: u64) -> Self {
+        TabId::new(id).expect("Tab id cannot be 0")
     }
 }
 

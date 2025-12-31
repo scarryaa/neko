@@ -1,9 +1,9 @@
 use crate::{
-    Buffer, CloseTabOperationType, Config, ConfigManager, Document, DocumentId, DocumentManager,
-    DocumentResult, Editor, FileTree, JumpHistory, MoveActiveTabResult, Tab, TabManager, View,
-    ViewId, ViewManager,
+    Buffer, CloseTabOperationType, Config, ConfigManager, Document, DocumentError, DocumentId,
+    DocumentManager, DocumentResult, Editor, FileTree, JumpHistory, MoveActiveTabResult, Tab,
+    TabError, TabId, TabManager, View, ViewId, ViewManager,
 };
-use std::{io::Error, path::Path};
+use std::path::Path;
 
 // TODO(scarlet): Make new tab + open file atomic? Or at least provide an atomic fn version
 // TODO(scarlet): Add error types
@@ -56,21 +56,21 @@ impl AppState {
         self.tab_manager.get_tabs()
     }
 
-    pub fn get_tab(&self, id: usize) -> Result<&Tab, Error> {
+    pub fn get_tab(&self, id: TabId) -> Result<&Tab, TabError> {
         self.tab_manager.get_tab(id)
     }
 
-    pub fn get_active_tab_id(&self) -> usize {
+    pub fn get_active_tab_id(&self) -> TabId {
         self.tab_manager.get_active_tab_id()
     }
 
     pub fn get_close_tab_ids(
         &self,
         operation_type: CloseTabOperationType,
-        anchor_tab_id: usize,
+        anchor_tab_id: TabId,
         close_pinned: bool,
         // TODO(scarlet): Remove io::Error/create TabError type
-    ) -> Result<Vec<usize>, std::io::Error> {
+    ) -> Result<Vec<TabId>, TabError> {
         self.tab_manager
             .get_close_tab_ids(operation_type, anchor_tab_id, close_pinned)
     }
@@ -125,9 +125,9 @@ impl AppState {
     pub fn close_tabs(
         &mut self,
         operation_type: CloseTabOperationType,
-        anchor_tab_id: usize,
+        anchor_tab_id: TabId,
         close_pinned: bool,
-    ) -> Result<Vec<usize>, Error> {
+    ) -> Result<Vec<TabId>, TabError> {
         let history_enabled = self
             .config_manager()
             .get_snapshot()
@@ -144,7 +144,8 @@ impl AppState {
         &mut self,
         path: &Path,
         add_to_history: bool,
-    ) -> DocumentResult<usize> {
+        // TODO(scarlet): Should not be a DocumentResult?
+    ) -> Result<TabId, DocumentError> {
         // Open (or reuse) the document for the given path
         let document_id = self.document_manager.open_document(path)?;
 
@@ -223,7 +224,7 @@ impl AppState {
         // result
 
         MoveActiveTabResult {
-            found_id: Some(0),
+            found_id: Some(TabId::new(1).expect("Tab id should not be 0")),
             reopened_tab: false,
             scroll_offsets: None,
             cursors: None,
@@ -232,28 +233,28 @@ impl AppState {
         }
     }
 
-    pub fn pin_tab(&mut self, id: usize) -> Result<(), Error> {
+    pub fn pin_tab(&mut self, id: TabId) -> Result<(), TabError> {
         self.tab_manager.pin_tab(id)
     }
 
-    pub fn unpin_tab(&mut self, id: usize) -> Result<(), Error> {
+    pub fn unpin_tab(&mut self, id: crate::TabId) -> Result<(), TabError> {
         self.tab_manager.unpin_tab(id)
     }
 
     pub fn set_tab_scroll_offsets(
         &mut self,
-        id: usize,
+        id: TabId,
         new_offsets: (i32, i32),
-    ) -> Result<(), Error> {
+    ) -> Result<(), TabError> {
         self.tab_manager.set_tab_scroll_offsets(id, new_offsets)
     }
 
     // TODO(scarlet): Need to ensure document/view is switched too
-    pub fn set_active_tab(&mut self, id: usize) -> Result<(), Error> {
+    pub fn set_active_tab(&mut self, id: TabId) -> Result<(), TabError> {
         self.tab_manager.set_active_tab(id)
     }
 
-    pub fn move_tab(&mut self, from: usize, to: usize) -> Result<(), Error> {
+    pub fn move_tab(&mut self, from: usize, to: usize) -> Result<(), TabError> {
         self.tab_manager.move_tab(from, to)
     }
 
@@ -266,7 +267,7 @@ impl AppState {
         title: Option<String>,
         add_tab_to_history: bool,
         activate_view: bool,
-    ) -> (DocumentId, usize, ViewId) {
+    ) -> (DocumentId, TabId, ViewId) {
         let document_id = document_manager.new_document(title);
         let tab_id = tab_manager.add_tab_for_document(document_id, add_tab_to_history);
 
