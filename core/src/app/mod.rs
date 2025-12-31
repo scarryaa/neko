@@ -1,6 +1,6 @@
 #[allow(clippy::module_inception)]
 pub mod app;
-mod document_manager;
+mod file_io_manager;
 
 pub use app::AppState;
-pub use document_manager::DocumentManager;
+pub use file_io_manager::FileIoManager;

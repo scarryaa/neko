@@ -1,13 +1,13 @@
-use super::DocumentManager;
 use crate::{
-    CloseTabOperationType, Config, ConfigManager, Editor, FileTree, JumpHistory,
-    MoveActiveTabResult, Tab, TabManager,
+    CloseTabOperationType, Config, ConfigManager, DocumentManager, Editor, FileIoManager, FileTree,
+    JumpHistory, MoveActiveTabResult, Tab, TabManager,
 };
 use std::{
     io::Error,
     path::{Path, PathBuf},
 };
 
+// TODO(scarlet): Add error types
 /// Application state.
 ///
 /// Acts primarily as a facade over [`TabManager`] and [`FileTree`],
@@ -17,6 +17,7 @@ pub struct AppState {
     file_tree: FileTree,
     config_manager: *const ConfigManager,
     tab_manager: TabManager,
+    _document_manager: DocumentManager,
     pub jump_history: JumpHistory,
 }
 
@@ -29,6 +30,7 @@ impl AppState {
             file_tree: FileTree::new(root_path)?,
             config_manager,
             tab_manager: TabManager::new()?,
+            _document_manager: DocumentManager::default(),
             jump_history: JumpHistory::default(),
         })
     }
@@ -221,7 +223,7 @@ impl AppState {
             .to_path_buf();
         let content = tab.get_editor().buffer().get_text();
 
-        DocumentManager::save_to_path(&path, &content)?;
+        FileIoManager::write(&path, &content)?;
         tab.set_original_content(content);
 
         // Refresh config if tab with config path was saved in the editor
@@ -248,7 +250,7 @@ impl AppState {
         let content = tab.get_editor().buffer().get_text();
         let path_buf = PathBuf::from(path);
 
-        DocumentManager::save_to_path(&path_buf, &content)?;
+        FileIoManager::write(&path_buf, &content)?;
         tab.set_original_content(content);
         tab.set_file_path(Some(path.to_string()));
 

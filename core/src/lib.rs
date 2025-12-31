@@ -10,7 +10,7 @@ pub mod test_utils;
 pub mod text;
 pub mod theme;
 
-pub use app::AppState;
+pub use app::{AppState, FileIoManager};
 pub use commands::{
     Command, CommandResult, DocumentTarget, JumpCommand, JumpHistory, JumpManagementCommand,
     JumpManagementResult, LineTarget, UiIntent, execute_command, execute_jump_command,
@@ -24,6 +24,7 @@ pub use file_system::{FileNode, FileTree};
 pub use shortcuts::ShortcutsManager;
 pub(crate) use tab::{Tab, TabManager, types::*};
 pub use text::{
-    AddCursorDirection, Buffer, ChangeSet, Cursor, CursorEntry, Editor, Selection, SelectionManager,
+    AddCursorDirection, Buffer, ChangeSet, Cursor, CursorEntry, Document, DocumentId,
+    DocumentManager, Editor, Selection, SelectionManager, document::error_types::*, types::*,
 };
 pub use theme::{Theme, ThemeManager};
