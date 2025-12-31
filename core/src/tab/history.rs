@@ -1,8 +1,10 @@
+use crate::TabId;
+
 // TODO(scarlet): Add tests
 #[derive(Debug, Default)]
 pub struct TabHistoryManager {
     /// Tracks last activated tabs by id
-    active_tab_history: Vec<usize>,
+    active_tab_history: Vec<TabId>,
     /// Index into active_tab_history when navigating
     history_pos: Option<usize>,
 }
@@ -10,21 +12,21 @@ pub struct TabHistoryManager {
 impl TabHistoryManager {
     pub fn new() -> Self {
         Self {
-            active_tab_history: vec![0],
+            active_tab_history: vec![TabId::new(1).expect("Tab id cannot be 0")],
             history_pos: Some(0),
         }
     }
 
     pub fn last_matching<F>(&self, predicate: F) -> Option<usize>
     where
-        F: Fn(usize) -> bool,
+        F: Fn(TabId) -> bool,
     {
         self.active_tab_history
             .iter()
             .rposition(|&id| predicate(id))
     }
 
-    pub fn id_at(&self, idx: usize) -> usize {
+    pub fn id_at(&self, idx: usize) -> TabId {
         self.active_tab_history[idx]
     }
 
@@ -44,7 +46,7 @@ impl TabHistoryManager {
         self.active_tab_history.is_empty()
     }
 
-    pub fn remap_id(&mut self, old_id: usize, new_id: usize) {
+    pub fn remap_id(&mut self, old_id: TabId, new_id: TabId) {
         for history_id in &mut self.active_tab_history {
             if *history_id == old_id {
                 *history_id = new_id;
@@ -73,7 +75,7 @@ impl TabHistoryManager {
         (start + 1..len).find(|&i| self.active_tab_history[i] != current)
     }
 
-    pub fn remove_id_from_history(&mut self, id: usize) {
+    pub fn remove_id_from_history(&mut self, id: TabId) {
         self.active_tab_history.retain(|&h| h != id);
     }
 
@@ -81,7 +83,7 @@ impl TabHistoryManager {
         self.active_tab_history.remove(idx);
     }
 
-    pub fn record_id(&mut self, id: usize) {
+    pub fn record_id(&mut self, id: TabId) {
         if self.active_tab_history.last().copied() != Some(id) {
             self.active_tab_history.push(id);
         }

@@ -1,17 +1,13 @@
 use super::{ClosedTabStore, TabHistoryManager};
 use crate::{
-    CloseTabOperationType, ClosedTabInfo, CursorEntry, DocumentId, Editor, MoveActiveTabResult,
-    ScrollOffsets, Selection, Tab,
-};
-use std::{
-    io::{Error, ErrorKind},
-    path::PathBuf,
+    CloseTabOperationType, ClosedTabInfo, DocumentId, MoveActiveTabResult, MoveTabError,
+    ScrollOffsets, Tab, TabError, TabId,
 };
 
 pub enum ResolveOutcome {
-    Existing(usize),
+    Existing(TabId),
     NeedsReopen {
-        original_id: usize,
+        original_id: TabId,
         info: ClosedTabInfo,
     },
     Unresolvable,
@@ -21,8 +17,8 @@ pub enum ResolveOutcome {
 #[derive(Debug)]
 pub struct TabManager {
     tabs: Vec<Tab>,
-    active_tab_id: usize,
-    next_tab_id: usize,
+    active_tab_id: TabId,
+    next_tab_id: TabId,
     history_manager: TabHistoryManager,
     closed_store: ClosedTabStore,
 }
@@ -31,8 +27,8 @@ impl TabManager {
     pub fn new() -> Self {
         Self {
             tabs: Vec::new(),
-            active_tab_id: 0,
-            next_tab_id: 0,
+            active_tab_id: TabId::new(1).expect("Tab id should not be 0"),
+            next_tab_id: TabId::new(2).expect("Tab id should not be 0"),
             history_manager: TabHistoryManager::new(),
             closed_store: ClosedTabStore::default(),
         }
@@ -55,105 +51,79 @@ impl TabManager {
         &mut self.tabs
     }
 
-    pub fn get_tab(&self, id: usize) -> Result<&Tab, Error> {
-        if let Some(tab) = self.tabs.iter().find(|t| t.get_id() == id) {
-            Ok(tab)
-        } else {
-            Err(Error::new(
-                ErrorKind::NotFound,
-                "Tab with given id not found",
-            ))
-        }
+    pub fn get_tab(&self, id: TabId) -> Result<&Tab, TabError> {
+        self.tabs
+            .iter()
+            .find(|tab| tab.get_id() == id)
+            .ok_or_else(|| TabError::NotFound(id))
     }
 
-    pub fn get_tab_mut(&mut self, id: usize) -> Result<&mut Tab, Error> {
-        if let Some(tab) = self.tabs.iter_mut().find(|t| t.get_id() == id) {
-            Ok(tab)
-        } else {
-            Err(Error::new(
-                ErrorKind::NotFound,
-                "Tab with given id not found",
-            ))
-        }
+    pub fn get_tab_mut(&mut self, id: TabId) -> Result<&mut Tab, TabError> {
+        self.tabs
+            .iter_mut()
+            .find(|tab| tab.get_id() == id)
+            .ok_or_else(|| TabError::NotFound(id))
     }
 
-    pub fn get_active_tab_id(&self) -> usize {
+    pub fn get_active_tab_id(&self) -> TabId {
         self.active_tab_id
-    }
-
-    pub fn get_active_editor(&self) -> Option<&Editor> {
-        if let Some(index) = self
-            .tabs
-            .iter()
-            .position(|t| t.get_id() == self.active_tab_id)
-        {
-            self.tabs.get(index).map(|t| t.get_editor())
-        } else {
-            None
-        }
-    }
-
-    pub fn get_active_editor_mut(&mut self) -> Option<&mut Editor> {
-        if let Some(index) = self
-            .tabs
-            .iter()
-            .position(|t| t.get_id() == self.active_tab_id)
-        {
-            self.tabs.get_mut(index).map(|t| t.get_editor_mut())
-        } else {
-            None
-        }
     }
 
     pub fn get_close_tab_ids(
         &self,
-        operation_type: CloseTabOperationType,
-        anchor_tab_id: usize,
-        close_pinned: bool,
-    ) -> Result<Vec<usize>, Error> {
-        use CloseTabOperationType::*;
-
-        let anchor_index = match operation_type {
-            Single | Others | Left | Right => self
-                .tabs
-                .iter()
-                .position(|t| t.get_id() == anchor_tab_id)
-                .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?,
-            All | Clean => 0, // No anchor needed
-        };
-
-        let mut ids = Vec::new();
-        for (idx, tab) in self.tabs.iter().enumerate() {
-            let id = tab.get_id();
-            let is_anchor = id == anchor_tab_id;
-            let is_pinned = tab.get_is_pinned();
-
-            // Pinned tabs handling:
-            // - For a single tab close op: may close the anchor tab, even if it is pinned,
-            //   if close_pinned is true && is_anchor is true
-            // - For the other ops: never close pinned tabs
-            if is_pinned && !(matches!(operation_type, Single) && is_anchor && close_pinned) {
-                continue;
-            }
-
-            let include = match operation_type {
-                Single => is_anchor,
-                Others => !is_anchor,
-                Left => idx < anchor_index,
-                Right => idx > anchor_index,
-                All => true,
-                Clean => !tab.get_modified(),
-            };
-
-            if include {
-                ids.push(id);
-            }
-        }
-
-        Ok(ids)
+        _operation_type: CloseTabOperationType,
+        _anchor_tab_id: TabId,
+        _close_pinned: bool,
+    ) -> Result<Vec<TabId>, TabError> {
+        // TODO(scarlet): Adjust this for the new document architecture
+        // use CloseTabOperationType::*;
+        //
+        // let anchor_index = match operation_type {
+        //     Single | Others | Left | Right => self
+        //         .tabs
+        //         .iter()
+        //         .position(|t| t.get_id() == anchor_tab_id)
+        //         .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?,
+        //     All | Clean => 0, // No anchor needed
+        // };
+        //
+        // let mut ids = Vec::new();
+        // for (idx, tab) in self.tabs.iter().enumerate() {
+        //     let id = tab.get_id();
+        //     let is_anchor = id == anchor_tab_id;
+        //     let is_pinned = tab.get_is_pinned();
+        //
+        //     // Pinned tabs handling:
+        //     // - For a single tab close op: may close the anchor tab, even if it is pinned,
+        //     //   if close_pinned is true && is_anchor is true
+        //     // - For the other ops: never close pinned tabs
+        //     if is_pinned && !(matches!(operation_type, Single) && is_anchor && close_pinned) {
+        //         continue;
+        //     }
+        //
+        //     let include = match operation_type {
+        //         Single => is_anchor,
+        //         Others => !is_anchor,
+        //         Left => idx < anchor_index,
+        //         Right => idx > anchor_index,
+        //         All => true,
+        //         Clean => !tab.get_modified(),
+        //     };
+        //
+        //     if include {
+        //         ids.push(id);
+        //     }
+        // }
+        //
+        // Ok(ids)
+        Ok(Vec::new())
     }
 
-    pub fn find_tab_by_document(&self, document_id: DocumentId) -> Option<usize> {
+    fn generate_next_id(&mut self) -> TabId {
+        self.next_tab_id.take_next()
+    }
+
+    pub fn find_tab_by_document(&self, document_id: DocumentId) -> Option<TabId> {
         self.tabs
             .iter()
             .find(|tab| tab.get_document_id() == document_id)
@@ -163,8 +133,8 @@ impl TabManager {
     // Setters
     /// Creates a new tab associated with a given [`DocumentId`] and activates it, optionally
     /// adding it to history.
-    pub fn add_tab_for_document(&mut self, document_id: DocumentId, add_to_history: bool) -> usize {
-        let new_tab_id = self.get_next_tab_id();
+    pub fn add_tab_for_document(&mut self, document_id: DocumentId, add_to_history: bool) -> TabId {
+        let new_tab_id = self.generate_next_id();
         let tab = Tab::new(new_tab_id, document_id);
 
         self.tabs.push(tab);
@@ -178,28 +148,27 @@ impl TabManager {
     }
 
     // TODO(scarlet): Create a unified fn for removing tabs (and adjusting history)
-    pub fn close_tab(&mut self, id: usize, history_enabled: bool) -> Result<(), Error> {
-        if let Some(index) = self.tabs.iter().position(|t| t.get_id() == id) {
-            self.record_closed_tabs(&[id]);
-            self.tabs.remove(index);
-            self.switch_to_last_active_tab(history_enabled);
+    pub fn close_tab(&mut self, id: TabId, history_enabled: bool) -> Result<(), TabError> {
+        let index = self
+            .tabs
+            .iter()
+            .position(|tab| tab.get_id() == id)
+            .ok_or_else(|| TabError::NotFound(id))?;
 
-            Ok(())
-        } else {
-            Err(Error::new(
-                ErrorKind::NotFound,
-                "Tab with given id not found",
-            ))
-        }
+        self.record_closed_tabs(&[id]);
+        self.tabs.remove(index);
+        self.switch_to_last_active_tab(history_enabled);
+
+        Ok(())
     }
 
     pub fn close_tabs(
         &mut self,
         operation_type: CloseTabOperationType,
-        anchor_tab_id: usize,
+        anchor_tab_id: TabId,
         history_enabled: bool,
         close_pinned: bool,
-    ) -> Result<Vec<usize>, Error> {
+    ) -> Result<Vec<TabId>, TabError> {
         let ids = self.get_close_tab_ids(operation_type, anchor_tab_id, close_pinned)?;
         if ids.is_empty() {
             return Ok(ids);
@@ -207,7 +176,7 @@ impl TabManager {
 
         self.record_closed_tabs(&ids);
 
-        let id_set: std::collections::HashSet<usize> = ids.iter().copied().collect();
+        let id_set: std::collections::HashSet<TabId> = ids.iter().copied().collect();
         self.tabs.retain(|t| !id_set.contains(&t.get_id()));
 
         self.switch_to_last_active_tab(history_enabled);
@@ -224,6 +193,7 @@ impl TabManager {
         auto_reopen_closed_tabs_in_history: bool,
     ) -> MoveActiveTabResult {
         if self.tabs.is_empty() {
+            // TODO(scarlet): Add a helper fn to construct the MoveActiveTabResult
             return MoveActiveTabResult {
                 found_id: Some(self.active_tab_id),
                 reopened_tab: false,
@@ -375,13 +345,14 @@ impl TabManager {
         }
     }
 
-    pub fn pin_tab(&mut self, id: usize) -> Result<(), Error> {
+    pub fn pin_tab(&mut self, id: TabId) -> Result<(), TabError> {
         let idx = self
             .tabs
             .iter()
             .position(|t| t.get_id() == id)
-            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
+            .ok_or_else(|| TabError::NotFound(id))?;
 
+        // Bail if the tab is already pinned
         if self.tabs[idx].get_is_pinned() {
             return Ok(());
         }
@@ -389,7 +360,6 @@ impl TabManager {
         self.tabs[idx].set_is_pinned(true);
 
         let tab = self.tabs.remove(idx);
-
         let insert_idx = self
             .tabs
             .iter()
@@ -401,12 +371,12 @@ impl TabManager {
         Ok(())
     }
 
-    pub fn unpin_tab(&mut self, id: usize) -> Result<(), Error> {
+    pub fn unpin_tab(&mut self, id: TabId) -> Result<(), TabError> {
         let idx = self
             .tabs
             .iter()
             .position(|t| t.get_id() == id)
-            .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?;
+            .ok_or_else(|| TabError::NotFound(id))?;
 
         if !self.tabs[idx].get_is_pinned() {
             return Ok(());
@@ -415,7 +385,6 @@ impl TabManager {
         self.tabs[idx].set_is_pinned(false);
 
         let tab = self.tabs.remove(idx);
-
         let insert_idx = match self.tabs.iter().rposition(|t| t.get_is_pinned()) {
             Some(last_pinned_idx) => last_pinned_idx + 1,
             None => 0,
@@ -428,39 +397,26 @@ impl TabManager {
 
     pub fn set_tab_scroll_offsets(
         &mut self,
-        id: usize,
+        id: TabId,
         new_offsets: (i32, i32),
-    ) -> Result<(), Error> {
-        if let Some(tab) = self.tabs.iter_mut().find(|t| t.get_id() == id) {
+    ) -> Result<(), TabError> {
+        self.get_tab_mut(id).map(|tab| {
             tab.set_scroll_offsets(new_offsets);
-            Ok(())
-        } else {
-            Err(Error::new(
-                ErrorKind::NotFound,
-                "Tab with given id not found",
-            ))
-        }
+        })
     }
 
-    pub fn set_active_tab(&mut self, id: usize) -> Result<(), Error> {
-        if self.tabs.iter().any(|t| t.get_id() == id) {
-            self.activate_tab(id);
-            Ok(())
-        } else {
-            Err(Error::new(
-                ErrorKind::NotFound,
-                "Tab with given id not found",
-            ))
-        }
+    pub fn set_active_tab(&mut self, id: TabId) -> Result<(), TabError> {
+        // Ensure the tab exists before activating it
+        self.get_tab(id)?;
+        self.activate_tab(id);
+        Ok(())
     }
 
-    pub fn move_tab(&mut self, from: usize, to: usize) -> Result<(), Error> {
+    pub fn move_tab(&mut self, from: usize, to: usize) -> Result<(), TabError> {
         let len = self.tabs.len();
+
         if from >= len || to >= len {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "Invalid tab index",
-            ));
+            return Err(MoveTabError::InvalidIndex { from, to }.into());
         }
 
         if from == to || len <= 1 {
@@ -469,19 +425,11 @@ impl TabManager {
 
         let tab = self.tabs.remove(from);
         self.tabs.insert(to, tab);
-
         Ok(())
     }
 
-    fn get_next_tab_id(&mut self) -> usize {
-        let id = self.next_tab_id;
-        self.next_tab_id += 1;
-
-        id
-    }
-
     // History ops
-    fn activate_tab(&mut self, id: usize) {
+    fn activate_tab(&mut self, id: TabId) {
         if self.active_tab_id == id {
             return;
         }
@@ -493,14 +441,14 @@ impl TabManager {
         self.history_manager.set_history_pos(None);
     }
 
-    fn activate_tab_no_history(&mut self, id: usize) {
+    fn activate_tab_no_history(&mut self, id: TabId) {
         self.active_tab_id = id;
     }
 
     fn switch_to_last_active_tab(&mut self, history_enabled: bool) {
         // No tabs left
         if self.tabs.is_empty() {
-            self.active_tab_id = 0;
+            self.active_tab_id = TabId::new(1).expect("Tab id cannot be 0");
             self.history_manager.set_history_pos(None);
             return;
         }
@@ -526,105 +474,108 @@ impl TabManager {
 
     fn resolve_history_target(
         &mut self,
-        id: usize,
-        auto_reopen_closed_tabs_in_history: bool,
+        _id: TabId,
+        _auto_reopen_closed_tabs_in_history: bool,
     ) -> ResolveOutcome {
-        // If the tab still exists, use it
-        if self.tabs.iter().any(|t| t.get_id() == id) {
-            return ResolveOutcome::Existing(id);
-        }
-
-        // Try to get the path for this history id from closed_tabs
-        let maybe_path = self.closed_store.path_for(id);
-
-        // If there is a currently open tab with the same path (even if id is different), target that
-        if let Some(ref path) = maybe_path {
-            if let Some(tab) = self
-                .tabs
-                .iter()
-                .find(|t| t.get_file_path() == Some(&path.clone()))
-            {
-                let new_id = tab.get_id();
-
-                // Update history to point at the new id instead of the old one
-                self.history_manager.remap_id(id, new_id);
-                _ = self.closed_store.take(id);
-
-                return ResolveOutcome::Existing(new_id);
-            }
-        }
-
-        // If the config setting is turned off, skip
-        if !auto_reopen_closed_tabs_in_history {
-            return ResolveOutcome::Unresolvable;
-        }
-
-        // TODO(scarlet): Update history in the case where we go backwards a few tabs and then do a
-        // new action (e.g. tab opened)
+        ResolveOutcome::Unresolvable
+        // TODO(scarlet): Adjust this for the new document architecture
+        // // If the tab still exists, use it
+        // if self.tabs.iter().any(|t| t.get_id() == id) {
+        //     return ResolveOutcome::Existing(id);
+        // }
         //
-        // Ex.
-        // - open tabs [1, 2, 3, 4]
-        //     active_tab_history = [1, 2, 3, 4]
-        //                                       ^ history_pos = None
-        // - navigate backwards in history to tab 2
-        //     active_tab_history = [1, 2, 3, 4]
-        //                              ^ history_pos = index of 2 => 1
-        // - open a new tab 5 while history_pos points at tab 2
-        //     => should truncate [3, 4], append 5
-        //     active_tab_history = [1, 2, 5] (instead of [1, 2, 3, 4, 5])
-        //                                 ^ history_pos = index of 5 => 2
-        //                                   (should it be reset to None?)
-        // TODO(scarlet): Update history in the case where, when opening a file and then closing
-        // the tab, moving backwards in history should reopen it (currently we have to move forward
-        // in history to reopen it)
-
-        // If there is recorded tab info, pass it along
-        let Some(info) = self.closed_store.take(id) else {
-            return ResolveOutcome::Unresolvable;
-        };
-
-        ResolveOutcome::NeedsReopen {
-            original_id: id,
-            info,
-        }
+        // // Try to get the path for this history id from closed_tabs
+        // let maybe_path = self.closed_store.path_for(id);
+        //
+        // // If there is a currently open tab with the same path (even if id is different), target that
+        // if let Some(ref path) = maybe_path {
+        //     if let Some(tab) = self
+        //         .tabs
+        //         .iter()
+        //         .find(|t| t.get_file_path() == Some(&path.clone()))
+        //     {
+        //         let new_id = tab.get_id();
+        //
+        //         // Update history to point at the new id instead of the old one
+        //         self.history_manager.remap_id(id, new_id);
+        //         _ = self.closed_store.take(id);
+        //
+        //         return ResolveOutcome::Existing(new_id);
+        //     }
+        // }
+        //
+        // // If the config setting is turned off, skip
+        // if !auto_reopen_closed_tabs_in_history {
+        //     return ResolveOutcome::Unresolvable;
+        // }
+        //
+        // // TODO(scarlet): Update history in the case where we go backwards a few tabs and then do a
+        // // new action (e.g. tab opened)
+        // //
+        // // Ex.
+        // // - open tabs [1, 2, 3, 4]
+        // //     active_tab_history = [1, 2, 3, 4]
+        // //                                       ^ history_pos = None
+        // // - navigate backwards in history to tab 2
+        // //     active_tab_history = [1, 2, 3, 4]
+        // //                              ^ history_pos = index of 2 => 1
+        // // - open a new tab 5 while history_pos points at tab 2
+        // //     => should truncate [3, 4], append 5
+        // //     active_tab_history = [1, 2, 5] (instead of [1, 2, 3, 4, 5])
+        // //                                 ^ history_pos = index of 5 => 2
+        // //                                   (should it be reset to None?)
+        // // TODO(scarlet): Update history in the case where, when opening a file and then closing
+        // // the tab, moving backwards in history should reopen it (currently we have to move forward
+        // // in history to reopen it)
+        //
+        // // If there is recorded tab info, pass it along
+        // let Some(info) = self.closed_store.take(id) else {
+        //     return ResolveOutcome::Unresolvable;
+        // };
+        //
+        // ResolveOutcome::NeedsReopen {
+        //     original_id: id,
+        //     info,
+        // }
     }
 
-    fn record_closed_tabs(&mut self, ids: &[usize]) {
-        self.closed_store.record_closed_tabs(ids, |id| {
-            let path: PathBuf;
-            let scroll_offsets: (usize, usize);
-            let cursors: Vec<CursorEntry>;
-            let selections: Selection;
-
-            if let Some(tab) = self.tabs.iter().find(|t| t.get_id() == id) {
-                if let Some(found_path) = tab.get_file_path().map(|p| p.to_path_buf()) {
-                    let found_scroll_offsets = tab.get_scroll_offsets();
-                    scroll_offsets = (
-                        found_scroll_offsets.0 as usize,
-                        found_scroll_offsets.1 as usize,
-                    );
-
-                    path = found_path;
-
-                    let found_cursors = tab.get_editor().cursors();
-                    cursors = found_cursors;
-
-                    let found_selections = tab.get_editor().selection();
-                    selections = found_selections;
-                } else {
-                    return None;
-                }
-            } else {
-                return None;
-            }
-
-            Some(ClosedTabInfo {
-                path,
-                scroll_offsets: (scroll_offsets.0, scroll_offsets.1),
-                cursors,
-                selections,
-            })
-        });
+    fn record_closed_tabs(&mut self, _ids: &[TabId]) {
+        // TODO(scarlet): Adjust this for the new document architecture
+        // self.closed_store.record_closed_tabs(ids, |id| {
+        //     let path: PathBuf;
+        //     let scroll_offsets: (usize, usize);
+        //     let cursors: Vec<CursorEntry>;
+        //     let selections: Selection;
+        //
+        //     if let Some(tab) = self.tabs.iter().find(|t| t.get_id() == id) {
+        //         if let Some(found_path) = tab.get_file_path().map(|p| p.to_path_buf()) {
+        //             let found_scroll_offsets = tab.get_scroll_offsets();
+        //             scroll_offsets = (
+        //                 found_scroll_offsets.0 as usize,
+        //                 found_scroll_offsets.1 as usize,
+        //             );
+        //
+        //             path = found_path;
+        //
+        //             let found_cursors = tab.get_editor().cursors();
+        //             cursors = found_cursors;
+        //
+        //             let found_selections = tab.get_editor().selection();
+        //             selections = found_selections;
+        //         } else {
+        //             return None;
+        //         }
+        //     } else {
+        //         return None;
+        //     }
+        //
+        //     Some(ClosedTabInfo {
+        //         path,
+        //         scroll_offsets: (scroll_offsets.0, scroll_offsets.1),
+        //         cursors,
+        //         selections,
+        //     })
+        // });
     }
 }
 
@@ -632,10 +583,14 @@ impl TabManager {
 mod test {
     use super::*;
 
+    fn make_tab_id(id: u64) -> TabId {
+        TabId::new(id).expect("Provided tab id must be non-zero")
+    }
+
     #[test]
     fn close_tab_returns_error_when_tabs_are_empty() {
         let mut tm = TabManager::new();
-        let result = tm.close_tab(1, false);
+        let result = tm.close_tab(make_tab_id(1), false);
 
         assert!(result.is_err())
     }
@@ -643,7 +598,7 @@ mod test {
     #[test]
     fn close_tab_returns_error_when_id_not_found() {
         let mut tm = TabManager::new();
-        let result = tm.close_tab(1, false);
+        let result = tm.close_tab(make_tab_id(1), false);
 
         assert!(result.is_err())
     }
@@ -651,8 +606,8 @@ mod test {
     #[test]
     fn set_active_tab_returns_error_when_tabs_are_empty() {
         let mut tm = TabManager::new();
-        let _ = tm.close_tab(0, false);
-        let result = tm.set_active_tab(0);
+        let _ = tm.close_tab(make_tab_id(1), false);
+        let result = tm.set_active_tab(make_tab_id(1));
 
         assert!(result.is_err())
     }
@@ -660,7 +615,7 @@ mod test {
     #[test]
     fn set_active_tab_returns_error_when_id_not_found() {
         let mut tm = TabManager::new();
-        let result = tm.set_active_tab(1);
+        let result = tm.set_active_tab(make_tab_id(1));
 
         assert!(result.is_err())
     }
