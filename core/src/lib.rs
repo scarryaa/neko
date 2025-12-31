@@ -25,6 +25,7 @@ pub use shortcuts::ShortcutsManager;
 pub(crate) use tab::{Tab, TabManager, types::*};
 pub use text::{
     AddCursorDirection, Buffer, ChangeSet, Cursor, CursorEntry, Document, DocumentId,
-    DocumentManager, Editor, Selection, SelectionManager, document::error_types::*, types::*,
+    DocumentManager, Editor, Selection, SelectionManager, View, ViewId, ViewManager,
+    document::error_types::*, types::*,
 };
 pub use theme::{Theme, ThemeManager};

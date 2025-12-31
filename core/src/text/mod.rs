@@ -6,6 +6,7 @@ pub mod editor;
 pub mod history;
 pub mod selection;
 pub mod types;
+pub mod view;
 pub mod width_manager;
 
 pub use buffer::Buffer;
@@ -15,4 +16,5 @@ pub use editor::Editor;
 pub use history::{Edit, Transaction, UndoHistory, ViewState};
 pub use selection::{selection_manager::SelectionManager, types::Selection};
 pub use types::*;
+pub use view::{View, ViewId, ViewManager};
 use width_manager::WidthManager;
