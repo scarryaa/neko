@@ -1,36 +1,17 @@
-use crate::Editor;
-use std::path::{Path, PathBuf};
+use crate::DocumentId;
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Tab {
-    editor: Box<Editor>,
-    original_content: String,
-    file_path: Option<PathBuf>,
-    title: String,
-    is_pinned: bool,
     id: usize,
+    document_id: DocumentId,
     scroll_offsets: (i32, i32),
+    is_pinned: bool,
 }
 
 impl Tab {
-    pub fn new(id: usize) -> Self {
+    pub fn new(id: usize, document_id: DocumentId) -> Self {
         Self {
-            editor: Box::new(Editor::new()),
-            original_content: String::new(),
-            file_path: None,
-            title: "Untitled".to_string(),
-            is_pinned: false,
-            id,
-            scroll_offsets: (0, 0),
-        }
-    }
-
-    pub fn with_title(title: &str, id: usize) -> Self {
-        Self {
-            editor: Box::new(Editor::new()),
-            original_content: String::new(),
-            file_path: None,
-            title: title.to_string(),
+            document_id,
             is_pinned: false,
             id,
             scroll_offsets: (0, 0),
@@ -38,36 +19,16 @@ impl Tab {
     }
 
     // Getters
-    pub fn get_title(&self) -> String {
-        self.title.clone()
-    }
-
     pub fn get_id(&self) -> usize {
         self.id
     }
 
+    pub fn get_document_id(&self) -> DocumentId {
+        self.document_id
+    }
+
     pub fn get_is_pinned(&self) -> bool {
         self.is_pinned
-    }
-
-    pub fn get_file_path(&self) -> Option<&Path> {
-        self.file_path.as_deref()
-    }
-
-    pub fn get_original_content(&self) -> String {
-        self.original_content.clone()
-    }
-
-    pub fn get_editor(&self) -> &Editor {
-        &self.editor
-    }
-
-    pub fn get_editor_mut(&mut self) -> &mut Editor {
-        &mut self.editor
-    }
-
-    pub fn get_modified(&self) -> bool {
-        self.editor.buffer().get_text() != self.original_content
     }
 
     pub fn get_scroll_offsets(&self) -> (i32, i32) {
@@ -75,26 +36,6 @@ impl Tab {
     }
 
     // Setters
-    pub fn set_title(&mut self, title: &str) {
-        if title.is_empty() {
-            self.title = "Untitled".to_string()
-        } else {
-            self.title = title.to_string();
-        }
-    }
-
-    pub fn set_file_path(&mut self, file_path: Option<String>) {
-        if let Some(file_path) = file_path {
-            self.file_path = Some(file_path.into());
-        } else {
-            self.file_path = None;
-        }
-    }
-
-    pub fn set_original_content(&mut self, new_content: String) {
-        self.original_content = new_content;
-    }
-
     pub fn set_is_pinned(&mut self, new_is_pinned: bool) {
         self.is_pinned = new_is_pinned;
     }
@@ -106,23 +47,28 @@ impl Tab {
 
 #[cfg(test)]
 mod test {
+    use crate::Buffer;
+
     use super::*;
 
     #[test]
     fn get_modified_returns_false_if_buffer_and_original_content_are_empty() {
         let t = Tab::new(0);
-        assert!(!t.get_modified());
+        let b = Buffer::new();
+        assert!(!t.get_modified(&b));
     }
 
     #[test]
     fn get_modified_returns_true_if_buffer_does_not_equal_original_content() {
         let mut t = Tab::new(0);
+        let b = Buffer::new();
         t.set_original_content("hello".to_string());
-        assert!(t.get_modified());
+        assert!(t.get_modified(&b));
 
         let mut t2 = Tab::new(1);
-        t2.get_editor_mut().insert_text("hello");
-        assert!(t.get_modified());
+        let mut b = Buffer::new();
+        t2.get_editor_mut().insert_text(&mut b, "hello");
+        assert!(t.get_modified(&b));
     }
 
     #[test]

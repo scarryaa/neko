@@ -2,6 +2,7 @@ use super::{
     Command, CommandResult, JumpManagementResult, UiIntent, execute_jump_management_command,
 };
 use crate::{AppState, ConfigManager, ThemeManager};
+use std::io::{Error, ErrorKind};
 
 pub fn execute_command(
     cmd: Command,
@@ -27,31 +28,17 @@ pub fn execute_command(
             })
         }
         Command::OpenConfig => {
-            // TODO(scarlet): Improve the flow here, i.e. make new_tab + open_file atomic
             let config_path = ConfigManager::get_config_path();
+
+            let tab_id = app
+                .ensure_tab_for_path(&config_path)
+                .map_err(|err| Error::new(ErrorKind::NotFound, err))?;
+
             let config_path_str = config_path.to_string_lossy().to_string();
-
-            // Try to find an existing tab
-            let existing_id = app.get_tabs().iter().find_map(|t| {
-                t.get_file_path().and_then(|p| {
-                    if p.to_string_lossy() == config_path_str {
-                        Some(t.get_id())
-                    } else {
-                        None
-                    }
-                })
-            });
-
-            let id = if let Some(id) = existing_id {
-                id
-            } else {
-                app.new_tab(true);
-                app.open_file(&config_path_str).unwrap_or_default()
-            };
 
             Ok(CommandResult {
                 intents: vec![UiIntent::OpenConfig {
-                    id: id as i64,
+                    id: tab_id as i64,
                     path: config_path_str,
                 }],
             })

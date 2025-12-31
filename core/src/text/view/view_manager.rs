@@ -5,9 +5,11 @@ use std::collections::HashMap;
 /// Manages a collection of current [`View`]s.
 ///
 /// `ViewManager` is responsible for creating, mutating, and tracking views.
+#[derive(Debug)]
 pub struct ViewManager {
     views: HashMap<ViewId, View>,
     next_view_id: ViewId,
+    active_view_id: Option<ViewId>,
 }
 
 impl Default for ViewManager {
@@ -21,6 +23,7 @@ impl ViewManager {
         Self {
             views: HashMap::new(),
             next_view_id: ViewId(1),
+            active_view_id: None,
         }
     }
 
@@ -34,6 +37,20 @@ impl ViewManager {
 
     pub fn get_view_mut(&mut self, view_id: ViewId) -> Option<&mut View> {
         self.views.get_mut(&view_id)
+    }
+
+    pub fn active_view(&self) -> Option<ViewId> {
+        self.active_view_id
+    }
+
+    pub fn set_active_view(&mut self, id: ViewId) {
+        if self.views.contains_key(&id) {
+            self.active_view_id = Some(id);
+        }
+    }
+
+    pub fn clear_active_view(&mut self) {
+        self.active_view_id = None;
     }
 
     /// Creates a new [`View`] and returns the corresponding [`ViewId`].

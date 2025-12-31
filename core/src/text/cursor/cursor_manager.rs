@@ -59,6 +59,14 @@ impl CursorManager {
         self.active_cursor_index = 0;
     }
 
+    pub fn cursors(&self) -> &[CursorEntry] {
+        &self.cursors
+    }
+
+    pub fn cursors_mut(&mut self) -> &mut [CursorEntry] {
+        &mut self.cursors
+    }
+
     pub fn cursor_exists_at(&self, row: usize, col: usize) -> bool {
         self.cursors
             .iter()

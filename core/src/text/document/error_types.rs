@@ -1,6 +1,8 @@
 use crate::DocumentId;
 use std::{fmt, io};
 
+pub type DocumentResult<T> = std::result::Result<T, DocumentError>;
+
 #[derive(Debug)]
 pub enum DocumentError {
     Io(io::Error),

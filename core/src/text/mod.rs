@@ -11,7 +11,7 @@ pub mod width_manager;
 
 pub use buffer::Buffer;
 pub use cursor::{cursor_manager::CursorManager, types::*};
-pub use document::{Document, document_manager::DocumentManager, error_types::*, types::*};
+pub use document::{Document, DocumentManager, error_types::*, types::*};
 pub use editor::Editor;
 pub use history::{Edit, Transaction, UndoHistory, ViewState};
 pub use selection::{selection_manager::SelectionManager, types::Selection};

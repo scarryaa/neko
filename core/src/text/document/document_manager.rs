@@ -5,7 +5,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-type Result<T> = std::result::Result<T, DocumentError>;
+use super::DocumentResult;
 
 /// Manages a collection of open [`Document`]s.
 ///
@@ -38,12 +38,12 @@ impl DocumentManager {
     }
 
     /// Creates an empty [`Document`] and returns the corresponding [`DocumentId`].
-    pub fn new_document(&mut self, title: String) -> DocumentId {
+    pub fn new_document(&mut self, title: Option<String>) -> DocumentId {
         let id = self.generate_next_id();
         let document = Document {
             id,
             path: None,
-            title,
+            title: title.unwrap_or("Untitled".to_string()),
             buffer: Buffer::new(),
             modified: false,
         };
@@ -55,7 +55,7 @@ impl DocumentManager {
 
     /// Loads a file from disk and creates a new [`Document`], returning the corresponding
     /// [`DocumentId`].
-    pub fn open_document(&mut self, path: &Path) -> Result<DocumentId> {
+    pub fn open_document(&mut self, path: &Path) -> DocumentResult<DocumentId> {
         let canon_path = fs::canonicalize(path)?;
 
         // If already open, reuse it
@@ -100,7 +100,7 @@ impl DocumentManager {
 
     /// Attempts to save the [`Document`] with the provided [`DocumentId`] under the associated
     /// path.
-    pub fn save_document(&mut self, document_id: DocumentId) -> Result<()> {
+    pub fn save_document(&mut self, document_id: DocumentId) -> DocumentResult<()> {
         let (path, content) = {
             let document = self
                 .documents
@@ -127,7 +127,11 @@ impl DocumentManager {
     // TODO(scarlet): Handle the case where 'save as' occurs and the provided new path matches a different
     // stored Document's path.
     /// Attempts to save the [`Document`] with the provided [`DocumentId`] under the provided path.
-    pub fn save_document_as(&mut self, document_id: DocumentId, new_path: &Path) -> Result<()> {
+    pub fn save_document_as(
+        &mut self,
+        document_id: DocumentId,
+        new_path: &Path,
+    ) -> DocumentResult<()> {
         let canon_new_path = FileIoManager::canonicalize(new_path)?;
         let content = {
             let document = self

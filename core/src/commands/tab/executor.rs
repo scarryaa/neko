@@ -1,16 +1,28 @@
 use super::{TabCommand, TabCommandState, TabContext};
 use crate::{AppState, CloseTabOperationType};
 
-pub fn tab_command_state(app_state: &AppState, id: usize) -> std::io::Result<TabCommandState> {
+pub fn tab_command_state(
+    app_state: &AppState,
+    id: usize,
+) -> Result<TabCommandState, std::io::Error> {
     let tabs = app_state.get_tabs();
 
-    let index = tabs.iter().position(|t| t.get_id() == id).ok_or_else(|| {
-        std::io::Error::new(std::io::ErrorKind::NotFound, "Tab with given id not found")
-    })?;
+    let tab = tabs
+        .iter()
+        .find(|tab| tab.get_id() == id)
+        .ok_or(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("Tab with id {id} not found"),
+        ))?;
 
-    let tab = &tabs[index];
     let is_pinned = tab.get_is_pinned();
-    let has_path = tab.get_file_path().is_some();
+    let document_id = tab.get_document_id();
+
+    let has_path = app_state
+        .get_document_manager()
+        .get_document(document_id)
+        .map(|doc| doc.path.is_some())
+        .unwrap_or(false);
 
     let can_close_others = !app_state
         .get_close_tab_ids(CloseTabOperationType::Others, id, false)?

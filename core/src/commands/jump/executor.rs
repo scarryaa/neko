@@ -63,71 +63,71 @@ pub fn execute_jump_command(command: JumpCommand, app_state: &mut AppState) {
 
     match command {
         JumpCommand::ToPosition { row, column } => {
-            app_state.with_editor(|editor| {
-                editor.move_to(row, column, true);
+            app_state.with_editor_and_buffer(|editor, buffer| {
+                editor.move_to(buffer, row, column, true);
             });
         }
         JumpCommand::ToLine(target) => match target {
             LineTarget::Start => {
-                app_state.with_editor(|editor| {
+                app_state.with_editor_and_buffer(|editor, buffer| {
                     let current_row = editor.get_last_added_cursor().row;
 
-                    editor.move_to(current_row, 0, true);
+                    editor.move_to(buffer, current_row, 0, true);
                 });
             }
             LineTarget::Middle => {
-                app_state.with_editor(|editor| {
+                app_state.with_editor_and_buffer(|editor, buffer| {
                     let current_row = editor.get_last_added_cursor().row;
-                    let line_len = editor.line_length(current_row);
+                    let line_len = editor.line_length(buffer, current_row);
 
-                    editor.move_to(current_row, line_len / 2, true);
+                    editor.move_to(buffer, current_row, line_len / 2, true);
                 });
             }
             LineTarget::End => {
-                app_state.with_editor(|editor| {
+                app_state.with_editor_and_buffer(|editor, buffer| {
                     let current_row = editor.get_last_added_cursor().row;
-                    let line_len = editor.line_length(current_row);
+                    let line_len = editor.line_length(buffer, current_row);
 
-                    editor.move_to(current_row, line_len, true);
+                    editor.move_to(buffer, current_row, line_len, true);
                 });
             }
         },
         JumpCommand::ToDocument(target) => match target {
             DocumentTarget::Start => {
-                app_state.with_editor(|editor| {
-                    editor.move_to(0, 0, true);
+                app_state.with_editor_and_buffer(|editor, buffer| {
+                    editor.move_to(buffer, 0, 0, true);
                 });
             }
             DocumentTarget::Middle => {
-                app_state.with_editor(|editor| {
+                app_state.with_editor_and_buffer(|editor, buffer| {
                     let current_column = editor.get_last_added_cursor().col;
                     let line_count = editor.get_line_count();
 
-                    editor.move_to(line_count / 2, current_column, true);
+                    editor.move_to(buffer, line_count / 2, current_column, true);
                 });
             }
             DocumentTarget::End => {
-                app_state.with_editor(|editor| {
+                app_state.with_editor_and_buffer(|editor, buffer| {
                     let line_count = editor.get_line_count();
-                    let last_line_len = editor.line_length(line_count);
+                    let last_line_len = editor.line_length(buffer, line_count);
 
-                    editor.move_to(line_count, last_line_len, true);
+                    editor.move_to(buffer, line_count, last_line_len, true);
                 });
             }
             DocumentTarget::Quarter => {
-                app_state.with_editor(|editor| {
+                app_state.with_editor_and_buffer(|editor, buffer| {
                     let current_column = editor.get_last_added_cursor().col;
                     let line_count = editor.get_line_count();
 
-                    editor.move_to(line_count / 4, current_column, true);
+                    editor.move_to(buffer, line_count / 4, current_column, true);
                 });
             }
             DocumentTarget::ThreeQuarters => {
-                app_state.with_editor(|editor| {
+                app_state.with_editor_and_buffer(|editor, buffer| {
                     let current_column = editor.get_last_added_cursor().col;
                     let line_count = editor.get_line_count();
 
-                    editor.move_to((line_count / 4) * 3, current_column, true);
+                    editor.move_to(buffer, (line_count / 4) * 3, current_column, true);
                 });
             }
         },
