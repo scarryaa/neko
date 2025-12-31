@@ -1,21 +1,12 @@
-pub mod buffer;
 pub mod cursor;
 pub mod document;
-pub mod edit_ops;
 pub mod editor;
-pub mod history;
 pub mod selection;
-pub mod types;
 pub mod view;
-pub mod width_manager;
 
-pub use buffer::Buffer;
 pub use cursor::{CursorManager, types::*};
 pub use document::{Document, DocumentManager, error_types::*, types::*};
-use editor::DeleteResult;
-pub use editor::Editor;
-pub use history::{Edit, Transaction, UndoHistory, ViewState};
+pub(crate) use editor::types::*;
+pub use editor::{Buffer, Edit, Editor, Transaction, UndoHistory, ViewState};
 pub use selection::{SelectionManager, types::*};
-pub use types::*;
 pub use view::{View, ViewId, ViewManager, Viewport};
-use width_manager::WidthManager;

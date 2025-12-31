@@ -1,29 +1,10 @@
-use super::{CursorManager, Edit, Transaction, UndoHistory, ViewState, WidthManager};
-use crate::{
-    AddCursorDirection, Buffer, Change, ChangeSet, Cursor, CursorEntry, OpFlags, Selection,
-    SelectionManager,
+use super::{
+    Change, ChangeSet, CursorMode, DeleteResult, Edit, OpFlags, SelectionMode, Transaction,
+    UndoHistory, ViewState, WidthManager,
 };
-
-enum SelectionMode {
-    Clear,
-    Extend,
-    Keep,
-}
-
-enum CursorMode {
-    Single,
-    Multiple,
-}
-
-pub(crate) enum DeleteResult {
-    Text {
-        invalidate: Option<usize>,
-    },
-    Newline {
-        row: usize,
-        invalidate: Option<usize>,
-    },
-}
+use crate::{
+    AddCursorDirection, Buffer, Cursor, CursorEntry, CursorManager, Selection, SelectionManager,
+};
 
 #[derive(Default, Debug)]
 pub struct Editor {
