@@ -1,4 +1,17 @@
+use crate::{TabError, TabId};
 use std::{path::PathBuf, str::FromStr};
+
+#[derive(Debug)]
+pub enum TabCommandError {
+    Tab(TabError),
+    UnknownCommand(String),
+}
+
+impl From<TabError> for TabCommandError {
+    fn from(err: TabError) -> Self {
+        TabCommandError::Tab(err)
+    }
+}
 
 #[derive(Clone)]
 pub enum TabCommand {
@@ -64,7 +77,7 @@ impl FromStr for TabCommand {
 }
 
 pub struct TabContext {
-    pub id: usize,
+    pub id: TabId,
     pub is_pinned: bool,
     pub is_modified: bool,
     pub file_path: Option<PathBuf>,

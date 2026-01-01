@@ -72,7 +72,7 @@ impl TabManager {
     pub fn get_close_tab_ids(
         &self,
         _operation_type: CloseTabOperationType,
-        _anchor_tab_id: TabId,
+        _anchor_tab_id: Option<TabId>,
         _close_pinned: bool,
     ) -> Result<Vec<TabId>, TabError> {
         // TODO(scarlet): Adjust this for the new document architecture
@@ -169,7 +169,7 @@ impl TabManager {
         history_enabled: bool,
         close_pinned: bool,
     ) -> Result<Vec<TabId>, TabError> {
-        let ids = self.get_close_tab_ids(operation_type, anchor_tab_id, close_pinned)?;
+        let ids = self.get_close_tab_ids(operation_type, Some(anchor_tab_id), close_pinned)?;
         if ids.is_empty() {
             return Ok(ids);
         }

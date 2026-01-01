@@ -160,7 +160,7 @@ impl From<UiIntent> for UiIntentFfi {
             UiIntent::OpenConfig { id, path } => UiIntentFfi {
                 kind: UiIntentKindFfi::OpenConfig,
                 argument_str: path,
-                argument_u64: id as u64,
+                argument_u64: id.into(),
                 jump_aliases: Vec::new(),
             },
             UiIntent::ShowJumpAliases { aliases } => {
@@ -430,7 +430,7 @@ impl From<TabCommandState> for TabCommandStateFfi {
 impl From<TabContextFfi> for TabContext {
     fn from(ctx: TabContextFfi) -> Self {
         TabContext {
-            id: ctx.id as usize,
+            id: ctx.id.into(),
             is_pinned: ctx.is_pinned,
             is_modified: ctx.is_modified,
             file_path: if ctx.file_path_present && !ctx.file_path.is_empty() {

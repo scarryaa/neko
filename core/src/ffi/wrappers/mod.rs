@@ -7,11 +7,13 @@ pub mod file_tree;
 pub mod shortcuts;
 pub mod theme;
 
-pub use app::*;
-pub use command_palette::*;
-pub use commands::*;
-pub use config::*;
-pub use editor::*;
-pub use file_tree::*;
-pub use shortcuts::*;
-pub use theme::*;
+pub(crate) use app::*;
+pub(crate) use command_palette::*;
+pub(crate) use commands::*;
+pub(crate) use config::*;
+#[allow(unused_imports)]
+pub(crate) use editor::*;
+#[allow(unused_imports)]
+pub(crate) use file_tree::*;
+pub(crate) use shortcuts::*;
+pub(crate) use theme::*;

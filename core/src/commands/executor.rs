@@ -31,14 +31,14 @@ pub fn execute_command(
             let config_path = ConfigManager::get_config_path();
 
             let tab_id = app
-                .ensure_tab_for_path(&config_path)
+                .ensure_tab_for_path(&config_path, true)
                 .map_err(|err| Error::new(ErrorKind::NotFound, err))?;
 
             let config_path_str = config_path.to_string_lossy().to_string();
 
             Ok(CommandResult {
                 intents: vec![UiIntent::OpenConfig {
-                    id: tab_id as i64,
+                    id: tab_id,
                     path: config_path_str,
                 }],
             })

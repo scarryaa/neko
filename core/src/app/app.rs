@@ -67,9 +67,8 @@ impl AppState {
     pub fn get_close_tab_ids(
         &self,
         operation_type: CloseTabOperationType,
-        anchor_tab_id: TabId,
+        anchor_tab_id: Option<TabId>,
         close_pinned: bool,
-        // TODO(scarlet): Remove io::Error/create TabError type
     ) -> Result<Vec<TabId>, TabError> {
         self.tab_manager
             .get_close_tab_ids(operation_type, anchor_tab_id, close_pinned)
@@ -91,8 +90,21 @@ impl AppState {
         self.view_manager.set_active_view(id);
     }
 
+    /// Helper to get the active view and its document.
+    pub fn with_active_view<F, R>(&self, f: F) -> Option<R>
+    where
+        F: FnOnce(&View, &Document) -> R,
+    {
+        let view_id = self.view_manager.active_view()?;
+        let view = self.view_manager.get_view(view_id)?;
+        let document_id = view.document_id();
+        let document = self.document_manager.get_document(document_id)?;
+
+        Some(f(view, document))
+    }
+
     /// Helper to run something on the active view and its document.
-    pub fn with_active_view<F, R>(&mut self, f: F) -> Option<R>
+    pub fn with_active_view_mut<F, R>(&mut self, f: F) -> Option<R>
     where
         F: FnOnce(&mut View, &mut Document) -> R,
     {
@@ -104,20 +116,34 @@ impl AppState {
         Some(f(view, document))
     }
 
+    /// Returns a reference to the current (active) [`Editor`].
+    pub fn editor(&self) -> Option<&Editor> {
+        let view_id = self.view_manager.active_view()?;
+        let view = self.view_manager.get_view(view_id)?;
+        Some(view.editor())
+    }
+
+    /// Returns a mutable reference to the current (active) [`Editor`].
+    pub fn editor_mut(&mut self) -> Option<&mut Editor> {
+        let view_id = self.view_manager.active_view()?;
+        let view = self.view_manager.get_view_mut(view_id)?;
+        Some(view.editor_mut())
+    }
+
     /// Helper to run something on the active view's editor and the active document's buffer.
-    pub fn with_editor_and_buffer<F, R>(&mut self, f: F) -> Option<R>
+    pub fn with_editor_and_buffer_mut<F, R>(&mut self, f: F) -> Option<R>
     where
         F: FnOnce(&mut Editor, &mut Buffer) -> R,
     {
-        self.with_active_view(|view, document| f(view.editor_mut(), &mut document.buffer))
+        self.with_active_view_mut(|view, document| f(view.editor_mut(), &mut document.buffer))
     }
 
     /// Helper to run something on the active document's buffer.
-    pub fn with_buffer<F, R>(&mut self, f: F) -> Option<R>
+    pub fn with_buffer_mut<F, R>(&mut self, f: F) -> Option<R>
     where
         F: FnOnce(&mut Buffer) -> R,
     {
-        self.with_active_view(|_, document| f(&mut document.buffer))
+        self.with_active_view_mut(|_, document| f(&mut document.buffer))
     }
 
     // Setters
@@ -237,7 +263,7 @@ impl AppState {
         self.tab_manager.pin_tab(id)
     }
 
-    pub fn unpin_tab(&mut self, id: crate::TabId) -> Result<(), TabError> {
+    pub fn unpin_tab(&mut self, id: TabId) -> Result<(), TabError> {
         self.tab_manager.unpin_tab(id)
     }
 

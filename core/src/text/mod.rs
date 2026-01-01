@@ -5,7 +5,7 @@ pub mod selection;
 pub mod view;
 
 pub use cursor::{CursorManager, types::*};
-pub use document::{Document, DocumentManager, error_types::*, types::*};
+pub use document::{Document, DocumentManager, error::*, types::*};
 pub(crate) use editor::types::*;
 pub use editor::{Buffer, Edit, Editor, Transaction, UndoHistory, ViewState};
 pub use selection::{SelectionManager, types::*};

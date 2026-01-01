@@ -4,16 +4,16 @@ use crate::{
 };
 
 impl Editor {
-    pub(crate) fn get_text(&self) -> String {
-        self.buffer().get_text()
+    pub(crate) fn get_text(&self, buffer: &Buffer) -> String {
+        buffer.get_text()
     }
 
-    pub(crate) fn get_line(&self, line_idx: usize) -> String {
-        self.buffer().get_line(line_idx)
+    pub(crate) fn get_line(&self, buffer: &Buffer, line_idx: usize) -> String {
+        buffer.get_line(line_idx)
     }
 
-    pub(crate) fn get_line_count(&self) -> usize {
-        self.buffer().line_count()
+    pub(crate) fn get_line_count(&self, buffer: &Buffer) -> usize {
+        buffer.line_count()
     }
 
     pub(crate) fn get_cursor_positions(self: &Editor) -> Vec<CursorPosition> {
@@ -50,13 +50,13 @@ impl Editor {
         }
     }
 
-    pub(crate) fn copy(self: &Editor) -> String {
+    pub(crate) fn copy(self: &Editor, buffer: &Buffer) -> String {
         let selection = self.selection().clone();
 
         if selection.is_active() {
-            self.buffer().get_text_range(
-                selection.start.get_idx(self.buffer()),
-                selection.end.get_idx(self.buffer()),
+            buffer.get_text_range(
+                selection.start.get_idx(buffer),
+                selection.end.get_idx(buffer),
             )
         } else {
             "".to_string()

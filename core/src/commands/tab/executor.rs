@@ -1,18 +1,11 @@
-use crate::{AppState, CloseTabOperationType, TabCommand, TabCommandState, TabContext};
+use crate::{
+    AppState, CloseTabOperationType, TabCommand, TabCommandState, TabContext, TabError, TabId,
+};
 
-pub fn tab_command_state(
-    app_state: &AppState,
-    id: usize,
-) -> Result<TabCommandState, std::io::Error> {
-    let tabs = app_state.get_tabs();
+use super::TabCommandError;
 
-    let tab = tabs
-        .iter()
-        .find(|tab| tab.get_id() == id)
-        .ok_or(std::io::Error::new(
-            std::io::ErrorKind::NotFound,
-            format!("Tab with id {id} not found"),
-        ))?;
+pub fn tab_command_state(app_state: &AppState, id: TabId) -> Result<TabCommandState, TabError> {
+    let tab = app_state.get_tab(id)?;
 
     let is_pinned = tab.get_is_pinned();
     let document_id = tab.get_document_id();
@@ -24,16 +17,16 @@ pub fn tab_command_state(
         .unwrap_or(false);
 
     let can_close_others = !app_state
-        .get_close_tab_ids(CloseTabOperationType::Others, id, false)?
+        .get_close_tab_ids(CloseTabOperationType::Others, Some(id), false)?
         .is_empty();
     let can_close_left = !app_state
-        .get_close_tab_ids(CloseTabOperationType::Left, id, false)?
+        .get_close_tab_ids(CloseTabOperationType::Left, Some(id), false)?
         .is_empty();
     let can_close_right = !app_state
-        .get_close_tab_ids(CloseTabOperationType::Right, id, false)?
+        .get_close_tab_ids(CloseTabOperationType::Right, Some(id), false)?
         .is_empty();
     let can_close_clean = !app_state
-        .get_close_tab_ids(CloseTabOperationType::Clean, 0, false)?
+        .get_close_tab_ids(CloseTabOperationType::Clean, None, false)?
         .is_empty();
 
     Ok(TabCommandState {
@@ -54,13 +47,13 @@ pub fn run_tab_command(
     id: &str,
     ctx: &TabContext,
     close_pinned: bool,
-) -> std::io::Result<()> {
+) -> Result<(), TabCommandError> {
     use CloseTabOperationType::*;
     use TabCommand::*;
 
-    let command: TabCommand = id.parse().map_err(|_| {
-        std::io::Error::new(std::io::ErrorKind::InvalidInput, "Unknown tab command")
-    })?;
+    let command: TabCommand = id
+        .parse()
+        .map_err(|_| TabCommandError::UnknownCommand(id.to_string()))?;
 
     match command {
         tab_command @ (Close | CloseOthers | CloseLeft | CloseRight | CloseAll | CloseClean) => {

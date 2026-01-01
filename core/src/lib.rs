@@ -26,6 +26,6 @@ pub(crate) use text::ChangeSet;
 use text::CursorManager;
 pub use text::{
     AddCursorDirection, Buffer, Cursor, CursorEntry, Document, DocumentId, DocumentManager, Editor,
-    Selection, SelectionManager, View, ViewId, ViewManager, Viewport, document::error_types::*,
+    Selection, SelectionManager, View, ViewId, ViewManager, Viewport, document::error::*,
 };
 pub use theme::{Theme, ThemeManager};

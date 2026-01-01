@@ -287,10 +287,10 @@ pub mod ffi {
 
         // AppState
         fn new_app_state(root_path: &str, config_manager: &ConfigManager) -> Result<Box<AppState>>;
-        #[cxx_name = "get_active_editor"]
-        pub(crate) fn get_active_editor_wrapper(self: &AppState) -> &Editor;
-        #[cxx_name = "get_active_editor_mut"]
-        pub(crate) fn get_active_editor_mut_wrapper(self: &mut AppState) -> &mut Editor;
+        #[cxx_name = "active_editor"]
+        pub(crate) fn active_editor_wrapper(self: &AppState) -> &Editor;
+        #[cxx_name = "active_editor_mut"]
+        pub(crate) fn active_editor_mut_wrapper(self: &mut AppState) -> &mut Editor;
         pub(crate) fn get_file_tree(self: &AppState) -> &FileTree;
         pub(crate) fn get_file_tree_mut(self: &mut AppState) -> &mut FileTree;
         #[cxx_name = "get_close_tab_ids"]
@@ -328,10 +328,10 @@ pub mod ffi {
         pub(crate) fn pin_tab_wrapper(self: &mut AppState, id: u64) -> PinTabResult;
         #[cxx_name = "unpin_tab"]
         pub(crate) fn unpin_tab_wrapper(self: &mut AppState, id: u64) -> PinTabResult;
-        #[cxx_name = "save_tab"]
-        pub(crate) fn save_tab_wrapper(self: &mut AppState, id: u64) -> bool;
-        #[cxx_name = "save_tab_as"]
-        pub(crate) fn save_tab_as_wrapper(self: &mut AppState, id: u64, path: &str) -> bool;
+        // #[cxx_name = "save_tab"]
+        // pub(crate) fn save_tab_wrapper(self: &mut AppState, id: u64) -> bool;
+        // #[cxx_name = "save_tab_as"]
+        // pub(crate) fn save_tab_as_wrapper(self: &mut AppState, id: u64, path: &str) -> bool;
         #[cxx_name = "set_tab_scroll_offsets"]
         pub(crate) fn set_tab_scroll_offsets_wrapper(
             self: &mut AppState,
@@ -431,12 +431,12 @@ pub mod ffi {
         #[cxx_name = "set_line_width"]
         pub(crate) fn update_line_width(self: &mut Editor, line_idx: usize, line_width: f64);
         pub(crate) fn needs_width_measurement(self: &Editor, line_idx: usize) -> bool;
-        pub(crate) fn get_text(self: &Editor) -> String;
-        pub(crate) fn get_line(self: &Editor, line_idx: usize) -> String;
-        pub(crate) fn get_line_count(self: &Editor) -> usize;
+        pub(crate) fn get_text(self: &Editor, buffer: &Buffer) -> String;
+        pub(crate) fn get_line(self: &Editor, buffer: &Buffer, line_idx: usize) -> String;
+        pub(crate) fn get_line_count(self: &Editor, buffer: &Buffer) -> usize;
         pub(crate) fn get_cursor_positions(self: &Editor) -> Vec<CursorPosition>;
         pub(crate) fn get_selection(self: &mut Editor) -> Selection;
-        pub(crate) fn copy(self: &Editor) -> String;
+        pub(crate) fn copy(self: &Editor, buffer: &Buffer) -> String;
         pub(crate) fn paste(self: &mut Editor, buffer: &mut Buffer, text: &str) -> ChangeSetFfi;
         #[cxx_name = "add_cursor"]
         pub(crate) fn add_cursor_wrapper(

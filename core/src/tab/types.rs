@@ -33,12 +33,10 @@ pub enum TabError {
     Move(MoveTabError),
 }
 
-impl TabError {}
-
 impl fmt::Display for TabError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            TabError::InvalidId(id) => write!(f, "Tab id {id} must not be 0"),
+            TabError::InvalidId(_) => write!(f, "Tab id must not be 0"),
             TabError::NotFound(id) => write!(f, "Tab {id} not found"),
             TabError::Move(err) => write!(f, "{err}"),
         }

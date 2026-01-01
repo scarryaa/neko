@@ -1,4 +1,4 @@
-use crate::{JumpAliasInfo, JumpManagementCommand};
+use crate::{JumpAliasInfo, JumpManagementCommand, TabId};
 use std::{fmt::Display, str::FromStr};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -70,7 +70,7 @@ impl Display for Command {
 pub enum UiIntent {
     ToggleFileExplorer,
     ApplyTheme { name: String },
-    OpenConfig { id: i64, path: String },
+    OpenConfig { id: TabId, path: String },
     ShowJumpAliases { aliases: Vec<JumpAliasInfo> },
 }
 

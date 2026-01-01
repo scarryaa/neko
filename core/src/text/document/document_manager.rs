@@ -26,7 +26,7 @@ impl DocumentManager {
     pub fn new() -> Self {
         Self {
             documents: HashMap::new(),
-            next_document_id: DocumentId(1),
+            next_document_id: DocumentId::new(1).expect("Document id should not be 0"),
             path_index: HashMap::new(),
         }
     }

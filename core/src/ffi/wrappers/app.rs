@@ -1,10 +1,11 @@
 use crate::{
-    AppState, ConfigManager, Editor, Tab,
+    AppState, ConfigManager, Editor, Tab, TabError, TabId,
     ffi::{
         CloseManyTabsResult, CloseTabOperationTypeFfi, FileOpenResult, MoveActiveTabResult,
         NewTabResult, PinTabResult, ScrollOffsetFfi, TabSnapshot, TabSnapshotMaybe, TabsSnapshot,
     },
 };
+use std::path::Path;
 
 pub fn new_app_state(
     root_path: &str,
@@ -23,13 +24,13 @@ pub fn new_app_state(
 }
 
 impl AppState {
-    pub(crate) fn get_active_editor_wrapper(&self) -> &Editor {
-        self.get_active_editor()
+    pub(crate) fn active_editor_wrapper(&self) -> &Editor {
+        self.editor()
             .expect("Attempted to access editor but failed")
     }
 
-    pub(crate) fn get_active_editor_mut_wrapper(&mut self) -> &mut Editor {
-        self.get_active_editor_mut()
+    pub(crate) fn active_editor_mut_wrapper(&mut self) -> &mut Editor {
+        self.editor_mut()
             .expect("Attempted to access mutable editor but failed")
     }
 
@@ -39,10 +40,16 @@ impl AppState {
         anchor_tab_id: u64,
         close_pinned: bool,
     ) -> Vec<u64> {
-        self.get_close_tab_ids(operation_type.into(), anchor_tab_id.into(), close_pinned)
-            .expect("Unable to get 'close other' tab ids")
-            .iter()
-            .map(|id| (*id).into())
+        let anchor = if anchor_tab_id == 0 {
+            None
+        } else {
+            Some(TabId::new(anchor_tab_id).expect("Anchor tab id must not be 0"))
+        };
+
+        self.get_close_tab_ids(operation_type.into(), anchor, close_pinned)
+            .expect("Unable to get close tab ids")
+            .into_iter()
+            .map(|id| id.into())
             .collect()
     }
 
@@ -155,15 +162,15 @@ impl AppState {
         }
     }
 
-    pub(crate) fn save_tab_wrapper(&mut self, id: u64) -> bool {
-        self.save_tab(id.into()).is_ok()
+    pub(crate) fn save_document_wrapper(&mut self, id: u64) -> bool {
+        self.save_document(id.into()).is_ok()
     }
 
-    pub(crate) fn save_tab_as_wrapper(&mut self, id: u64, path: &str) -> bool {
-        self.save_tab_as(id.into(), path).is_ok()
+    pub(crate) fn save_document_as_wrapper(&mut self, id: u64, path: &str) -> bool {
+        self.save_document_as(id.into(), &Path::new(path)).is_ok()
     }
 
-    pub(crate) fn set_active_tab_wrapper(self: &mut AppState, id: u64) -> Result<()> {
+    pub(crate) fn set_active_tab_wrapper(&mut self, id: u64) -> Result<(), TabError> {
         self.set_active_tab(id.into())
     }
 

@@ -6,6 +6,7 @@ pub type DocumentResult<T> = std::result::Result<T, DocumentError>;
 #[derive(Debug)]
 pub enum DocumentError {
     Io(io::Error),
+    InvalidId(u64),
     NoPath(DocumentId),
     NotFound(DocumentId),
 }
@@ -14,6 +15,7 @@ impl fmt::Display for DocumentError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             DocumentError::Io(error) => write!(f, "IO error: {error}"),
+            DocumentError::InvalidId(_) => write!(f, "Document id must not be 0"),
             DocumentError::NoPath(id) => write!(f, "Document {id:?} has no path"),
             DocumentError::NotFound(id) => write!(f, "Document {id:?} not found"),
         }

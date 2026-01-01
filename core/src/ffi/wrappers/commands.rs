@@ -6,7 +6,7 @@ use crate::{
 
 // Tab commands
 pub(crate) fn get_tab_command_state(app_state: &AppState, id: u64) -> TabCommandStateFfi {
-    match tab_command_state(app_state, id as usize) {
+    match tab_command_state(app_state, id.into()) {
         Ok(state) => state.into(),
         Err(_) => TabCommandStateFfi {
             can_close: false,
