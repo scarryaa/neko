@@ -1,8 +1,8 @@
 use super::*;
 use crate::{
     AddCursorDirection, ChangeSet, CloseTabOperationType, Command, CommandResult, Config, Cursor,
-    DocumentTarget, JumpAliasInfo, JumpCommand, JumpManagementCommand, LineTarget, TabCommandState,
-    TabContext, UiIntent,
+    DocumentTarget, FileSystemError, JumpAliasInfo, JumpCommand, JumpManagementCommand, LineTarget,
+    TabCommandState, TabContext, UiIntent,
 };
 use std::path::PathBuf;
 
@@ -383,6 +383,16 @@ impl From<JumpCommand> for JumpCommandFfi {
                 line_target: LineTargetFfi::Start,
                 document_target: DocumentTargetFfi::Start,
             },
+        }
+    }
+}
+
+impl From<FileSystemError> for FileSystemErrorFfi {
+    fn from(error: FileSystemError) -> Self {
+        match error {
+            FileSystemError::Io(_) => FileSystemErrorFfi::Io,
+            FileSystemError::MissingName => FileSystemErrorFfi::MissingName,
+            FileSystemError::BadSystemTime(_) => FileSystemErrorFfi::BadSystemTime,
         }
     }
 }
