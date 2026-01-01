@@ -1,5 +1,5 @@
-pub mod config_manager;
+pub mod manager;
 mod types;
 
-pub use config_manager::ConfigManager;
+pub use manager::ConfigManager;
 pub use types::Config;

@@ -51,6 +51,7 @@ impl ShortcutsManager {
     }
 
     pub fn save(&self) -> Result<(), std::io::Error> {
+        // TODO(scarlet): Eventually handle the lock being poisoned
         let shortcuts = self.inner.read().unwrap();
         let json = serde_json::to_string_pretty(&*shortcuts)?;
         fs::write(&self.file_path, json)?;
@@ -79,6 +80,7 @@ impl ShortcutsManager {
     }
 
     pub fn get_snapshot(&self) -> Shortcuts {
+        // TODO(scarlet): Eventually handle the lock being poisoned
         self.inner.read().unwrap().clone()
     }
 
@@ -87,6 +89,7 @@ impl ShortcutsManager {
         F: FnOnce(&mut Shortcuts),
     {
         {
+            // TODO(scarlet): Eventually handle the lock being poisoned
             let mut shortcuts = self.inner.write().unwrap();
             modify_fn(&mut shortcuts);
         }

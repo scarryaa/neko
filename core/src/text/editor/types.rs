@@ -35,13 +35,3 @@ pub(super) enum CursorMode {
     Single,
     Multiple,
 }
-
-pub(super) enum DeleteResult {
-    Text {
-        invalidate: Option<usize>,
-    },
-    Newline {
-        row: usize,
-        invalidate: Option<usize>,
-    },
-}

@@ -1,8 +1,8 @@
-use super::{DeleteResult, Edit, OpFlags};
+use super::{ChangeSet, DeleteResult, Edit, OpFlags};
 use crate::{Buffer, Cursor, CursorEntry, Editor};
 
 impl Editor {
-    pub fn insert_text(&mut self, buffer: &mut Buffer, text: &str) -> super::ChangeSet {
+    pub fn insert_text(&mut self, buffer: &mut Buffer, text: &str) -> ChangeSet {
         let res = self.with_op(
             buffer,
             true,
@@ -39,7 +39,7 @@ impl Editor {
         res
     }
 
-    pub fn backspace(&mut self, buffer: &mut Buffer) -> super::ChangeSet {
+    pub fn backspace(&mut self, buffer: &mut Buffer) -> ChangeSet {
         let res = self.with_op(
             buffer,
             true,
@@ -71,7 +71,7 @@ impl Editor {
         res
     }
 
-    pub fn delete(&mut self, buffer: &mut Buffer) -> super::ChangeSet {
+    pub fn delete(&mut self, buffer: &mut Buffer) -> ChangeSet {
         let res = self.with_op(
             buffer,
             true,
@@ -210,6 +210,7 @@ impl Editor {
                 .cursors
                 .iter()
                 .position(|c| c.id == id)
+                // TODO(scarlet): Convert this to CursorId
                 .unwrap_or(0);
             self.cursor_manager_mut().set_active_cursor_index(new_index);
         } else {

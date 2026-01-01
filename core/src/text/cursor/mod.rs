@@ -1,5 +1,5 @@
-pub mod cursor_manager;
+pub mod manager;
 pub mod types;
 
-pub use cursor_manager::CursorManager;
+pub use manager::CursorManager;
 pub use types::*;

@@ -1,300 +1,327 @@
-use crate::FileNode;
+use crate::{FileNode, FileSystemResult};
 use std::{
     collections::{HashMap, HashSet},
     fs::{self},
-    io,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 
-#[repr(C)]
+/// Represents a file tree.
+///
+/// Stores relevant information about the files/directories therein, such as the root directory
+/// path, the nodes (and their children) contained within the root path, and other useful metadata
+/// like which directories are 'expanded' or 'selected'.
 #[derive(Debug)]
 pub struct FileTree {
-    pub nodes: Vec<FileNode>,
-    pub root_path: PathBuf,
-    expanded: HashMap<PathBuf, Vec<FileNode>>,
-    selected: HashSet<PathBuf>,
-    current: Option<PathBuf>,
-    pub cached_visible: Vec<FileNode>,
+    /// The root path of the tree; e.g. the top-most directory.
+    pub root_path: Option<PathBuf>,
+    /// Stores all of the tree's [`FileNode`]s, keyed by the node's path.
+    pub loaded_nodes: HashMap<PathBuf, Vec<FileNode>>,
+    /// Holds the set of currently expanded paths, where each path is from a [`FileNode`]
+    /// entry (must be a directory).
+    expanded_paths: HashSet<PathBuf>,
+    /// Holds the set of currently selected paths, where each path is from a [`FileNode`]
+    /// entry.
+    selected_paths: HashSet<PathBuf>,
+    /// The path currently used as the anchor for navigation or other movement actions.
+    current_path: Option<PathBuf>,
 }
 
 impl FileTree {
-    pub fn new(root: Option<&str>) -> Result<Self, io::Error> {
-        if root.is_none() || root.is_some_and(|r| r.is_empty()) {
-            return Ok(Self {
-                nodes: Vec::new(),
-                root_path: PathBuf::new(),
-                expanded: HashMap::new(),
-                selected: HashSet::new(),
-                current: None,
-                cached_visible: Vec::new(),
-            });
+    /// Constructs a `FileTree` for the given root directory.
+    ///
+    /// If `Some(path)` is provided and the path is a valid root path, the
+    /// immediate children of that directory are loaded and stored in
+    /// `loaded_nodes`, and the root directory is marked as expanded.
+    ///
+    /// If `None` is provided, or if the path is not a root path, an empty
+    /// `FileTree` is returned (see [`FileTree::empty`]).
+    pub fn new<P: AsRef<Path>>(root_path_opt: Option<P>) -> FileSystemResult<Self> {
+        // No root path was provided, so initialize with an "empty" state.
+        let root_path_buf = match root_path_opt {
+            None => return Ok(Self::empty()),
+            Some(path) => {
+                let path_ref = path.as_ref();
+                if !path_ref.has_root() {
+                    return Ok(Self::empty());
+                }
+                path_ref.to_path_buf()
+            }
+        };
+
+        // TODO(scarlet): Create a FileIoManager fn for this
+        let mut child_nodes = Vec::new();
+        for entry_res in fs::read_dir(&root_path_buf)? {
+            let entry = entry_res?;
+            let node = FileNode::from_entry(entry, 0)?;
+            child_nodes.push(node);
         }
 
-        let entries = fs::read_dir(root.unwrap_or(""))?;
+        let mut loaded_nodes = HashMap::new();
+        loaded_nodes.insert(root_path_buf.clone(), child_nodes.clone());
 
-        let nodes: Vec<FileNode> = entries
-            .filter_map(|entry| {
-                let entry = entry.ok()?;
-                let path = entry.path();
-                let metadata = entry.metadata().ok()?;
-
-                Some(FileNode {
-                    path: path.to_string_lossy().into_owned(),
-                    name: path.file_name()?.to_string_lossy().into_owned(),
-                    is_dir: metadata.is_dir(),
-                    is_hidden: path
-                        .file_name()
-                        .and_then(|n| n.to_str())
-                        .map(|n| n.starts_with('.'))
-                        .unwrap_or(false),
-                    size: metadata.len(),
-                    modified: metadata
-                        .modified()
-                        .ok()?
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .ok()?
-                        .as_secs(),
-                    depth: 1,
-                })
-            })
-            .collect();
+        let mut expanded_paths = HashSet::new();
+        expanded_paths.insert(root_path_buf.clone());
 
         Ok(Self {
-            nodes,
-            root_path: PathBuf::from(root.unwrap_or("")),
-            expanded: HashMap::new(),
-            selected: HashSet::new(),
-            current: None,
-            cached_visible: Vec::new(),
+            root_path: Some(root_path_buf),
+            loaded_nodes,
+            expanded_paths,
+            selected_paths: HashSet::new(),
+            current_path: None,
         })
     }
 
-    pub fn set_root_path(&mut self, path: &str) {
-        self.root_path = PathBuf::from(path);
-
-        self.expanded.clear();
-        self.selected.clear();
-        self.current = None;
-        self.cached_visible.clear();
-        self.nodes.clear();
-
-        if path.is_empty() {
-            return;
+    /// Creates an empty `FileTree` with no root path and no loaded nodes.
+    ///
+    /// This represents a valid tree in an "uninitialized" state; no files are
+    /// loaded, no directories are expanded, and there is no current or
+    /// selected path.
+    pub fn empty() -> Self {
+        Self {
+            root_path: None,
+            loaded_nodes: HashMap::new(),
+            expanded_paths: HashSet::new(),
+            selected_paths: HashSet::new(),
+            current_path: None,
         }
-
-        self.nodes = fs::read_dir(path)
-            .ok()
-            .map(|entries| {
-                entries
-                    .filter_map(|entry| FileNode::from_entry(entry.ok()?))
-                    .collect()
-            })
-            .unwrap_or_default();
     }
 
-    pub fn get_children(&mut self, path: &str) -> &[FileNode] {
-        let path_buf = PathBuf::from(path);
+    pub fn set_root_path<P: AsRef<Path>>(&mut self, root_path: P) -> FileSystemResult<()> {
+        let path = root_path.as_ref().to_path_buf();
+        let new_tree = FileTree::new(Some(path))?;
 
-        self.expanded.entry(path_buf.clone()).or_insert_with(|| {
-            let mut children: Vec<FileNode> = fs::read_dir(path)
-                .ok()
-                .map(|entries| {
-                    entries
-                        .filter_map(|entry| {
-                            let entry = entry.ok()?;
-                            FileNode::from_entry(entry)
-                        })
-                        .collect()
-                })
-                .unwrap_or_default();
+        *self = new_tree;
 
-            children.sort_by(|a, b| match (a.is_dir, b.is_dir) {
-                (true, false) => std::cmp::Ordering::Less,
-                (false, true) => std::cmp::Ordering::Greater,
-                _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-            });
-
-            children
-        })
+        Ok(())
     }
 
-    pub fn get_visible_nodes(&self) -> Vec<&FileNode> {
-        let mut visible = Vec::new();
-        self.collect_visible(&self.root_path, &mut visible, 0);
-        visible
-    }
+    pub fn get_children<P: AsRef<Path>>(
+        &mut self,
+        directory_path: P,
+    ) -> FileSystemResult<&[FileNode]> {
+        let path = directory_path.as_ref().to_path_buf();
 
-    fn collect_visible<'a>(
-        &'a self,
-        path: &PathBuf,
-        visible: &mut Vec<&'a FileNode>,
-        _depth: usize,
-    ) {
-        if let Some(children) = self.expanded.get(path) {
-            for node in children {
-                visible.push(node);
-
-                let node_path = PathBuf::from(node.path_str());
-                if node.is_dir && self.expanded.contains_key(&node_path) {
-                    self.collect_visible(&node_path, visible, _depth + 1);
-                }
+        // If the nodes for the given path aren't already loaded, add them
+        if !self.loaded_nodes.contains_key(&path) {
+            // TODO(scarlet): Create a FileIoManager fn for this
+            let mut children = Vec::new();
+            for entry_res in fs::read_dir(&path)? {
+                let entry = entry_res?;
+                // Actual depth will be updated later
+                let node = FileNode::from_entry(entry, 1)?;
+                children.push(node);
             }
+
+            children.sort_by_key(|n| (!n.is_dir, n.name.to_lowercase()));
+            self.loaded_nodes.insert(path.clone(), children);
         }
+
+        // Otherwise just return the already-loaded nodes
+        Ok(self.loaded_nodes.get(&path).unwrap())
     }
 
-    fn collect_visible_owned(&self, path: &PathBuf, visible: &mut Vec<FileNode>, depth: usize) {
-        if let Some(children) = self.expanded.get(path) {
-            for node in children {
-                let node_with_depth = FileNode {
-                    path: node.path.clone(),
-                    name: node.name.clone(),
-                    is_dir: node.is_dir,
-                    is_hidden: node.is_hidden,
-                    size: node.size,
-                    modified: node.modified,
-                    depth,
-                };
+    /// Marks the provided path as collapsed, then fetches its children., serving as a "refresh" for
+    /// that path.
+    ///
+    /// Mostly used for scoped updates after, e.g. creating a new file/folder in a directory.
+    pub fn refresh_dir<P: AsRef<Path>>(&mut self, path: P) -> FileSystemResult<()> {
+        let path_buf = path.as_ref().to_path_buf();
 
-                visible.push(node_with_depth);
-
-                let node_path = PathBuf::from(&node.path);
-                if node.is_dir && self.expanded.contains_key(&node_path) {
-                    self.collect_visible_owned(&node_path, visible, depth + 1);
-                }
-            }
+        if path_buf.is_dir() {
+            self.expanded_paths.remove(&path_buf);
+            self.get_children(path)?;
         }
+
+        Ok(())
     }
 
-    pub fn get_visible_nodes_owned(&self) -> Vec<FileNode> {
-        let mut visible = Vec::new();
-        self.collect_visible_owned(&self.root_path, &mut visible, 0);
-        visible
+    /// Returns true if the provided path is expanded, and false if it is not.
+    fn is_expanded<P: AsRef<Path>>(&self, path: P) -> bool {
+        self.expanded_paths.contains(path.as_ref())
     }
 
-    pub fn next(&self, current_path: &str) -> Option<&FileNode> {
-        let visible = self.get_visible_nodes();
-        let current_idx = visible.iter().position(|n| n.path == current_path)?;
-        visible.get(current_idx + 1).copied()
+    /// Returns the "next" node in the tree (the one below the `current_path` node), if any.
+    pub fn next<P: AsRef<Path>>(&self, current_path: P) -> Option<FileNode> {
+        let path = current_path.as_ref();
+
+        let visible_nodes = self.visible_nodes();
+        let idx = visible_nodes.iter().position(|node| node.path == path)?;
+        visible_nodes.get(idx + 1).cloned()
     }
 
-    pub fn prev(&self, current_path: &str) -> Option<&FileNode> {
-        let visible = self.get_visible_nodes();
-        let current_idx = visible.iter().position(|n| n.path == current_path)?;
-        if current_idx > 0 {
-            visible.get(current_idx - 1).copied()
-        } else {
+    /// Returns the "previous" node in the tree (the one above the `current_path` node), if any.
+    pub fn prev<P: AsRef<Path>>(&self, current_path: P) -> Option<FileNode> {
+        let path = current_path.as_ref();
+
+        let visible_nodes = self.visible_nodes();
+        let idx = visible_nodes.iter().position(|node| node.path == path)?;
+        if idx == 0 {
             None
+        } else {
+            visible_nodes.get(idx - 1).cloned()
         }
     }
 
-    pub fn toggle_expanded(&mut self, path: &str) {
-        let path_buf = PathBuf::from(path);
+    /// Toggles selection on a node, selecting it if it is not selected, and unselecting it if it
+    /// is selected.
+    pub fn toggle_select_for_path<P: AsRef<Path>>(&mut self, path: P) {
+        let path_buf = path.as_ref().to_path_buf();
 
+        match self.selected_paths.contains(&path_buf) {
+            true => self.selected_paths.remove(&path_buf),
+            false => self.selected_paths.insert(path_buf),
+        };
+    }
+
+    /// Returns the currently selected path if there is one, or `None`.
+    pub fn current_path(&self) -> Option<PathBuf> {
+        self.current_path.clone()
+    }
+
+    /// Returns the expanded paths by moving it.
+    pub fn expanded_owned(&self) -> HashSet<PathBuf> {
+        self.expanded_paths.clone()
+    }
+
+    /// Returns the selected paths by moving it.
+    pub fn selected_owned(&self) -> HashSet<PathBuf> {
+        self.selected_paths.clone()
+    }
+
+    /// Toggles the expanded/collapsed state of the provided path. If it is not expanded, it is
+    /// added to `expanded_paths` and its children are retrieved.
+    pub fn toggle_expanded<P: AsRef<Path>>(&mut self, path: P) {
+        let path_buf = path.as_ref().to_path_buf();
         if !path_buf.is_dir() {
             return;
         }
 
-        if self.is_expanded(path) {
-            self.expanded.remove(&path_buf);
+        if self.is_expanded(&path) {
+            self.expanded_paths.remove(&path_buf);
         } else {
+            // TODO(scarlet): Do we need to do this? Only if we are expanding the directory for the
+            // first time, but then we would need to track if it has been expanded before or not.
             self.get_children(path);
         }
     }
 
-    pub fn set_collapsed(&mut self, path: &str) {
-        let path_buf = PathBuf::from(path);
+    /// Removes the provided path from `expanded_paths`, effectively marking it as collapsed.
+    pub fn set_collapsed<P: AsRef<Path>>(&mut self, path: P) {
+        let path_buf = path.as_ref().to_path_buf();
 
         if path_buf.is_dir() && self.is_expanded(path) {
-            self.expanded.remove(&path_buf);
+            self.expanded_paths.remove(&path_buf);
         }
     }
 
-    pub fn set_expanded(&mut self, path: &str) {
-        let mut path_buf = PathBuf::from(path);
+    /// Ensures that the directory containing `path` (and all of its ancestors) are marked as
+    /// expanded and have their children loaded.
+    pub fn ensure_path_visible<P: AsRef<Path>>(&mut self, path: P) -> FileSystemResult<()> {
+        let mut path_buf = path.as_ref().to_path_buf();
 
+        // If the provided path is not a directory, "redirect" it to the parent directory.
         if !path_buf.is_dir() {
             if let Some(parent) = path_buf.parent() {
                 path_buf = parent.to_path_buf();
             } else {
-                return;
+                // Path has no parent; nothing to expand.
+                return Ok(());
             }
         }
 
-        if !self.root_path.as_os_str().is_empty() && !path_buf.starts_with(&self.root_path) {
-            return;
+        // Return early if the root path is `None`.
+        let root_path = match &self.root_path {
+            Some(path) => path,
+            None => return Ok(()),
+        };
+
+        // Return early if the provided path is not a descendant of the root directory/path.
+        if !path_buf.starts_with(root_path) {
+            return Ok(());
         }
 
-        let mut ancestors = Vec::new();
-        let mut current = path_buf;
+        // Collect all ancestors from `path_buf` up to `root`.
+        let mut ancestor_paths = Vec::new();
+        let mut current_path = path_buf;
 
         loop {
-            ancestors.push(current.clone());
+            ancestor_paths.push(current_path.clone());
 
-            if !self.root_path.as_os_str().is_empty() && current == self.root_path {
+            // Exit if we reached the root path.
+            if current_path == *root_path {
                 break;
             }
 
-            let Some(parent) = current.parent() else {
+            // Exit if the current path has no parent.
+            let Some(parent) = current_path.parent() else {
                 break;
             };
 
-            current = parent.to_path_buf();
+            current_path = parent.to_path_buf();
         }
 
-        ancestors.reverse();
+        // Ensure we expand from the root downwards.
+        ancestor_paths.reverse();
 
-        for ancestor in ancestors {
-            if ancestor.is_dir() && !self.expanded.contains_key(&ancestor) {
-                let ancestor_str = ancestor.to_string_lossy();
-                self.get_children(ancestor_str.as_ref());
+        for ancestor_path in ancestor_paths {
+            if !self.expanded_paths.contains(&ancestor_path) {
+                // Mark the directory as expanded.
+                self.expanded_paths.insert(ancestor_path.clone());
+                // Load its children.
+                self.get_children(&ancestor_path)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Returns a flattened list of all visible nodes in the tree, in sorted
+    /// order.
+    pub fn visible_nodes(&self) -> Vec<FileNode> {
+        let mut visible_nodes = Vec::new();
+        let root_path = match &self.root_path {
+            Some(path) => path,
+            None => return visible_nodes,
+        };
+
+        self.collect_visible_owned(root_path, 0, &mut visible_nodes);
+        visible_nodes
+    }
+
+    fn collect_visible_owned<P: AsRef<Path>>(
+        &self,
+        directory_path: P,
+        depth: usize,
+        collected_nodes: &mut Vec<FileNode>,
+    ) {
+        let path = directory_path.as_ref();
+        // If no children have been loaded for this directory, return.
+        let Some(children) = self.loaded_nodes.get(path) else {
+            return;
+        };
+
+        for node in children {
+            collected_nodes.push(node.with_depth(depth));
+
+            // Recurse into expanded directories.
+            if node.is_dir && self.expanded_paths.contains(&node.path) {
+                self.collect_visible_owned(&node.path, depth + 1, collected_nodes);
             }
         }
     }
 
-    pub fn refresh_dir(&mut self, path: &str) {
-        let path_buf = PathBuf::from(path);
-
-        if path_buf.is_dir() {
-            self.expanded.remove(&path_buf);
-            self.get_children(path);
-        }
+    /// Sets the `current_path` from the path provided.
+    pub fn set_current_path<P: AsRef<Path>>(&mut self, path: P) {
+        self.current_path = Some(path.as_ref().to_path_buf());
     }
 
-    fn is_expanded(&self, path: &str) -> bool {
-        self.expanded.contains_key(&PathBuf::from(path))
+    /// Clears the `current_path`, setting it to `None`.
+    pub fn clear_current_path(&mut self) {
+        self.current_path = None;
     }
 
-    pub fn toggle_select(&mut self, path: &str) {
-        let path_buf = PathBuf::from(path);
-
-        if self.selected.contains(&path_buf) {
-            self.selected.remove(&path_buf);
-        } else {
-            self.selected.insert(path_buf);
-        }
-    }
-
-    pub fn set_current(&mut self, path: &str) {
-        self.current = Some(PathBuf::from(path));
-    }
-
-    pub fn clear_current(&mut self) {
-        self.current = None;
-    }
-
-    pub fn get_selected_owned(&self) -> HashSet<PathBuf> {
-        self.selected.clone()
-    }
-
-    pub fn get_expanded_owned(&self) -> HashMap<PathBuf, Vec<FileNode>> {
-        self.expanded.clone()
-    }
-
-    pub fn get_current(&self) -> Option<PathBuf> {
-        self.current.clone()
-    }
-
-    pub fn clear_selection(&mut self) {
-        self.selected.clear();
+    /// Clears the current selected node(s).
+    pub fn clear_selected_paths(&mut self) {
+        self.selected_paths.clear();
     }
 }

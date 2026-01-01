@@ -1,7 +1,7 @@
 use crate::{
     Buffer, CloseTabOperationType, Config, ConfigManager, Document, DocumentError, DocumentId,
-    DocumentManager, DocumentResult, Editor, FileTree, JumpHistory, MoveActiveTabResult, Tab,
-    TabError, TabId, TabManager, View, ViewId, ViewManager,
+    DocumentManager, DocumentResult, Editor, FileSystemResult, FileTree, JumpHistory,
+    MoveActiveTabResult, Tab, TabError, TabId, TabManager, View, ViewId, ViewManager,
 };
 use std::path::Path;
 
@@ -22,10 +22,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(
-        config_manager: &ConfigManager,
-        root_path: Option<&str>,
-    ) -> Result<Self, std::io::Error> {
+    pub fn new(config_manager: &ConfigManager, root_path: Option<&str>) -> FileSystemResult<Self> {
         let file_tree = FileTree::new(root_path)?;
 
         let mut document_manager = DocumentManager::default();
@@ -364,15 +361,11 @@ impl AppState {
     }
 
     pub fn reveal_in_file_tree(&mut self, path: &str) {
-        if self.file_tree.root_path.as_os_str().is_empty() {
-            return;
-        }
-
         // Expand ancestors so the file becomes visible
-        self.file_tree.set_expanded(path);
+        self.file_tree.ensure_path_visible(path);
 
         // Mark it as current
-        self.file_tree.set_current(path);
+        self.file_tree.set_current_path(path);
     }
 
     // Utility

@@ -1,5 +1,5 @@
-pub mod theme_manager;
+pub mod manager;
 pub mod types;
 
-pub use theme_manager::ThemeManager;
+pub use manager::ThemeManager;
 pub use types::*;

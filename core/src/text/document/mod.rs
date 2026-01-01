@@ -1,7 +1,9 @@
-pub mod document_manager;
 pub mod error;
+pub mod manager;
+pub mod result;
 pub mod types;
 
-pub use document_manager::DocumentManager;
 pub use error::*;
+pub use manager::DocumentManager;
+pub use result::*;
 pub use types::*;

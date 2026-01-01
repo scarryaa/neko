@@ -1,5 +1,6 @@
+pub mod manager;
 pub mod types;
-pub mod view_manager;
 
+pub use manager::ViewManager;
 pub use types::*;
-pub use view_manager::ViewManager;
+

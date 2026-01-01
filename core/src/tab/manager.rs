@@ -468,6 +468,7 @@ impl TabManager {
 
         // If history is disabled or no valid entry was found,
         // pick the last tab in the list
+        // TODO(scarlet): Handle the case where there are no tabs
         self.active_tab_id = self.tabs.last().unwrap().get_id();
         self.history_manager.set_history_pos(None);
     }
