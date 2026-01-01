@@ -22,6 +22,7 @@ pub struct AppState {
 }
 
 impl AppState {
+    // TODO(scarlet): Convert this result to e.g. AppStateError
     pub fn new(config_manager: &ConfigManager, root_path: Option<&str>) -> FileSystemResult<Self> {
         let file_tree = FileTree::new(root_path)?;
 

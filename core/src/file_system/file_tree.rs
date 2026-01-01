@@ -1,7 +1,6 @@
-use crate::{FileNode, FileSystemResult};
+use crate::{FileIoManager, FileNode, FileSystemResult};
 use std::{
     collections::{HashMap, HashSet},
-    fs::{self},
     path::{Path, PathBuf},
 };
 
@@ -48,9 +47,8 @@ impl FileTree {
             }
         };
 
-        // TODO(scarlet): Create a FileIoManager fn for this
         let mut child_nodes = Vec::new();
-        for entry_res in fs::read_dir(&root_path_buf)? {
+        for entry_res in FileIoManager::read_dir(&root_path_buf)? {
             let entry = entry_res?;
             let node = FileNode::from_entry(entry, 0)?;
             child_nodes.push(node);
@@ -103,9 +101,8 @@ impl FileTree {
 
         // If the nodes for the given path aren't already loaded, add them
         if !self.loaded_nodes.contains_key(&path) {
-            // TODO(scarlet): Create a FileIoManager fn for this
             let mut children = Vec::new();
-            for entry_res in fs::read_dir(&path)? {
+            for entry_res in FileIoManager::read_dir(&path)? {
                 let entry = entry_res?;
                 // Actual depth will be updated later
                 let node = FileNode::from_entry(entry, 1)?;

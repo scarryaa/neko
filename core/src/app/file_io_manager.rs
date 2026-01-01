@@ -1,4 +1,5 @@
 use std::{
+    fs::{self, ReadDir},
     io,
     path::{Path, PathBuf},
 };
@@ -12,15 +13,19 @@ pub type FileResult<T> = io::Result<T>;
 pub struct FileIoManager;
 
 impl FileIoManager {
-    pub fn write(path: &Path, content: &str) -> FileResult<()> {
-        std::fs::write(path, content)
+    pub fn write<P: AsRef<Path>>(path: P, content: &str) -> FileResult<()> {
+        fs::write(path, content)
     }
 
-    pub fn read(path: &Path) -> FileResult<String> {
-        std::fs::read_to_string(path)
+    pub fn read<P: AsRef<Path>>(path: P) -> FileResult<String> {
+        fs::read_to_string(path)
     }
 
-    pub fn canonicalize(path: &Path) -> FileResult<PathBuf> {
-        std::fs::canonicalize(path)
+    pub fn read_dir<P: AsRef<Path>>(path: P) -> FileResult<ReadDir> {
+        Ok(fs::read_dir(path)?)
+    }
+
+    pub fn canonicalize<P: AsRef<Path>>(path: P) -> FileResult<PathBuf> {
+        fs::canonicalize(path)
     }
 }
