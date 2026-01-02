@@ -70,14 +70,14 @@ pub fn execute_jump_command(command: JumpCommand, app_state: &mut AppState) {
         JumpCommand::ToLine(target) => match target {
             LineTarget::Start => {
                 app_state.with_editor_and_buffer_mut(|editor, buffer| {
-                    let current_row = editor.get_last_added_cursor().row;
+                    let current_row = editor.last_added_cursor().row;
 
                     editor.move_to(buffer, current_row, 0, true);
                 });
             }
             LineTarget::Middle => {
                 app_state.with_editor_and_buffer_mut(|editor, buffer| {
-                    let current_row = editor.get_last_added_cursor().row;
+                    let current_row = editor.last_added_cursor().row;
                     let line_len = editor.line_length(buffer, current_row);
 
                     editor.move_to(buffer, current_row, line_len / 2, true);
@@ -85,7 +85,7 @@ pub fn execute_jump_command(command: JumpCommand, app_state: &mut AppState) {
             }
             LineTarget::End => {
                 app_state.with_editor_and_buffer_mut(|editor, buffer| {
-                    let current_row = editor.get_last_added_cursor().row;
+                    let current_row = editor.last_added_cursor().row;
                     let line_len = editor.line_length(buffer, current_row);
 
                     editor.move_to(buffer, current_row, line_len, true);
@@ -100,15 +100,15 @@ pub fn execute_jump_command(command: JumpCommand, app_state: &mut AppState) {
             }
             DocumentTarget::Middle => {
                 app_state.with_editor_and_buffer_mut(|editor, buffer| {
-                    let current_column = editor.get_last_added_cursor().col;
-                    let line_count = editor.get_line_count(buffer);
+                    let current_column = editor.last_added_cursor().column;
+                    let line_count = buffer.line_count();
 
                     editor.move_to(buffer, line_count / 2, current_column, true);
                 });
             }
             DocumentTarget::End => {
                 app_state.with_editor_and_buffer_mut(|editor, buffer| {
-                    let line_count = editor.get_line_count(buffer);
+                    let line_count = buffer.line_count();
                     let last_line_len = editor.line_length(buffer, line_count);
 
                     editor.move_to(buffer, line_count, last_line_len, true);
@@ -116,16 +116,16 @@ pub fn execute_jump_command(command: JumpCommand, app_state: &mut AppState) {
             }
             DocumentTarget::Quarter => {
                 app_state.with_editor_and_buffer_mut(|editor, buffer| {
-                    let current_column = editor.get_last_added_cursor().col;
-                    let line_count = editor.get_line_count(buffer);
+                    let current_column = editor.last_added_cursor().column;
+                    let line_count = buffer.line_count();
 
                     editor.move_to(buffer, line_count / 4, current_column, true);
                 });
             }
             DocumentTarget::ThreeQuarters => {
                 app_state.with_editor_and_buffer_mut(|editor, buffer| {
-                    let current_column = editor.get_last_added_cursor().col;
-                    let line_count = editor.get_line_count(buffer);
+                    let current_column = editor.last_added_cursor().column;
+                    let line_count = buffer.line_count();
 
                     editor.move_to(buffer, (line_count / 4) * 3, current_column, true);
                 });

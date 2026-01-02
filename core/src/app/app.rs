@@ -81,8 +81,16 @@ impl AppState {
         &self.document_manager
     }
 
+    pub fn get_document_manager_mut(&mut self) -> &mut DocumentManager {
+        &mut self.document_manager
+    }
+
     pub fn get_view_manager(&self) -> &ViewManager {
         &self.view_manager
+    }
+
+    pub fn get_view_manager_mut(&mut self) -> &mut ViewManager {
+        &mut self.view_manager
     }
 
     pub fn active_view_id(&self) -> Option<ViewId> {
@@ -147,6 +155,30 @@ impl AppState {
         F: FnOnce(&mut Buffer) -> R,
     {
         self.with_active_view_mut(|_, document| f(&mut document.buffer))
+    }
+
+    /// Helper to run something on the specified view and its associated document.
+    pub fn with_view_and_document_mut<F, R>(&mut self, view_id: ViewId, f: F) -> Option<R>
+    where
+        F: FnOnce(&mut View, &mut Document) -> R,
+    {
+        let view = self.view_manager.get_view_mut(view_id)?;
+        let document_id = view.document_id();
+        let document = self.document_manager.get_document_mut(document_id)?;
+
+        Some(f(view, document))
+    }
+
+    /// Helper to query something on the specified view and its associated document.
+    pub fn with_view_and_document<F, R>(&self, view_id: ViewId, f: F) -> Option<R>
+    where
+        F: FnOnce(&View, &Document) -> R,
+    {
+        let view = self.view_manager.get_view(view_id)?;
+        let document_id = view.document_id();
+        let document = self.document_manager.get_document(document_id)?;
+
+        Some(f(view, document))
     }
 
     // Setters
