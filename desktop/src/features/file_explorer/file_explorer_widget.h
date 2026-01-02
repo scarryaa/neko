@@ -1,7 +1,7 @@
 #ifndef FILE_EXPLORER_WIDGET_H
 #define FILE_EXPLORER_WIDGET_H
 
-#include "features/file_explorer/controllers/file_tree_controller.h"
+#include "features/file_explorer/bridge/file_tree_bridge.h"
 #include "theme/types/types.h"
 #include "types/qt_types_fwd.h"
 #include <QFont>
@@ -16,7 +16,7 @@ class FileExplorerWidget : public QScrollArea {
 
 public:
   struct FileExplorerProps {
-    FileTreeController *fileTreeController;
+    FileTreeBridge *fileTreeBridge;
     QFont font;
     FileExplorerTheme theme;
   };
@@ -88,7 +88,7 @@ private:
 
   int convertMousePositionToRow(double yPos);
 
-  FileTreeController *fileTreeController;
+  FileTreeBridge *fileTreeBridge;
   QPushButton *directorySelectionButton;
 
   FileExplorerTheme theme;

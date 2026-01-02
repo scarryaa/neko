@@ -1,10 +1,10 @@
-#include "tab_controller.h"
+#include "tab_bridge.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 
-TabController::TabController(TabControllerProps props)
+TabBridge::TabBridge(TabBridgeProps props)
     : tabController(std::move(props.tabController)) {}
 
-TabPresentation TabController::fromSnapshot(const neko::TabSnapshot &tab) {
+TabPresentation TabBridge::fromSnapshot(const neko::TabSnapshot &tab) {
   return TabPresentation{
       .id = static_cast<int>(tab.id),
       .pinned = tab.pinned,
@@ -14,25 +14,25 @@ TabPresentation TabController::fromSnapshot(const neko::TabSnapshot &tab) {
   };
 }
 
-neko::TabsSnapshot TabController::getTabsSnapshot() {
+neko::TabsSnapshot TabBridge::getTabsSnapshot() {
   return tabController->get_tabs_snapshot();
 }
 
-neko::TabSnapshotMaybe TabController::getTabSnapshot(int tabId) {
+neko::TabSnapshotMaybe TabBridge::getTabSnapshot(int tabId) {
   return tabController->get_tab_snapshot(tabId);
 }
 
 QList<int>
-TabController::getCloseTabIds(neko::CloseTabOperationTypeFfi operationType,
-                              int anchorTabId, bool closePinned) const {
+TabBridge::getCloseTabIds(neko::CloseTabOperationTypeFfi operationType,
+                          int anchorTabId, bool closePinned) const {
   const auto result =
       tabController->get_close_tab_ids(operationType, anchorTabId, closePinned);
   return {result.begin(), result.end()};
 }
 
-int TabController::createDocumentTabAndView(const std::string &title,
-                                            bool addTabToHistory,
-                                            bool activateView) {
+int TabBridge::createDocumentTabAndView(const std::string &title,
+                                        bool addTabToHistory,
+                                        bool activateView) {
   auto result = tabController->create_document_tab_and_view(
       title, addTabToHistory, activateView);
 
@@ -65,7 +65,7 @@ int TabController::createDocumentTabAndView(const std::string &title,
 
 // TODO(scarlet): Figure out a unified/better solution than separate 'core ->
 // cpp' signals?
-void TabController::notifyTabOpenedFromCore(int tabId) {
+void TabBridge::notifyTabOpenedFromCore(int tabId) {
   if (tabController.into_raw() == nullptr) {
     return;
   }
@@ -93,12 +93,12 @@ void TabController::notifyTabOpenedFromCore(int tabId) {
   emit activeTabChanged(tabId);
 }
 
-void TabController::fileOpened(const neko::TabSnapshot &snapshot) {
+void TabBridge::fileOpened(const neko::TabSnapshot &snapshot) {
   auto presentation = fromSnapshot(snapshot);
   emit tabUpdated(presentation);
 }
 
-void TabController::tabSaved(int tabId) {
+void TabBridge::tabSaved(int tabId) {
   const auto snapshotMaybe = tabController->get_tab_snapshot(tabId);
 
   if (snapshotMaybe.found) {
@@ -107,8 +107,8 @@ void TabController::tabSaved(int tabId) {
   }
 }
 
-bool TabController::closeTabs(neko::CloseTabOperationTypeFfi operationType,
-                              int anchorTabId, bool closePinned) {
+bool TabBridge::closeTabs(neko::CloseTabOperationTypeFfi operationType,
+                          int anchorTabId, bool closePinned) {
   if (tabController.into_raw() == nullptr) {
     return false;
   }
@@ -132,7 +132,7 @@ bool TabController::closeTabs(neko::CloseTabOperationTypeFfi operationType,
   return true;
 }
 
-bool TabController::pinTab(int tabId) {
+bool TabBridge::pinTab(int tabId) {
   if (tabController.into_raw() == nullptr) {
     return false;
   }
@@ -153,7 +153,7 @@ bool TabController::pinTab(int tabId) {
   return true;
 }
 
-bool TabController::unpinTab(int tabId) {
+bool TabBridge::unpinTab(int tabId) {
   if (tabController.into_raw() == nullptr) {
     return false;
   }
@@ -174,7 +174,7 @@ bool TabController::unpinTab(int tabId) {
   return true;
 }
 
-bool TabController::moveTabBy(neko::Buffer buffer, int delta, bool useHistory) {
+bool TabBridge::moveTabBy(neko::Buffer buffer, int delta, bool useHistory) {
   // if (tabCoreApi == nullptr) {
   //   return false;
   // }
@@ -213,7 +213,7 @@ bool TabController::moveTabBy(neko::Buffer buffer, int delta, bool useHistory) {
   return true;
 }
 
-bool TabController::moveTab(int fromIndex, int toIndex) {
+bool TabBridge::moveTab(int fromIndex, int toIndex) {
   if (tabController.into_raw() == nullptr) {
     return false;
   }
@@ -226,7 +226,7 @@ bool TabController::moveTab(int fromIndex, int toIndex) {
   return true;
 }
 
-void TabController::setActiveTab(int tabId) {
+void TabBridge::setActiveTab(int tabId) {
   if (tabController.into_raw() == nullptr) {
     return;
   }
@@ -236,7 +236,7 @@ void TabController::setActiveTab(int tabId) {
   emit activeTabChanged(tabId);
 }
 
-void TabController::setTabScrollOffsets(
-    int tabId, const neko::ScrollOffsetFfi &newOffsets) {
+void TabBridge::setTabScrollOffsets(int tabId,
+                                    const neko::ScrollOffsetFfi &newOffsets) {
   tabController->set_tab_scroll_offsets(tabId, newOffsets);
 }

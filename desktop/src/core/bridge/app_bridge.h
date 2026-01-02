@@ -1,12 +1,11 @@
 #ifndef APP_BRIDGE_H
 #define APP_BRIDGE_H
 
-#include "core/api/tab_core_api.h"
 #include <QObject>
 #include <neko-core/src/ffi/bridge.rs.h>
 #include <vector>
 
-class AppBridge : public QObject, public ITabCoreApi {
+class AppBridge : public QObject {
   Q_OBJECT
 
 public:
@@ -32,30 +31,27 @@ public:
   // AppController (Rust)
   uint64_t openFile(const std::string &path, bool addToHistory);
 
-  // ITabCoreApi
-  neko::TabsSnapshot getTabsSnapshot() override;
+  neko::TabsSnapshot getTabsSnapshot();
   std::vector<int> getCloseTabIds(neko::CloseTabOperationTypeFfi operationType,
-                                  int anchorTabId, bool closePinned) override;
+                                  int anchorTabId, bool closePinned);
   neko::MoveActiveTabResult moveTabBy(neko::Buffer buffer, int delta,
-                                      bool useHistory) override;
-  bool moveTab(int fromIndex, int toIndex) override;
-  neko::PinTabResult pinTab(int tabId) override;
-  neko::PinTabResult unpinTab(int tabId) override;
+                                      bool useHistory);
+  bool moveTab(int fromIndex, int toIndex);
+  neko::PinTabResult pinTab(int tabId);
+  neko::PinTabResult unpinTab(int tabId);
   neko::CloseManyTabsResult
   closeTabs(neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
-            bool closePinned) override;
-  neko::TabSnapshotMaybe getTabSnapshot(int tabId) override;
-  void setActiveTab(int tabId) override;
-  void setTabScrollOffsets(int tabId,
-                           const neko::ScrollOffsetFfi &offsets) override;
+            bool closePinned);
+  neko::TabSnapshotMaybe getTabSnapshot(int tabId);
+  void setActiveTab(int tabId);
+  void setTabScrollOffsets(int tabId, const neko::ScrollOffsetFfi &offsets);
   neko::CreateDocumentTabAndViewResultFfi
   createDocumentTabAndView(const std::string &title, bool addTabToHistory,
-                           bool activateView) override;
-  // End ITabCoreApi
+                           bool activateView);
 
-  [[nodiscard]] rust::Box<neko::EditorController> getActiveEditorMut() const;
+  [[nodiscard]] rust::Box<neko::EditorController> getEditorController() const;
   [[nodiscard]] rust::Box<neko::TabController> getTabController() const;
-  [[nodiscard]] neko::FileTree &getFileTreeMut() const;
+  [[nodiscard]] rust::Box<neko::FileTreeController> getFileTreeController();
   [[nodiscard]] neko::TabCommandStateFfi
   getTabCommandState(const neko::TabContextFfi &ctx) const;
   static std::vector<neko::TabCommandFfi> getAvailableTabCommands();

@@ -52,6 +52,10 @@ qt_add_executable(neko
     WIN32 MACOSX_BUNDLE
     src/main.cpp
 
+    # Core Bridges
+    src/core/bridge/app_bridge.cpp
+    src/core/bridge/app_bridge.h
+
     # Main Window
     src/features/main_window/main_window.cpp
     src/features/main_window/main_window.h
@@ -68,8 +72,6 @@ qt_add_executable(neko
     src/features/main_window/interfaces/save_result.h
 
     # Main Window Controllers
-    src/features/main_window/controllers/app_controller.cpp
-    src/features/main_window/controllers/app_controller.h
     src/features/main_window/controllers/workspace_coordinator.cpp
     src/features/main_window/controllers/workspace_coordinator.h
     src/features/main_window/controllers/command_manager.cpp
@@ -141,17 +143,17 @@ qt_add_executable(neko
     src/features/editor/render/gutter_renderer.cpp
     src/features/editor/render/gutter_renderer.h
 
-    # Editor Controller
-    src/features/editor/controllers/editor_controller.cpp
-    src/features/editor/controllers/editor_controller.h
+    # Editor Bridge
+    src/features/editor/bridge/editor_bridge.cpp
+    src/features/editor/bridge/editor_bridge.h
 
     # File Explorer
     src/features/file_explorer/file_explorer_widget.cpp
     src/features/file_explorer/file_explorer_widget.h
 
-    # File Explorer Controller
-    src/features/file_explorer/controllers/file_tree_controller.cpp
-    src/features/file_explorer/controllers/file_tree_controller.h
+    # File Explorer Bridge
+    src/features/file_explorer/bridge/file_tree_bridge.cpp
+    src/features/file_explorer/bridge/file_tree_bridge.h
 
     # Tabs
     src/features/tabs/tab_bar_widget.cpp
@@ -159,9 +161,9 @@ qt_add_executable(neko
     src/features/tabs/tab_widget.cpp
     src/features/tabs/tab_widget.h
 
-    # Tab Controller
-    src/features/tabs/controllers/tab_controller.cpp
-    src/features/tabs/controllers/tab_controller.h
+    # Tab Bridge
+    src/features/tabs/bridge/tab_bridge.cpp
+    src/features/tabs/bridge/tab_bridge.h
 
     # Tab Types
     src/features/tabs/types/types.h

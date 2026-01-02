@@ -23,7 +23,7 @@ public:
   [[nodiscard]] QString getLine(int index) const;
   [[nodiscard]] QStringList getLines() const;
   [[nodiscard]] int getLineCount() const;
-  [[nodiscard]] Selection getSelection() const;
+  [[nodiscard]] Selection getSelection();
   [[nodiscard]] std::vector<Cursor> getCursorPositions() const;
   [[nodiscard]] bool needsWidthMeasurement(int index) const;
   [[nodiscard]] double getMaxWidth() const;
@@ -35,7 +35,7 @@ public:
 
   // Setters
   void setLineWidth(int index, double width);
-  void setEditorBridge(neko::EditorController *editorController);
+  void setController(rust::Box<neko::EditorController> &&controller);
 
   // Selection/Cursor movement
   void selectWord(int row, int column);

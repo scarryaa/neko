@@ -9,7 +9,7 @@
 #include <functional>
 #include <string>
 
-class TabController;
+class TabBridge;
 class AppBridge;
 class EditorBridge;
 
@@ -20,7 +20,7 @@ class EditorBridge;
 class TabFlows {
 public:
   struct TabFlowsProps {
-    TabController *tabController;
+    TabBridge *tabBridge;
     AppBridge *appBridge;
     EditorBridge *editorBridge;
     const UiHandles uiHandles;
@@ -39,7 +39,7 @@ public:
   void newTab();
   void tabChanged(int tabId);
   void tabUnpinned(int tabId);
-  void moveTabBy(int delta, bool useHistory);
+  static void moveTabBy(int delta, bool useHistory);
 
   // Actions on single tabs
   void copyTabPath(int tabId);
@@ -64,7 +64,7 @@ public:
       const TabScrollOffsets &scrollOffsets) const;
 
 private:
-  TabController *tabController;
+  TabBridge *tabBridge;
   AppBridge *appBridge;
   EditorBridge *editorBridge;
   const UiHandles uiHandles;

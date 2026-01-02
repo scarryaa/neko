@@ -1,7 +1,7 @@
 #ifndef EDITOR_WIDGET_H
 #define EDITOR_WIDGET_H
 
-#include "controllers/editor_controller.h"
+#include "bridge/editor_bridge.h"
 #include "features/editor/render/editor_renderer.h"
 #include "theme/types/types.h"
 #include "types/qt_types_fwd.h"

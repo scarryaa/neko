@@ -3,7 +3,7 @@
 
 class CommandRegistry;
 class ContextMenuRegistry;
-class TabController;
+class TabBridge;
 class TabWidget;
 class ThemeProvider;
 
@@ -28,7 +28,7 @@ public:
     ThemeProvider *themeProvider;
     ContextMenuRegistry *contextMenuRegistry;
     CommandRegistry *commandRegistry;
-    TabController *tabController;
+    TabBridge *tabBridge;
   };
 
   explicit TabBarWidget(const TabBarProps &props, QWidget *parent = nullptr);
@@ -68,7 +68,7 @@ private:
   TabWidget *findTabWidgetById(int tabId);
 
   ThemeProvider *themeProvider;
-  TabController *tabController;
+  TabBridge *tabBridge;
   ContextMenuRegistry &contextMenuRegistry;
   CommandRegistry &commandRegistry;
   QWidget *containerWidget;

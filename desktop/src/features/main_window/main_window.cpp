@@ -1,12 +1,12 @@
 #include "main_window.h"
-#include "controllers/app_bridge.h"
+#include "core/bridge/app_bridge.h"
 #include "features/command_palette/command_palette_widget.h"
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
-#include "features/editor/controllers/editor_controller.h"
+#include "features/editor/bridge/editor_bridge.h"
 #include "features/editor/editor_widget.h"
 #include "features/editor/gutter_widget.h"
-#include "features/file_explorer/controllers/file_tree_controller.h"
+#include "features/file_explorer/bridge/file_tree_bridge.h"
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/connections/editor_connections.h"
 #include "features/main_window/connections/file_explorer_connections.h"
@@ -14,7 +14,6 @@
 #include "features/main_window/connections/theme_connections.h"
 #include "features/main_window/connections/ui_style_connections.h"
 #include "features/main_window/connections/workspace_connections.h"
-#include "features/main_window/controllers/app_bridge.h"
 #include "features/main_window/controllers/command_executor.h"
 #include "features/main_window/controllers/command_manager.h"
 #include "features/main_window/controllers/shortcuts_manager.h"
@@ -63,7 +62,7 @@ MainWindow::MainWindow(QWidget *parent)
       new AppBridge({.configManager = *configManager, .rootPath = ""});
 
   rust::Box<neko::EditorController> editorController =
-      appBridge->getActiveEditorMut();
+      appBridge->getEditorController();
   rust::Box<neko::TabController> tabController = appBridge->getTabController();
   editorBridge = new EditorBridge(EditorBridge::EditorBridgeProps{
       .editorController = std::move(editorController)});
@@ -159,16 +158,15 @@ void MainWindow::setupWidgets(TabController *tabController,
   auto snapshot = appConfigService->getSnapshot();
   const bool fileExplorerShown = snapshot.file_explorer.shown;
 
-  neko::FileTree *fileTree = &appBridge->getFileTreeMut();
-  auto *fileTreeController =
-      new FileTreeController({.fileTree = fileTree}, this);
+  auto *fileTreeBridge = new FileTreeBridge(
+      {.fileTreeController = appBridge->getFileTreeController()}, this);
   const auto jumpHints = WorkspaceCoordinator::buildJumpHintRows();
 
   emptyStateWidget = new QWidget(this);
   titleBarWidget = new TitleBarWidget(
       {.font = fonts.interfaceFont, .theme = themes.titleBarTheme}, this);
   fileExplorerWidget =
-      new FileExplorerWidget({.fileTreeController = fileTreeController,
+      new FileExplorerWidget({.fileTreeBridge = fileTreeBridge,
                               .font = fonts.fileExplorerFont,
                               .theme = themes.fileExplorerTheme},
                              this);

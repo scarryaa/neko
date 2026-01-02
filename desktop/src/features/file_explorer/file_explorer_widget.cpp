@@ -1,5 +1,5 @@
 #include "file_explorer_widget.h"
-#include "features/file_explorer/controllers/file_tree_controller.h"
+#include "features/file_explorer/bridge/file_tree_bridge.h"
 #include "utils/ui_utils.h"
 #include <QApplication>
 #include <QClipboard>
@@ -33,7 +33,7 @@
 
 FileExplorerWidget::FileExplorerWidget(const FileExplorerProps &props,
                                        QWidget *parent)
-    : QScrollArea(parent), fileTreeController(props.fileTreeController),
+    : QScrollArea(parent), fileTreeBridge(props.fileTreeBridge),
       font(props.font), theme(props.theme), fontMetrics(font) {
   setFocusPolicy(Qt::StrongFocus);
   setFrameShape(QFrame::NoFrame);
@@ -60,7 +60,7 @@ void FileExplorerWidget::connectSignals() {
 }
 
 void FileExplorerWidget::initialize(const std::string &path) {
-  fileTreeController->setRootDir(path);
+  fileTreeBridge->setRootDir(path);
   emit directorySelected(path);
   loadDirectory(path);
 }
@@ -97,7 +97,7 @@ void FileExplorerWidget::setAndApplyTheme(const FileExplorerTheme &newTheme) {
 }
 
 void FileExplorerWidget::itemRevealRequested() {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
   int index = 0;
   for (auto &node : snapshot.nodes) {
     if (node.is_current) {
@@ -176,7 +176,7 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   }
 
   if (shouldScroll) {
-    auto snapshot = fileTreeController->getTreeSnapshot();
+    auto snapshot = fileTreeBridge->getTreeSnapshot();
     int index = 0;
     for (auto &node : snapshot.nodes) {
       if (node.is_current) {
@@ -193,7 +193,7 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
 }
 
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
   const bool refocusClick = focusReceivedFromMouse;
   focusReceivedFromMouse = false;
 
@@ -205,16 +205,16 @@ void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
       return;
     }
 
-    fileTreeController->clearCurrent();
+    fileTreeBridge->clearCurrent();
     redraw();
     return;
   }
 
   auto currentNode = snapshot.nodes[row];
-  fileTreeController->setCurrent(currentNode.path.c_str());
+  fileTreeBridge->setCurrent(currentNode.path.c_str());
 
   if (currentNode.is_dir) {
-    fileTreeController->toggleExpanded(currentNode.path.c_str());
+    fileTreeBridge->toggleExpanded(currentNode.path.c_str());
   } else {
     QString fileStr = QString::fromUtf8(currentNode.path.c_str());
     emit fileSelected(fileStr.toStdString(), false);
@@ -225,7 +225,7 @@ void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
 
 void FileExplorerWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(viewport());
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
 
   drawFiles(&painter, snapshot.nodes.size(), snapshot.nodes);
 }
@@ -371,13 +371,13 @@ void FileExplorerWidget::drawFile(QPainter *painter, double xPos, double yPos,
 }
 
 void FileExplorerWidget::loadDirectory(const std::string &path) {
-  fileTreeController->setExpanded(path);
+  fileTreeBridge->setExpanded(path);
   updateDimensions();
   redraw();
 }
 
 double FileExplorerWidget::measureContent() {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
   double finalWidth = 0;
 
   // TODO(scarlet): Make this faster
@@ -390,7 +390,7 @@ double FileExplorerWidget::measureContent() {
 }
 
 void FileExplorerWidget::updateDimensions() {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
 
   const double lineHeight = fontMetrics.height();
   const double viewportHeight =
@@ -440,7 +440,7 @@ void FileExplorerWidget::setFontSize(double newFontSize) {
 }
 
 void FileExplorerWidget::handleEnter() {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
   std::string currentNodePath;
   neko::FileNodeSnapshot currentNode;
   bool currentNodeExpanded = false;
@@ -470,7 +470,7 @@ void FileExplorerWidget::handleEnter() {
   } else {
     // If no node is selected (and the tree is not empty), select the first node
     if (!snapshot.nodes.empty()) {
-      fileTreeController->setCurrent(snapshot.nodes[0].path.c_str());
+      fileTreeBridge->setCurrent(snapshot.nodes[0].path.c_str());
     } else {
       return;
     }
@@ -478,7 +478,7 @@ void FileExplorerWidget::handleEnter() {
 }
 
 void FileExplorerWidget::handleLeft() {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
   std::string currentNodePath;
   bool currentNodeExpanded = false;
   for (auto &node : snapshot.nodes) {
@@ -491,10 +491,10 @@ void FileExplorerWidget::handleLeft() {
 
   // If focused node is collapsed, go to parent and collapse
   if (!currentNodeExpanded) {
-    auto parentPath = fileTreeController->getParentNodePath(currentNodePath);
+    auto parentPath = fileTreeBridge->getParentNodePath(currentNodePath);
     if (parentPath != snapshot.root.c_str()) {
-      fileTreeController->setCurrent(parentPath);
-      fileTreeController->setCollapsed(parentPath);
+      fileTreeBridge->setCurrent(parentPath);
+      fileTreeBridge->setCollapsed(parentPath);
     }
   } else {
     // Otherwise, collapse focused node and stay put
@@ -503,7 +503,7 @@ void FileExplorerWidget::handleLeft() {
 }
 
 void FileExplorerWidget::handleRight() {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
   std::string currentNodePath;
   neko::FileNodeSnapshot currentNode;
   bool currentNodeExpanded = false;
@@ -521,16 +521,16 @@ void FileExplorerWidget::handleRight() {
     expandNode();
   } else {
     // Otherwise, go to first child
-    auto children = fileTreeController->getVisibleChildren(currentNodePath);
+    auto children = fileTreeBridge->getVisibleChildren(currentNodePath);
 
     if (!children.empty()) {
-      fileTreeController->setCurrent(children[0].path.c_str());
+      fileTreeBridge->setCurrent(children[0].path.c_str());
     }
   }
 }
 
 void FileExplorerWidget::handleCopy() {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
   std::string currentNodePath;
   for (auto &node : snapshot.nodes) {
     if (node.is_current) {
@@ -548,7 +548,7 @@ void FileExplorerWidget::handleCopy() {
 }
 
 void FileExplorerWidget::handlePaste() {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
   std::string currentNodePath;
   bool currentNodeIsDirectory = false;
   for (auto &node : snapshot.nodes) {
@@ -558,7 +558,7 @@ void FileExplorerWidget::handlePaste() {
     }
   }
 
-  auto parentNodePath = fileTreeController->getParentNodePath(currentNodePath);
+  auto parentNodePath = fileTreeBridge->getParentNodePath(currentNodePath);
   QString targetDirectory = currentNodeIsDirectory
                                 ? QString::fromUtf8(currentNodePath)
                                 : QString::fromUtf8(parentNodePath);
@@ -594,8 +594,8 @@ void FileExplorerWidget::handlePaste() {
     }
   }
 
-  fileTreeController->refreshDirectory(currentNodeIsDirectory ? currentNodePath
-                                                              : parentNodePath);
+  fileTreeBridge->refreshDirectory(currentNodeIsDirectory ? currentNodePath
+                                                          : parentNodePath);
 }
 
 bool FileExplorerWidget::copyRecursively(const QString &sourceFolder,
@@ -628,7 +628,7 @@ bool FileExplorerWidget::copyRecursively(const QString &sourceFolder,
 }
 
 void FileExplorerWidget::handleDeleteConfirm() {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
   neko::FileNodeSnapshot currentNode;
   for (auto &node : snapshot.nodes) {
     if (node.is_current) {
@@ -650,7 +650,7 @@ void FileExplorerWidget::handleDeleteConfirm() {
 }
 
 void FileExplorerWidget::handleDeleteNoConfirm() {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
   neko::FileNodeSnapshot currentNode;
   for (auto &node : snapshot.nodes) {
     if (node.is_current) {
@@ -664,17 +664,17 @@ void FileExplorerWidget::handleDeleteNoConfirm() {
 
 void FileExplorerWidget::deleteItem(const std::string &path,
                                     const neko::FileNodeSnapshot &currentNode) {
-  auto prevNode = fileTreeController->getPreviousNode(path);
-  auto parentPath = fileTreeController->getParentNodePath(path);
+  auto prevNode = fileTreeBridge->getPreviousNode(path);
+  auto parentPath = fileTreeBridge->getParentNodePath(path);
   bool currentIsDir = currentNode.is_dir;
 
   if (currentIsDir) {
     QDir dir = QDir(QString::fromStdString(path));
 
     if (dir.removeRecursively()) {
-      fileTreeController->refreshDirectory(parentPath);
+      fileTreeBridge->refreshDirectory(parentPath);
 
-      fileTreeController->setCurrent(prevNode.path.c_str());
+      fileTreeBridge->setCurrent(prevNode.path.c_str());
     } else {
       qDebug() << "Failed to remove directory";
     }
@@ -682,9 +682,9 @@ void FileExplorerWidget::deleteItem(const std::string &path,
     QFile file = QFile(QString::fromStdString(path));
 
     if (file.remove()) {
-      fileTreeController->refreshDirectory(parentPath);
+      fileTreeBridge->refreshDirectory(parentPath);
 
-      fileTreeController->setCurrent(prevNode.path.c_str());
+      fileTreeBridge->setCurrent(prevNode.path.c_str());
     } else {
       qDebug() << "Failed to remove file";
     }
@@ -692,7 +692,7 @@ void FileExplorerWidget::deleteItem(const std::string &path,
 }
 
 void FileExplorerWidget::selectNextNode() {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
   std::string currentNodePath;
   for (auto &node : snapshot.nodes) {
     if (node.is_current) {
@@ -703,7 +703,7 @@ void FileExplorerWidget::selectNextNode() {
 
   if (currentNodePath.empty()) {
     if (!snapshot.nodes.empty()) {
-      fileTreeController->setCurrent(snapshot.nodes[0].path.c_str());
+      fileTreeBridge->setCurrent(snapshot.nodes[0].path.c_str());
     } else {
       return;
     }
@@ -713,16 +713,16 @@ void FileExplorerWidget::selectNextNode() {
   // If we are at the bottom
   if (currentNodePath == snapshot.nodes.back().path.c_str()) {
     // Wrap to start
-    fileTreeController->setCurrent(snapshot.nodes.begin()->path.c_str());
+    fileTreeBridge->setCurrent(snapshot.nodes.begin()->path.c_str());
     return;
   }
 
-  auto next = fileTreeController->getNextNode(currentNodePath);
-  fileTreeController->setCurrent(next.path.c_str());
+  auto next = fileTreeBridge->getNextNode(currentNodePath);
+  fileTreeBridge->setCurrent(next.path.c_str());
 }
 
 void FileExplorerWidget::selectPrevNode() {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
   std::string currentNodePath;
   for (auto &node : snapshot.nodes) {
     if (node.is_current) {
@@ -736,24 +736,24 @@ void FileExplorerWidget::selectPrevNode() {
       return;
     }
 
-    fileTreeController->setCurrent(snapshot.nodes[0].path.c_str());
+    fileTreeBridge->setCurrent(snapshot.nodes[0].path.c_str());
     return;
   }
 
   // If we are at the top (root node)
   if (currentNodePath == snapshot.nodes[0].path.c_str()) {
     // Wrap to end
-    fileTreeController->setCurrent(
+    fileTreeBridge->setCurrent(
         snapshot.nodes.at(snapshot.nodes.size() - 1).path.c_str());
     return;
   }
 
-  auto prev = fileTreeController->getPreviousNode(currentNodePath);
-  fileTreeController->setCurrent(prev.path.c_str());
+  auto prev = fileTreeBridge->getPreviousNode(currentNodePath);
+  fileTreeBridge->setCurrent(prev.path.c_str());
 }
 
 void FileExplorerWidget::toggleSelectNode() {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
   std::string currentNodePath;
   for (auto &node : snapshot.nodes) {
     if (node.is_current) {
@@ -767,15 +767,15 @@ void FileExplorerWidget::toggleSelectNode() {
       return;
     }
 
-    fileTreeController->setCurrent(snapshot.nodes[0].path.c_str());
+    fileTreeBridge->setCurrent(snapshot.nodes[0].path.c_str());
     return;
   }
 
-  fileTreeController->toggleSelect(currentNodePath);
+  fileTreeBridge->toggleSelect(currentNodePath);
 }
 
 void FileExplorerWidget::expandNode() {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
   std::string currentNodePath;
   for (auto &node : snapshot.nodes) {
     if (node.is_current) {
@@ -789,16 +789,16 @@ void FileExplorerWidget::expandNode() {
       return;
     }
 
-    fileTreeController->setCurrent(snapshot.nodes[0].path.c_str());
+    fileTreeBridge->setCurrent(snapshot.nodes[0].path.c_str());
     return;
   }
 
-  fileTreeController->setExpanded(currentNodePath);
+  fileTreeBridge->setExpanded(currentNodePath);
   updateDimensions();
 }
 
 void FileExplorerWidget::collapseNode() {
-  auto snapshot = fileTreeController->getTreeSnapshot();
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
   std::string currentNodePath;
   for (auto &node : snapshot.nodes) {
     if (node.is_current) {
@@ -812,11 +812,11 @@ void FileExplorerWidget::collapseNode() {
       return;
     }
 
-    fileTreeController->setCurrent(snapshot.nodes[0].path.c_str());
+    fileTreeBridge->setCurrent(snapshot.nodes[0].path.c_str());
     return;
   }
 
-  fileTreeController->setCollapsed(currentNodePath);
+  fileTreeBridge->setCollapsed(currentNodePath);
   updateDimensions();
 }
 

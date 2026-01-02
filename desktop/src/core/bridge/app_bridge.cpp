@@ -12,7 +12,7 @@ uint64_t AppBridge::openFile(const std::string &path, bool addToHistory) {
   return appState->ensure_tab_for_path(path, addToHistory);
 }
 
-rust::Box<neko::EditorController> AppBridge::getActiveEditorMut() const {
+rust::Box<neko::EditorController> AppBridge::getEditorController() const {
   return appController->editor_controller();
 }
 
@@ -20,8 +20,8 @@ rust::Box<neko::TabController> AppBridge::getTabController() const {
   return appController->tab_controller();
 }
 
-neko::FileTree &AppBridge::getFileTreeMut() const {
-  return appState->get_file_tree_mut();
+rust::Box<neko::FileTreeController> AppBridge::getFileTreeController() {
+  return appController->file_tree_controller();
 }
 
 neko::TabCommandStateFfi

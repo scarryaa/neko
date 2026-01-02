@@ -4,7 +4,7 @@
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
 #include "features/main_window/ui_handles.h"
-#include "features/tabs/controllers/tab_controller.h"
+#include "features/tabs/bridge/tab_bridge.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 
 ShortcutsManager::ShortcutsManager(const ShortcutsManagerProps &props,
@@ -12,8 +12,7 @@ ShortcutsManager::ShortcutsManager(const ShortcutsManagerProps &props,
     : actionOwner(props.actionOwner),
       nekoShortcutsManager(props.shortcutsManager),
       workspaceCoordinator(props.workspaceCoordinator),
-      tabController(props.tabController), uiHandles(props.uiHandles),
-      QObject(parent) {
+      tabBridge(props.tabBridge), uiHandles(props.uiHandles), QObject(parent) {
   populateShortcutMetadata();
   setUpKeyboardShortcuts();
 }
@@ -44,7 +43,7 @@ void ShortcutsManager::populateShortcutMetadata() {
       {
           "Tab::Close",
           [this]() {
-            const auto snapshot = tabController->getTabsSnapshot();
+            const auto snapshot = tabBridge->getTabsSnapshot();
             workspaceCoordinator->closeTabs(
                 neko::CloseTabOperationTypeFfi::Single,
                 static_cast<int>(snapshot.active_id), false);
@@ -53,7 +52,7 @@ void ShortcutsManager::populateShortcutMetadata() {
       {
           "Tab::ForceClose",
           [this]() {
-            const auto snapshot = tabController->getTabsSnapshot();
+            const auto snapshot = tabBridge->getTabsSnapshot();
             workspaceCoordinator->closeTabs(
                 neko::CloseTabOperationTypeFfi::Single,
                 static_cast<int>(snapshot.active_id), true);

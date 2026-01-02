@@ -26,6 +26,7 @@ class CreateDocumentTabAndViewResultFfi;
 
 class TabController;
 class AppController;
+class EditorController;
 
 class FileOpenResult;
 class MoveActiveTabResult;

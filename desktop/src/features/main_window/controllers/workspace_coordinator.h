@@ -5,14 +5,14 @@
 #include "features/main_window/flows/tab_flows.h"
 #include "features/main_window/interfaces/save_result.h"
 #include "features/main_window/ui_handles.h"
-#include "types/ffi_types_fwd.h"
 #include <QList>
 #include <QObject>
+#include <neko-core/src/ffi/bridge.rs.h>
 #include <optional>
 #include <string>
 #include <vector>
 
-class TabController;
+class TabBridge;
 class AppBridge;
 class EditorBridge;
 class AppConfigService;
@@ -25,7 +25,7 @@ class WorkspaceCoordinator : public QObject {
 
 public:
   struct WorkspaceCoordinatorProps {
-    TabController *tabController;
+    TabBridge *tabBridge;
     AppBridge *appBridge;
     EditorBridge *editorBridge;
     AppConfigService *appConfigService;
@@ -85,12 +85,12 @@ private:
   void copyTabPath(int tabId);
   void tabTogglePin(int tabId, bool tabIsPinned);
   void refreshUiForActiveTab(bool focusEditor);
-  void setActiveEditor(neko::Editor *editor);
+  void setEditorController(rust::Box<neko::EditorController> editorController);
   void refreshStatusBarCursorInfo();
 
   TabFlows tabFlows;
 
-  TabController *tabController;
+  TabBridge *tabBridge;
   AppBridge *appBridge;
   AppConfigService *appConfigService;
   EditorBridge *editorBridge;

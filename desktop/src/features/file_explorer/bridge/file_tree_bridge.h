@@ -1,20 +1,19 @@
-#ifndef FILE_TREE_CONTROLLER_H
-#define FILE_TREE_CONTROLLER_H
+#ifndef FILE_TREE_BRIDGE_H
+#define FILE_TREE_BRIDGE_H
 
 #include "neko-core/src/ffi/bridge.rs.h"
 #include <QObject>
 
-class FileTreeController : public QObject {
+class FileTreeBridge : public QObject {
   Q_OBJECT
 
 public:
-  struct FileTreeControllerProps {
-    neko::FileTree *fileTree;
+  struct FileTreeBridgeProps {
+    rust::Box<neko::FileTreeController> fileTreeController;
   };
 
-  explicit FileTreeController(const FileTreeControllerProps &props,
-                              QObject *parent = nullptr);
-  ~FileTreeController() override = default;
+  explicit FileTreeBridge(FileTreeBridgeProps props, QObject *parent = nullptr);
+  ~FileTreeBridge() override = default;
 
   neko::FileTreeSnapshot getTreeSnapshot();
   std::string getParentNodePath(const std::string &path);
@@ -33,7 +32,7 @@ public:
   void refreshDirectory(const std::string &directoryPath);
 
 private:
-  neko::FileTree *fileTree;
+  rust::Box<neko::FileTreeController> fileTreeController;
 };
 
 #endif

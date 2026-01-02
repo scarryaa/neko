@@ -1,5 +1,5 @@
 #include "tab_bar_widget.h"
-#include "features/tabs/controllers/tab_controller.h"
+#include "features/tabs/bridge/tab_bridge.h"
 #include "features/tabs/tab_widget.h"
 #include "utils/ui_utils.h"
 #include <QByteArray>

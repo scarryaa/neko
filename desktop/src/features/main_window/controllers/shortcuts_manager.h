@@ -1,7 +1,7 @@
 #ifndef SHORTCUTS_MANAGER_H
 #define SHORTCUTS_MANAGER_H
 
-class TabController;
+class TabBridge;
 class WorkspaceCoordinator;
 class UiHandles;
 
@@ -20,7 +20,7 @@ public:
     QWidget *actionOwner;
     neko::ShortcutsManager *shortcutsManager;
     WorkspaceCoordinator *workspaceCoordinator;
-    TabController *tabController;
+    TabBridge *tabBridge;
     const UiHandles *uiHandles;
   };
 
@@ -74,7 +74,7 @@ private:
   QWidget *actionOwner;
   neko::ShortcutsManager *nekoShortcutsManager;
   WorkspaceCoordinator *workspaceCoordinator;
-  TabController *tabController;
+  TabBridge *tabBridge;
   const UiHandles *uiHandles;
 };
 

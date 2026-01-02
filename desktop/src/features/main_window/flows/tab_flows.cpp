@@ -1,11 +1,11 @@
 #include "tab_flows.h"
+#include "core/bridge/app_bridge.h"
 #include "features/editor/editor_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
-#include "features/main_window/controllers/app_bridge.h"
 #include "features/main_window/services/dialog_service.h"
 #include "features/main_window/ui_handles.h"
 #include "features/status_bar/status_bar_widget.h"
-#include "features/tabs/controllers/tab_controller.h"
+#include "features/tabs/bridge/tab_bridge.h"
 #include "features/tabs/tab_bar_widget.h"
 #include <QApplication>
 #include <QClipboard>
@@ -18,7 +18,7 @@
 #include <neko-core/src/ffi/bridge.rs.h>
 
 TabFlows::TabFlows(const TabFlowsProps &props)
-    : tabController(props.tabController), appBridge(props.appBridge),
+    : tabBridge(props.tabBridge), appBridge(props.appBridge),
       editorBridge(props.editorBridge), uiHandles(props.uiHandles) {}
 
 void TabFlows::handleTabCommand(const std::string &commandId,
@@ -54,7 +54,7 @@ void TabFlows::handleTabCommand(const std::string &commandId,
 
 void TabFlows::closeTabs(neko::CloseTabOperationTypeFfi operationType,
                          int anchorTabId, bool forceClose) {
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
   if (!snapshot.active_present) {
     // Close the window if there are no tabs
     QApplication::quit();
@@ -66,17 +66,16 @@ void TabFlows::closeTabs(neko::CloseTabOperationTypeFfi operationType,
   const bool closePinned =
       (operationType == neko::CloseTabOperationTypeFfi::Single) && forceClose;
 
-  auto ids =
-      tabController->getCloseTabIds(operationType, anchorTabId, closePinned);
+  auto ids = tabBridge->getCloseTabIds(operationType, anchorTabId, closePinned);
 
-  closeManyTabs(
-      ids, forceClose, [this, anchorTabId, operationType, closePinned]() {
-        tabController->closeTabs(operationType, anchorTabId, closePinned);
-      });
+  closeManyTabs(ids, forceClose,
+                [this, anchorTabId, operationType, closePinned]() {
+                  tabBridge->closeTabs(operationType, anchorTabId, closePinned);
+                });
 }
 
 void TabFlows::fileSaved(bool saveAs) {
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
 
   if (!snapshot.active_present) {
     return;
@@ -87,20 +86,20 @@ void TabFlows::fileSaved(bool saveAs) {
 
   if (success) {
     uiHandles.tabBarWidget->setTabModified(activeId, false);
-    tabController->tabSaved(activeId);
+    tabBridge->tabSaved(activeId);
   }
 }
 
 void TabFlows::tabTogglePin(int tabId, bool isPinned) {
   if (isPinned) {
-    tabController->unpinTab(tabId);
+    tabBridge->unpinTab(tabId);
   } else {
-    tabController->pinTab(tabId);
+    tabBridge->pinTab(tabId);
   }
 }
 
 void TabFlows::copyTabPath(int tabId) {
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
   QString path;
 
   for (const auto &tab : snapshot.tabs) {
@@ -128,22 +127,22 @@ bool TabFlows::revealTab(const neko::TabContextFfi &ctx) {
 
 void TabFlows::newTab() {
   saveScrollOffsetsForActiveTab();
-  tabController->addTab();
+  tabBridge->addTab();
 }
 
 void TabFlows::tabChanged(int tabId) {
   saveScrollOffsetsForActiveTab();
-  tabController->setActiveTab(tabId);
+  tabBridge->setActiveTab(tabId);
 }
 
-void TabFlows::tabUnpinned(int tabId) { tabController->unpinTab(tabId); }
+void TabFlows::tabUnpinned(int tabId) { tabBridge->unpinTab(tabId); }
 
 void TabFlows::moveTabBy(int delta, bool useHistory) {
-  tabController->moveTabBy(delta, useHistory);
+  TabBridge::moveTabBy(nullptr, delta, useHistory);
 }
 
 void TabFlows::bufferChanged() {
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
   const int activeId = static_cast<int>(snapshot.active_id);
 
   bool modified = false;
@@ -158,15 +157,15 @@ void TabFlows::bufferChanged() {
 }
 
 void TabFlows::handleTabsClosed() {
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
   const int newTabCount = static_cast<int>(snapshot.tabs.size());
 
   uiHandles.statusBarWidget->onTabClosed(newTabCount);
 }
 
-// TODO(scarlet): Move this to TabController?
+// TODO(scarlet): Move this to TabBridge?
 int TabFlows::getModifiedTabCount(const QList<int> &ids) {
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
 
   QSet<int> idSet;
   idSet.reserve(ids.size());
@@ -196,7 +195,7 @@ SaveResult TabFlows::saveTab(int tabId, bool isSaveAs) {
 }
 
 bool TabFlows::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
   QString fileName;
   QString path;
 
@@ -233,7 +232,7 @@ bool TabFlows::closeManyTabs(const QList<int> &ids, bool forceClose,
     return false;
   }
 
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
 
   QHash<int, bool> modifiedById;
   modifiedById.reserve(static_cast<int>(snapshot.tabs.size()));
@@ -286,7 +285,7 @@ bool TabFlows::closeManyTabs(const QList<int> &ids, bool forceClose,
 }
 
 void TabFlows::saveScrollOffsetsForActiveTab() {
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
 
   if (!snapshot.active_present) {
     return;
@@ -302,11 +301,11 @@ void TabFlows::saveScrollOffsetsForActiveTab() {
       static_cast<int32_t>(horizontalScrollOffset),
       static_cast<int32_t>(verticalScrollOffset)};
 
-  tabController->setTabScrollOffsets(activeId, scrollOffsets);
+  tabBridge->setTabScrollOffsets(activeId, scrollOffsets);
 }
 
 void TabFlows::restoreScrollOffsetsForActiveTab() {
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
 
   neko::ScrollOffsetFfi offsets;
   for (const auto &tab : snapshot.tabs) {

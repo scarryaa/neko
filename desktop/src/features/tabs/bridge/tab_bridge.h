@@ -1,21 +1,21 @@
-#ifndef TAB_CONTROLLER_H
-#define TAB_CONTROLLER_H
+#ifndef TAB_BRIDGE_H
+#define TAB_BRIDGE_H
 
 #include "features/tabs/types/types.h"
 #include <QList>
 #include <QObject>
 #include <neko-core/src/ffi/bridge.rs.h>
 
-class TabController : public QObject {
+class TabBridge : public QObject {
   Q_OBJECT
 
 public:
-  struct TabControllerProps {
+  struct TabBridgeProps {
     rust::Box<neko::TabController> tabController;
   };
 
-  explicit TabController(TabControllerProps props);
-  ~TabController() override = default;
+  explicit TabBridge(TabBridgeProps props);
+  ~TabBridge() override = default;
 
   // Getters
   [[nodiscard]] QList<int>

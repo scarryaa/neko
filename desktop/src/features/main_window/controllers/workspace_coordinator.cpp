@@ -1,16 +1,16 @@
 #include "workspace_coordinator.h"
+#include "core/bridge/app_bridge.h"
 #include "features/command_palette/command_palette_widget.h"
-#include "features/editor/controllers/editor_controller.h"
+#include "features/editor/bridge/editor_bridge.h"
 #include "features/editor/editor_widget.h"
 #include "features/editor/gutter_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
-#include "features/main_window/controllers/app_bridge.h"
 #include "features/main_window/controllers/command_executor.h"
 #include "features/main_window/services/app_config_service.h"
 #include "features/main_window/services/dialog_service.h"
 #include "features/main_window/ui_handles.h"
 #include "features/status_bar/status_bar_widget.h"
-#include "features/tabs/controllers/tab_controller.h"
+#include "features/tabs/bridge/tab_bridge.h"
 #include "features/tabs/tab_bar_widget.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 #include <QApplication>
@@ -22,46 +22,46 @@
 
 WorkspaceCoordinator::WorkspaceCoordinator(
     const WorkspaceCoordinatorProps &props, QObject *parent)
-    : tabController(props.tabController), appBridge(props.appBridge),
+    : tabBridge(props.tabBridge), appBridge(props.appBridge),
       appConfigService(props.appConfigService),
       editorBridge(props.editorBridge), uiHandles(props.uiHandles),
       commandExecutor(props.commandExecutor),
-      tabFlows({.tabController = props.tabController,
+      tabFlows({.tabBridge = props.tabBridge,
                 .appBridge = props.appBridge,
                 .editorBridge = props.editorBridge,
                 .uiHandles = props.uiHandles}),
       QObject(parent) {
-  // TabController -> WorkspaceCoordinator
-  connect(tabController, &TabController::activeTabChanged, this,
+  // TabBridge -> WorkspaceCoordinator
+  connect(tabBridge, &TabBridge::activeTabChanged, this,
           &WorkspaceCoordinator::refreshUiForActiveTab);
-  connect(tabController, &TabController::allTabsClosed, this,
+  connect(tabBridge, &TabBridge::allTabsClosed, this,
           [this] { refreshUiForActiveTab(false); });
-  connect(tabController, &TabController::restoreScrollOffsetsForReopenedTab,
-          this, [this](const TabScrollOffsets &scrollOffsets) {
+  connect(tabBridge, &TabBridge::restoreScrollOffsetsForReopenedTab, this,
+          [this](const TabScrollOffsets &scrollOffsets) {
             tabFlows.restoreScrollOffsetsForReopenedTab(scrollOffsets);
           });
 
-  // TabController -> TabBarWidget
-  connect(tabController, &TabController::tabOpened, uiHandles.tabBarWidget,
+  // TabBridge -> TabBarWidget
+  connect(tabBridge, &TabBridge::tabOpened, uiHandles.tabBarWidget,
           &TabBarWidget::addTab);
-  connect(tabController, &TabController::tabClosed, uiHandles.tabBarWidget,
+  connect(tabBridge, &TabBridge::tabClosed, uiHandles.tabBarWidget,
           &TabBarWidget::removeTab);
-  connect(tabController, &TabController::tabMoved, uiHandles.tabBarWidget,
+  connect(tabBridge, &TabBridge::tabMoved, uiHandles.tabBarWidget,
           [this](int fromIndex, int toIndex) {
             uiHandles.tabBarWidget->moveTab(fromIndex, toIndex);
             uiHandles.editorWidget->setFocus();
           });
-  connect(tabController, &TabController::tabUpdated, uiHandles.tabBarWidget,
+  connect(tabBridge, &TabBridge::tabUpdated, uiHandles.tabBarWidget,
           &TabBarWidget::updateTab);
-  connect(tabController, &TabController::activeTabChanged,
-          uiHandles.tabBarWidget, &TabBarWidget::setCurrentTabId);
+  connect(tabBridge, &TabBridge::activeTabChanged, uiHandles.tabBarWidget,
+          &TabBarWidget::setCurrentTabId);
 
-  // WorkspaceCoordinator -> TabController
-  connect(this, &WorkspaceCoordinator::fileOpened, tabController,
-          &TabController::fileOpened);
+  // WorkspaceCoordinator -> TabBridge
+  connect(this, &WorkspaceCoordinator::fileOpened, tabBridge,
+          &TabBridge::fileOpened);
 
-  auto &activeEditor = appBridge->getActiveEditorMut();
-  setActiveEditor(&activeEditor);
+  auto editorController = appBridge->getEditorController();
+  setActiveEditor(editorController);
 }
 
 void WorkspaceCoordinator::fileExplorerToggled() {
@@ -77,7 +77,7 @@ void WorkspaceCoordinator::fileExplorerToggled() {
 }
 
 void WorkspaceCoordinator::cursorPositionClicked() {
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
   if (!snapshot.active_present) {
     return;
   }
@@ -135,7 +135,7 @@ WorkspaceCoordinator::requestFileExplorerDirectory() const {
 void WorkspaceCoordinator::commandPaletteGoToPosition(
     const QString &jumpCommandKey, int64_t row, int64_t column,
     bool isPosition) {
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
   if (!snapshot.active_present) {
     return;
   }
@@ -199,7 +199,7 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &key,
     return;
   }
 
-  const auto beforeSnapshot = tabController->getTabsSnapshot();
+  const auto beforeSnapshot = tabBridge->getTabsSnapshot();
   if (beforeSnapshot.active_present) {
     tabFlows.saveScrollOffsetsForActiveTab();
   }
@@ -221,12 +221,12 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &key,
       // If config was already open, just activate it
       for (const auto &tab : beforeSnapshot.tabs) {
         if (tab.path_present && tab.path == path) {
-          tabController->setActiveTab(static_cast<int>(tab.id));
+          tabBridge->setActiveTab(static_cast<int>(tab.id));
           return;
         }
       }
 
-      tabController->notifyTabOpenedFromCore(tabId);
+      tabBridge->notifyTabOpenedFromCore(tabId);
       break;
     }
     case neko::UiIntentKindFfi::ShowJumpAliases: {
@@ -240,7 +240,7 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &key,
 
 void WorkspaceCoordinator::openFile() {
   // Check if there is an active tab - if so, use the parent path
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
   QString startingPath;
 
   if (snapshot.active_present) {
@@ -265,7 +265,7 @@ void WorkspaceCoordinator::openFile() {
     return;
   }
 
-  auto targetTabId = tabController->addTab();
+  auto targetTabId = tabBridge->addTab();
   const auto result = appBridge->openFile(targetTabId, filePath.toStdString());
 
   if (result.success) {
@@ -277,7 +277,7 @@ void WorkspaceCoordinator::fileSelected(const std::string &path,
                                         bool focusEditor) {
   // Save scroll offsets if there is an active tab
   {
-    const auto snapshot = tabController->getTabsSnapshot();
+    const auto snapshot = tabBridge->getTabsSnapshot();
     if (snapshot.active_present) {
       tabFlows.saveScrollOffsetsForActiveTab();
     }
@@ -285,23 +285,23 @@ void WorkspaceCoordinator::fileSelected(const std::string &path,
     // If file already open, just activate it
     for (const auto &tab : snapshot.tabs) {
       if (tab.path_present && tab.path == path) {
-        tabController->setActiveTab(static_cast<int>(tab.id));
+        tabBridge->setActiveTab(static_cast<int>(tab.id));
         return;
       }
     }
   }
 
   // Otherwise, create a tab, open file into it, rollback on failure
-  const int newTabId = tabController->addTab();
+  const int newTabId = tabBridge->addTab();
   auto result = appBridge->openFile(path);
 
   if (!result.success) {
-    tabController->closeTabs(neko::CloseTabOperationTypeFfi::Single, newTabId,
-                             false);
+    tabBridge->closeTabs(neko::CloseTabOperationTypeFfi::Single, newTabId,
+                         false);
     return;
   }
 
-  tabController->fileOpened(result.snapshot);
+  tabBridge->fileOpened(result.snapshot);
 }
 
 void WorkspaceCoordinator::fileSaved(bool saveAs) {
@@ -345,7 +345,7 @@ SaveResult WorkspaceCoordinator::saveTab(int tabId, bool isSaveAs) {
 }
 
 void WorkspaceCoordinator::revealActiveTab() {
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
   if (!snapshot.active_present) {
     return;
   }
@@ -378,7 +378,7 @@ void WorkspaceCoordinator::closeTabs(
 }
 
 void WorkspaceCoordinator::applyInitialState() {
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
 
   int index = 0;
   for (const auto &tab : snapshot.tabs) {
@@ -408,7 +408,7 @@ void WorkspaceCoordinator::applyInitialState() {
 }
 
 void WorkspaceCoordinator::refreshUiForActiveTab(bool focusEditor) {
-  const auto snapshot = tabController->getTabsSnapshot();
+  const auto snapshot = tabBridge->getTabsSnapshot();
 
   if (!snapshot.active_present) {
     uiHandles.tabBarContainerWidget->hide();
@@ -422,8 +422,8 @@ void WorkspaceCoordinator::refreshUiForActiveTab(bool focusEditor) {
   // IMPORTANT: Set active editor before re-showing widgets, otherwise
   // Qt layout triggers a resize event (which queries the line count with the
   // old editor reference)
-  auto &activeEditor = appBridge->getActiveEditorMut();
-  setActiveEditor(&activeEditor);
+  auto editorController = appBridge->getEditorController();
+  setEditorController(std::move(editorController));
 
   uiHandles.emptyStateWidget->hide();
   uiHandles.tabBarContainerWidget->show();
@@ -444,8 +444,9 @@ void WorkspaceCoordinator::refreshUiForActiveTab(bool focusEditor) {
   }
 }
 
-void WorkspaceCoordinator::setActiveEditor(neko::Editor *editor) {
-  editorBridge->setEditor(editor);
+void WorkspaceCoordinator::setEditorController(
+    rust::Box<neko::EditorController> editorController) {
+  editorBridge->setController(std::move(editorController));
 
   uiHandles.editorWidget->setEditorBridge(editorBridge);
   uiHandles.gutterWidget->setEditorBridge(editorBridge);

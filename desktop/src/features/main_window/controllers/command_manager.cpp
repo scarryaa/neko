@@ -1,7 +1,7 @@
 #include "command_manager.h"
+#include "core/bridge/app_bridge.h"
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
-#include "features/main_window/controllers/app_bridge.h"
 #include "features/main_window/controllers/workspace_coordinator.h"
 #include "neko-core/src/ffi/bridge.rs.h"
 #include <cstdint>
