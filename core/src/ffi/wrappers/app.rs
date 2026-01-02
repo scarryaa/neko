@@ -1,5 +1,5 @@
 use crate::{
-    AppState, Buffer, ConfigManager, Editor, Tab, TabError, TabId,
+    AppState, Buffer, ConfigManager, Tab, TabError, TabId,
     ffi::{
         CloseManyTabsResult, CloseTabOperationTypeFfi, CreateDocumentTabAndViewResultFfi,
         DocumentErrorFfi, MoveActiveTabResult, PinTabResult, ScrollOffsetFfi, TabSnapshot,
@@ -25,16 +25,6 @@ pub fn new_app_state(
 }
 
 impl AppState {
-    pub(crate) fn active_editor_wrapper(&self) -> &Editor {
-        self.editor()
-            .expect("Attempted to access editor but failed")
-    }
-
-    pub(crate) fn active_editor_mut_wrapper(&mut self) -> &mut Editor {
-        self.editor_mut()
-            .expect("Attempted to access mutable editor but failed")
-    }
-
     pub fn get_close_tab_ids_wrapper(
         &self,
         operation_type: CloseTabOperationTypeFfi,

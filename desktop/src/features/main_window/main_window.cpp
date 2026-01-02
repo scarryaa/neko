@@ -59,9 +59,11 @@ MainWindow::MainWindow(QWidget *parent)
   commandRegistry = CommandRegistry();
   contextMenuRegistry = ContextMenuRegistry();
 
-  auto *appController = new AppController({.appState = &*appState});
+  auto *appController = new AppController({.appState = &*appState,
+                                           .configManager = *configManager,
+                                           .rootPath = ""});
 
-  neko::Editor *editor = &appController->getActiveEditorMut();
+  neko::EditorHandle *editor = &*appController->getActiveEditorMut();
   editorController = new EditorController({.editor = editor});
 
   auto *tabController = new TabController({.tabCoreApi = appController});
@@ -79,7 +81,7 @@ MainWindow::MainWindow(QWidget *parent)
       this);
 
   applyTheme();
-  setupWidgets(editor, tabController, appController);
+  setupWidgets(tabController, appController);
 
   // Layout
   MainWindowLayoutBuilder layoutBuilder(
@@ -147,8 +149,7 @@ MainWindow::MainWindow(QWidget *parent)
   themeProvider->reload();
 }
 
-void MainWindow::setupWidgets(neko::Editor *editor,
-                              TabController *tabController,
+void MainWindow::setupWidgets(TabController *tabController,
                               AppController *appController) {
   auto themes = themeProvider->getCurrentThemes();
   auto fonts = uiStyleManager->getCurrentFonts();

@@ -2,7 +2,8 @@
 #include <neko-core/src/ffi/bridge.rs.h>
 
 AppController::AppController(const AppControllerProps &props)
-    : appState(props.appState) {}
+    : appState(props.appState), appController(neko::new_app_controller(
+                                    props.configManager, props.rootPath)) {}
 
 // TabCoreAPI
 neko::TabsSnapshot AppController::getTabsSnapshot() {
@@ -17,10 +18,15 @@ AppController::getCloseTabIds(neko::CloseTabOperationTypeFfi operationType,
   return {result.begin(), result.end()};
 }
 
-neko::NewTabResult AppController::newTab() { return appState->new_tab(); }
+neko::CreateDocumentTabAndViewResultFfi AppController::createDocumentTabAndView(
+    const std::string &title, bool addTabToHistory, bool activateView) {
+  return appState->create_document_tab_and_view(title, addTabToHistory,
+                                                activateView);
+}
 
-neko::MoveActiveTabResult AppController::moveTabBy(int delta, bool useHistory) {
-  return appState->move_active_tab_by(delta, useHistory);
+neko::MoveActiveTabResult AppController::moveTabBy(neko::Buffer buffer,
+                                                   int delta, bool useHistory) {
+  return appState->move_active_tab_by(buffer, delta, useHistory);
 }
 
 bool AppController::moveTab(int fromIndex, int toIndex) {
@@ -51,15 +57,14 @@ void AppController::setTabScrollOffsets(int tabId,
                                         const neko::ScrollOffsetFfi &offsets) {
   appState->set_tab_scroll_offsets(tabId, offsets);
 }
-
 // End TabCoreAPI
 
-neko::FileOpenResult AppController::openFile(const std::string &path) {
-  return appState->open_file(path);
+uint64_t AppController::openFile(const std::string &path, bool addToHistory) {
+  return appState->ensure_tab_for_path(path, addToHistory);
 }
 
-neko::Editor &AppController::getActiveEditorMut() const {
-  return appState->get_active_editor_mut();
+rust::Box<neko::EditorHandle> AppController::getActiveEditorMut() const {
+  return appController->get_active_editor_mut();
 }
 
 neko::FileTree &AppController::getFileTreeMut() const {
@@ -122,21 +127,10 @@ void AppController::runTabCommand(const std::string &commandId,
   neko::run_tab_command(*appState, commandId, ctx, closePinned);
 }
 
-bool AppController::saveTab(int tabId) { return appState->save_tab(tabId); }
-
-bool AppController::saveTabAs(int tabId, const std::string &path) {
-  return appState->save_tab_as(tabId, path);
+bool AppController::saveDocument(int documentId) {
+  return appState->save_document(documentId);
 }
 
-neko::FileOpenResult AppController::openFile(int tabId,
-                                             const std::string &path) {
-  auto openResult = appState->open_file(path);
-
-  if (!openResult.success) {
-    // Roll back the added tab
-    appState->close_tabs(neko::CloseTabOperationTypeFfi::Single, tabId, false);
-    return openResult;
-  }
-
-  return openResult;
+bool AppController::saveDocumentAs(int documentId, const std::string &path) {
+  return appState->save_document_as(documentId, path);
 }

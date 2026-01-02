@@ -35,8 +35,7 @@ public:
   ~MainWindow() override = default;
 
 private:
-  void setupWidgets(neko::Editor *editor, TabController *tabController,
-                    AppController *appController);
+  void setupWidgets(TabController *tabController, AppController *appController);
   void applyTheme();
   void connectSignals();
 

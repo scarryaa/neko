@@ -1,6 +1,6 @@
 use crate::{
     AppState, Buffer, ConfigManager, Editor, FileTree, ShortcutsManager, ThemeManager,
-    execute_jump_key, ffi::wrappers::*,
+    execute_jump_key, ffi::AppController, ffi::EditorHandle, ffi::wrappers::*,
 };
 
 #[cxx::bridge(namespace = "neko")]
@@ -301,13 +301,19 @@ pub mod ffi {
         type Editor;
         type FileTree;
         type Buffer;
+        type EditorHandle;
+        type AppController;
+
+        // AppController
+        pub fn new_app_controller(
+            config_manager: &ConfigManager,
+            root_path: String,
+        ) -> Box<AppController>;
+        pub fn get_active_editor_mut(self: &AppController) -> Box<EditorHandle>;
+        pub fn open_file(self: &AppController, path: String, add_to_history: bool) -> Result<u64>;
 
         // AppState
         fn new_app_state(root_path: &str, config_manager: &ConfigManager) -> Result<Box<AppState>>;
-        #[cxx_name = "active_editor"]
-        pub(crate) fn active_editor_wrapper(self: &AppState) -> &Editor;
-        #[cxx_name = "active_editor_mut"]
-        pub(crate) fn active_editor_mut_wrapper(self: &mut AppState) -> &mut Editor;
         pub(crate) fn get_file_tree(self: &AppState) -> &FileTree;
         pub(crate) fn get_file_tree_mut(self: &mut AppState) -> &mut FileTree;
         #[cxx_name = "get_close_tab_ids"]
@@ -342,7 +348,9 @@ pub mod ffi {
         pub(crate) fn pin_tab_wrapper(self: &mut AppState, id: u64) -> PinTabResult;
         #[cxx_name = "unpin_tab"]
         pub(crate) fn unpin_tab_wrapper(self: &mut AppState, id: u64) -> PinTabResult;
+        #[cxx_name = "save_document"]
         pub(crate) fn save_document_wrapper(self: &mut AppState, id: u64) -> bool;
+        #[cxx_name = "save_document_as"]
         pub(crate) fn save_document_as_wrapper(self: &mut AppState, id: u64, path: &str) -> bool;
         #[cxx_name = "set_tab_scroll_offsets"]
         pub(crate) fn set_tab_scroll_offsets_wrapper(
@@ -350,12 +358,14 @@ pub mod ffi {
             id: u64,
             new_offsets: ScrollOffsetFfi,
         ) -> bool;
+        #[cxx_name = "create_document_tab_and_view"]
         pub fn create_document_tab_and_view_wrapper(
             self: &mut AppState,
             title: String,
             add_tab_to_history: bool,
             activate_view: bool,
         ) -> CreateDocumentTabAndViewResultFfi;
+        #[cxx_name = "ensure_tab_for_path"]
         pub fn ensure_tab_for_path_wrapper(
             self: &mut AppState,
             path: &str,
@@ -389,6 +399,9 @@ pub mod ffi {
         pub(crate) fn set_theme(self: &mut ThemeManager, theme_name: &str) -> bool;
         #[cxx_name = "get_current_theme_name"]
         pub(crate) fn get_current_theme_name_wrapper(self: &ThemeManager) -> String;
+
+        // EditorHandle
+        pub fn select_word(self: &mut EditorHandle, row: usize, column: usize) -> ChangeSetFfi;
 
         // Editor
         #[cxx_name = "move_to"]
@@ -509,7 +522,8 @@ pub mod ffi {
             anchor_row: usize,
             row: usize,
         ) -> ChangeSetFfi;
-        pub(crate) fn buffer_is_empty(self: &Editor, buffer: &Buffer) -> bool;
+        // #[cxx_name = "buffer_is_empty"]
+        // pub(crate) fn buffer_is_empty_wrapper(self: &Editor, view_id: u64) -> bool;
 
         // FileTree
         #[cxx_name = "set_root_dir"]

@@ -5,6 +5,7 @@
 
 namespace neko {
 class Editor;
+class EditorHandle;
 class Selection;
 class CursorPosition;
 class ChangeSetFfi;
@@ -21,6 +22,7 @@ class TabSnapshotMaybe;
 class PinTabResult;
 class NewTabResult;
 class CloseManyTabsResult;
+class CreateDocumentTabAndViewResultFfi;
 
 class FileOpenResult;
 class MoveActiveTabResult;

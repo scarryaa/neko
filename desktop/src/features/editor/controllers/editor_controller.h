@@ -2,17 +2,17 @@
 #define EDITOR_CONTROLLER_H
 
 #include "features/editor/types/types.h"
-#include "types/ffi_types_fwd.h"
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <neko-core/src/ffi/bridge.rs.h>
 
 class EditorController : public QObject {
   Q_OBJECT
 
 public:
   struct EditorControllerProps {
-    neko::Editor *editor;
+    neko::EditorHandle *editor;
   };
 
   explicit EditorController(const EditorControllerProps &props);
@@ -97,7 +97,8 @@ private:
   void nav(neko::ChangeSetFfi (neko::Editor::*moveFn)(),
            neko::ChangeSetFfi (neko::Editor::*selectFn)(), bool shouldSelect);
 
-  neko::Editor *editor;
+  // TODO(scarlet): Wrap this (avoid raw neko:: types)
+  rust::Box<neko::Editor> editor;
 };
 
 #endif

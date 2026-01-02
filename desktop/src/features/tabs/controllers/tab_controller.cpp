@@ -4,10 +4,7 @@
 TabPresentation TabController::fromSnapshot(const neko::TabSnapshot &tab) {
   return TabPresentation{
       .id = static_cast<int>(tab.id),
-      .title = QString::fromUtf8(tab.title),
-      .path = QString::fromUtf8(tab.path),
       .pinned = tab.pinned,
-      .modified = tab.modified,
       .scrollOffsets =
           TabScrollOffsets{.x = static_cast<double>(tab.scroll_offsets.x),
                            .y = static_cast<double>(tab.scroll_offsets.y)},
@@ -42,13 +39,29 @@ int TabController::addTab() {
     return -1;
   }
 
-  auto result = tabCoreApi->newTab();
-  int newTabId = static_cast<int>(result.id);
-  int newTabIndex = static_cast<int>(result.index);
-  auto presentation = fromSnapshot(result.snapshot);
+  auto result = tabCoreApi->createDocumentTabAndView("Untitled", true, true);
+  const int newTabId = static_cast<int>(result.tab_id);
+  auto tabsSnapshot = tabCoreApi->getTabsSnapshot();
 
-  emit tabOpened(presentation, newTabIndex);
+  int newTabIndex = -1;
+  std::optional<TabPresentation> presentation;
+
+  for (int i = 0; i < tabsSnapshot.tabs.size(); ++i) {
+    const auto &tabSnapshot = tabsSnapshot.tabs[i];
+    if (static_cast<int>(tabSnapshot.id) == newTabId) {
+      newTabIndex = i;
+      presentation = fromSnapshot(tabSnapshot);
+      break;
+    }
+  }
+
+  if (newTabIndex < 0 || !presentation.has_value()) {
+    return -1;
+  }
+
+  emit tabOpened(presentation.value(), newTabIndex);
   emit activeTabChanged(newTabId);
+
   return newTabId;
 }
 
@@ -164,38 +177,40 @@ bool TabController::unpinTab(int tabId) {
 }
 
 bool TabController::moveTabBy(int delta, bool useHistory) {
-  if (tabCoreApi == nullptr) {
-    return false;
-  }
+  // if (tabCoreApi == nullptr) {
+  //   return false;
+  // }
 
-  neko::MoveActiveTabResult result = tabCoreApi->moveTabBy(delta, useHistory);
-  int tabId = static_cast<int>(result.id);
-  TabScrollOffsets offsets;
-
-  if (result.reopened) {
-    TabPresentation presentation = fromSnapshot(result.snapshot);
-    auto snapshot = getTabsSnapshot();
-    offsets = presentation.scrollOffsets;
-
-    // Get the tab index
-    int index = 0;
-    for (int i = 0; i < static_cast<int>(snapshot.tabs.size()); ++i) {
-      if (static_cast<int>(snapshot.tabs[i].id) == tabId) {
-        index = i;
-        break;
-      }
-    }
-
-    emit tabOpened(presentation, index);
-  }
-
-  emit activeTabChanged(tabId);
-
-  // Restore offsets after emitting activeTabChanged, since the handler tries to
-  // restore scroll offsets on active change
-  if (result.reopened) {
-    emit restoreScrollOffsetsForReopenedTab(offsets);
-  }
+  // neko::MoveActiveTabResult result =
+  //     tabCoreApi->moveTabBy(buffer, delta, useHistory);
+  // int tabId = static_cast<int>(result.id);
+  // TabScrollOffsets offsets;
+  //
+  // if (result.reopened) {
+  //   TabPresentation presentation = fromSnapshot(result.snapshot);
+  //   auto snapshot = getTabsSnapshot();
+  //   offsets = presentation.scrollOffsets;
+  //
+  //   // Get the tab index
+  //   int index = 0;
+  //   for (int i = 0; i < static_cast<int>(snapshot.tabs.size()); ++i) {
+  //     if (static_cast<int>(snapshot.tabs[i].id) == tabId) {
+  //       index = i;
+  //       break;
+  //     }
+  //   }
+  //
+  //   emit tabOpened(presentation, index);
+  // }
+  //
+  // emit activeTabChanged(tabId);
+  //
+  // // Restore offsets after emitting activeTabChanged, since the handler tries
+  // to
+  // // restore scroll offsets on active change
+  // if (result.reopened) {
+  //   emit restoreScrollOffsetsForReopenedTab(offsets);
+  // }
 
   return true;
 }

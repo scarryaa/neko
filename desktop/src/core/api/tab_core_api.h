@@ -2,6 +2,7 @@
 #define TAB_CORE_API_H
 
 #include "types/ffi_types_fwd.h"
+#include <neko-core/src/ffi/bridge.rs.h>
 #include <vector>
 
 struct ITabCoreApi {
@@ -12,8 +13,12 @@ struct ITabCoreApi {
   getCloseTabIds(neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
                  bool closePinned) = 0;
 
-  virtual neko::NewTabResult newTab() = 0;
-  virtual neko::MoveActiveTabResult moveTabBy(int delta, bool useHistory) = 0;
+  virtual neko::CreateDocumentTabAndViewResultFfi
+  createDocumentTabAndView(const std::string &title, bool addTabToHistory,
+                           bool activateView) = 0;
+  uint64_t openFile(const std::string &path, bool addToHistory);
+  virtual neko::MoveActiveTabResult moveTabBy(neko::Buffer buffer, int delta,
+                                              bool useHistory) = 0;
   virtual bool moveTab(int fromIndex, int toIndex) = 0;
   virtual neko::PinTabResult pinTab(int tabId) = 0;
   virtual neko::PinTabResult unpinTab(int tabId) = 0;

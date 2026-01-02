@@ -12,6 +12,8 @@ class AppController : public QObject, public ITabCoreApi {
 public:
   struct AppControllerProps {
     neko::AppState *appState;
+    neko::ConfigManager &configManager;
+    const std::string &rootPath;
   };
 
   struct JumpCommandArgs {
@@ -28,12 +30,15 @@ public:
   explicit AppController(const AppControllerProps &props);
   ~AppController() override = default;
 
+  // AppController (Rust)
+  uint64_t openFile(const std::string &path, bool addToHistory);
+
   // ITabCoreApi
   neko::TabsSnapshot getTabsSnapshot() override;
   std::vector<int> getCloseTabIds(neko::CloseTabOperationTypeFfi operationType,
                                   int anchorTabId, bool closePinned) override;
-  neko::NewTabResult newTab() override;
-  neko::MoveActiveTabResult moveTabBy(int delta, bool useHistory) override;
+  neko::MoveActiveTabResult moveTabBy(neko::Buffer buffer, int delta,
+                                      bool useHistory) override;
   bool moveTab(int fromIndex, int toIndex) override;
   neko::PinTabResult pinTab(int tabId) override;
   neko::PinTabResult unpinTab(int tabId) override;
@@ -44,10 +49,12 @@ public:
   void setActiveTab(int tabId) override;
   void setTabScrollOffsets(int tabId,
                            const neko::ScrollOffsetFfi &offsets) override;
+  neko::CreateDocumentTabAndViewResultFfi
+  createDocumentTabAndView(const std::string &title, bool addTabToHistory,
+                           bool activateView) override;
   // End ITabCoreApi
 
-  neko::FileOpenResult openFile(const std::string &path);
-  [[nodiscard]] neko::Editor &getActiveEditorMut() const;
+  [[nodiscard]] rust::Box<neko::EditorHandle> getActiveEditorMut() const;
   [[nodiscard]] neko::FileTree &getFileTreeMut() const;
   [[nodiscard]] neko::TabCommandStateFfi
   getTabCommandState(const neko::TabContextFfi &ctx) const;
@@ -61,12 +68,12 @@ public:
   void runTabCommand(const std::string &commandId,
                      const neko::TabContextFfi &ctx, bool closePinned);
 
-  bool saveTab(int tabId);
-  bool saveTabAs(int tabId, const std::string &path);
-  neko::FileOpenResult openFile(int tabId, const std::string &path);
+  bool saveDocument(int documentId);
+  bool saveDocumentAs(int documentId, const std::string &path);
 
 private:
   neko::AppState *appState;
+  rust::Box<neko::AppController> appController;
 };
 
 #endif

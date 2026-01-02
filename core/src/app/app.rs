@@ -23,6 +23,7 @@ pub struct AppState {
 
 impl AppState {
     // TODO(scarlet): Convert this result to e.g. AppStateError
+    // TODO(scarlet): Convert the path arg to <P: AsRef<Path>>
     pub fn new(config_manager: &ConfigManager, root_path: Option<&str>) -> FileSystemResult<Self> {
         let file_tree = FileTree::new(root_path)?;
 
@@ -78,6 +79,10 @@ impl AppState {
 
     pub fn get_document_manager(&self) -> &DocumentManager {
         &self.document_manager
+    }
+
+    pub fn get_view_manager(&self) -> &ViewManager {
+        &self.view_manager
     }
 
     pub fn active_view_id(&self) -> Option<ViewId> {
