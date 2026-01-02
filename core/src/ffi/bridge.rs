@@ -183,6 +183,10 @@ pub mod ffi {
         pub document_id: u64,
         pub pinned: bool,
         pub scroll_offsets: ScrollOffsetFfi,
+        pub title: String,
+        pub path_present: bool,
+        pub path: String,
+        pub modified: bool,
     }
 
     struct TabsSnapshot {
@@ -413,6 +417,7 @@ pub mod ffi {
         ) -> Result<FileNodeSnapshot>;
         pub(crate) fn get_path_of_parent(self: &FileTreeController, path: &str) -> String;
         pub(crate) fn ensure_path_visible(self: &mut FileTreeController, path: &str) -> Result<()>;
+        pub fn set_expanded(self: &mut FileTreeController, path: &str);
         pub(crate) fn set_collapsed(self: &mut FileTreeController, path: &str);
         pub(crate) fn toggle_select_for_path(self: &mut FileTreeController, path: &str);
         pub(crate) fn set_current_path(self: &mut FileTreeController, path: &str);

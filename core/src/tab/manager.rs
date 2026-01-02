@@ -1,7 +1,7 @@
 use super::{ClosedTabStore, TabHistoryManager};
 use crate::{
     CloseTabOperationType, ClosedTabInfo, DocumentId, MoveActiveTabResult, MoveTabError,
-    ScrollOffsets, Tab, TabError, TabId,
+    ScrollOffsets, Tab, TabError, TabId, ViewId,
 };
 
 pub enum ResolveOutcome {
@@ -139,9 +139,14 @@ impl TabManager {
     // Setters
     /// Creates a new tab associated with a given [`DocumentId`] and activates it, optionally
     /// adding it to history.
-    pub fn add_tab_for_document(&mut self, document_id: DocumentId, add_to_history: bool) -> TabId {
+    pub fn add_tab_for_document(
+        &mut self,
+        document_id: DocumentId,
+        view_id: ViewId,
+        add_to_history: bool,
+    ) -> TabId {
         let new_tab_id = self.generate_next_id();
-        let tab = Tab::new(new_tab_id, document_id);
+        let tab = Tab::new(new_tab_id, document_id, view_id);
 
         self.tabs.push(tab);
         if add_to_history {

@@ -56,11 +56,11 @@ void AppBridge::runTabCommand(const std::string &commandId,
   commandController->run_tab_command(commandId, ctx, closePinned);
 }
 
-bool AppBridge::saveDocument(int documentId) {
+bool AppBridge::saveDocument(uint64_t documentId) {
   return appController->save_document(documentId);
 }
 
-bool AppBridge::saveDocumentAs(int documentId, const std::string &path) {
+bool AppBridge::saveDocumentAs(uint64_t documentId, const std::string &path) {
   return appController->save_document_as(documentId, path);
 }
 

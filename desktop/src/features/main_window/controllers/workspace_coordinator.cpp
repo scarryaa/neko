@@ -15,6 +15,7 @@
 #include "neko-core/src/ffi/bridge.rs.h"
 #include <QApplication>
 #include <QClipboard>
+#include <QDir>
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QPushButton>
@@ -61,7 +62,7 @@ WorkspaceCoordinator::WorkspaceCoordinator(
           &TabBridge::fileOpened);
 
   auto editorController = appBridge->getEditorController();
-  setActiveEditor(editorController);
+  setEditorController(std::move(editorController));
 }
 
 void WorkspaceCoordinator::fileExplorerToggled() {
@@ -106,9 +107,10 @@ void WorkspaceCoordinator::cursorPositionClicked() {
       });
 }
 
-std::vector<ShortcutHintRow> WorkspaceCoordinator::buildJumpHintRows() {
+std::vector<ShortcutHintRow>
+WorkspaceCoordinator::buildJumpHintRows(AppBridge *appBridge) {
   std::vector<ShortcutHintRow> result;
-  const auto jumpCommands = AppBridge::getAvailableJumpCommands();
+  const auto jumpCommands = appBridge->getAvailableJumpCommands();
 
   result.reserve(jumpCommands.size());
   for (const auto &cmd : jumpCommands) {
@@ -133,6 +135,7 @@ WorkspaceCoordinator::requestFileExplorerDirectory() const {
 }
 
 void WorkspaceCoordinator::commandPaletteGoToPosition(
+    // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
     const QString &jumpCommandKey, int64_t row, int64_t column,
     bool isPosition) {
   const auto snapshot = tabBridge->getTabsSnapshot();
@@ -176,7 +179,7 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &key,
   neko::CommandKindFfi kind;
   rust::String argument;
 
-  const auto commands = AppBridge::getAvailableCommands();
+  const auto commands = appBridge->getAvailableCommands();
   for (const auto &nekoCommand : commands) {
     if (key == QString::fromUtf8(nekoCommand.key)) {
       rustKey = nekoCommand.key;
@@ -238,70 +241,62 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &key,
   }
 }
 
-void WorkspaceCoordinator::openFile() {
-  // Check if there is an active tab - if so, use the parent path
+QString WorkspaceCoordinator::getInitialDialogDirectory() const {
   const auto snapshot = tabBridge->getTabsSnapshot();
-  QString startingPath;
 
-  if (snapshot.active_present) {
-    const int activeId = static_cast<int>(snapshot.active_id);
-    for (const auto &tab : snapshot.tabs) {
-      if (tab.path_present && tab.id == activeId) {
-        startingPath = QString::fromUtf8(tab.path);
-        break;
-      }
+  if (!snapshot.active_present) {
+    return QDir::homePath();
+  }
+
+  // Find the active tab
+  for (const auto &tab : snapshot.tabs) {
+    if (tab.id == snapshot.active_id && tab.path_present) {
+      const QString path = QString::fromUtf8(tab.path.data());
+      QFileInfo fileInfo(path);
+
+      return fileInfo.isDir() ? fileInfo.absoluteFilePath()
+                              : fileInfo.absolutePath();
     }
   }
 
-  QString initialDir;
-  if (!startingPath.isEmpty()) {
-    QFileInfo info(startingPath);
-    initialDir = info.isDir() ? info.absoluteFilePath() : info.absolutePath();
+  return QDir::homePath();
+}
+
+void WorkspaceCoordinator::performFileOpen(const std::string &path) {
+  // Save scroll offsets for the current tab
+  if (const auto snapshot = tabBridge->getTabsSnapshot();
+      snapshot.active_present) {
+    tabFlows.saveScrollOffsetsForActiveTab();
   }
 
+  const auto newTabId = appBridge->openFile(path, true);
+  const auto newTabSnapshotMaybe =
+      tabBridge->getTabSnapshot(static_cast<int>(newTabId));
+
+  if (newTabSnapshotMaybe.found) {
+    tabBridge->fileOpened(newTabSnapshotMaybe.snapshot);
+  }
+}
+
+void WorkspaceCoordinator::openFile() {
+  const QString initialDir = getInitialDialogDirectory();
   const QString filePath =
       DialogService::openFileSelectionDialog(initialDir, uiHandles.window);
+
   if (filePath.isEmpty()) {
     return;
   }
 
-  auto targetTabId = tabBridge->addTab();
-  const auto result = appBridge->openFile(targetTabId, filePath.toStdString());
-
-  if (result.success) {
-    emit fileOpened(result.snapshot);
-  }
+  performFileOpen(filePath.toStdString());
 }
 
 void WorkspaceCoordinator::fileSelected(const std::string &path,
                                         bool focusEditor) {
-  // Save scroll offsets if there is an active tab
-  {
-    const auto snapshot = tabBridge->getTabsSnapshot();
-    if (snapshot.active_present) {
-      tabFlows.saveScrollOffsetsForActiveTab();
-    }
+  performFileOpen(path);
 
-    // If file already open, just activate it
-    for (const auto &tab : snapshot.tabs) {
-      if (tab.path_present && tab.path == path) {
-        tabBridge->setActiveTab(static_cast<int>(tab.id));
-        return;
-      }
-    }
+  if (focusEditor) {
+    uiHandles.editorWidget->setFocus();
   }
-
-  // Otherwise, create a tab, open file into it, rollback on failure
-  const int newTabId = tabBridge->addTab();
-  auto result = appBridge->openFile(path);
-
-  if (!result.success) {
-    tabBridge->closeTabs(neko::CloseTabOperationTypeFfi::Single, newTabId,
-                         false);
-    return;
-  }
-
-  tabBridge->fileOpened(result.snapshot);
 }
 
 void WorkspaceCoordinator::fileSaved(bool saveAs) {
@@ -366,7 +361,7 @@ void WorkspaceCoordinator::revealActiveTab() {
 }
 
 void WorkspaceCoordinator::moveTabBy(int delta, bool useHistory) {
-  tabFlows.moveTabBy(delta, useHistory);
+  TabFlows::moveTabBy(delta, useHistory);
 }
 
 // TODO(scarlet): Wrap the neko:: type eventually so it doesn't leak into

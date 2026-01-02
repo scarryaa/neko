@@ -66,10 +66,6 @@ int TabBridge::createDocumentTabAndView(const std::string &title,
 // TODO(scarlet): Figure out a unified/better solution than separate 'core ->
 // cpp' signals?
 void TabBridge::notifyTabOpenedFromCore(int tabId) {
-  if (tabController.into_raw() == nullptr) {
-    return;
-  }
-
   auto tabsSnapshot = getTabsSnapshot();
   const neko::TabSnapshot *found = nullptr;
   int index = 0;
@@ -109,10 +105,6 @@ void TabBridge::tabSaved(int tabId) {
 
 bool TabBridge::closeTabs(neko::CloseTabOperationTypeFfi operationType,
                           int anchorTabId, bool closePinned) {
-  if (tabController.into_raw() == nullptr) {
-    return false;
-  }
-
   auto result =
       tabController->close_tabs(operationType, anchorTabId, closePinned);
   if (result.closed_ids.empty()) {
@@ -133,10 +125,6 @@ bool TabBridge::closeTabs(neko::CloseTabOperationTypeFfi operationType,
 }
 
 bool TabBridge::pinTab(int tabId) {
-  if (tabController.into_raw() == nullptr) {
-    return false;
-  }
-
   auto result = tabController->pin_tab(tabId);
   if (!result.success) {
     return false;
@@ -154,10 +142,6 @@ bool TabBridge::pinTab(int tabId) {
 }
 
 bool TabBridge::unpinTab(int tabId) {
-  if (tabController.into_raw() == nullptr) {
-    return false;
-  }
-
   auto result = tabController->unpin_tab(tabId);
   if (!result.success) {
     return false;
@@ -214,10 +198,6 @@ bool TabBridge::moveTabBy(neko::Buffer buffer, int delta, bool useHistory) {
 }
 
 bool TabBridge::moveTab(int fromIndex, int toIndex) {
-  if (tabController.into_raw() == nullptr) {
-    return false;
-  }
-
   if (!tabController->move_tab(fromIndex, toIndex)) {
     return false;
   }
@@ -227,10 +207,6 @@ bool TabBridge::moveTab(int fromIndex, int toIndex) {
 }
 
 void TabBridge::setActiveTab(int tabId) {
-  if (tabController.into_raw() == nullptr) {
-    return;
-  }
-
   tabController->set_active_tab(tabId);
 
   emit activeTabChanged(tabId);

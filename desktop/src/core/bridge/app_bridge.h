@@ -62,8 +62,8 @@ public:
   void runTabCommand(const std::string &commandId,
                      const neko::TabContextFfi &ctx, bool closePinned);
 
-  bool saveDocument(int documentId);
-  bool saveDocumentAs(int documentId, const std::string &path);
+  bool saveDocument(uint64_t documentId);
+  bool saveDocumentAs(uint64_t documentId, const std::string &path);
 
   [[nodiscard]] neko::CommandController *getCommandController();
 

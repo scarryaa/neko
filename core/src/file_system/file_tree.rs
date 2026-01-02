@@ -189,16 +189,11 @@ impl FileTree {
     /// added to `expanded_paths` and its children are retrieved.
     pub fn toggle_expanded<P: AsRef<Path>>(&mut self, path: P) {
         let path_buf = path.as_ref().to_path_buf();
-        if !path_buf.is_dir() {
-            return;
-        }
 
-        if self.is_expanded(&path) {
-            self.expanded_paths.remove(&path_buf);
+        if self.is_expanded(&path_buf) {
+            self.set_collapsed(&path_buf);
         } else {
-            // TODO(scarlet): Do we need to do this? Only if we are expanding the directory for the
-            // first time, but then we would need to track if it has been expanded before or not.
-            _ = self.get_children(path);
+            self.set_expanded(&path_buf);
         }
     }
 
@@ -208,6 +203,21 @@ impl FileTree {
 
         if path_buf.is_dir() && self.is_expanded(path) {
             self.expanded_paths.remove(&path_buf);
+        }
+    }
+
+    /// Marks the provided path as expanded and loads its children.
+    pub fn set_expanded<P: AsRef<Path>>(&mut self, path: P) {
+        let path_buf = path.as_ref().to_path_buf();
+
+        // Only directories can be expanded.
+        if !path_buf.is_dir() {
+            return;
+        }
+
+        // We only need to load the children if we are changing state from collapsed -> expanded.
+        if self.expanded_paths.insert(path_buf.clone()) {
+            let _ = self.get_children(&path_buf);
         }
     }
 
@@ -261,12 +271,7 @@ impl FileTree {
         ancestor_paths.reverse();
 
         for ancestor_path in ancestor_paths {
-            if !self.expanded_paths.contains(&ancestor_path) {
-                // Mark the directory as expanded.
-                self.expanded_paths.insert(ancestor_path.clone());
-                // Load its children.
-                self.get_children(&ancestor_path)?;
-            }
+            self.set_expanded(&ancestor_path);
         }
 
         Ok(())

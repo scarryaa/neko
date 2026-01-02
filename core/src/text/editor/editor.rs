@@ -6,12 +6,18 @@ use crate::{
     AddCursorDirection, Buffer, Cursor, CursorEntry, CursorManager, Selection, SelectionManager,
 };
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct Editor {
     widths: WidthManager,
     cursor_manager: CursorManager,
     selection_manager: SelectionManager,
     history: UndoHistory,
+}
+
+impl Default for Editor {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Editor {

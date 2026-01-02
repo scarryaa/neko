@@ -60,19 +60,19 @@ void ShortcutsManager::populateShortcutMetadata() {
       },
       {
           "Tab::NextLinear",
-          [this]() { workspaceCoordinator->moveTabBy(+1, false); },
+          [this]() { WorkspaceCoordinator::moveTabBy(+1, false); },
       },
       {
           "Tab::PreviousLinear",
-          [this]() { workspaceCoordinator->moveTabBy(-1, false); },
+          [this]() { WorkspaceCoordinator::moveTabBy(-1, false); },
       },
       {
           "Tab::HistoryForward",
-          [this]() { workspaceCoordinator->moveTabBy(+1, true); },
+          [this]() { WorkspaceCoordinator::moveTabBy(+1, true); },
       },
       {
           "Tab::HistoryBack",
-          [this]() { workspaceCoordinator->moveTabBy(-1, true); },
+          [this]() { WorkspaceCoordinator::moveTabBy(-1, true); },
       },
       {
           "Tab::Reveal",

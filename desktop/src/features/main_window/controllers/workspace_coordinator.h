@@ -44,7 +44,7 @@ public:
                  bool forceClose);
   void newTab();
   void revealActiveTab();
-  void moveTabBy(int delta, bool useHistory);
+  static void moveTabBy(int delta, bool useHistory);
 
   // Save / close flows
   SaveResult saveTab(int tabId, bool isSaveAs);
@@ -58,7 +58,7 @@ public:
 
   // Utilities
   [[nodiscard]] std::optional<std::string> requestFileExplorerDirectory() const;
-  [[nodiscard]] static std::vector<ShortcutHintRow> buildJumpHintRows();
+  static std::vector<ShortcutHintRow> buildJumpHintRows(AppBridge *appBridge);
 
   // NOLINTNEXTLINE(readability-redundant-access-specifiers)
 public slots:
@@ -87,6 +87,8 @@ private:
   void refreshUiForActiveTab(bool focusEditor);
   void setEditorController(rust::Box<neko::EditorController> editorController);
   void refreshStatusBarCursorInfo();
+  void performFileOpen(const std::string &path);
+  [[nodiscard]] QString getInitialDialogDirectory() const;
 
   TabFlows tabFlows;
 

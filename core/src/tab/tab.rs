@@ -1,17 +1,19 @@
-use crate::{DocumentId, TabId};
+use crate::{DocumentId, TabId, ViewId};
 
 #[derive(Debug)]
 pub struct Tab {
     id: TabId,
     document_id: DocumentId,
+    view_id: ViewId,
     scroll_offsets: (i32, i32),
     is_pinned: bool,
 }
 
 impl Tab {
-    pub fn new(id: TabId, document_id: DocumentId) -> Self {
+    pub fn new(id: TabId, document_id: DocumentId, view_id: ViewId) -> Self {
         Self {
             document_id,
+            view_id,
             is_pinned: false,
             id,
             scroll_offsets: (0, 0),
@@ -21,6 +23,10 @@ impl Tab {
     // Getters
     pub fn get_id(&self) -> TabId {
         self.id
+    }
+
+    pub fn get_view_id(&self) -> ViewId {
+        self.view_id
     }
 
     pub fn get_document_id(&self) -> DocumentId {

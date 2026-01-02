@@ -198,17 +198,25 @@ bool TabFlows::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
   const auto snapshot = tabBridge->getTabsSnapshot();
   QString fileName;
   QString path;
+  uint64_t documentId;
+  bool foundTabId;
 
   for (const auto &tab : snapshot.tabs) {
     if (tab.id == tabId) {
       path = QString::fromUtf8(tab.path);
       fileName = QString::fromUtf8(tab.title);
+      documentId = tab.document_id;
+      foundTabId = true;
       break;
     }
   }
 
+  if (!foundTabId) {
+    return false;
+  }
+
   if (!path.isEmpty() && !isSaveAs) {
-    return appBridge->saveDocument();
+    return appBridge->saveDocument(documentId);
   }
 
   QString initialDir;
@@ -223,7 +231,7 @@ bool TabFlows::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
     return false;
   }
 
-  return appBridge->saveDocumentAs(, filePath.toStdString());
+  return appBridge->saveDocumentAs(documentId, filePath.toStdString());
 }
 
 bool TabFlows::closeManyTabs(const QList<int> &ids, bool forceClose,

@@ -44,6 +44,10 @@ impl FileTreeController {
             .map_err(FileSystemErrorFfi::from)
     }
 
+    pub fn set_expanded(self: &mut FileTreeController, path: &str) {
+        self.access_mut(|tree| tree.set_expanded(path))
+    }
+
     pub fn set_collapsed(self: &mut FileTreeController, path: &str) {
         self.access_mut(|tree| tree.set_collapsed(path))
     }

@@ -8,20 +8,64 @@ use crate::{
 };
 use std::{cell::RefCell, rc::Rc};
 
+struct TabMetadata {
+    modified: bool,
+    title: String,
+    path: String,
+}
+
 pub struct TabController {
     pub(crate) app_state: Rc<RefCell<AppState>>,
 }
 
 impl TabController {
-    fn make_tab_snapshot(tab: &Tab) -> TabSnapshot {
+    fn make_tab_snapshot(&self, tab: &Tab) -> TabSnapshot {
+        let app_state = self.app_state.borrow();
+        let tab_metadata = self.get_tab_metadata(&app_state, tab);
+
         TabSnapshot {
             id: tab.get_id().into(),
             document_id: tab.get_document_id().into(),
             pinned: tab.get_is_pinned(),
+            modified: tab_metadata.modified,
+            title: tab_metadata.title,
+            path: tab_metadata.path.clone(),
+            path_present: !tab_metadata.path.is_empty(),
             scroll_offsets: ScrollOffsetFfi {
                 x: tab.get_scroll_offsets().0,
                 y: tab.get_scroll_offsets().1,
             },
+        }
+    }
+
+    fn get_tab_metadata(&self, app_state: &AppState, tab: &Tab) -> TabMetadata {
+        let document = app_state
+            .get_view_manager()
+            .get_view(tab.get_view_id())
+            .and_then(|v| {
+                app_state
+                    .get_document_manager()
+                    .get_document(v.document_id())
+            });
+
+        if let Some(document) = document {
+            let document_path = document
+                .path
+                .as_ref()
+                .map(|path| path.to_string_lossy().to_string())
+                .unwrap_or_default();
+
+            TabMetadata {
+                modified: document.modified,
+                title: document.title.clone(),
+                path: document_path,
+            }
+        } else {
+            TabMetadata {
+                modified: false,
+                title: "Untitled".to_string(),
+                path: String::new(),
+            }
         }
     }
 
@@ -50,7 +94,7 @@ impl TabController {
         if let Ok(tab) = self.app_state.borrow().get_tab(id.into()) {
             TabSnapshotMaybe {
                 found: true,
-                snapshot: Self::make_tab_snapshot(tab),
+                snapshot: self.make_tab_snapshot(tab),
             }
         } else {
             TabSnapshotMaybe {
@@ -83,7 +127,7 @@ impl TabController {
             .borrow()
             .get_tabs()
             .iter()
-            .map(Self::make_tab_snapshot)
+            .map(|tab| self.make_tab_snapshot(tab))
             .collect();
 
         let active_id = self.app_state.borrow().get_active_tab_id();
@@ -152,7 +196,7 @@ impl TabController {
         // Try to find the tab with this id
         if let Some(found_id) = result.found_id {
             let snapshot = if let Ok(tab) = self.app_state.borrow().get_tab(found_id) {
-                let mut snapshot = Self::make_tab_snapshot(tab);
+                let mut snapshot = self.make_tab_snapshot(tab);
 
                 // Replace the scroll offsets
                 if let Some(scroll_offsets) = result.scroll_offsets {
@@ -232,7 +276,7 @@ impl TabController {
 
         let app_state = self.app_state.borrow();
         let tab_ref = &app_state.get_tabs()[to_index as usize];
-        let snapshot = Self::make_tab_snapshot(tab_ref);
+        let snapshot = self.make_tab_snapshot(tab_ref);
 
         PinTabResult {
             success: true,
@@ -290,7 +334,7 @@ impl TabController {
 
         let app_state = self.app_state.borrow();
         let tab_ref = &app_state.get_tabs()[to_index as usize];
-        let snapshot = Self::make_tab_snapshot(tab_ref);
+        let snapshot = self.make_tab_snapshot(tab_ref);
 
         PinTabResult {
             success: true,

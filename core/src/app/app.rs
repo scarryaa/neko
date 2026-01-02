@@ -212,13 +212,20 @@ impl AppState {
 
         // Try to find an existing tab for the document
         if let Some(tab_id) = self.tab_manager.find_tab_by_document(document_id) {
-            return Ok(tab_id);
+            if let Ok(tab) = self.tab_manager.get_tab(tab_id) {
+                self.view_manager.set_active_view(tab.get_view_id());
+                return Ok(tab_id);
+            }
         }
 
-        // Otherwise, create a new tab for the document
+        // Otherwise, create a new tab/view/editor
+        let editor = Editor::default();
+        let view_id = self.view_manager.create_view(document_id, editor);
         let tab_id = self
             .tab_manager
-            .add_tab_for_document(document_id, add_to_history);
+            .add_tab_for_document(document_id, view_id, add_to_history);
+
+        self.view_manager.set_active_view(view_id);
 
         Ok(tab_id)
     }
@@ -327,11 +334,10 @@ impl AppState {
         add_tab_to_history: bool,
         activate_view: bool,
     ) -> (DocumentId, TabId, ViewId) {
-        let document_id = document_manager.new_document(title);
-        let tab_id = tab_manager.add_tab_for_document(document_id, add_tab_to_history);
-
         let editor = Editor::default();
+        let document_id = document_manager.new_document(title);
         let view_id = view_manager.create_view(document_id, editor);
+        let tab_id = tab_manager.add_tab_for_document(document_id, view_id, add_tab_to_history);
 
         if activate_view {
             view_manager.set_active_view(view_id);
@@ -363,7 +369,12 @@ impl AppState {
 
     pub fn open_document(&mut self, path: &Path) -> DocumentResult<DocumentId> {
         let new_document_id = self.document_manager.open_document(path)?;
-        self.tab_manager.add_tab_for_document(new_document_id, true);
+        let editor = Editor::default();
+        let view_id = self.view_manager.create_view(new_document_id, editor);
+
+        self.tab_manager
+            .add_tab_for_document(new_document_id, view_id, true);
+        self.view_manager.set_active_view(view_id);
 
         Ok(new_document_id)
     }
@@ -371,8 +382,12 @@ impl AppState {
     // TODO(scarlet): (Tab)HistoryManager needs to be relocated (maybe to the DocumentManager or AppState)?
     pub fn new_document(&mut self, add_tab_to_history: bool) -> DocumentId {
         let new_document_id = self.document_manager.new_document(None);
+        let editor = Editor::default();
+        let view_id = self.view_manager.create_view(new_document_id, editor);
+
         self.tab_manager
-            .add_tab_for_document(new_document_id, add_tab_to_history);
+            .add_tab_for_document(new_document_id, view_id, add_tab_to_history);
+        self.view_manager.set_active_view(view_id);
 
         new_document_id
     }

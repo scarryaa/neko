@@ -100,10 +100,6 @@ void EditorBridge::selectWord(const int row, const int column) {
 }
 
 void EditorBridge::selectLine(int row) {
-  if (editorController.into_raw() == nullptr) {
-    return;
-  }
-
   const int lineCount = static_cast<int>(editorController->get_line_count());
   if (lineCount == 0) {
     return;
@@ -252,10 +248,6 @@ void EditorBridge::applyChangeSet(const neko::ChangeSetFfi &changeSet) {
 }
 
 void EditorBridge::emitCursorAndSelection() {
-  if (editorController.into_raw() == nullptr) {
-    return;
-  }
-
   const auto cursors = editorController->get_cursor_positions();
   if (cursors.empty()) {
     return;

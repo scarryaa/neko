@@ -159,7 +159,7 @@ void MainWindow::setupWidgets(TabBridge *tabBridge, AppBridge *appBridge) {
 
   auto *fileTreeBridge = new FileTreeBridge(
       {.fileTreeController = appBridge->getFileTreeController()}, this);
-  const auto jumpHints = WorkspaceCoordinator::buildJumpHintRows();
+  const auto jumpHints = WorkspaceCoordinator::buildJumpHintRows(appBridge);
 
   emptyStateWidget = new QWidget(this);
   titleBarWidget = new TitleBarWidget(
