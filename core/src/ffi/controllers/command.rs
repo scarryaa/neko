@@ -1,0 +1,118 @@
+use crate::{
+    AppState, ConfigManager, ThemeManager, execute_command, execute_jump_command, execute_jump_key,
+    ffi::{
+        CommandFfi, CommandKindFfi, CommandResultFfi, JumpCommandFfi, TabCommandFfi,
+        TabCommandStateFfi, TabContextFfi,
+    },
+    get_available_commands, get_available_jump_commands, get_available_tab_commands,
+    run_tab_command, tab_command_state,
+};
+use std::{cell::RefCell, rc::Rc};
+
+pub struct CommandController {
+    pub(crate) app_state: Rc<RefCell<AppState>>,
+}
+
+impl CommandController {
+    // Jump Commands
+    pub fn execute_jump_command(&self, cmd: JumpCommandFfi) {
+        let mut app_state = self.app_state.borrow_mut();
+        let Ok(command) = cmd.clone().try_into() else {
+            eprintln!("Invalid JumpCommandFfi from C++: {cmd:?}");
+            return;
+        };
+
+        execute_jump_command(command, &mut app_state);
+    }
+
+    pub fn execute_jump_key(&self, key: String) {
+        let mut app_state = self.app_state.borrow_mut();
+        execute_jump_key(key, &mut app_state);
+    }
+
+    pub fn get_available_jump_commands(&self) -> Vec<JumpCommandFfi> {
+        let Ok(commands) = get_available_jump_commands() else {
+            return Vec::new();
+        };
+
+        commands.into_iter().map(|cmd| cmd.into()).collect()
+    }
+
+    // Tab Commands
+    pub fn run_tab_command(&self, id: &str, ctx: TabContextFfi, close_pinned: bool) -> bool {
+        let mut app_state = self.app_state.borrow_mut();
+        run_tab_command(&mut app_state, id, &ctx.into(), close_pinned).is_ok()
+    }
+
+    pub fn get_tab_command_state(&self, id: u64) -> TabCommandStateFfi {
+        let app_state = self.app_state.borrow();
+
+        match tab_command_state(&app_state, id.into()) {
+            Ok(state) => state.into(),
+            Err(_) => TabCommandStateFfi {
+                can_close: false,
+                can_close_others: false,
+                can_close_left: false,
+                can_close_right: false,
+                can_close_all: false,
+                can_close_clean: false,
+                can_copy_path: false,
+                can_reveal: false,
+                is_pinned: false,
+            },
+        }
+    }
+
+    pub fn get_available_tab_commands(&self) -> Vec<TabCommandFfi> {
+        let Ok(commands) = get_available_tab_commands() else {
+            return Vec::new();
+        };
+
+        commands
+            .into_iter()
+            .map(|cmd| TabCommandFfi {
+                id: cmd.as_str().to_string(),
+            })
+            .collect()
+    }
+
+    // General Commands
+    pub(crate) fn new_command(
+        &self,
+        key: String,
+        display_name: String,
+        kind: CommandKindFfi,
+        argument: String,
+    ) -> CommandFfi {
+        CommandFfi {
+            key,
+            display_name,
+            kind,
+            argument,
+        }
+    }
+
+    pub fn execute_command(
+        &self,
+        cmd: CommandFfi,
+        config: &mut ConfigManager,
+        theme: &mut ThemeManager,
+    ) -> CommandResultFfi {
+        let mut app_state = self.app_state.borrow_mut();
+        if let Ok(result) = execute_command(cmd.into(), config, theme, &mut app_state) {
+            result.into()
+        } else {
+            CommandResultFfi {
+                intents: Vec::new(),
+            }
+        }
+    }
+
+    pub fn get_available_commands(&self) -> Vec<CommandFfi> {
+        let Ok(commands) = get_available_commands() else {
+            return Vec::new();
+        };
+
+        commands.into_iter().map(|cmd| cmd.into()).collect()
+    }
+}

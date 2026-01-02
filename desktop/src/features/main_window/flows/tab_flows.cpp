@@ -127,7 +127,7 @@ bool TabFlows::revealTab(const neko::TabContextFfi &ctx) {
 
 void TabFlows::newTab() {
   saveScrollOffsetsForActiveTab();
-  tabBridge->addTab();
+  tabBridge->createDocumentTabAndView("Untitled", true, true);
 }
 
 void TabFlows::tabChanged(int tabId) {
@@ -138,7 +138,7 @@ void TabFlows::tabChanged(int tabId) {
 void TabFlows::tabUnpinned(int tabId) { tabBridge->unpinTab(tabId); }
 
 void TabFlows::moveTabBy(int delta, bool useHistory) {
-  TabBridge::moveTabBy(nullptr, delta, useHistory);
+  // TabBridge::moveTabBy(nullptr, delta, useHistory);
 }
 
 void TabFlows::bufferChanged() {
@@ -208,7 +208,7 @@ bool TabFlows::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
   }
 
   if (!path.isEmpty() && !isSaveAs) {
-    return appBridge->saveTab(tabId);
+    return appBridge->saveDocument();
   }
 
   QString initialDir;
@@ -223,7 +223,7 @@ bool TabFlows::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
     return false;
   }
 
-  return appBridge->saveTabAs(tabId, filePath.toStdString());
+  return appBridge->saveDocumentAs(, filePath.toStdString());
 }
 
 bool TabFlows::closeManyTabs(const QList<int> &ids, bool forceClose,

@@ -1,8 +1,8 @@
 use crate::{
-    AppState, Buffer, ConfigManager, FileTree, ShortcutsManager, ThemeManager, execute_jump_key,
+    AppState, Buffer, ConfigManager, FileTree, ShortcutsManager, ThemeManager,
     ffi::{
-        AppController, EditorController, FileTreeController, TabController, new_app_controller,
-        wrappers::*,
+        AppController, CommandController, EditorController, FileTreeController, TabController,
+        new_app_controller, wrappers::*,
     },
 };
 
@@ -307,6 +307,7 @@ pub mod ffi {
         type AppController;
         type TabController;
         type FileTreeController;
+        type CommandController;
 
         // AppController
         pub fn new_app_controller(
@@ -316,6 +317,7 @@ pub mod ffi {
         pub fn editor_controller(self: &AppController) -> Box<EditorController>;
         pub fn tab_controller(self: &AppController) -> Box<TabController>;
         pub fn file_tree_controller(self: &AppController) -> Box<FileTreeController>;
+        pub fn command_controller(self: &AppController) -> Box<CommandController>;
 
         pub(crate) fn save_document(self: &mut AppController, id: u64) -> bool;
         pub(crate) fn save_document_as(self: &mut AppController, id: u64, path: &str) -> bool;
@@ -466,6 +468,38 @@ pub mod ffi {
             new_offsets: ScrollOffsetFfi,
         ) -> bool;
 
+        // Command Controller
+        // Jump Commands
+        pub fn execute_jump_command(self: &CommandController, cmd: JumpCommandFfi);
+        pub fn execute_jump_key(self: &CommandController, key: String);
+        pub fn get_available_jump_commands(self: &CommandController) -> Vec<JumpCommandFfi>;
+
+        // Tab Commands
+        pub fn run_tab_command(
+            self: &CommandController,
+            id: &str,
+            ctx: TabContextFfi,
+            close_pinned: bool,
+        ) -> bool;
+        pub fn get_tab_command_state(self: &CommandController, id: u64) -> TabCommandStateFfi;
+        pub fn get_available_tab_commands(self: &CommandController) -> Vec<TabCommandFfi>;
+
+        // General Commands
+        pub(crate) fn new_command(
+            self: &CommandController,
+            key: String,
+            display_name: String,
+            kind: CommandKindFfi,
+            argument: String,
+        ) -> CommandFfi;
+        pub fn execute_command(
+            self: &CommandController,
+            cmd: CommandFfi,
+            config: &mut ConfigManager,
+            theme: &mut ThemeManager,
+        ) -> CommandResultFfi;
+        pub fn get_available_commands(self: &CommandController) -> Vec<CommandFfi>;
+
         // ConfigManager
         pub(crate) fn new_config_manager() -> Result<Box<ConfigManager>>;
         #[cxx_name = "get_config_snapshot"]
@@ -493,41 +527,5 @@ pub mod ffi {
         pub(crate) fn set_theme(self: &mut ThemeManager, theme_name: &str) -> bool;
         #[cxx_name = "get_current_theme_name"]
         pub(crate) fn get_current_theme_name_wrapper(self: &ThemeManager) -> String;
-
-        // Commands
-        #[cxx_name = "execute_command"]
-        pub(crate) fn execute_command_wrapper(
-            cmd: CommandFfi,
-            config: &mut ConfigManager,
-            theme: &mut ThemeManager,
-            app: &mut AppState,
-        ) -> CommandResultFfi;
-        pub(crate) fn new_command(
-            key: String,
-            display_name: String,
-            kind: CommandKindFfi,
-            argument: String,
-        ) -> CommandFfi;
-        #[cxx_name = "get_available_commands"]
-        pub(crate) fn get_available_commands_wrapper() -> Vec<CommandFfi>;
-
-        // Jump commands
-        #[cxx_name = "execute_jump_command"]
-        pub(crate) fn execute_jump_command_wrapper(cmd: JumpCommandFfi, app_state: &mut AppState);
-        pub(crate) fn execute_jump_key(key: String, app_state: &mut AppState);
-        #[cxx_name = "get_available_jump_commands"]
-        pub(crate) fn get_available_jump_commands_wrapper() -> Vec<JumpCommandFfi>;
-
-        // Tab commands
-        pub(crate) fn get_tab_command_state(app_state: &AppState, id: u64) -> TabCommandStateFfi;
-        #[cxx_name = "run_tab_command"]
-        pub(crate) fn run_tab_command_wrapper(
-            app_state: &mut AppState,
-            id: &str,
-            ctx: TabContextFfi,
-            close_pinned: bool,
-        ) -> bool;
-        #[cxx_name = "get_available_tab_commands"]
-        pub(crate) fn get_available_tab_commands_wrapper() -> Vec<TabCommandFfi>;
     }
 }

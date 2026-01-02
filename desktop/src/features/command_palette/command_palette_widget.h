@@ -1,6 +1,7 @@
 #ifndef COMMAND_PALETTE_WIDGET_H
 #define COMMAND_PALETTE_WIDGET_H
 
+#include "core/bridge/app_bridge.h"
 #include "features/command_palette/types/types.h"
 #include "theme/types/types.h"
 #include "types/qt_types_fwd.h"
@@ -41,6 +42,7 @@ private:
 
 public:
   struct CommandPaletteProps {
+    AppBridge *appBridge;
     QFont font;
     CommandPaletteTheme theme;
     std::vector<ShortcutHintRow> jumpHints;
@@ -118,6 +120,8 @@ private:
   void setSuggestionRowClamped(int row);
   void updateCommandSuggestions(const QString &text);
   void resetCommandHistoryNavigation();
+
+  AppBridge *appBridge;
 
   CommandPaletteTheme theme;
   QFont font;

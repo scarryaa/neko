@@ -13,7 +13,7 @@ class GutterWidget;
 class EditorWidget;
 class CommandPaletteWidget;
 class FileExplorerWidget;
-class TabController;
+class TabBridge;
 class AppBridge;
 class AppConfigService;
 class UiStyleManager;
@@ -35,7 +35,7 @@ public:
   ~MainWindow() override = default;
 
 private:
-  void setupWidgets(TabController *tabController, AppBridge *appBridge);
+  void setupWidgets(TabBridge *tabBridge, AppBridge *appBridge);
   void applyTheme();
   void connectSignals();
 

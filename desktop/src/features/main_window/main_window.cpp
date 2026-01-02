@@ -23,7 +23,7 @@
 #include "features/main_window/services/app_config_service.h"
 #include "features/main_window/services/dialog_service.h"
 #include "features/status_bar/status_bar_widget.h"
-#include "features/tabs/controllers/tab_controller.h"
+#include "features/tabs/bridge/tab_bridge.h"
 #include "features/tabs/tab_bar_widget.h"
 #include "features/title_bar/title_bar_widget.h"
 #include "neko-core/src/ffi/bridge.rs.h"
@@ -67,8 +67,8 @@ MainWindow::MainWindow(QWidget *parent)
   editorBridge = new EditorBridge(EditorBridge::EditorBridgeProps{
       .editorController = std::move(editorController)});
 
-  auto *tabBridge = new TabController(TabController::TabControllerProps{
-      .tabController = std::move(tabController)});
+  auto *tabBridge = new TabBridge(
+      TabBridge::TabBridgeProps{.tabController = std::move(tabController)});
 
   appConfigService =
       new AppConfigService({.configManager = &*configManager}, this);
@@ -119,7 +119,7 @@ MainWindow::MainWindow(QWidget *parent)
 
   workspaceCoordinator = new WorkspaceCoordinator(
       {
-          .tabController = tabBridge,
+          .tabBridge = tabBridge,
           .appBridge = appBridge,
           .editorBridge = editorBridge,
           .appConfigService = appConfigService,
@@ -140,7 +140,7 @@ MainWindow::MainWindow(QWidget *parent)
           .actionOwner = this,
           .shortcutsManager = &*shortcutsManager,
           .workspaceCoordinator = workspaceCoordinator,
-          .tabController = tabBridge,
+          .tabBridge = tabBridge,
           .uiHandles = &uiHandles,
       },
       this);
@@ -151,8 +151,7 @@ MainWindow::MainWindow(QWidget *parent)
   themeProvider->reload();
 }
 
-void MainWindow::setupWidgets(TabController *tabController,
-                              AppBridge *appBridge) {
+void MainWindow::setupWidgets(TabBridge *tabBridge, AppBridge *appBridge) {
   auto themes = themeProvider->getCurrentThemes();
   auto fonts = uiStyleManager->getCurrentFonts();
   auto snapshot = appConfigService->getSnapshot();
@@ -171,7 +170,8 @@ void MainWindow::setupWidgets(TabController *tabController,
                               .theme = themes.fileExplorerTheme},
                              this);
   commandPaletteWidget =
-      new CommandPaletteWidget({.font = fonts.commandPaletteFont,
+      new CommandPaletteWidget({.appBridge = appBridge,
+                                .font = fonts.commandPaletteFont,
                                 .theme = themes.commandPaletteTheme,
                                 .jumpHints = jumpHints},
                                this);
@@ -195,7 +195,7 @@ void MainWindow::setupWidgets(TabController *tabController,
                                    .themeProvider = themeProvider,
                                    .contextMenuRegistry = &contextMenuRegistry,
                                    .commandRegistry = &commandRegistry,
-                                   .tabController = tabController},
+                                   .tabBridge = tabBridge},
                                   tabBarContainer);
 }
 

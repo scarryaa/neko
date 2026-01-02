@@ -25,8 +25,7 @@ TabBarWidget::TabBarWidget(const TabBarProps &props, QWidget *parent)
     : QScrollArea(parent), font(props.font), tabBarTheme(props.theme),
       tabTheme(props.tabTheme), themeProvider(props.themeProvider),
       contextMenuRegistry(*props.contextMenuRegistry),
-      commandRegistry(*props.commandRegistry),
-      tabController(props.tabController) {
+      commandRegistry(*props.commandRegistry), tabBridge(props.tabBridge) {
   setFont(font);
 
   QFontMetrics fontMetrics(font);
@@ -321,7 +320,7 @@ void TabBarWidget::dropEvent(QDropEvent *event) {
     return;
   }
 
-  tabController->moveTab(fromIndex, toIndex);
+  tabBridge->moveTab(fromIndex, toIndex);
   dropIndicator->setVisible(false);
   event->setDropAction(Qt::MoveAction);
   event->accept();

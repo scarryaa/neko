@@ -28,14 +28,12 @@ public:
   explicit AppBridge(const AppBridgeProps &props);
   ~AppBridge() override = default;
 
-  // AppController (Rust)
-  uint64_t openFile(const std::string &path, bool addToHistory);
-
   neko::TabsSnapshot getTabsSnapshot();
   std::vector<int> getCloseTabIds(neko::CloseTabOperationTypeFfi operationType,
                                   int anchorTabId, bool closePinned);
   neko::MoveActiveTabResult moveTabBy(neko::Buffer buffer, int delta,
                                       bool useHistory);
+  uint64_t openFile(const std::string &path, bool addToHistory);
   bool moveTab(int fromIndex, int toIndex);
   neko::PinTabResult pinTab(int tabId);
   neko::PinTabResult unpinTab(int tabId);
@@ -54,9 +52,9 @@ public:
   [[nodiscard]] rust::Box<neko::FileTreeController> getFileTreeController();
   [[nodiscard]] neko::TabCommandStateFfi
   getTabCommandState(const neko::TabContextFfi &ctx) const;
-  static std::vector<neko::TabCommandFfi> getAvailableTabCommands();
-  static std::vector<neko::CommandFfi> getAvailableCommands();
-  static std::vector<neko::JumpCommandFfi> getAvailableJumpCommands();
+  std::vector<neko::TabCommandFfi> getAvailableTabCommands();
+  std::vector<neko::CommandFfi> getAvailableCommands();
+  std::vector<neko::JumpCommandFfi> getAvailableJumpCommands();
 
   void executeJumpCommand(const neko::JumpCommandFfi &jumpCommand);
   void executeJumpKey(const QString &key);
@@ -67,8 +65,11 @@ public:
   bool saveDocument(int documentId);
   bool saveDocumentAs(int documentId, const std::string &path);
 
+  [[nodiscard]] neko::CommandController *getCommandController();
+
 private:
   rust::Box<neko::AppController> appController;
+  rust::Box<neko::CommandController> commandController;
 };
 
 #endif

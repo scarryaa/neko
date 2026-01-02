@@ -3,13 +3,11 @@
 
 AppBridge::AppBridge(const AppBridgeProps &props)
     : appController(
-          neko::new_app_controller(props.configManager, props.rootPath)) {}
-
-// TabCoreAPI
-// End TabCoreAPI
+          neko::new_app_controller(props.configManager, props.rootPath)),
+      commandController(appController->command_controller()) {}
 
 uint64_t AppBridge::openFile(const std::string &path, bool addToHistory) {
-  return appState->ensure_tab_for_path(path, addToHistory);
+  return appController->ensure_tab_for_path(path, addToHistory);
 }
 
 rust::Box<neko::EditorController> AppBridge::getEditorController() const {
@@ -26,63 +24,46 @@ rust::Box<neko::FileTreeController> AppBridge::getFileTreeController() {
 
 neko::TabCommandStateFfi
 AppBridge::getTabCommandState(const neko::TabContextFfi &ctx) const {
-  return neko::get_tab_command_state(*appState, ctx.id);
+  return commandController->get_tab_command_state(ctx.id);
 }
 
 std::vector<neko::CommandFfi> AppBridge::getAvailableCommands() {
-  auto rawCommands = neko::get_available_commands();
-  std::vector<neko::CommandFfi> commands = {};
-  commands.reserve(commands.size());
-
-  for (const auto &command : rawCommands) {
-    commands.push_back(command);
-  }
-
-  return commands;
+  auto commands = commandController->get_available_commands();
+  return {commands.begin(), commands.end()};
 }
 
 std::vector<neko::JumpCommandFfi> AppBridge::getAvailableJumpCommands() {
-  auto rawCommands = neko::get_available_jump_commands();
-  std::vector<neko::JumpCommandFfi> commands = {};
-  commands.reserve(commands.size());
-
-  for (const auto &command : rawCommands) {
-    commands.push_back(command);
-  }
-
-  return commands;
+  auto commands = commandController->get_available_jump_commands();
+  return {commands.begin(), commands.end()};
 }
 
 void AppBridge::executeJumpCommand(const neko::JumpCommandFfi &jumpCommand) {
-  neko::execute_jump_command(jumpCommand, *appState);
+  commandController->execute_jump_command(jumpCommand);
 }
 
 void AppBridge::executeJumpKey(const QString &key) {
-  neko::execute_jump_key(key.toStdString(), *appState);
+  commandController->execute_jump_key(key.toStdString());
 }
 
 std::vector<neko::TabCommandFfi> AppBridge::getAvailableTabCommands() {
-  auto rawCommands = neko::get_available_tab_commands();
-  std::vector<neko::TabCommandFfi> commands = {};
-  commands.reserve(commands.size());
-
-  for (const auto &command : rawCommands) {
-    commands.push_back(command);
-  }
-
-  return commands;
+  auto commands = commandController->get_available_tab_commands();
+  return {commands.begin(), commands.end()};
 }
 
 void AppBridge::runTabCommand(const std::string &commandId,
                               const neko::TabContextFfi &ctx,
                               bool closePinned) {
-  neko::run_tab_command(*appState, commandId, ctx, closePinned);
+  commandController->run_tab_command(commandId, ctx, closePinned);
 }
 
 bool AppBridge::saveDocument(int documentId) {
-  return appState->save_document(documentId);
+  return appController->save_document(documentId);
 }
 
 bool AppBridge::saveDocumentAs(int documentId, const std::string &path) {
-  return appState->save_document_as(documentId, path);
+  return appController->save_document_as(documentId, path);
+}
+
+neko::CommandController *AppBridge::getCommandController() {
+  return &*commandController;
 }

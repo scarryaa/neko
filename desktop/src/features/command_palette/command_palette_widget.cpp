@@ -137,8 +137,8 @@ void CommandPaletteWidget::setVisibilityIfNotNull(QWidget *widget,
 
 CommandPaletteWidget::CommandPaletteWidget(const CommandPaletteProps &props,
                                            QWidget *parent)
-    : QWidget(parent), theme(props.theme), font(props.font),
-      shortcutRows(props.jumpHints) {
+    : QWidget(parent), appBridge(props.appBridge), theme(props.theme),
+      font(props.font), shortcutRows(props.jumpHints) {
   setFont(font);
   setUpWindow();
   buildUi();
@@ -683,7 +683,7 @@ void CommandPaletteWidget::emitCommandRequestFromInput() {
   }
 
   // TODO(scarlet): Allow aliases?
-  const auto availableCommands = AppBridge::getAvailableCommands();
+  const auto availableCommands = appBridge->getAvailableCommands();
 
   // If a suggestion is highlighted, use its stored key
   if (commandSuggestions != nullptr &&
@@ -1096,7 +1096,7 @@ void CommandPaletteWidget::updateCommandSuggestions(const QString &text) {
   commandSuggestions->clear();
 
   const QString textString = text.trimmed();
-  const auto availableCommands = AppBridge::getAvailableCommands();
+  const auto availableCommands = appBridge->getAvailableCommands();
 
   for (const auto &cmd : availableCommands) {
     const QString label = QString::fromUtf8(cmd.display_name);

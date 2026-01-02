@@ -4,7 +4,7 @@ use crate::{
 };
 use std::{cell::RefCell, path::Path, rc::Rc};
 
-use super::{EditorController, FileTreeController};
+use super::{CommandController, EditorController, FileTreeController};
 
 // pub fn new_app_state(
 //     root_path: &str,
@@ -61,6 +61,12 @@ impl AppController {
         Box::new(EditorController {
             app_state: self.app_state.clone(),
             view_id,
+        })
+    }
+
+    pub fn command_controller(&self) -> Box<CommandController> {
+        Box::new(CommandController {
+            app_state: self.app_state.clone(),
         })
     }
 

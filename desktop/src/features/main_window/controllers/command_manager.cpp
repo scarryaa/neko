@@ -132,7 +132,8 @@ void CommandManager::registerCommands() {
 
 void CommandManager::registerProviders() {
   contextMenuRegistry->registerProvider("tab", [this](const QVariant &variant) {
-    auto availableCommands = AppBridge::getAvailableTabCommands();
+    auto availableCommands =
+        appBridge->getCommandController()->get_available_tab_commands();
 
     const auto ctx = variant.value<neko::TabContextFfi>();
     const auto state = appBridge->getTabCommandState(ctx);
