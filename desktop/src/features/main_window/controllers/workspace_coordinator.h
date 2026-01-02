@@ -13,8 +13,8 @@
 #include <vector>
 
 class TabController;
-class AppController;
-class EditorController;
+class AppBridge;
+class EditorBridge;
 class AppConfigService;
 class CommandExecutor;
 
@@ -26,8 +26,8 @@ class WorkspaceCoordinator : public QObject {
 public:
   struct WorkspaceCoordinatorProps {
     TabController *tabController;
-    AppController *appController;
-    EditorController *editorController;
+    AppBridge *appBridge;
+    EditorBridge *editorBridge;
     AppConfigService *appConfigService;
     CommandExecutor *commandExecutor;
     const UiHandles uiHandles;
@@ -91,9 +91,9 @@ private:
   TabFlows tabFlows;
 
   TabController *tabController;
-  AppController *appController;
+  AppBridge *appBridge;
   AppConfigService *appConfigService;
-  EditorController *editorController;
+  EditorBridge *editorBridge;
   CommandExecutor *commandExecutor;
   const UiHandles uiHandles;
 };

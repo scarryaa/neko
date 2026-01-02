@@ -1,5 +1,5 @@
 #include "main_window.h"
-#include "controllers/app_controller.h"
+#include "controllers/app_bridge.h"
 #include "features/command_palette/command_palette_widget.h"
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
@@ -14,6 +14,7 @@
 #include "features/main_window/connections/theme_connections.h"
 #include "features/main_window/connections/ui_style_connections.h"
 #include "features/main_window/connections/workspace_connections.h"
+#include "features/main_window/controllers/app_bridge.h"
 #include "features/main_window/controllers/command_executor.h"
 #include "features/main_window/controllers/command_manager.h"
 #include "features/main_window/controllers/shortcuts_manager.h"
@@ -49,7 +50,6 @@
 // TODO(scarlet): Auto detect config file save in editor
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), configManager(neko::new_config_manager()),
-      appState(neko::new_app_state("", *configManager)),
       themeManager(neko::new_theme_manager()),
       shortcutsManager(neko::new_shortcuts_manager()) {
   setupMacOSTitleBar(this);
@@ -59,21 +59,24 @@ MainWindow::MainWindow(QWidget *parent)
   commandRegistry = CommandRegistry();
   contextMenuRegistry = ContextMenuRegistry();
 
-  auto *appController = new AppController({.appState = &*appState,
-                                           .configManager = *configManager,
-                                           .rootPath = ""});
+  auto *appBridge =
+      new AppBridge({.configManager = *configManager, .rootPath = ""});
 
-  neko::EditorHandle *editor = &*appController->getActiveEditorMut();
-  editorController = new EditorController({.editor = editor});
+  rust::Box<neko::EditorController> editorController =
+      appBridge->getActiveEditorMut();
+  rust::Box<neko::TabController> tabController = appBridge->getTabController();
+  editorBridge = new EditorBridge(EditorBridge::EditorBridgeProps{
+      .editorController = std::move(editorController)});
 
-  auto *tabController = new TabController({.tabCoreApi = appController});
+  auto *tabBridge = new TabController(TabController::TabControllerProps{
+      .tabController = std::move(tabController)});
 
   appConfigService =
       new AppConfigService({.configManager = &*configManager}, this);
   auto *commandExecutor =
       new CommandExecutor({.configManager = &*configManager,
                            .themeManager = &*themeManager,
-                           .appState = &*appState,
+                           .appBridge = &*appBridge,
                            .appConfigService = appConfigService});
   themeProvider = new ThemeProvider({.themeManager = &*themeManager}, this);
   uiStyleManager = new UiStyleManager(
@@ -81,7 +84,7 @@ MainWindow::MainWindow(QWidget *parent)
       this);
 
   applyTheme();
-  setupWidgets(tabController, appController);
+  setupWidgets(tabBridge, appBridge);
 
   // Layout
   MainWindowLayoutBuilder layoutBuilder(
@@ -117,9 +120,9 @@ MainWindow::MainWindow(QWidget *parent)
 
   workspaceCoordinator = new WorkspaceCoordinator(
       {
-          .tabController = tabController,
-          .appController = appController,
-          .editorController = editorController,
+          .tabController = tabBridge,
+          .appBridge = appBridge,
+          .editorBridge = editorBridge,
           .appConfigService = appConfigService,
           .commandExecutor = commandExecutor,
           .uiHandles = uiHandles,
@@ -130,7 +133,7 @@ MainWindow::MainWindow(QWidget *parent)
       .commandRegistry = &commandRegistry,
       .contextMenuRegistry = &contextMenuRegistry,
       .workspaceCoordinator = workspaceCoordinator,
-      .appController = appController,
+      .appBridge = appBridge,
   });
 
   auto *qtShortcutsManager = new ShortcutsManager(
@@ -138,7 +141,7 @@ MainWindow::MainWindow(QWidget *parent)
           .actionOwner = this,
           .shortcutsManager = &*shortcutsManager,
           .workspaceCoordinator = workspaceCoordinator,
-          .tabController = tabController,
+          .tabController = tabBridge,
           .uiHandles = &uiHandles,
       },
       this);
@@ -150,13 +153,13 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 void MainWindow::setupWidgets(TabController *tabController,
-                              AppController *appController) {
+                              AppBridge *appBridge) {
   auto themes = themeProvider->getCurrentThemes();
   auto fonts = uiStyleManager->getCurrentFonts();
   auto snapshot = appConfigService->getSnapshot();
   const bool fileExplorerShown = snapshot.file_explorer.shown;
 
-  neko::FileTree *fileTree = &appController->getFileTreeMut();
+  neko::FileTree *fileTree = &appBridge->getFileTreeMut();
   auto *fileTreeController =
       new FileTreeController({.fileTree = fileTree}, this);
   const auto jumpHints = WorkspaceCoordinator::buildJumpHintRows();
@@ -174,16 +177,16 @@ void MainWindow::setupWidgets(TabController *tabController,
                                 .theme = themes.commandPaletteTheme,
                                 .jumpHints = jumpHints},
                                this);
-  editorWidget = new EditorWidget({.editorController = editorController,
+  editorWidget = new EditorWidget({.editorBridge = editorBridge,
                                    .font = fonts.editorFont,
                                    .theme = themes.editorTheme},
                                   this);
-  gutterWidget = new GutterWidget({.editorController = editorController,
+  gutterWidget = new GutterWidget({.editorBridge = editorBridge,
                                    .theme = themes.gutterTheme,
                                    .font = fonts.editorFont},
                                   this);
   statusBarWidget =
-      new StatusBarWidget({.editorController = editorController,
+      new StatusBarWidget({.editorBridge = editorBridge,
                            .theme = themes.statusBarTheme,
                            .fileExplorerInitiallyShown = fileExplorerShown},
                           this);
@@ -209,7 +212,7 @@ void MainWindow::applyTheme() {
 
 void MainWindow::connectSignals() {
   new EditorConnections({.uiHandles = uiHandles,
-                         .editorController = editorController,
+                         .editorBridge = editorBridge,
                          .workspaceCoordinator = workspaceCoordinator},
                         this);
   new MainWindowConnections({.uiHandles = uiHandles,

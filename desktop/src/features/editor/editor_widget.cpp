@@ -7,7 +7,7 @@
 #include <QTextLine>
 
 EditorWidget::EditorWidget(const EditorProps &props, QWidget *parent)
-    : QScrollArea(parent), editorController(props.editorController),
+    : QScrollArea(parent), editorBridge(props.editorBridge),
       renderer(new EditorRenderer()), theme(props.theme), font(props.font),
       fontMetrics(font) {
   setFocusPolicy(Qt::StrongFocus);
@@ -43,11 +43,11 @@ void EditorWidget::setAndApplyTheme(const EditorTheme &newTheme) {
 void EditorWidget::redraw() const { viewport()->update(); }
 
 void EditorWidget::updateDimensions() {
-  if (editorController == nullptr) {
+  if (editorBridge == nullptr) {
     return;
   }
 
-  const int lineCount = editorController->getLineCount();
+  const int lineCount = editorBridge->getLineCount();
   const auto viewportHeight = (lineCount * fontMetrics.height()) -
                               viewport()->height() + VIEWPORT_PADDING;
   const auto contentWidth = measureWidth();
@@ -65,8 +65,8 @@ void EditorWidget::updateDimensions() {
   redraw();
 }
 
-void EditorWidget::setEditorController(EditorController *newEditorController) {
-  editorController = newEditorController;
+void EditorWidget::setEditorBridge(EditorBridge *newEditorBridge) {
+  editorBridge = newEditorBridge;
 }
 
 void EditorWidget::onBufferChanged() const { redraw(); }
@@ -91,7 +91,7 @@ static bool nearPos(const QPoint &pointA, const QPoint &pointB,
 }
 
 void EditorWidget::keyPressEvent(QKeyEvent *event) {
-  if (editorController == nullptr) {
+  if (editorBridge == nullptr) {
     return;
   }
 
@@ -103,35 +103,35 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
   if (ctrl) {
     switch (event->key()) {
     case Qt::Key_A:
-      editorController->selectAll();
+      editorBridge->selectAll();
       return;
     case Qt::Key_C:
-      editorController->copy();
+      editorBridge->copy();
       return;
     case Qt::Key_V: {
-      editorController->paste();
+      editorBridge->paste();
       return;
     }
     case Qt::Key_X:
-      editorController->cut();
+      editorBridge->cut();
       return;
 
     case Qt::Key_P:
       if (meta) {
-        editorController->addCursor(neko::AddCursorDirectionKind::Above);
+        editorBridge->addCursor(neko::AddCursorDirectionKind::Above);
         return;
       }
     case Qt::Key_N:
       if (meta) {
-        editorController->addCursor(neko::AddCursorDirectionKind::Below);
+        editorBridge->addCursor(neko::AddCursorDirectionKind::Below);
         return;
       }
 
     case Qt::Key_Z:
       if (shift) {
-        editorController->redo();
+        editorBridge->redo();
       } else {
-        editorController->undo();
+        editorBridge->undo();
       }
       return;
 
@@ -151,41 +151,41 @@ void EditorWidget::keyPressEvent(QKeyEvent *event) {
 
   switch (event->key()) {
   case Qt::Key_Left:
-    editorController->moveOrSelectLeft(shift);
+    editorBridge->moveOrSelectLeft(shift);
     break;
   case Qt::Key_Right:
-    editorController->moveOrSelectRight(shift);
+    editorBridge->moveOrSelectRight(shift);
     break;
   case Qt::Key_Up:
-    editorController->moveOrSelectUp(shift);
+    editorBridge->moveOrSelectUp(shift);
     break;
   case Qt::Key_Down:
-    editorController->moveOrSelectDown(shift);
+    editorBridge->moveOrSelectDown(shift);
     break;
   case Qt::Key_Enter:
   case Qt::Key_Return:
-    editorController->insertNewline();
+    editorBridge->insertNewline();
     break;
   case Qt::Key_Backspace:
-    editorController->backspace();
+    editorBridge->backspace();
     break;
   case Qt::Key_Delete:
-    editorController->deleteForwards();
+    editorBridge->deleteForwards();
     break;
   case Qt::Key_Tab:
-    editorController->insertTab();
+    editorBridge->insertTab();
     break;
   case Qt::Key_Escape:
-    editorController->clearSelectionOrCursors();
+    editorBridge->clearSelectionOrCursors();
     break;
   default:
-    editorController->insertText(event->text().toStdString());
+    editorBridge->insertText(event->text().toStdString());
     break;
   }
 }
 
 void EditorWidget::mousePressEvent(QMouseEvent *event) {
-  if (editorController == nullptr) {
+  if (editorBridge == nullptr) {
     return;
   }
 
@@ -196,11 +196,11 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
     tripleArmed = false;
     tripleArmTimer.stop();
 
-    if (editorController->cursorExistsAt(rowCol.row, rowCol.col)) {
-      editorController->removeCursor(rowCol.row, rowCol.col);
+    if (editorBridge->cursorExistsAt(rowCol.row, rowCol.col)) {
+      editorBridge->removeCursor(rowCol.row, rowCol.col);
     } else {
-      editorController->addCursor(neko::AddCursorDirectionKind::At, rowCol.row,
-                                  rowCol.col);
+      editorBridge->addCursor(neko::AddCursorDirectionKind::At, rowCol.row,
+                              rowCol.col);
     }
 
     redraw();
@@ -216,9 +216,9 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
       tripleArmed = false;
       tripleArmTimer.stop();
 
-      editorController->selectLine(tripleRow);
+      editorBridge->selectLine(tripleRow);
 
-      const int lineCount = editorController->getLineCount();
+      const int lineCount = editorBridge->getLineCount();
 
       if (lineCount > 0) {
         lineSelectMode = true;
@@ -244,7 +244,7 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
 
     wordSelectMode = false;
     lineSelectMode = false;
-    editorController->moveTo(rowCol.row, rowCol.col, true);
+    editorBridge->moveTo(rowCol.row, rowCol.col, true);
 
     redraw();
 
@@ -256,7 +256,7 @@ void EditorWidget::mousePressEvent(QMouseEvent *event) {
 }
 
 void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
-  if (editorController == nullptr) {
+  if (editorBridge == nullptr) {
     return;
   }
 
@@ -269,7 +269,7 @@ void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
     const RowCol rowCol =
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
 
-    editorController->moveTo(rowCol.row, rowCol.col, true);
+    editorBridge->moveTo(rowCol.row, rowCol.col, true);
 
     redraw();
 
@@ -279,9 +279,9 @@ void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
 
   const RowCol rowCol =
       convertMousePositionToRowCol(event->pos().x(), event->pos().y());
-  editorController->selectWord(rowCol.row, rowCol.col);
+  editorBridge->selectWord(rowCol.row, rowCol.col);
 
-  const auto selection = editorController->getSelection();
+  const auto selection = editorBridge->getSelection();
 
   if (selection.active) {
     wordSelectMode = true;
@@ -303,7 +303,7 @@ void EditorWidget::mouseDoubleClickEvent(QMouseEvent *event) {
 }
 
 void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
-  if (editorController == nullptr) {
+  if (editorBridge == nullptr) {
     return;
   }
 
@@ -314,9 +314,9 @@ void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
 
     const RowCol rowCol =
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
-    editorController->selectWordDrag(wordAnchorStart.row, wordAnchorStart.col,
-                                     wordAnchorEnd.row, wordAnchorEnd.col,
-                                     rowCol.row, rowCol.col);
+    editorBridge->selectWordDrag(wordAnchorStart.row, wordAnchorStart.col,
+                                 wordAnchorEnd.row, wordAnchorEnd.col,
+                                 rowCol.row, rowCol.col);
 
     redraw();
   } else if (lineSelectMode) {
@@ -326,14 +326,14 @@ void EditorWidget::mouseMoveEvent(QMouseEvent *event) {
 
     const RowCol rowCol =
         convertMousePositionToRowCol(event->pos().x(), event->pos().y());
-    editorController->selectLineDrag(lineAnchorRow, rowCol.row);
+    editorBridge->selectLineDrag(lineAnchorRow, rowCol.row);
 
     redraw();
   } else {
     if (event->buttons() == Qt::LeftButton) {
       const RowCol rowCol =
           convertMousePositionToRowCol(event->pos().x(), event->pos().y());
-      editorController->selectTo(rowCol.row, rowCol.col);
+      editorBridge->selectTo(rowCol.row, rowCol.col);
 
       redraw();
     }
@@ -350,7 +350,7 @@ void EditorWidget::mouseReleaseEvent(QMouseEvent *event) {
 }
 
 void EditorWidget::paintEvent(QPaintEvent *event) {
-  if (editorController == nullptr) {
+  if (editorBridge == nullptr) {
     return;
   }
 
@@ -362,7 +362,7 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
   const double viewportWidth = viewport()->width();
   const double lineHeight = fontMetrics.height();
 
-  const int lineCount = editorController->getLineCount();
+  const int lineCount = editorBridge->getLineCount();
   const int firstVisibleLine = qMax(
       0, qMin(static_cast<int>(verticalOffset / lineHeight), lineCount - 1));
   const int visibleLineCount = static_cast<int>(viewportHeight / lineHeight);
@@ -374,10 +374,10 @@ void EditorWidget::paintEvent(QPaintEvent *event) {
       lineHeight,       firstVisibleLine, lastVisibleLine, verticalOffset,
       horizontalOffset, viewportWidth,    viewportHeight};
 
-  const QStringList lines = editorController->getLines();
-  const auto cursors = editorController->getCursorPositions();
-  const auto selections = editorController->getSelection();
-  const bool isEmpty = editorController->isEmpty();
+  const QStringList lines = editorBridge->getLines();
+  const auto cursors = editorBridge->getCursorPositions();
+  const auto selections = editorBridge->getSelection();
+  const bool isEmpty = editorBridge->isEmpty();
 
   const double fontAscent = fontMetrics.ascent();
   const double fontDescent = fontMetrics.descent();
@@ -450,7 +450,7 @@ RowCol EditorWidget::convertMousePositionToRowCol(const double xPos,
   const int scrollX = horizontalScrollBar()->value();
   const int scrollY = verticalScrollBar()->value();
 
-  const int lineCount = editorController->getLineCount();
+  const int lineCount = editorBridge->getLineCount();
   if (lineCount <= 0) {
     return {0, 0};
   }
@@ -459,7 +459,7 @@ RowCol EditorWidget::convertMousePositionToRowCol(const double xPos,
   const int lastRow = (lineCount - 1);
   const int row = std::min(targetRow, lastRow);
 
-  const QString line = editorController->getLine(row);
+  const QString line = editorBridge->getLine(row);
   const auto targetX = static_cast<qreal>(xPos + scrollX);
 
   int col = xToCursorIndex(line, font, targetX);
@@ -503,17 +503,17 @@ void EditorWidget::updateFont(const QFont &newFont) {
 }
 
 void EditorWidget::scrollToCursor() {
-  if (editorController == nullptr) {
+  if (editorBridge == nullptr) {
     return;
   }
 
-  const auto cursors = editorController->getCursorPositions();
+  const auto cursors = editorBridge->getCursorPositions();
   const auto cursor = cursors.at(0);
 
   const int targetRow = static_cast<int>(cursor.row);
   const double lineHeight = fontMetrics.height();
 
-  const QString line = editorController->getLine(cursor.row);
+  const QString line = editorBridge->getLine(cursor.row);
   const QString textBeforeCursor = line.mid(0, cursor.column);
 
   const double viewportWidth = viewport()->width();
@@ -543,19 +543,19 @@ void EditorWidget::scrollToCursor() {
 }
 
 double EditorWidget::measureWidth() const {
-  if (editorController == nullptr) {
+  if (editorBridge == nullptr) {
     return 0;
   }
 
-  const int lineCount = editorController->getLineCount();
+  const int lineCount = editorBridge->getLineCount();
 
   for (int i = 0; i < lineCount; i++) {
-    if (editorController->needsWidthMeasurement(i)) {
-      const QString line = editorController->getLine(i);
+    if (editorBridge->needsWidthMeasurement(i)) {
+      const QString line = editorBridge->getLine(i);
       const double width = fontMetrics.horizontalAdvance(line);
-      editorController->setLineWidth(i, width);
+      editorBridge->setLineWidth(i, width);
     }
   }
 
-  return editorController->getMaxWidth();
+  return editorBridge->getMaxWidth();
 }

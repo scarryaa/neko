@@ -24,6 +24,9 @@ class NewTabResult;
 class CloseManyTabsResult;
 class CreateDocumentTabAndViewResultFfi;
 
+class TabController;
+class AppController;
+
 class FileOpenResult;
 class MoveActiveTabResult;
 

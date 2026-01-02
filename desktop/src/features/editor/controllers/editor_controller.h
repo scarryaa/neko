@@ -1,5 +1,5 @@
-#ifndef EDITOR_CONTROLLER_H
-#define EDITOR_CONTROLLER_H
+#ifndef EDITOR_BRIDGE_H
+#define EDITOR_BRIDGE_H
 
 #include "features/editor/types/types.h"
 #include <QObject>
@@ -7,16 +7,16 @@
 #include <QStringList>
 #include <neko-core/src/ffi/bridge.rs.h>
 
-class EditorController : public QObject {
+class EditorBridge : public QObject {
   Q_OBJECT
 
 public:
-  struct EditorControllerProps {
-    neko::EditorHandle *editor;
+  struct EditorBridgeProps {
+    rust::Box<neko::EditorController> editorController;
   };
 
-  explicit EditorController(const EditorControllerProps &props);
-  ~EditorController() override = default;
+  explicit EditorBridge(EditorBridgeProps props);
+  ~EditorBridge() override = default;
 
   // Getters
   [[nodiscard]] bool isEmpty() const;
@@ -35,7 +35,7 @@ public:
 
   // Setters
   void setLineWidth(int index, double width);
-  void setEditor(neko::Editor *editor);
+  void setEditorBridge(neko::EditorController *editorController);
 
   // Selection/Cursor movement
   void selectWord(int row, int column);
@@ -94,11 +94,11 @@ private:
 
   template <typename Fn, typename... Args>
   void doOp(Fn &&function, Args &&...args);
-  void nav(neko::ChangeSetFfi (neko::Editor::*moveFn)(),
-           neko::ChangeSetFfi (neko::Editor::*selectFn)(), bool shouldSelect);
+  void nav(neko::ChangeSetFfi (neko::EditorController::*moveFn)(),
+           neko::ChangeSetFfi (neko::EditorController::*selectFn)(),
+           bool shouldSelect);
 
-  // TODO(scarlet): Wrap this (avoid raw neko:: types)
-  rust::Box<neko::Editor> editor;
+  rust::Box<neko::EditorController> editorController;
 };
 
 #endif

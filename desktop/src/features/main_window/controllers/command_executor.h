@@ -4,12 +4,13 @@
 // Need to include actual headers due to rust::String
 #include <neko-core/src/ffi/bridge.rs.h>
 
+class AppBridge;
 class AppConfigService;
 
 struct CommandExecutorProps {
   neko::ConfigManager *configManager;
   neko::ThemeManager *themeManager;
-  neko::AppState *appState;
+  AppBridge *appBridge;
   AppConfigService *appConfigService;
 };
 
@@ -25,7 +26,7 @@ public:
 private:
   neko::ConfigManager *configManager;
   neko::ThemeManager *themeManager;
-  neko::AppState *appState;
+  AppBridge *appBridge;
   AppConfigService *appConfigService;
 };
 

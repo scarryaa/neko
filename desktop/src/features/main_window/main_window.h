@@ -1,7 +1,7 @@
 #ifndef MAIN_WINDOW_H
 #define MAIN_WINDOW_H
 
-class EditorController;
+class EditorBridge;
 class WorkspaceCoordinator;
 class WorkspaceController;
 class CommandManager;
@@ -14,7 +14,7 @@ class EditorWidget;
 class CommandPaletteWidget;
 class FileExplorerWidget;
 class TabController;
-class AppController;
+class AppBridge;
 class AppConfigService;
 class UiStyleManager;
 
@@ -35,15 +35,14 @@ public:
   ~MainWindow() override = default;
 
 private:
-  void setupWidgets(TabController *tabController, AppController *appController);
+  void setupWidgets(TabController *tabController, AppBridge *appBridge);
   void applyTheme();
   void connectSignals();
 
   rust::Box<neko::ConfigManager> configManager;
-  rust::Box<neko::AppState> appState;
   rust::Box<neko::ThemeManager> themeManager;
   rust::Box<neko::ShortcutsManager> shortcutsManager;
-  EditorController *editorController;
+  EditorBridge *editorBridge;
   WorkspaceCoordinator *workspaceCoordinator;
   WorkspaceController *workspaceController;
   CommandRegistry commandRegistry;

@@ -16,8 +16,8 @@
 #include <QStyleOption>
 
 StatusBarWidget::StatusBarWidget(const StatusBarProps &props, QWidget *parent)
-    : QWidget(parent), font(props.font),
-      editorController(props.editorController), theme(props.theme) {
+    : QWidget(parent), font(props.font), editorBridge(props.editorBridge),
+      theme(props.theme) {
   setFont(font);
   QFontMetrics fontMetrics(font);
 
@@ -103,14 +103,14 @@ void StatusBarWidget::setAndApplyTheme(const StatusBarTheme &newTheme) {
 // NOLINTNEXTLINE
 void StatusBarWidget::updateCursorPosition(int row, int col,
                                            int numberOfCursors) {
-  if (editorController == nullptr) {
+  if (editorBridge == nullptr) {
     return;
   }
 
   QString newPosition = QString("%1:%2").arg(row + 1).arg(col + 1);
 
   // TODO(scarlet): Show selection lines, chars
-  int numberOfSelections = editorController->getNumberOfSelections();
+  int numberOfSelections = editorBridge->getNumberOfSelections();
   if (numberOfCursors > 1 || numberOfSelections > 1) {
     newPosition = newPosition.append(" (%1 selections)")
                       .arg(std::max(numberOfCursors, numberOfSelections));
@@ -123,7 +123,7 @@ void StatusBarWidget::showCursorPositionInfo() { cursorPosition->show(); }
 // NOLINTNEXTLINE
 void StatusBarWidget::onCursorPositionChanged(int row, int col,
                                               int numberOfCursors) {
-  if (editorController == nullptr) {
+  if (editorBridge == nullptr) {
     return;
   }
 
@@ -132,7 +132,7 @@ void StatusBarWidget::onCursorPositionChanged(int row, int col,
   QString newPosition = QString("%1:%2").arg(row + 1).arg(col + 1);
 
   // TODO(scarlet): Show selection lines, chars
-  int numberOfSelections = editorController->getNumberOfSelections();
+  int numberOfSelections = editorBridge->getNumberOfSelections();
   if (numberOfCursors > 1 || numberOfSelections > 1) {
     newPosition = newPosition.append(" (%1 selections)")
                       .arg(std::max(numberOfCursors, numberOfSelections));

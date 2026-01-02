@@ -4,7 +4,7 @@
 
 CommandExecutor::CommandExecutor(const CommandExecutorProps &props)
     : configManager(props.configManager), themeManager(props.themeManager),
-      appState(props.appState), appConfigService(props.appConfigService) {}
+      appBridge(props.appBridge), appConfigService(props.appConfigService) {}
 
 neko::CommandResultFfi CommandExecutor::execute(const rust::String &key,
                                                 const rust::String &displayName,
@@ -12,7 +12,7 @@ neko::CommandResultFfi CommandExecutor::execute(const rust::String &key,
                                                 const rust::String &argument) {
   auto commandFfi = neko::new_command(key, displayName, kind, argument);
   auto result = neko::execute_command(commandFfi, *configManager, *themeManager,
-                                      *appState);
+                                      *appBridge);
 
   if (appConfigService != nullptr) {
     appConfigService->notifyExternalConfigChange();

@@ -11,14 +11,14 @@
 
 QT_FWD(QWheelEvent, QPaintEvent)
 
-class EditorController;
+class EditorBridge;
 
 class GutterWidget : public QScrollArea {
   Q_OBJECT
 
 public:
   struct GutterProps {
-    EditorController *editorController;
+    EditorBridge *editorBridge;
     GutterTheme theme;
     QFont font;
   };
@@ -29,7 +29,7 @@ public:
   void redraw() const;
   void setAndApplyTheme(const GutterTheme &newTheme);
   void updateDimensions();
-  void setEditorController(EditorController *newEditorController);
+  void setEditorBridge(EditorBridge *newEditorBridge);
 
 protected:
   [[nodiscard]] QSize sizeHint() const override;
@@ -55,7 +55,7 @@ private:
 
   GutterTheme theme;
 
-  EditorController *editorController;
+  EditorBridge *editorBridge;
   GutterRenderer *renderer;
   QFont font;
   QFontMetricsF fontMetrics;

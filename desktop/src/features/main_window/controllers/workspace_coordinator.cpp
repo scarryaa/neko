@@ -4,7 +4,7 @@
 #include "features/editor/editor_widget.h"
 #include "features/editor/gutter_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
-#include "features/main_window/controllers/app_controller.h"
+#include "features/main_window/controllers/app_bridge.h"
 #include "features/main_window/controllers/command_executor.h"
 #include "features/main_window/services/app_config_service.h"
 #include "features/main_window/services/dialog_service.h"
@@ -22,13 +22,13 @@
 
 WorkspaceCoordinator::WorkspaceCoordinator(
     const WorkspaceCoordinatorProps &props, QObject *parent)
-    : tabController(props.tabController), appController(props.appController),
+    : tabController(props.tabController), appBridge(props.appBridge),
       appConfigService(props.appConfigService),
-      editorController(props.editorController), uiHandles(props.uiHandles),
+      editorBridge(props.editorBridge), uiHandles(props.uiHandles),
       commandExecutor(props.commandExecutor),
       tabFlows({.tabController = props.tabController,
-                .appController = props.appController,
-                .editorController = props.editorController,
+                .appBridge = props.appBridge,
+                .editorBridge = props.editorBridge,
                 .uiHandles = props.uiHandles}),
       QObject(parent) {
   // TabController -> WorkspaceCoordinator
@@ -60,7 +60,7 @@ WorkspaceCoordinator::WorkspaceCoordinator(
   connect(this, &WorkspaceCoordinator::fileOpened, tabController,
           &TabController::fileOpened);
 
-  auto &activeEditor = appController->getActiveEditorMut();
+  auto &activeEditor = appBridge->getActiveEditorMut();
   setActiveEditor(&activeEditor);
 }
 
@@ -82,17 +82,17 @@ void WorkspaceCoordinator::cursorPositionClicked() {
     return;
   }
 
-  const auto cursor = editorController->getLastAddedCursor();
-  const int lineCount = editorController->getLineCount();
+  const auto cursor = editorBridge->getLastAddedCursor();
+  const int lineCount = editorBridge->getLineCount();
 
   if (lineCount == 0) {
     return;
   }
 
   const auto maxCol =
-      std::max<std::size_t>(1, editorController->getLineLength(cursor.row));
+      std::max<std::size_t>(1, editorBridge->getLineLength(cursor.row));
   const auto lastLineMaxCol =
-      std::max<std::size_t>(1, editorController->getLineLength(lineCount - 1));
+      std::max<std::size_t>(1, editorBridge->getLineLength(lineCount - 1));
 
   uiHandles.commandPaletteWidget->showPalette(
       CommandPaletteMode::Jump,
@@ -108,7 +108,7 @@ void WorkspaceCoordinator::cursorPositionClicked() {
 
 std::vector<ShortcutHintRow> WorkspaceCoordinator::buildJumpHintRows() {
   std::vector<ShortcutHintRow> result;
-  const auto jumpCommands = AppController::getAvailableJumpCommands();
+  const auto jumpCommands = AppBridge::getAvailableJumpCommands();
 
   result.reserve(jumpCommands.size());
   for (const auto &cmd : jumpCommands) {
@@ -141,7 +141,7 @@ void WorkspaceCoordinator::commandPaletteGoToPosition(
   }
 
   if (isPosition) {
-    const int lineCount = editorController->getLineCount();
+    const int lineCount = editorBridge->getLineCount();
     const int64_t maxLine = std::max<int64_t>(1, lineCount);
 
     const int64_t clampedRow = std::clamp<int64_t>(row, 1, maxLine);
@@ -157,9 +157,9 @@ void WorkspaceCoordinator::commandPaletteGoToPosition(
         .document_target = neko::DocumentTargetFfi::Start,
     };
 
-    appController->executeJumpCommand(jumpCommand);
+    appBridge->executeJumpCommand(jumpCommand);
   } else {
-    appController->executeJumpKey(jumpCommandKey);
+    appBridge->executeJumpKey(jumpCommandKey);
   }
 
   // TODO(scarlet): Turn these into signals?
@@ -176,7 +176,7 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &key,
   neko::CommandKindFfi kind;
   rust::String argument;
 
-  const auto commands = AppController::getAvailableCommands();
+  const auto commands = AppBridge::getAvailableCommands();
   for (const auto &nekoCommand : commands) {
     if (key == QString::fromUtf8(nekoCommand.key)) {
       rustKey = nekoCommand.key;
@@ -266,8 +266,7 @@ void WorkspaceCoordinator::openFile() {
   }
 
   auto targetTabId = tabController->addTab();
-  const auto result =
-      appController->openFile(targetTabId, filePath.toStdString());
+  const auto result = appBridge->openFile(targetTabId, filePath.toStdString());
 
   if (result.success) {
     emit fileOpened(result.snapshot);
@@ -294,7 +293,7 @@ void WorkspaceCoordinator::fileSelected(const std::string &path,
 
   // Otherwise, create a tab, open file into it, rollback on failure
   const int newTabId = tabController->addTab();
-  auto result = appController->openFile(path);
+  auto result = appBridge->openFile(path);
 
   if (!result.success) {
     tabController->closeTabs(neko::CloseTabOperationTypeFfi::Single, newTabId,
@@ -423,7 +422,7 @@ void WorkspaceCoordinator::refreshUiForActiveTab(bool focusEditor) {
   // IMPORTANT: Set active editor before re-showing widgets, otherwise
   // Qt layout triggers a resize event (which queries the line count with the
   // old editor reference)
-  auto &activeEditor = appController->getActiveEditorMut();
+  auto &activeEditor = appBridge->getActiveEditorMut();
   setActiveEditor(&activeEditor);
 
   uiHandles.emptyStateWidget->hide();
@@ -446,20 +445,20 @@ void WorkspaceCoordinator::refreshUiForActiveTab(bool focusEditor) {
 }
 
 void WorkspaceCoordinator::setActiveEditor(neko::Editor *editor) {
-  editorController->setEditor(editor);
+  editorBridge->setEditor(editor);
 
-  uiHandles.editorWidget->setEditorController(editorController);
-  uiHandles.gutterWidget->setEditorController(editorController);
+  uiHandles.editorWidget->setEditorBridge(editorBridge);
+  uiHandles.gutterWidget->setEditorBridge(editorBridge);
 }
 
 void WorkspaceCoordinator::refreshStatusBarCursorInfo() {
-  if (editorController == nullptr) {
+  if (editorBridge == nullptr) {
     return;
   }
 
-  const auto cursorPosition = editorController->getLastAddedCursor();
+  const auto cursorPosition = editorBridge->getLastAddedCursor();
   const int numberOfCursors =
-      static_cast<int>(editorController->getCursorPositions().size());
+      static_cast<int>(editorBridge->getCursorPositions().size());
 
   uiHandles.statusBarWidget->updateCursorPosition(
       cursorPosition.row, cursorPosition.column, numberOfCursors);

@@ -19,7 +19,7 @@ class EditorWidget : public QScrollArea {
 
 public:
   struct EditorProps {
-    EditorController *editorController;
+    EditorBridge *editorBridge;
     QFont font;
     EditorTheme theme;
   };
@@ -30,7 +30,7 @@ public:
   void setAndApplyTheme(const EditorTheme &newTheme);
   void redraw() const;
   void updateDimensions();
-  void setEditorController(EditorController *newEditorController);
+  void setEditorBridge(EditorBridge *newEditorBridge);
 
   // NOLINTNEXTLINE(readability-redundant-access-specifiers)
 public slots:
@@ -70,7 +70,7 @@ private:
 
   EditorTheme theme;
 
-  EditorController *editorController;
+  EditorBridge *editorBridge;
   EditorRenderer *renderer;
   QFont font;
   QFontMetricsF fontMetrics;

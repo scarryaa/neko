@@ -1,7 +1,7 @@
 #include "tab_flows.h"
 #include "features/editor/editor_widget.h"
 #include "features/file_explorer/file_explorer_widget.h"
-#include "features/main_window/controllers/app_controller.h"
+#include "features/main_window/controllers/app_bridge.h"
 #include "features/main_window/services/dialog_service.h"
 #include "features/main_window/ui_handles.h"
 #include "features/status_bar/status_bar_widget.h"
@@ -18,8 +18,8 @@
 #include <neko-core/src/ffi/bridge.rs.h>
 
 TabFlows::TabFlows(const TabFlowsProps &props)
-    : tabController(props.tabController), appController(props.appController),
-      editorController(props.editorController), uiHandles(props.uiHandles) {}
+    : tabController(props.tabController), appBridge(props.appBridge),
+      editorBridge(props.editorBridge), uiHandles(props.uiHandles) {}
 
 void TabFlows::handleTabCommand(const std::string &commandId,
                                 const neko::TabContextFfi &ctx,
@@ -122,7 +122,7 @@ bool TabFlows::revealTab(const neko::TabContextFfi &ctx) {
     return false;
   }
 
-  appController->runTabCommand("tab.reveal", ctx, false);
+  appBridge->runTabCommand("tab.reveal", ctx, false);
   return true;
 }
 
@@ -209,7 +209,7 @@ bool TabFlows::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
   }
 
   if (!path.isEmpty() && !isSaveAs) {
-    return appController->saveTab(tabId);
+    return appBridge->saveTab(tabId);
   }
 
   QString initialDir;
@@ -224,7 +224,7 @@ bool TabFlows::saveTabWithPromptIfNeeded(int tabId, bool isSaveAs) {
     return false;
   }
 
-  return appController->saveTabAs(tabId, filePath.toStdString());
+  return appBridge->saveTabAs(tabId, filePath.toStdString());
 }
 
 bool TabFlows::closeManyTabs(const QList<int> &ids, bool forceClose,

@@ -1,17 +1,16 @@
-#ifndef APP_STATE_CONTROLLER_H
-#define APP_STATE_CONTROLLER_H
+#ifndef APP_BRIDGE_H
+#define APP_BRIDGE_H
 
 #include "core/api/tab_core_api.h"
 #include <QObject>
 #include <neko-core/src/ffi/bridge.rs.h>
 #include <vector>
 
-class AppController : public QObject, public ITabCoreApi {
+class AppBridge : public QObject, public ITabCoreApi {
   Q_OBJECT
 
 public:
-  struct AppControllerProps {
-    neko::AppState *appState;
+  struct AppBridgeProps {
     neko::ConfigManager &configManager;
     const std::string &rootPath;
   };
@@ -27,8 +26,8 @@ public:
     neko::LineTargetFfi lineTarget;
   };
 
-  explicit AppController(const AppControllerProps &props);
-  ~AppController() override = default;
+  explicit AppBridge(const AppBridgeProps &props);
+  ~AppBridge() override = default;
 
   // AppController (Rust)
   uint64_t openFile(const std::string &path, bool addToHistory);
@@ -54,7 +53,8 @@ public:
                            bool activateView) override;
   // End ITabCoreApi
 
-  [[nodiscard]] rust::Box<neko::EditorHandle> getActiveEditorMut() const;
+  [[nodiscard]] rust::Box<neko::EditorController> getActiveEditorMut() const;
+  [[nodiscard]] rust::Box<neko::TabController> getTabController() const;
   [[nodiscard]] neko::FileTree &getFileTreeMut() const;
   [[nodiscard]] neko::TabCommandStateFfi
   getTabCommandState(const neko::TabContextFfi &ctx) const;
@@ -72,7 +72,6 @@ public:
   bool saveDocumentAs(int documentId, const std::string &path);
 
 private:
-  neko::AppState *appState;
   rust::Box<neko::AppController> appController;
 };
 

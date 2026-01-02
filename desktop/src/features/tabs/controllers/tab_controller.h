@@ -1,21 +1,20 @@
 #ifndef TAB_CONTROLLER_H
 #define TAB_CONTROLLER_H
 
-#include "core/api/tab_core_api.h"
 #include "features/tabs/types/types.h"
-#include "types/ffi_types_fwd.h"
 #include <QList>
 #include <QObject>
+#include <neko-core/src/ffi/bridge.rs.h>
 
 class TabController : public QObject {
   Q_OBJECT
 
 public:
   struct TabControllerProps {
-    ITabCoreApi *tabCoreApi;
+    rust::Box<neko::TabController> tabController;
   };
 
-  explicit TabController(const TabControllerProps &props);
+  explicit TabController(TabControllerProps props);
   ~TabController() override = default;
 
   // Getters
@@ -23,15 +22,17 @@ public:
   getCloseTabIds(neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
                  bool closePinned) const;
   neko::TabsSnapshot getTabsSnapshot();
+  neko::TabSnapshotMaybe getTabSnapshot(int tabId);
 
   // Setters
-  int addTab();
+  int createDocumentTabAndView(const std::string &title, bool addTabToHistory,
+                               bool activateView);
   bool closeTabs(neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
                  bool closePinned);
   bool pinTab(int tabId);
   bool unpinTab(int tabId);
-  bool moveTabBy(int delta, bool useHistory);
   bool moveTab(int fromIndex, int toIndex);
+  static bool moveTabBy(neko::Buffer buffer, int delta, bool useHistory);
   void setActiveTab(int tabId);
   void setTabScrollOffsets(int tabId, const neko::ScrollOffsetFfi &newOffsets);
   void notifyTabOpenedFromCore(int tabId);
@@ -54,7 +55,7 @@ signals:
 private:
   static TabPresentation fromSnapshot(const neko::TabSnapshot &tab);
 
-  ITabCoreApi *tabCoreApi;
+  rust::Box<neko::TabController> tabController;
 };
 
 #endif

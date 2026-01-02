@@ -12,7 +12,7 @@ EditorConnections::EditorConnections(const EditorConnectionsProps &props,
     : QObject(parent) {
   auto uiHandles = props.uiHandles;
   auto *workspaceCoordinator = props.workspaceCoordinator;
-  auto *editorController = props.editorController;
+  auto *editorBridge = props.editorBridge;
 
   // GutterWidget <-> EditorWidget
   connect(uiHandles.gutterWidget->verticalScrollBar(),
@@ -24,33 +24,33 @@ EditorConnections::EditorConnections(const EditorConnectionsProps &props,
   connect(uiHandles.editorWidget, &EditorWidget::fontSizeChangedByUser,
           uiHandles.gutterWidget, &GutterWidget::onEditorFontSizeChanged);
 
-  // EditorController -> StatusBarWidget
-  connect(editorController, &EditorController::cursorChanged,
-          uiHandles.statusBarWidget, &StatusBarWidget::onCursorPositionChanged);
+  // EditorBridge -> StatusBarWidget
+  connect(editorBridge, &EditorBridge::cursorChanged, uiHandles.statusBarWidget,
+          &StatusBarWidget::onCursorPositionChanged);
 
-  // EditorController -> WorkspaceCoordinator
-  connect(editorController, &EditorController::bufferChanged,
-          workspaceCoordinator, &WorkspaceCoordinator::bufferChanged);
+  // EditorBridge -> WorkspaceCoordinator
+  connect(editorBridge, &EditorBridge::bufferChanged, workspaceCoordinator,
+          &WorkspaceCoordinator::bufferChanged);
 
-  // EditorController -> EditorWidget
-  connect(editorController, &EditorController::bufferChanged,
-          uiHandles.editorWidget, &EditorWidget::onBufferChanged);
-  connect(editorController, &EditorController::cursorChanged,
-          uiHandles.editorWidget, &EditorWidget::onCursorChanged);
-  connect(editorController, &EditorController::selectionChanged,
-          uiHandles.editorWidget, &EditorWidget::onSelectionChanged);
-  connect(editorController, &EditorController::viewportChanged,
-          uiHandles.editorWidget, &EditorWidget::onViewportChanged);
+  // EditorBridge -> EditorWidget
+  connect(editorBridge, &EditorBridge::bufferChanged, uiHandles.editorWidget,
+          &EditorWidget::onBufferChanged);
+  connect(editorBridge, &EditorBridge::cursorChanged, uiHandles.editorWidget,
+          &EditorWidget::onCursorChanged);
+  connect(editorBridge, &EditorBridge::selectionChanged, uiHandles.editorWidget,
+          &EditorWidget::onSelectionChanged);
+  connect(editorBridge, &EditorBridge::viewportChanged, uiHandles.editorWidget,
+          &EditorWidget::onViewportChanged);
 
-  // EditorController -> GutterWidget
-  connect(editorController, &EditorController::lineCountChanged,
-          uiHandles.gutterWidget, &GutterWidget::onEditorLineCountChanged);
-  connect(editorController, &EditorController::bufferChanged,
-          uiHandles.gutterWidget, &GutterWidget::onBufferChanged);
-  connect(editorController, &EditorController::cursorChanged,
-          uiHandles.gutterWidget, &GutterWidget::onCursorChanged);
-  connect(editorController, &EditorController::selectionChanged,
-          uiHandles.gutterWidget, &GutterWidget::onSelectionChanged);
-  connect(editorController, &EditorController::viewportChanged,
-          uiHandles.gutterWidget, &GutterWidget::onViewportChanged);
+  // EditorBridge -> GutterWidget
+  connect(editorBridge, &EditorBridge::lineCountChanged, uiHandles.gutterWidget,
+          &GutterWidget::onEditorLineCountChanged);
+  connect(editorBridge, &EditorBridge::bufferChanged, uiHandles.gutterWidget,
+          &GutterWidget::onBufferChanged);
+  connect(editorBridge, &EditorBridge::cursorChanged, uiHandles.gutterWidget,
+          &GutterWidget::onCursorChanged);
+  connect(editorBridge, &EditorBridge::selectionChanged, uiHandles.gutterWidget,
+          &GutterWidget::onSelectionChanged);
+  connect(editorBridge, &EditorBridge::viewportChanged, uiHandles.gutterWidget,
+          &GutterWidget::onViewportChanged);
 }

@@ -3,8 +3,8 @@
 #include <QApplication>
 #include <QClipboard>
 
-EditorController::EditorController(const EditorControllerProps &props)
-    : editor(props.editor) {}
+EditorBridge::EditorBridge(EditorBridgeProps props)
+    : editorController(std::move(props.editorController)) {}
 
 bool EditorController::isEmpty() const { return editor->buffer_is_empty(); }
 

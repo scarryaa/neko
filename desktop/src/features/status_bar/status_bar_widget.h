@@ -1,7 +1,7 @@
 #ifndef STATUS_BAR_WIDGET_H
 #define STATUS_BAR_WIDGET_H
 
-class EditorController;
+class EditorBridge;
 class ConfigManager;
 
 #include "theme/types/types.h"
@@ -15,7 +15,7 @@ class StatusBarWidget : public QWidget {
 
 public:
   struct StatusBarProps {
-    EditorController *editorController;
+    EditorBridge *editorBridge;
     QFont font;
     StatusBarTheme theme;
     bool fileExplorerInitiallyShown;
@@ -45,7 +45,7 @@ private:
   void onFileExplorerToggled();
   void onCursorPositionClicked();
 
-  EditorController *editorController;
+  EditorBridge *editorBridge;
   double m_height;
   QPushButton *fileExplorerToggleButton;
   QPushButton *cursorPosition;

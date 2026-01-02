@@ -10,8 +10,8 @@
 #include <string>
 
 class TabController;
-class AppController;
-class EditorController;
+class AppBridge;
+class EditorBridge;
 
 /// \class TabFlows
 /// \brief Orchestrates tab-related workflows that involve multiple controllers
@@ -21,8 +21,8 @@ class TabFlows {
 public:
   struct TabFlowsProps {
     TabController *tabController;
-    AppController *appController;
-    EditorController *editorController;
+    AppBridge *appBridge;
+    EditorBridge *editorBridge;
     const UiHandles uiHandles;
   };
 
@@ -65,8 +65,8 @@ public:
 
 private:
   TabController *tabController;
-  AppController *appController;
-  EditorController *editorController;
+  AppBridge *appBridge;
+  EditorBridge *editorBridge;
   const UiHandles uiHandles;
 
   bool closeManyTabs(const QList<int> &ids, bool forceClose,

@@ -1,7 +1,7 @@
 #ifndef EDITOR_CONNECTIONS_H
 #define EDITOR_CONNECTIONS_H
 
-class EditorController;
+class EditorBridge;
 class WorkspaceCoordinator;
 class UiHandles;
 
@@ -13,7 +13,7 @@ class EditorConnections : public QObject {
 public:
   struct EditorConnectionsProps {
     const UiHandles &uiHandles;
-    EditorController *editorController;
+    EditorBridge *editorBridge;
     WorkspaceCoordinator *workspaceCoordinator;
   };
 

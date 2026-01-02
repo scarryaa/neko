@@ -8,7 +8,7 @@
 #include <QWheelEvent>
 
 GutterWidget::GutterWidget(const GutterProps &props, QWidget *parent)
-    : QScrollArea(parent), editorController(props.editorController),
+    : QScrollArea(parent), editorBridge(props.editorBridge),
       renderer(new GutterRenderer()), theme(props.theme), font(props.font),
       fontMetrics(font) {
   setFocusPolicy(Qt::NoFocus);
@@ -37,11 +37,11 @@ void GutterWidget::setAndApplyTheme(const GutterTheme &newTheme) {
 }
 
 void GutterWidget::updateDimensions() {
-  if (editorController == nullptr) {
+  if (editorBridge == nullptr) {
     return;
   }
 
-  const int lineCount = editorController->getLineCount();
+  const int lineCount = editorBridge->getLineCount();
   const auto viewportHeight = (lineCount * fontMetrics.height()) -
                               viewport()->height() + VIEWPORT_PADDING;
   const auto contentWidth = measureWidth();
@@ -55,8 +55,8 @@ void GutterWidget::updateDimensions() {
   redraw();
 }
 
-void GutterWidget::setEditorController(EditorController *newEditorController) {
-  editorController = newEditorController;
+void GutterWidget::setEditorBridge(EditorBridge *newEditorBridge) {
+  editorBridge = newEditorBridge;
 }
 
 QSize GutterWidget::sizeHint() const {
@@ -64,7 +64,7 @@ QSize GutterWidget::sizeHint() const {
 }
 
 void GutterWidget::paintEvent(QPaintEvent *event) {
-  if (editorController == nullptr) {
+  if (editorBridge == nullptr) {
     return;
   }
 
@@ -76,7 +76,7 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
   const double viewportWidth = viewport()->width();
   const double lineHeight = fontMetrics.height();
 
-  const int lineCount = editorController->getLineCount();
+  const int lineCount = editorBridge->getLineCount();
   const int firstVisibleLine = qMax(
       0, qMin(static_cast<int>(verticalOffset / lineHeight), lineCount - 1));
   const int visibleLineCount = static_cast<int>(viewportHeight / lineHeight);
@@ -88,9 +88,9 @@ void GutterWidget::paintEvent(QPaintEvent *event) {
       lineHeight,       firstVisibleLine, lastVisibleLine, verticalOffset,
       horizontalOffset, viewportWidth,    viewportHeight};
 
-  const auto cursors = editorController->getCursorPositions();
-  const auto selections = editorController->getSelection();
-  const bool isEmpty = editorController->bufferIsEmpty();
+  const auto cursors = editorBridge->getCursorPositions();
+  const auto selections = editorBridge->getSelection();
+  const bool isEmpty = editorBridge->bufferIsEmpty();
 
   const double fontAscent = fontMetrics.ascent();
   const double fontDescent = fontMetrics.descent();
@@ -145,11 +145,11 @@ void GutterWidget::onSelectionChanged() const { redraw(); }
 void GutterWidget::onViewportChanged() { updateDimensions(); }
 
 double GutterWidget::measureWidth() const {
-  if (editorController == nullptr) {
+  if (editorBridge == nullptr) {
     return 0;
   }
 
-  const int lineCount = editorController->getLineCount();
+  const int lineCount = editorBridge->getLineCount();
 
   return fontMetrics.horizontalAdvance(QString::number(lineCount));
 }

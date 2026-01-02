@@ -1,6 +1,5 @@
 use crate::{
-    AppState, Buffer, ConfigManager, Editor, FileTree, ShortcutsManager, ThemeManager,
-    execute_jump_key,
+    AppState, Buffer, ConfigManager, FileTree, ShortcutsManager, ThemeManager, execute_jump_key,
     ffi::{
         AppController, EditorController, FileTreeController, TabController, new_app_controller,
         wrappers::*,
@@ -302,7 +301,6 @@ pub mod ffi {
         type ConfigManager;
         type ShortcutsManager;
         type ThemeManager;
-        type Editor;
         type FileTree;
         type Buffer;
         type EditorController;
@@ -447,6 +445,7 @@ pub mod ffi {
             close_pinned: bool,
         ) -> CloseManyTabsResult;
         pub(crate) fn move_tab(self: &mut TabController, from: usize, to: usize) -> bool;
+        // TODO(scarlet): Decouple this fn from the buffer arg if possible
         pub fn move_active_tab_by(
             self: &mut TabController,
             buffer: &mut Buffer,
