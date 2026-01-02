@@ -40,9 +40,9 @@ void TabFlows::handleTabCommand(const std::string &commandId,
   } else if (commandId == "tab.closeRight") {
     closeTabs(neko::CloseTabOperationTypeFfi::Right, tabId, forceClose);
   } else if (commandId == "tab.closeAll") {
-    closeTabs(neko::CloseTabOperationTypeFfi::All, 0, forceClose);
+    closeTabs(neko::CloseTabOperationTypeFfi::All, tabId, forceClose);
   } else if (commandId == "tab.closeClean") {
-    closeTabs(neko::CloseTabOperationTypeFfi::Clean, 0, forceClose);
+    closeTabs(neko::CloseTabOperationTypeFfi::Clean, tabId, forceClose);
   } else if (commandId == "tab.copyPath") {
     copyTabPath(tabId);
   } else if (commandId == "tab.reveal") {

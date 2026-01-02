@@ -77,52 +77,50 @@ impl TabManager {
 
     pub fn get_close_tab_ids(
         &self,
-        _operation_type: CloseTabOperationType,
-        _anchor_tab_id: Option<TabId>,
-        _close_pinned: bool,
+        operation_type: CloseTabOperationType,
+        anchor_tab_id: Option<TabId>,
+        close_pinned: bool,
     ) -> Result<Vec<TabId>, TabError> {
-        // TODO(scarlet): Adjust this for the new document architecture
-        // use CloseTabOperationType::*;
-        //
-        // let anchor_index = match operation_type {
-        //     Single | Others | Left | Right => self
-        //         .tabs
-        //         .iter()
-        //         .position(|t| t.get_id() == anchor_tab_id)
-        //         .ok_or_else(|| Error::new(ErrorKind::NotFound, "Tab with given id not found"))?,
-        //     All | Clean => 0, // No anchor needed
-        // };
-        //
-        // let mut ids = Vec::new();
-        // for (idx, tab) in self.tabs.iter().enumerate() {
-        //     let id = tab.get_id();
-        //     let is_anchor = id == anchor_tab_id;
-        //     let is_pinned = tab.get_is_pinned();
-        //
-        //     // Pinned tabs handling:
-        //     // - For a single tab close op: may close the anchor tab, even if it is pinned,
-        //     //   if close_pinned is true && is_anchor is true
-        //     // - For the other ops: never close pinned tabs
-        //     if is_pinned && !(matches!(operation_type, Single) && is_anchor && close_pinned) {
-        //         continue;
-        //     }
-        //
-        //     let include = match operation_type {
-        //         Single => is_anchor,
-        //         Others => !is_anchor,
-        //         Left => idx < anchor_index,
-        //         Right => idx > anchor_index,
-        //         All => true,
-        //         Clean => !tab.get_modified(),
-        //     };
-        //
-        //     if include {
-        //         ids.push(id);
-        //     }
-        // }
-        //
-        // Ok(ids)
-        Ok(Vec::new())
+        use CloseTabOperationType::*;
+
+        let find_anchor_index = || -> Result<usize, TabError> {
+            let anchor_id = anchor_tab_id.ok_or(TabError::NoIdProvided)?;
+            self.tabs
+                .iter()
+                .position(|tab| tab.get_id() == anchor_id)
+                .ok_or(TabError::NotFound(anchor_id))
+        };
+
+        let mut ids = Vec::new();
+
+        for (idx, tab) in self.tabs.iter().enumerate() {
+            let id = tab.get_id();
+            let is_anchor = anchor_tab_id.map(|a| a == id).unwrap_or(false);
+            let is_pinned = tab.get_is_pinned();
+
+            // Pinned tabs handling:
+            // - For a single tab close op: may close the anchor tab, even if it is pinned,
+            //   if close_pinned is true && is_anchor is true
+            // - For the other ops: never close pinned tabs
+            if is_pinned && !(matches!(operation_type, Single) && is_anchor && close_pinned) {
+                continue;
+            }
+
+            let include = match operation_type {
+                Single => is_anchor,
+                Others => !is_anchor,
+                Left => idx < find_anchor_index()?,
+                Right => idx > find_anchor_index()?,
+                // Select all tabs for now, AppState will filter out modified tabs after
+                All | Clean => true, // No anchor needed
+            };
+
+            if include {
+                ids.push(id);
+            }
+        }
+
+        Ok(ids)
     }
 
     fn generate_next_id(&mut self) -> TabId {

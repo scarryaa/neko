@@ -110,11 +110,13 @@ impl TabController {
         anchor_tab_id: u64,
         close_pinned: bool,
     ) -> CloseManyTabsResult {
-        match self.app_state.borrow_mut().close_tabs(
+        let result = self.app_state.borrow_mut().close_tabs(
             operation_type.into(),
             anchor_tab_id.into(),
             close_pinned,
-        ) {
+        );
+
+        match result {
             Ok(closed_ids) => self
                 .build_close_many_result(true, closed_ids.iter().map(|id| (*id).into()).collect()),
             Err(_) => self.build_close_many_result(false, vec![]),
@@ -142,23 +144,6 @@ impl TabController {
             active_present,
             active_id: if active_present { active_id.into() } else { 0 },
             tabs,
-        }
-    }
-
-    pub fn close_tab(
-        &self,
-        operation_type: CloseTabOperationTypeFfi,
-        anchor_tab_id: u64,
-        close_pinned: bool,
-    ) -> CloseManyTabsResult {
-        match self.app_state.borrow_mut().close_tabs(
-            operation_type.into(),
-            anchor_tab_id.into(),
-            close_pinned,
-        ) {
-            Ok(closed_ids) => self
-                .build_close_many_result(true, closed_ids.iter().map(|id| (*id).into()).collect()),
-            Err(_) => self.build_close_many_result(false, vec![]),
         }
     }
 

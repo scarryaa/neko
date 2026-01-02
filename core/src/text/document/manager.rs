@@ -122,6 +122,15 @@ impl DocumentManager {
         Ok(())
     }
 
+    /// Removes a document and cleans up its path index.
+    pub fn close_document(&mut self, document_id: DocumentId) {
+        if let Some(document) = self.documents.remove(&document_id) {
+            if let Some(path) = document.path {
+                self.path_index.remove(&path);
+            }
+        }
+    }
+
     // TODO(scarlet): Handle the case where 'save as' occurs and the provided new path matches a different
     // stored Document's path.
     /// Attempts to save the [`Document`] with the provided [`DocumentId`] under the provided path.

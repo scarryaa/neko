@@ -35,7 +35,7 @@ impl fmt::Display for TabId {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum CloseTabOperationType {
     Single,
     Left,

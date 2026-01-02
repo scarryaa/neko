@@ -445,12 +445,6 @@ pub mod ffi {
             close_pinned: bool,
         ) -> CloseManyTabsResult;
         pub fn get_tabs_snapshot(self: &TabController) -> TabsSnapshot;
-        pub fn close_tab(
-            self: &TabController,
-            operation_type: CloseTabOperationTypeFfi,
-            anchor_tab_id: u64,
-            close_pinned: bool,
-        ) -> CloseManyTabsResult;
         pub(crate) fn move_tab(self: &mut TabController, from: usize, to: usize) -> bool;
         // TODO(scarlet): Decouple this fn from the buffer arg if possible
         pub fn move_active_tab_by(

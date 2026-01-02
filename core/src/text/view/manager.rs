@@ -52,6 +52,13 @@ impl ViewManager {
         self.active_view_id = None;
     }
 
+    /// Checks if any remaining view is referencing the given document.
+    pub fn has_views_for_document(&self, document_id: DocumentId) -> bool {
+        self.views
+            .values()
+            .any(|view| view.document_id() == document_id)
+    }
+
     /// Creates a new [`View`] and returns the corresponding [`ViewId`].
     pub fn create_view(&mut self, document_id: DocumentId, editor: Editor) -> ViewId {
         let id = self.generate_next_id();

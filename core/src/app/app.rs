@@ -69,8 +69,28 @@ impl AppState {
         anchor_tab_id: Option<TabId>,
         close_pinned: bool,
     ) -> Result<Vec<TabId>, TabError> {
-        self.tab_manager
-            .get_close_tab_ids(operation_type, anchor_tab_id, close_pinned)
+        let mut ids = self.tab_manager.get_close_tab_ids(
+            operation_type.clone(),
+            anchor_tab_id,
+            close_pinned,
+        )?;
+
+        // Filter out modified documents if needed
+        if matches!(operation_type, CloseTabOperationType::Clean) {
+            ids.retain(|&tab_id| !self.is_tab_modified(tab_id));
+        }
+
+        Ok(ids)
+    }
+
+    fn is_tab_modified(&self, tab_id: TabId) -> bool {
+        if let Ok(tab) = self.tab_manager.get_tab(tab_id) {
+            if let Some(doc) = self.document_manager.get_document(tab.get_document_id()) {
+                return doc.modified;
+            }
+        }
+
+        false
     }
 
     pub fn get_config_snapshot(&self) -> Config {
@@ -182,21 +202,66 @@ impl AppState {
     }
 
     // Setters
-    // TODO(scarlet): Needs to handle closing the corresponding document/view
     pub fn close_tabs(
         &mut self,
         operation_type: CloseTabOperationType,
         anchor_tab_id: TabId,
         close_pinned: bool,
     ) -> Result<Vec<TabId>, TabError> {
+        let ids_to_close = self.tab_manager.get_close_tab_ids(
+            operation_type.clone(),
+            Some(anchor_tab_id),
+            close_pinned,
+        )?;
+
+        if ids_to_close.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let mut views_and_documents_to_close = Vec::new();
+        for &tab_id in &ids_to_close {
+            if let Ok(tab) = self.tab_manager.get_tab(tab_id) {
+                views_and_documents_to_close.push((tab.get_view_id(), tab.get_document_id()));
+            }
+        }
+
+        // Close the tabs
         let history_enabled = self
             .config_manager()
             .get_snapshot()
             .editor
             .switch_to_last_visited_tab_on_close;
 
-        self.tab_manager
-            .close_tabs(operation_type, anchor_tab_id, history_enabled, close_pinned)
+        let closed_ids = self.tab_manager.close_tabs(
+            operation_type,
+            anchor_tab_id,
+            history_enabled,
+            close_pinned,
+        )?;
+
+        // Clean up the relevant views and documents
+        for (view_id, document_id) in views_and_documents_to_close {
+            self.view_manager.remove_view(view_id);
+
+            // Only close the document if no other views are pointing to it
+            if !self.view_manager.has_views_for_document(document_id) {
+                self.document_manager.close_document(document_id);
+            }
+        }
+
+        let active_tab_id = self.tab_manager.get_active_tab_id();
+
+        // Check if there are any tabs left
+        if !self.tab_manager.get_tabs().is_empty() {
+            // Sync the active view
+            if let Ok(tab) = self.tab_manager.get_tab(active_tab_id) {
+                self.view_manager.set_active_view(tab.get_view_id());
+            }
+        } else {
+            self.view_manager.clear_active_view();
+        }
+
+        Ok(closed_ids)
     }
 
     /// Returns the tab id for the given path, reusing an existing tab if present,
