@@ -1,7 +1,7 @@
 use crate::{AppState, Buffer, Editor, ViewId, ffi::ChangeSetFfi};
 use std::{cell::RefCell, rc::Rc};
 
-pub struct EditorHandle {
+pub struct EditorController {
     /// A reference to the main app.
     pub(crate) app_state: Rc<RefCell<AppState>>,
     /// The view id needed to find the desired editor instance.
@@ -9,7 +9,7 @@ pub struct EditorHandle {
     pub(crate) view_id: ViewId,
 }
 
-impl EditorHandle {
+impl EditorController {
     fn access_mut<F, R>(&self, f: F) -> R
     where
         F: FnOnce(&mut Editor, &mut Buffer) -> R,

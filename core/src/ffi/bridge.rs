@@ -1,6 +1,10 @@
 use crate::{
     AppState, Buffer, ConfigManager, Editor, FileTree, ShortcutsManager, ThemeManager,
-    execute_jump_key, ffi::AppController, ffi::EditorHandle, ffi::wrappers::*,
+    execute_jump_key,
+    ffi::{
+        AppController, EditorController, FileTreeController, TabController, new_app_controller,
+        wrappers::*,
+    },
 };
 
 #[cxx::bridge(namespace = "neko")]
@@ -301,76 +305,76 @@ pub mod ffi {
         type Editor;
         type FileTree;
         type Buffer;
-        type EditorHandle;
+        type EditorController;
         type AppController;
+        type TabController;
+        type FileTreeController;
 
         // AppController
         pub fn new_app_controller(
             config_manager: &ConfigManager,
             root_path: String,
         ) -> Box<AppController>;
-        pub fn get_active_editor_mut(self: &AppController) -> Box<EditorHandle>;
-        pub fn open_file(self: &AppController, path: String, add_to_history: bool) -> Result<u64>;
+        pub fn editor_controller(self: &AppController) -> Box<EditorController>;
+        pub fn tab_controller(self: &AppController) -> Box<TabController>;
+        pub fn file_tree_controller(self: &AppController) -> Box<FileTreeController>;
 
-        // AppState
-        fn new_app_state(root_path: &str, config_manager: &ConfigManager) -> Result<Box<AppState>>;
-        pub(crate) fn get_file_tree(self: &AppState) -> &FileTree;
-        pub(crate) fn get_file_tree_mut(self: &mut AppState) -> &mut FileTree;
-        #[cxx_name = "get_close_tab_ids"]
-        pub(crate) fn get_close_tab_ids_wrapper(
-            self: &mut AppState,
+        pub(crate) fn save_document(self: &mut AppController, id: u64) -> bool;
+        pub(crate) fn save_document_as(self: &mut AppController, id: u64, path: &str) -> bool;
+        pub fn ensure_tab_for_path(
+            self: &mut AppController,
+            path: &str,
+            add_to_history: bool,
+        ) -> Result<u64>;
+
+        // EditorController
+        pub fn select_word(self: &mut EditorController, row: usize, column: usize) -> ChangeSetFfi;
+
+        // FileTreeController
+        pub fn toggle_expanded(self: &mut FileTreeController, path: &str);
+
+        // TabController
+        pub fn set_active_tab(self: &mut TabController, id: u64) -> Result<()>;
+        pub fn get_close_tab_ids(
+            self: &TabController,
             operation_type: CloseTabOperationTypeFfi,
-            anchor_id: u64,
+            anchor_tab_id: u64,
             close_pinned: bool,
         ) -> Vec<u64>;
-        pub(crate) fn get_tabs_snapshot(self: &AppState) -> TabsSnapshot;
-        pub(crate) fn get_tab_snapshot(self: &AppState, id: u64) -> TabSnapshotMaybe;
-
-        #[cxx_name = "close_tabs"]
-        pub(crate) fn close_tabs_wrapper(
-            self: &mut AppState,
+        pub fn get_tab_snapshot(self: &TabController, id: u64) -> TabSnapshotMaybe;
+        pub(crate) fn close_tabs(
+            self: &TabController,
             operation_type: CloseTabOperationTypeFfi,
             anchor_tab_id: u64,
             close_pinned: bool,
         ) -> CloseManyTabsResult;
-        #[cxx_name = "set_active_tab"]
-        pub(crate) fn set_active_tab_wrapper(self: &mut AppState, id: u64) -> Result<()>;
-        #[cxx_name = "move_tab"]
-        pub(crate) fn move_tab_wrapper(self: &mut AppState, from: usize, to: usize) -> bool;
-        #[cxx_name = "move_active_tab_by"]
-        pub fn move_active_tab_by_wrapper(
-            self: &mut AppState,
+        pub fn get_tabs_snapshot(self: &TabController) -> TabsSnapshot;
+        pub fn close_tab(
+            self: &TabController,
+            operation_type: CloseTabOperationTypeFfi,
+            anchor_tab_id: u64,
+            close_pinned: bool,
+        ) -> CloseManyTabsResult;
+        pub(crate) fn move_tab(self: &mut TabController, from: usize, to: usize) -> bool;
+        pub fn move_active_tab_by(
+            self: &mut TabController,
             buffer: &mut Buffer,
             delta: i64,
             use_history: bool,
         ) -> MoveActiveTabResult;
-        #[cxx_name = "pin_tab"]
-        pub(crate) fn pin_tab_wrapper(self: &mut AppState, id: u64) -> PinTabResult;
-        #[cxx_name = "unpin_tab"]
-        pub(crate) fn unpin_tab_wrapper(self: &mut AppState, id: u64) -> PinTabResult;
-        #[cxx_name = "save_document"]
-        pub(crate) fn save_document_wrapper(self: &mut AppState, id: u64) -> bool;
-        #[cxx_name = "save_document_as"]
-        pub(crate) fn save_document_as_wrapper(self: &mut AppState, id: u64, path: &str) -> bool;
-        #[cxx_name = "set_tab_scroll_offsets"]
-        pub(crate) fn set_tab_scroll_offsets_wrapper(
-            self: &mut AppState,
-            id: u64,
-            new_offsets: ScrollOffsetFfi,
-        ) -> bool;
-        #[cxx_name = "create_document_tab_and_view"]
-        pub fn create_document_tab_and_view_wrapper(
-            self: &mut AppState,
+        pub(crate) fn pin_tab(self: &mut TabController, id: u64) -> PinTabResult;
+        pub(crate) fn unpin_tab(self: &mut TabController, id: u64) -> PinTabResult;
+        pub fn create_document_tab_and_view(
+            self: &mut TabController,
             title: String,
             add_tab_to_history: bool,
             activate_view: bool,
         ) -> CreateDocumentTabAndViewResultFfi;
-        #[cxx_name = "ensure_tab_for_path"]
-        pub fn ensure_tab_for_path_wrapper(
-            self: &mut AppState,
-            path: &str,
-            add_to_history: bool,
-        ) -> Result<u64>;
+        pub(crate) fn set_tab_scroll_offsets(
+            self: &mut TabController,
+            id: u64,
+            new_offsets: ScrollOffsetFfi,
+        ) -> bool;
 
         // ConfigManager
         pub(crate) fn new_config_manager() -> Result<Box<ConfigManager>>;
@@ -399,9 +403,6 @@ pub mod ffi {
         pub(crate) fn set_theme(self: &mut ThemeManager, theme_name: &str) -> bool;
         #[cxx_name = "get_current_theme_name"]
         pub(crate) fn get_current_theme_name_wrapper(self: &ThemeManager) -> String;
-
-        // EditorHandle
-        pub fn select_word(self: &mut EditorHandle, row: usize, column: usize) -> ChangeSetFfi;
 
         // Editor
         #[cxx_name = "move_to"]

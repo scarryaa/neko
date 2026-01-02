@@ -1,18 +1,14 @@
-pub mod app;
 pub mod command_palette;
 pub mod commands;
 pub mod config;
-pub mod controllers;
 pub mod editor;
 pub mod file_tree;
 pub mod shortcuts;
 pub mod theme;
 
-pub(crate) use app::*;
 pub(crate) use command_palette::*;
 pub(crate) use commands::*;
 pub(crate) use config::*;
-pub(crate) use controllers::*;
 #[allow(unused_imports)]
 pub(crate) use editor::*;
 #[allow(unused_imports)]
