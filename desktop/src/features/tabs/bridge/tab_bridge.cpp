@@ -7,7 +7,10 @@ TabBridge::TabBridge(TabBridgeProps props)
 TabPresentation TabBridge::fromSnapshot(const neko::TabSnapshot &tab) {
   return TabPresentation{
       .id = static_cast<int>(tab.id),
+      .title = QString::fromUtf8(tab.title),
+      .path = QString::fromUtf8(tab.path),
       .pinned = tab.pinned,
+      .modified = tab.modified,
       .scrollOffsets =
           TabScrollOffsets{.x = static_cast<double>(tab.scroll_offsets.x),
                            .y = static_cast<double>(tab.scroll_offsets.y)},
@@ -44,6 +47,7 @@ int TabBridge::createDocumentTabAndView(const std::string &title,
 
   for (int i = 0; i < tabsSnapshot.tabs.size(); ++i) {
     const auto &tabSnapshot = tabsSnapshot.tabs[i];
+
     if (static_cast<int>(tabSnapshot.id) == newTabId) {
       newTabIndex = i;
       presentation = fromSnapshot(tabSnapshot);
@@ -59,8 +63,6 @@ int TabBridge::createDocumentTabAndView(const std::string &title,
   emit activeTabChanged(newTabId);
 
   return newTabId;
-
-  return static_cast<int>(result.tab_id);
 }
 
 // TODO(scarlet): Figure out a unified/better solution than separate 'core ->

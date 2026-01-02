@@ -42,10 +42,10 @@ impl TabController {
         let document = app_state
             .get_view_manager()
             .get_view(tab.get_view_id())
-            .and_then(|v| {
+            .and_then(|view| {
                 app_state
                     .get_document_manager()
-                    .get_document(v.document_id())
+                    .get_document(view.document_id())
             });
 
         if let Some(document) = document {

@@ -317,9 +317,12 @@ impl AppState {
         self.tab_manager.set_tab_scroll_offsets(id, new_offsets)
     }
 
-    // TODO(scarlet): Need to ensure document/view is switched too
     pub fn set_active_tab(&mut self, id: TabId) -> Result<(), TabError> {
-        self.tab_manager.set_active_tab(id)
+        self.tab_manager.set_active_tab(id)?;
+        let view_id = self.tab_manager.get_tab(id)?.get_view_id();
+        self.view_manager.set_active_view(view_id);
+
+        Ok(())
     }
 
     pub fn move_tab(&mut self, from: usize, to: usize) -> Result<(), TabError> {
