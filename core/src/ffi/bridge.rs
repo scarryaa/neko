@@ -402,6 +402,27 @@ pub mod ffi {
 
         // FileTreeController
         pub fn toggle_expanded(self: &mut FileTreeController, path: &str);
+        pub(crate) fn set_root_path(self: &mut FileTreeController, path: &str) -> Result<()>;
+        pub(crate) fn get_next_node(
+            self: &FileTreeController,
+            current_path: &str,
+        ) -> Result<FileNodeSnapshot>;
+        pub(crate) fn get_prev_node(
+            self: &FileTreeController,
+            current_path: &str,
+        ) -> Result<FileNodeSnapshot>;
+        pub(crate) fn get_path_of_parent(self: &FileTreeController, path: &str) -> String;
+        pub(crate) fn ensure_path_visible(self: &mut FileTreeController, path: &str) -> Result<()>;
+        pub(crate) fn set_collapsed(self: &mut FileTreeController, path: &str);
+        pub(crate) fn toggle_select_for_path(self: &mut FileTreeController, path: &str);
+        pub(crate) fn set_current_path(self: &mut FileTreeController, path: &str);
+        pub(crate) fn clear_current_path(self: &mut FileTreeController);
+        pub(crate) fn get_children(
+            self: &mut FileTreeController,
+            path: &str,
+        ) -> Result<Vec<FileNodeSnapshot>>;
+        pub(crate) fn refresh_dir(self: &mut FileTreeController, path: &str) -> Result<()>;
+        pub(crate) fn get_tree_snapshot(self: &FileTreeController) -> FileTreeSnapshot;
 
         // TabController
         pub fn set_active_tab(self: &mut TabController, id: u64) -> Result<()>;
@@ -473,32 +494,6 @@ pub mod ffi {
         pub(crate) fn set_theme(self: &mut ThemeManager, theme_name: &str) -> bool;
         #[cxx_name = "get_current_theme_name"]
         pub(crate) fn get_current_theme_name_wrapper(self: &ThemeManager) -> String;
-
-        // FileTree
-        #[cxx_name = "set_root_dir"]
-        pub(crate) fn set_root_path(self: &mut FileTree, path: &str) -> Result<()>;
-        pub(crate) fn get_next_node_wrapper(
-            self: &FileTree,
-            current_path: &str,
-        ) -> Result<FileNodeSnapshot>;
-        pub(crate) fn get_prev_node_wrapper(
-            self: &FileTree,
-            current_path: &str,
-        ) -> Result<FileNodeSnapshot>;
-        pub(crate) fn get_path_of_parent(self: &FileTree, path: &str) -> String;
-        pub(crate) fn toggle_expanded(self: &mut FileTree, path: &str);
-        pub(crate) fn ensure_path_visible(self: &mut FileTree, path: &str) -> Result<()>;
-        pub(crate) fn set_collapsed(self: &mut FileTree, path: &str);
-        pub(crate) fn toggle_select_for_path(self: &mut FileTree, path: &str);
-        pub(crate) fn set_current_path(self: &mut FileTree, path: &str);
-        pub(crate) fn clear_current_path(self: &mut FileTree);
-        #[cxx_name = "get_children"]
-        pub(crate) fn get_children_wrapper(
-            self: &mut FileTree,
-            path: &str,
-        ) -> Result<Vec<FileNodeSnapshot>>;
-        pub(crate) fn refresh_dir(self: &mut FileTree, path: &str) -> Result<()>;
-        pub(crate) fn get_tree_snapshot(self: &FileTree) -> FileTreeSnapshot;
 
         // Commands
         #[cxx_name = "execute_command"]
