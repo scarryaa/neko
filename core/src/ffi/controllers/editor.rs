@@ -1,5 +1,5 @@
 use crate::{
-    AppState, Buffer, Editor, ViewId,
+    AppState, Buffer, ChangeSet, Editor, ViewId,
     ffi::{AddCursorDirectionFfi, ChangeSetFfi, CursorPosition, Selection},
 };
 use std::{cell::RefCell, rc::Rc};
@@ -35,6 +35,17 @@ impl EditorController {
                 f(view.editor(), &document.buffer)
             })
             .expect("Unable to access the specified Editor or Buffer.")
+    }
+
+    fn perform_edit<F>(&self, f: F) -> ChangeSetFfi
+    where
+        F: FnOnce(&mut Editor, &mut Buffer) -> ChangeSet,
+    {
+        self.app_state
+            .borrow_mut()
+            .apply_editor_action(self.view_id, f)
+            .map(|change_set| change_set.into())
+            .unwrap()
     }
 
     pub fn get_text(&self) -> String {
@@ -112,11 +123,11 @@ impl EditorController {
     }
 
     pub fn paste(&mut self, text: &str) -> ChangeSetFfi {
-        self.access_mut(|editor, buffer| editor.insert_text(buffer, text).into())
+        self.perform_edit(|editor, buffer| editor.insert_text(buffer, text))
     }
 
     pub fn insert_text(&mut self, text: &str) -> ChangeSetFfi {
-        self.access_mut(|editor, buffer| editor.insert_text(buffer, text).into())
+        self.perform_edit(|editor, buffer| editor.insert_text(buffer, text))
     }
 
     pub fn move_to(&mut self, row: usize, col: usize, clear_selection: bool) -> ChangeSetFfi {
@@ -181,23 +192,19 @@ impl EditorController {
     }
 
     pub fn insert_newline(&mut self) -> ChangeSetFfi {
-        self.access_mut(|editor, buffer| editor.insert_text(buffer, "\n"))
-            .into()
+        self.perform_edit(|editor, buffer| editor.insert_text(buffer, "\n"))
     }
 
     pub fn insert_tab(&mut self) -> ChangeSetFfi {
-        self.access_mut(|editor, buffer| editor.insert_text(buffer, "\t"))
-            .into()
+        self.perform_edit(|editor, buffer| editor.insert_text(buffer, "\t"))
     }
 
     pub fn backspace(&mut self) -> ChangeSetFfi {
-        self.access_mut(|editor, buffer| editor.backspace(buffer))
-            .into()
+        self.perform_edit(|editor, buffer| editor.backspace(buffer))
     }
 
     pub fn delete(&mut self) -> ChangeSetFfi {
-        self.access_mut(|editor, buffer| editor.delete(buffer))
-            .into()
+        self.perform_edit(|editor, buffer| editor.delete(buffer))
     }
 
     pub fn select_all(&mut self) -> ChangeSetFfi {
@@ -236,11 +243,11 @@ impl EditorController {
     }
 
     pub fn undo(&mut self) -> ChangeSetFfi {
-        self.access_mut(|editor, buffer| editor.undo(buffer)).into()
+        self.perform_edit(|editor, buffer| editor.undo(buffer))
     }
 
     pub fn redo(&mut self) -> ChangeSetFfi {
-        self.access_mut(|editor, buffer| editor.redo(buffer)).into()
+        self.perform_edit(|editor, buffer| editor.redo(buffer))
     }
 
     pub fn get_max_width(&self) -> f64 {

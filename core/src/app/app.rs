@@ -1,7 +1,7 @@
 use crate::{
-    Buffer, CloseTabOperationType, Config, ConfigManager, Document, DocumentError, DocumentId,
-    DocumentManager, DocumentResult, Editor, FileSystemResult, FileTree, JumpHistory,
-    MoveActiveTabResult, Tab, TabError, TabId, TabManager, View, ViewId, ViewManager,
+    Buffer, Change, ChangeSet, CloseTabOperationType, Config, ConfigManager, Document,
+    DocumentError, DocumentId, DocumentManager, DocumentResult, Editor, FileSystemResult, FileTree,
+    JumpHistory, MoveActiveTabResult, Tab, TabError, TabId, TabManager, View, ViewId, ViewManager,
 };
 use std::path::Path;
 
@@ -392,6 +392,23 @@ impl AppState {
 
     pub fn move_tab(&mut self, from: usize, to: usize) -> Result<(), TabError> {
         self.tab_manager.move_tab(from, to)
+    }
+
+    /// Executes an editor action on the specified view.
+    pub fn apply_editor_action<F>(&mut self, view_id: ViewId, action: F) -> Option<ChangeSet>
+    where
+        F: FnOnce(&mut Editor, &mut Buffer) -> ChangeSet,
+    {
+        let view = self.view_manager.get_view_mut(view_id)?;
+        let doc_id = view.document_id();
+        let doc = self.document_manager.get_document_mut(doc_id)?;
+        let change_set = action(view.editor_mut(), &mut doc.buffer);
+
+        if change_set.change.contains(Change::BUFFER) {
+            doc.modified = true;
+        }
+
+        Some(change_set)
     }
 
     fn create_document_tab_and_view_impl(

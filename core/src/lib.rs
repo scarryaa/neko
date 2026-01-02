@@ -22,11 +22,10 @@ pub use config::{Config, ConfigManager};
 pub use file_system::{FileNode, FileTree, error::*, result::*};
 pub use shortcuts::{Shortcut, ShortcutsManager};
 pub use tab::{Tab, TabManager, error::*, types::*};
-pub(crate) use text::ChangeSet;
 use text::CursorManager;
 pub use text::{
-    AddCursorDirection, Buffer, Cursor, CursorEntry, Document, DocumentId, DocumentManager,
-    DocumentResult, Editor, Selection, SelectionManager, View, ViewId, ViewManager, Viewport,
-    document::error::*, view::error::*,
+    AddCursorDirection, Buffer, Change, ChangeSet, Cursor, CursorEntry, Document, DocumentId,
+    DocumentManager, DocumentResult, Editor, Selection, SelectionManager, View, ViewId,
+    ViewManager, Viewport, document::error::*, view::error::*,
 };
 pub use theme::{Theme, ThemeManager};
