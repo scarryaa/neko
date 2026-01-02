@@ -1,4 +1,4 @@
-pub(super) enum DeleteResult {
+pub enum DeleteResult {
     Text {
         invalidate: Option<usize>,
     },

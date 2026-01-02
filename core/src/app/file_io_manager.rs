@@ -22,7 +22,7 @@ impl FileIoManager {
     }
 
     pub fn read_dir<P: AsRef<Path>>(path: P) -> FileResult<ReadDir> {
-        Ok(fs::read_dir(path)?)
+        fs::read_dir(path)
     }
 
     pub fn canonicalize<P: AsRef<Path>>(path: P) -> FileResult<PathBuf> {

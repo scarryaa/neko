@@ -99,6 +99,7 @@ impl Editor {
         self.select_word(buffer, row, col).into()
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub(crate) fn select_word_drag_wrapper(
         &mut self,
         buffer: &mut Buffer,

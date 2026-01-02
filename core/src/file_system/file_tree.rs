@@ -198,7 +198,7 @@ impl FileTree {
         } else {
             // TODO(scarlet): Do we need to do this? Only if we are expanding the directory for the
             // first time, but then we would need to track if it has been expanded before or not.
-            self.get_children(path);
+            _ = self.get_children(path);
         }
     }
 

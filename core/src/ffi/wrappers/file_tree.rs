@@ -59,13 +59,12 @@ impl FileTree {
         Ok(children
             .iter()
             .map(|node| {
-                let snapshot = Self::make_file_node_snapshot(
+                Self::make_file_node_snapshot(
                     node,
                     &selected_paths,
                     &expanded_paths,
                     current_path.as_ref(),
-                );
-                FileNodeSnapshot::from(snapshot)
+                )
             })
             .collect())
     }

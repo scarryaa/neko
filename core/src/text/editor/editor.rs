@@ -233,8 +233,8 @@ impl Editor {
     }
 
     fn delete_selection_impl(&mut self, buffer: &mut Buffer) {
-        let a = self.selection_manager.selection().start.get_idx(&buffer);
-        let b = self.selection_manager.selection().end.get_idx(&buffer);
+        let a = self.selection_manager.selection().start.get_idx(buffer);
+        let b = self.selection_manager.selection().end.get_idx(buffer);
         let (start, end) = if a <= b { (a, b) } else { (b, a) };
 
         let cursor_id = self.cursor_manager.new_cursor_id();
@@ -345,13 +345,13 @@ impl Editor {
             CursorMode::Multiple => i,
         };
 
-        f(&mut self.cursor_manager.cursors[new_i].cursor, &buffer);
+        f(&mut self.cursor_manager.cursors[new_i].cursor, buffer);
 
         match mode {
             SelectionMode::Extend => self
                 .selection_manager
                 .selection
-                .update(&self.cursor_manager.cursors[new_i].cursor, &buffer),
+                .update(&self.cursor_manager.cursors[new_i].cursor, buffer),
             SelectionMode::Clear => self.selection_manager.clear_selection(),
             SelectionMode::Keep => {}
         }
@@ -398,20 +398,21 @@ impl Editor {
             };
 
             let mut start_cursor = Cursor::new();
-            start_cursor.move_to(&buffer, word_row, word_start);
+            start_cursor.move_to(buffer, word_row, word_start);
             let mut end_cursor = Cursor::new();
-            end_cursor.move_to(&buffer, word_row, word_end);
+            end_cursor.move_to(buffer, word_row, word_end);
 
             editor.selection_manager.selection.begin(&start_cursor);
             editor
                 .selection_manager
                 .selection
-                .update(&end_cursor, &buffer);
+                .update(&end_cursor, buffer);
 
             editor.cursor_manager.cursors[0].cursor = end_cursor;
         })
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn select_word_drag(
         &mut self,
         buffer: &mut Buffer,
@@ -429,10 +430,10 @@ impl Editor {
             };
 
             let mut anchor_start = Cursor::new();
-            anchor_start.move_to(&buffer, anchor_start_row, anchor_start_col);
+            anchor_start.move_to(buffer, anchor_start_row, anchor_start_col);
 
             let mut anchor_end = Cursor::new();
-            anchor_end.move_to(&buffer, anchor_end_row, anchor_end_col);
+            anchor_end.move_to(buffer, anchor_end_row, anchor_end_col);
 
             let word_start_pos = (word_row, word_start);
             let word_end_pos = (word_row, word_end);
@@ -451,16 +452,16 @@ impl Editor {
             }
 
             let mut start_cursor = Cursor::new();
-            start_cursor.move_to(&buffer, target_start.0, target_start.1);
+            start_cursor.move_to(buffer, target_start.0, target_start.1);
 
             let mut end_cursor = Cursor::new();
-            end_cursor.move_to(&buffer, target_end.0, target_end.1);
+            end_cursor.move_to(buffer, target_end.0, target_end.1);
 
             editor.selection_manager.selection.begin(&start_cursor);
             editor
                 .selection_manager
                 .selection
-                .update(&end_cursor, &buffer);
+                .update(&end_cursor, buffer);
 
             if cursor_at_start {
                 editor.cursor_manager.cursors[0].cursor = start_cursor;
@@ -489,7 +490,7 @@ impl Editor {
             let cursor_at_start = row < anchor_row;
 
             let mut start_cursor = Cursor::new();
-            start_cursor.move_to(&buffer, start_row, 0);
+            start_cursor.move_to(buffer, start_row, 0);
 
             let (end_row, end_col) = if end_row + 1 < line_count {
                 (end_row + 1, 0)
@@ -498,13 +499,13 @@ impl Editor {
             };
 
             let mut end_cursor = Cursor::new();
-            end_cursor.move_to(&buffer, end_row, end_col);
+            end_cursor.move_to(buffer, end_row, end_col);
 
             editor.selection_manager.selection.begin(&start_cursor);
             editor
                 .selection_manager
                 .selection
-                .update(&end_cursor, &buffer);
+                .update(&end_cursor, buffer);
 
             if cursor_at_start {
                 editor.cursor_manager.cursors[0].cursor = start_cursor;
@@ -587,11 +588,11 @@ impl Editor {
                 &Cursor::new(),
             )];
 
-            editor.cursor_manager.cursors[0].cursor.move_to_end(&buffer);
+            editor.cursor_manager.cursors[0].cursor.move_to_end(buffer);
             editor
                 .selection_manager
                 .selection
-                .update(&editor.cursor_manager.cursors[0].cursor, &buffer);
+                .update(&editor.cursor_manager.cursors[0].cursor, buffer);
         })
     }
 

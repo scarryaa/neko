@@ -1,10 +1,10 @@
 use super::*;
 use crate::{
     AddCursorDirection, ChangeSet, CloseTabOperationType, Command, CommandResult, Config, Cursor,
-    DocumentTarget, FileSystemError, JumpAliasInfo, JumpCommand, JumpManagementCommand, LineTarget,
-    TabCommandState, TabContext, UiIntent,
+    DocumentError, DocumentTarget, FileSystemError, JumpAliasInfo, JumpCommand,
+    JumpManagementCommand, LineTarget, TabCommandState, TabContext, UiIntent,
 };
-use std::path::PathBuf;
+use std::{fmt, io, path::PathBuf};
 
 impl From<Config> for ConfigSnapshotFfi {
     fn from(c: Config) -> Self {
@@ -393,6 +393,46 @@ impl From<FileSystemError> for FileSystemErrorFfi {
             FileSystemError::Io(_) => FileSystemErrorFfi::Io,
             FileSystemError::MissingName => FileSystemErrorFfi::MissingName,
             FileSystemError::BadSystemTime(_) => FileSystemErrorFfi::BadSystemTime,
+        }
+    }
+}
+
+impl fmt::Display for FileSystemErrorFfi {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            FileSystemErrorFfi::MissingName => write!(f, "Missing name"),
+            FileSystemErrorFfi::BadSystemTime => write!(f, "Bad system time"),
+            FileSystemErrorFfi::Io => write!(f, "IO error"),
+            _ => unreachable!("FileSystemErrorFfi Display cases should be handled"),
+        }
+    }
+}
+
+impl fmt::Display for DocumentErrorFfi {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            DocumentErrorFfi::Io => write!(f, "IO error"),
+            DocumentErrorFfi::InvalidId => write!(f, "Document id must not be 0"),
+            DocumentErrorFfi::NoPath => write!(f, "Document has no path"),
+            DocumentErrorFfi::NotFound => write!(f, "Document not found"),
+            _ => unreachable!("DocumentErrorFfi Display cases should be handled"),
+        }
+    }
+}
+
+impl From<io::Error> for DocumentErrorFfi {
+    fn from(_: io::Error) -> Self {
+        DocumentErrorFfi::Io
+    }
+}
+
+impl From<DocumentError> for DocumentErrorFfi {
+    fn from(error: DocumentError) -> Self {
+        match error {
+            DocumentError::Io(_) => DocumentErrorFfi::Io,
+            DocumentError::InvalidId(_) => DocumentErrorFfi::InvalidId,
+            DocumentError::NoPath(_) => DocumentErrorFfi::NoPath,
+            DocumentError::NotFound(_) => DocumentErrorFfi::NotFound,
         }
     }
 }

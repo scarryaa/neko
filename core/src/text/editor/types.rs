@@ -1,6 +1,6 @@
 bitflags::bitflags! {
     #[derive(Default, Debug, Clone, Copy)]
-    pub(super) struct Change: u32 {
+    pub struct Change: u32 {
         const NONE       = 0;
         const BUFFER     = 1 << 0; // Text changed
         const CURSOR     = 1 << 1; // Cursor moved
@@ -12,7 +12,7 @@ bitflags::bitflags! {
 }
 
 #[derive(Default, Debug, Clone)]
-pub(crate) struct ChangeSet {
+pub struct ChangeSet {
     pub change: Change,
     pub line_count_before: usize,
     pub line_count_after: usize,
@@ -20,7 +20,7 @@ pub(crate) struct ChangeSet {
     pub dirty_last_row: Option<usize>,
 }
 
-pub(super) enum OpFlags {
+pub enum OpFlags {
     ViewportOnly,
     BufferViewportWidths,
 }

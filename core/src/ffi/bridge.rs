@@ -177,10 +177,7 @@ pub mod ffi {
     #[derive(Default, Clone)]
     struct TabSnapshot {
         pub id: u64,
-        pub title: String,
-        pub path_present: bool,
-        pub path: String,
-        pub modified: bool,
+        pub document_id: u64,
         pub pinned: bool,
         pub scroll_offsets: ScrollOffsetFfi,
     }
@@ -196,28 +193,28 @@ pub mod ffi {
         pub snapshot: TabSnapshot,
     }
 
-    pub struct NewTabResult {
-        pub id: u64,
-        pub index: u32,
-        pub snapshot: TabSnapshot,
-    }
-
     pub struct MoveActiveTabResult {
         pub id: u64,
         pub reopened: bool,
         pub snapshot: TabSnapshot,
     }
 
-    pub struct FileOpenResult {
-        pub success: bool,
-        pub snapshot: TabSnapshot,
-    }
-
-    pub struct CloseTabResult {
-        pub closed: bool,
-        pub has_active: bool,
-        pub active_id: u64,
-    }
+    // pub struct NewTabResult {
+    //     pub id: u64,
+    //     pub index: u32,
+    //     pub snapshot: TabSnapshot,
+    // }
+    //
+    // pub struct FileOpenResult {
+    //     pub success: bool,
+    //     pub snapshot: TabSnapshot,
+    // }
+    //
+    // pub struct CloseTabResult {
+    //     pub closed: bool,
+    //     pub has_active: bool,
+    //     pub active_id: u64,
+    // }
 
     pub struct CloseManyTabsResult {
         pub success: bool,
@@ -233,10 +230,18 @@ pub mod ffi {
         pub snapshot: TabSnapshot,
     }
 
-    enum FileSystemErrorFfi {
+    pub enum FileSystemErrorFfi {
         Io,
         MissingName,
         BadSystemTime,
+    }
+
+    #[derive(Debug)]
+    pub enum DocumentErrorFfi {
+        Io,
+        InvalidId,
+        NoPath,
+        NotFound,
     }
 
     struct FileNodeSnapshot {
@@ -282,6 +287,12 @@ pub mod ffi {
         id: String,
     }
 
+    struct CreateDocumentTabAndViewResultFfi {
+        document_id: u64,
+        view_id: u64,
+        tab_id: u64,
+    }
+
     extern "Rust" {
         type AppState;
         type ConfigManager;
@@ -309,8 +320,6 @@ pub mod ffi {
         pub(crate) fn get_tabs_snapshot(self: &AppState) -> TabsSnapshot;
         pub(crate) fn get_tab_snapshot(self: &AppState, id: u64) -> TabSnapshotMaybe;
 
-        #[cxx_name = "new_tab"]
-        pub(crate) fn new_tab_wrapper(self: &mut AppState) -> NewTabResult;
         #[cxx_name = "close_tabs"]
         pub(crate) fn close_tabs_wrapper(
             self: &mut AppState,
@@ -322,11 +331,10 @@ pub mod ffi {
         pub(crate) fn set_active_tab_wrapper(self: &mut AppState, id: u64) -> Result<()>;
         #[cxx_name = "move_tab"]
         pub(crate) fn move_tab_wrapper(self: &mut AppState, from: usize, to: usize) -> bool;
-        #[cxx_name = "open_file"]
-        pub(crate) fn open_file_wrapper(self: &mut AppState, path: &str) -> FileOpenResult;
         #[cxx_name = "move_active_tab_by"]
         pub fn move_active_tab_by_wrapper(
             self: &mut AppState,
+            buffer: &mut Buffer,
             delta: i64,
             use_history: bool,
         ) -> MoveActiveTabResult;
@@ -334,16 +342,25 @@ pub mod ffi {
         pub(crate) fn pin_tab_wrapper(self: &mut AppState, id: u64) -> PinTabResult;
         #[cxx_name = "unpin_tab"]
         pub(crate) fn unpin_tab_wrapper(self: &mut AppState, id: u64) -> PinTabResult;
-        // #[cxx_name = "save_tab"]
-        // pub(crate) fn save_tab_wrapper(self: &mut AppState, id: u64) -> bool;
-        // #[cxx_name = "save_tab_as"]
-        // pub(crate) fn save_tab_as_wrapper(self: &mut AppState, id: u64, path: &str) -> bool;
+        pub(crate) fn save_document_wrapper(self: &mut AppState, id: u64) -> bool;
+        pub(crate) fn save_document_as_wrapper(self: &mut AppState, id: u64, path: &str) -> bool;
         #[cxx_name = "set_tab_scroll_offsets"]
         pub(crate) fn set_tab_scroll_offsets_wrapper(
             self: &mut AppState,
             id: u64,
             new_offsets: ScrollOffsetFfi,
         ) -> bool;
+        pub fn create_document_tab_and_view_wrapper(
+            self: &mut AppState,
+            title: String,
+            add_tab_to_history: bool,
+            activate_view: bool,
+        ) -> CreateDocumentTabAndViewResultFfi;
+        pub fn ensure_tab_for_path_wrapper(
+            self: &mut AppState,
+            path: &str,
+            add_to_history: bool,
+        ) -> Result<u64>;
 
         // ConfigManager
         pub(crate) fn new_config_manager() -> Result<Box<ConfigManager>>;
@@ -473,6 +490,7 @@ pub mod ffi {
             row: usize,
             col: usize,
         ) -> ChangeSetFfi;
+        #[allow(clippy::too_many_arguments)]
         #[cxx_name = "select_word_drag"]
         pub(crate) fn select_word_drag_wrapper(
             self: &mut Editor,

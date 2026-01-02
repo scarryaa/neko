@@ -21,7 +21,7 @@ impl ViewManager {
     pub fn new() -> Self {
         Self {
             views: HashMap::new(),
-            next_view_id: ViewId(1),
+            next_view_id: ViewId::new(1).expect("next_view_id cannot be 0"),
             active_view_id: None,
         }
     }

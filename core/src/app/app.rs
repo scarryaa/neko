@@ -30,7 +30,7 @@ impl AppState {
         let mut tab_manager = TabManager::new();
         let mut view_manager = ViewManager::default();
 
-        let (_doc_id, _tab_id, _view_id) = AppState::create_document_tab_and_view(
+        let (_doc_id, _tab_id, _view_id) = AppState::create_document_tab_and_view_impl(
             &mut document_manager,
             &mut tab_manager,
             &mut view_manager,
@@ -282,9 +282,7 @@ impl AppState {
         self.tab_manager.move_tab(from, to)
     }
 
-    /// Creates a new empty document, a tab for it, and a view with a new editor,
-    /// optionally adding the tab to history and making the view active.
-    fn create_document_tab_and_view(
+    fn create_document_tab_and_view_impl(
         document_manager: &mut DocumentManager,
         tab_manager: &mut TabManager,
         view_manager: &mut ViewManager,
@@ -303,6 +301,27 @@ impl AppState {
         }
 
         (document_id, tab_id, view_id)
+    }
+
+    /// Creates a new empty document, a tab for it, and a view with a new editor,
+    /// optionally adding the tab to history and making the view active.
+    ///
+    /// This public-facing version of the function delegates to an impl variant that accepts the
+    /// three needed managers as arguments (see [`Self::create_document_tab_and_view_impl`]).
+    pub fn create_document_tab_and_view(
+        &mut self,
+        title: Option<String>,
+        add_tab_to_history: bool,
+        activate_view: bool,
+    ) -> (DocumentId, TabId, ViewId) {
+        Self::create_document_tab_and_view_impl(
+            &mut self.document_manager,
+            &mut self.tab_manager,
+            &mut self.view_manager,
+            title,
+            add_tab_to_history,
+            activate_view,
+        )
     }
 
     pub fn open_document(&mut self, path: &Path) -> DocumentResult<DocumentId> {
@@ -363,7 +382,7 @@ impl AppState {
 
     pub fn reveal_in_file_tree(&mut self, path: &str) {
         // Expand ancestors so the file becomes visible
-        self.file_tree.ensure_path_visible(path);
+        _ = self.file_tree.ensure_path_visible(path);
 
         // Mark it as current
         self.file_tree.set_current_path(path);

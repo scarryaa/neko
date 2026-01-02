@@ -20,7 +20,13 @@ pub struct TabManager {
     active_tab_id: TabId,
     next_tab_id: TabId,
     history_manager: TabHistoryManager,
-    closed_store: ClosedTabStore,
+    _closed_store: ClosedTabStore,
+}
+
+impl Default for TabManager {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TabManager {
@@ -30,7 +36,7 @@ impl TabManager {
             active_tab_id: TabId::new(1).expect("Tab id should not be 0"),
             next_tab_id: TabId::new(2).expect("Tab id should not be 0"),
             history_manager: TabHistoryManager::new(),
-            closed_store: ClosedTabStore::default(),
+            _closed_store: ClosedTabStore::default(),
         }
     }
 
@@ -55,14 +61,14 @@ impl TabManager {
         self.tabs
             .iter()
             .find(|tab| tab.get_id() == id)
-            .ok_or_else(|| TabError::NotFound(id))
+            .ok_or(TabError::NotFound(id))
     }
 
     pub fn get_tab_mut(&mut self, id: TabId) -> Result<&mut Tab, TabError> {
         self.tabs
             .iter_mut()
             .find(|tab| tab.get_id() == id)
-            .ok_or_else(|| TabError::NotFound(id))
+            .ok_or(TabError::NotFound(id))
     }
 
     pub fn get_active_tab_id(&self) -> TabId {
@@ -153,7 +159,7 @@ impl TabManager {
             .tabs
             .iter()
             .position(|tab| tab.get_id() == id)
-            .ok_or_else(|| TabError::NotFound(id))?;
+            .ok_or(TabError::NotFound(id))?;
 
         self.record_closed_tabs(&[id]);
         self.tabs.remove(index);
@@ -350,7 +356,7 @@ impl TabManager {
             .tabs
             .iter()
             .position(|t| t.get_id() == id)
-            .ok_or_else(|| TabError::NotFound(id))?;
+            .ok_or(TabError::NotFound(id))?;
 
         // Bail if the tab is already pinned
         if self.tabs[idx].get_is_pinned() {
@@ -376,7 +382,7 @@ impl TabManager {
             .tabs
             .iter()
             .position(|t| t.get_id() == id)
-            .ok_or_else(|| TabError::NotFound(id))?;
+            .ok_or(TabError::NotFound(id))?;
 
         if !self.tabs[idx].get_is_pinned() {
             return Ok(());

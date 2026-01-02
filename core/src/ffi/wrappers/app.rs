@@ -1,8 +1,9 @@
 use crate::{
-    AppState, ConfigManager, Editor, Tab, TabError, TabId,
+    AppState, Buffer, ConfigManager, Editor, Tab, TabError, TabId,
     ffi::{
-        CloseManyTabsResult, CloseTabOperationTypeFfi, FileOpenResult, MoveActiveTabResult,
-        NewTabResult, PinTabResult, ScrollOffsetFfi, TabSnapshot, TabSnapshotMaybe, TabsSnapshot,
+        CloseManyTabsResult, CloseTabOperationTypeFfi, CreateDocumentTabAndViewResultFfi,
+        DocumentErrorFfi, MoveActiveTabResult, PinTabResult, ScrollOffsetFfi, TabSnapshot,
+        TabSnapshotMaybe, TabsSnapshot,
     },
 };
 use std::path::Path;
@@ -54,17 +55,9 @@ impl AppState {
     }
 
     fn make_tab_snapshot(tab: &Tab) -> TabSnapshot {
-        let (path_present, path) = match tab.get_file_path() {
-            Some(p) => (true, p.to_string_lossy().to_string()),
-            None => (false, String::new()),
-        };
-
         TabSnapshot {
             id: tab.get_id().into(),
-            title: tab.get_title().to_string(),
-            path_present,
-            path,
-            modified: tab.get_modified(),
+            document_id: tab.get_document_id().into(),
             pinned: tab.get_is_pinned(),
             scroll_offsets: ScrollOffsetFfi {
                 x: tab.get_scroll_offsets().0,
@@ -104,32 +97,29 @@ impl AppState {
         }
     }
 
-    pub(crate) fn open_file_wrapper(&mut self, path: &str) -> FileOpenResult {
-        let result = self.open_file(path);
-
-        match result {
-            Ok(id) => {
-                let tab = self.get_tab(id).unwrap();
-                FileOpenResult {
-                    success: true,
-                    snapshot: Self::make_tab_snapshot(tab),
-                }
-            }
-            Err(_) => FileOpenResult {
-                success: false,
-                snapshot: TabSnapshot::default(),
-            },
-        }
+    pub fn ensure_tab_for_path_wrapper(
+        &mut self,
+        path: &str,
+        add_to_history: bool,
+    ) -> Result<u64, DocumentErrorFfi> {
+        self.ensure_tab_for_path(Path::new(path), add_to_history)
+            .map(|tab_id| tab_id.into())
+            .map_err(DocumentErrorFfi::from)
     }
 
-    pub(crate) fn new_tab_wrapper(self: &mut AppState) -> NewTabResult {
-        let (id, index) = self.new_tab(true);
-        let tab = self.get_tab(id).unwrap();
+    pub fn create_document_tab_and_view_wrapper(
+        &mut self,
+        title: String,
+        add_tab_to_history: bool,
+        activate_view: bool,
+    ) -> CreateDocumentTabAndViewResultFfi {
+        let (document_id, tab_id, view_id) =
+            self.create_document_tab_and_view(Some(title), add_tab_to_history, activate_view);
 
-        NewTabResult {
-            id: id.into(),
-            index: index as u32,
-            snapshot: Self::make_tab_snapshot(tab),
+        CreateDocumentTabAndViewResultFfi {
+            document_id: document_id.into(),
+            view_id: view_id.into(),
+            tab_id: tab_id.into(),
         }
     }
 
@@ -143,7 +133,7 @@ impl AppState {
 
         CloseManyTabsResult {
             success,
-            closed_ids: closed_ids.into_iter().map(|id| id as u64).collect(),
+            closed_ids: closed_ids.into_iter().collect(),
             has_active: any_tabs_left,
             active_id,
         }
@@ -167,7 +157,7 @@ impl AppState {
     }
 
     pub(crate) fn save_document_as_wrapper(&mut self, id: u64, path: &str) -> bool {
-        self.save_document_as(id.into(), &Path::new(path)).is_ok()
+        self.save_document_as(id.into(), Path::new(path)).is_ok()
     }
 
     pub(crate) fn set_active_tab_wrapper(&mut self, id: u64) -> Result<(), TabError> {
@@ -180,10 +170,11 @@ impl AppState {
 
     pub fn move_active_tab_by_wrapper(
         self: &mut AppState,
+        buffer: &mut Buffer,
         delta: i64,
         use_history: bool,
     ) -> MoveActiveTabResult {
-        let result = self.move_active_tab_by(delta, use_history);
+        let result = self.move_active_tab_by(buffer, delta, use_history);
 
         // Try to find the tab with this id
         if let Some(found_id) = result.found_id {

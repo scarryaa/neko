@@ -27,6 +27,6 @@ use text::CursorManager;
 pub use text::{
     AddCursorDirection, Buffer, Cursor, CursorEntry, Document, DocumentId, DocumentManager,
     DocumentResult, Editor, Selection, SelectionManager, View, ViewId, ViewManager, Viewport,
-    document::error::*,
+    document::error::*, view::error::*,
 };
 pub use theme::{Theme, ThemeManager};

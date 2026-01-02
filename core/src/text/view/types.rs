@@ -1,4 +1,5 @@
-use crate::{DocumentId, Editor};
+use crate::{DocumentId, Editor, ViewError};
+use std::{fmt, num::NonZeroU64};
 
 /// Represents the viewport associated with an open [`View`].
 #[derive(Debug, Clone, Copy, Default)]
@@ -10,13 +11,37 @@ pub struct Viewport {
 
 /// Represents the id associated with a given [`View`].
 #[derive(Eq, Hash, PartialEq, Clone, Copy, Debug)]
-pub struct ViewId(pub u64);
+pub struct ViewId(NonZeroU64);
 
 impl ViewId {
+    pub fn new(id: u64) -> Result<Self, ViewError> {
+        NonZeroU64::new(id)
+            .map(Self)
+            .ok_or(ViewError::InvalidId(id))
+    }
+
     pub fn take_next(&mut self) -> Self {
         let current_id = *self;
         self.0 = self.0.saturating_add(1);
         current_id
+    }
+}
+
+impl From<ViewId> for u64 {
+    fn from(id: ViewId) -> Self {
+        id.0.get()
+    }
+}
+
+impl From<u64> for ViewId {
+    fn from(id: u64) -> Self {
+        ViewId::new(id).expect("View id cannot be 0")
+    }
+}
+
+impl fmt::Display for ViewId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
