@@ -42,4 +42,6 @@ pub struct Document {
     pub title: String,
     pub buffer: Buffer,
     pub modified: bool,
+    pub saved_hash: u32,
+    pub saved_revision: usize,
 }

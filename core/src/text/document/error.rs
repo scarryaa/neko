@@ -7,6 +7,7 @@ pub enum DocumentError {
     InvalidId(u64),
     NoPath(DocumentId),
     NotFound(DocumentId),
+    ViewNotFound,
 }
 
 impl fmt::Display for DocumentError {
@@ -16,6 +17,7 @@ impl fmt::Display for DocumentError {
             DocumentError::InvalidId(_) => write!(f, "Document id must not be 0"),
             DocumentError::NoPath(id) => write!(f, "Document {id:?} has no path"),
             DocumentError::NotFound(id) => write!(f, "Document {id:?} not found"),
+            DocumentError::ViewNotFound => write!(f, "View not found"),
         }
     }
 }

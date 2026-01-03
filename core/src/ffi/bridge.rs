@@ -249,6 +249,7 @@ pub mod ffi {
         InvalidId,
         NoPath,
         NotFound,
+        ViewNotFound,
     }
 
     struct FileNodeSnapshot {

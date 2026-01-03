@@ -1,3 +1,4 @@
+use crc32fast::Hasher;
 use crop::Rope;
 use std::mem::swap;
 
@@ -239,6 +240,17 @@ impl Buffer {
         }
 
         deleted
+    }
+
+    /// Calculates a checksum of the entire buffer content.
+    pub fn checksum(&self) -> u32 {
+        let mut hasher = Hasher::new();
+
+        for chunk in self.content.chunks() {
+            hasher.update(chunk.as_bytes());
+        }
+
+        hasher.finalize()
     }
 }
 

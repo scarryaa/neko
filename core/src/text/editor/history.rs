@@ -44,22 +44,43 @@ pub struct ViewState {
 
 #[derive(Clone, Debug)]
 pub struct Transaction {
+    pub id: usize,
     pub before: ViewState,
     pub after: ViewState,
     pub edits: Vec<Edit>,
 }
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct UndoHistory {
     pub undo: Vec<Transaction>,
     pub redo: Vec<Transaction>,
     pub current: Option<Transaction>,
+    next_id: usize,
+}
+
+impl Default for UndoHistory {
+    fn default() -> Self {
+        Self {
+            undo: Vec::new(),
+            redo: Vec::new(),
+            current: None,
+            next_id: 1,
+        }
+    }
 }
 
 impl UndoHistory {
+    /// Returns the id of the transaction at the tip of the undo stack.
+    /// Returns 0 if there is no history.
+    pub fn current_revision(&self) -> usize {
+        self.undo.last().map(|tx| tx.id).unwrap_or(0)
+    }
+
     pub fn begin(&mut self, before: ViewState) {
         if self.current.is_none() {
             self.current = Some(Transaction {
+                // Id is finalized on commit
+                id: 0,
                 before: before.clone(),
                 after: before,
                 edits: Vec::new(),
@@ -78,6 +99,9 @@ impl UndoHistory {
             tx.after = after;
 
             if !tx.edits.is_empty() {
+                tx.id = self.next_id;
+                self.next_id += 1;
+
                 self.undo.push(tx);
                 self.redo.clear();
             }

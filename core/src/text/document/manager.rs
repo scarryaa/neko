@@ -38,11 +38,15 @@ impl DocumentManager {
     /// Creates an empty [`Document`] and returns the corresponding [`DocumentId`].
     pub fn new_document(&mut self, title: Option<String>) -> DocumentId {
         let id = self.generate_next_id();
+        let buffer = Buffer::new();
+        let saved_hash = buffer.checksum();
         let document = Document {
             id,
             path: None,
             title: title.unwrap_or("Untitled".to_string()),
-            buffer: Buffer::new(),
+            buffer,
+            saved_revision: 0,
+            saved_hash,
             modified: false,
         };
 
@@ -63,6 +67,10 @@ impl DocumentManager {
 
         // Read file content into a new document
         let file_content = FileIoManager::read(&canon_path)?;
+
+        let buffer = Buffer::from(&file_content);
+        let saved_hash = buffer.checksum();
+
         let document_id = self.generate_next_id();
         let document = Document {
             id: document_id,
@@ -72,7 +80,9 @@ impl DocumentManager {
                 .and_then(|name| name.to_str())
                 .unwrap_or("Untitled")
                 .to_string(),
-            buffer: Buffer::from(&file_content),
+            buffer,
+            saved_hash,
+            saved_revision: 0,
             modified: false,
         };
 
@@ -98,7 +108,11 @@ impl DocumentManager {
 
     /// Attempts to save the [`Document`] with the provided [`DocumentId`] under the associated
     /// path.
-    pub fn save_document(&mut self, document_id: DocumentId) -> DocumentResult<()> {
+    pub fn save_document(
+        &mut self,
+        document_id: DocumentId,
+        current_revision: usize,
+    ) -> DocumentResult<()> {
         let (path, content) = {
             let document = self
                 .documents
@@ -118,6 +132,8 @@ impl DocumentManager {
 
         let document = self.documents.get_mut(&document_id).unwrap();
         document.modified = false;
+        document.saved_revision = current_revision;
+        document.saved_hash = document.buffer.checksum();
 
         Ok(())
     }
@@ -138,6 +154,7 @@ impl DocumentManager {
         &mut self,
         document_id: DocumentId,
         new_path: &Path,
+        current_revision: usize,
     ) -> DocumentResult<()> {
         let canon_new_path = FileIoManager::canonicalize(new_path)?;
         let content = {
@@ -163,6 +180,7 @@ impl DocumentManager {
             .unwrap_or("Untitled")
             .to_string();
         document.modified = false;
+        document.saved_revision = current_revision;
 
         self.path_index
             .insert(canon_new_path.to_path_buf(), document_id);

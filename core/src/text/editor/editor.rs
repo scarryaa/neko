@@ -34,6 +34,10 @@ impl Editor {
         buffer.get_lines()
     }
 
+    pub fn revision(&self) -> usize {
+        self.history.current_revision()
+    }
+
     pub fn number_of_selections(&self) -> usize {
         // TODO: When converting to multi-selection, update this
         if self.selection_manager.has_active_selection() {
@@ -634,6 +638,7 @@ impl Editor {
             self.history.current = Some(Transaction {
                 before: self.view_state(),
                 after: self.view_state(),
+                id: 0,
                 edits: Vec::new(),
             });
         }
@@ -646,14 +651,8 @@ impl Editor {
     }
 
     fn commit_tx(&mut self) {
-        if let Some(mut tx) = self.history.current.take() {
-            tx.after = self.view_state();
-
-            if !tx.edits.is_empty() {
-                self.history.undo.push(tx);
-                self.history.redo.clear();
-            }
-        }
+        let after_state = self.view_state();
+        self.history.commit(after_state);
     }
 
     pub fn undo(&mut self, buffer: &mut Buffer) -> ChangeSet {

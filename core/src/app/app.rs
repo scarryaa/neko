@@ -409,8 +409,6 @@ impl AppState {
     }
 
     /// Executes an editor action on the specified view.
-    // TODO(scarlet): Fix document not being marked as clean when buffer returns to original state
-    // (e.g. via undo or deletion of added text)
     pub fn apply_editor_action<F>(&mut self, view_id: ViewId, action: F) -> Option<ChangeSet>
     where
         F: FnOnce(&mut Editor, &mut Buffer) -> ChangeSet,
@@ -420,8 +418,16 @@ impl AppState {
         let document = self.document_manager.get_document_mut(document_id)?;
         let change_set = action(view.editor_mut(), &mut document.buffer);
 
+        // Update document modified status
         if change_set.change.contains(Change::BUFFER) {
-            document.modified = true;
+            let current_revision = view.editor().revision();
+
+            if current_revision == document.saved_revision {
+                document.modified = false;
+            } else {
+                let current_hash = document.buffer.checksum();
+                document.modified = current_hash != document.saved_hash;
+            }
         }
 
         Some(change_set)
@@ -495,8 +501,21 @@ impl AppState {
         new_document_id
     }
 
-    pub fn save_document(&mut self, document_id: DocumentId) -> DocumentResult<()> {
-        self.document_manager.save_document(document_id)?;
+    pub fn save_document(&mut self, view_id: ViewId) -> DocumentResult<()> {
+        let (document_id, current_revision) = {
+            let view = self
+                .view_manager
+                .get_view(view_id)
+                .ok_or(DocumentError::ViewNotFound)?;
+
+            let document_id = view.document_id();
+            let current_revision = view.editor().revision();
+
+            (document_id, current_revision)
+        };
+
+        self.document_manager
+            .save_document(document_id, current_revision)?;
 
         if let Some(document) = self.document_manager.get_document(document_id) {
             if let Some(path) = &document.path {
@@ -514,7 +533,7 @@ impl AppState {
         Ok(())
     }
 
-    pub fn save_document_as(&mut self, document_id: DocumentId, path: &Path) -> DocumentResult<()> {
+    pub fn save_document_as(&mut self, view_id: ViewId, path: &Path) -> DocumentResult<()> {
         if path.as_os_str().is_empty() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
@@ -523,7 +542,18 @@ impl AppState {
             .into());
         }
 
-        self.document_manager.save_document_as(document_id, path)?;
+        let (document_id, current_revision) = {
+            let view = self
+                .view_manager
+                .get_view(view_id)
+                .ok_or(DocumentError::ViewNotFound)?;
+
+            (view.document_id(), view.editor().revision())
+        };
+
+        self.document_manager
+            .save_document_as(document_id, path, current_revision)?;
+
         Ok(())
     }
 

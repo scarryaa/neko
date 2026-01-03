@@ -433,6 +433,7 @@ impl From<DocumentError> for DocumentErrorFfi {
             DocumentError::InvalidId(_) => DocumentErrorFfi::InvalidId,
             DocumentError::NoPath(_) => DocumentErrorFfi::NoPath,
             DocumentError::NotFound(_) => DocumentErrorFfi::NotFound,
+            DocumentError::ViewNotFound => DocumentErrorFfi::ViewNotFound,
         }
     }
 }
