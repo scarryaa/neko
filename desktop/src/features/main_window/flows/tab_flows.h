@@ -39,7 +39,7 @@ public:
   void newTab();
   void tabChanged(int tabId);
   void tabUnpinned(int tabId);
-  static void moveTabBy(int delta, bool useHistory);
+  void moveTabBy(int delta, bool useHistory);
 
   // Actions on single tabs
   bool copyTabPath(int tabId);

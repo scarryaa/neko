@@ -151,7 +151,7 @@ void TabFlows::tabChanged(int tabId) {
 void TabFlows::tabUnpinned(int tabId) { tabBridge->unpinTab(tabId); }
 
 void TabFlows::moveTabBy(int delta, bool useHistory) {
-  // TabBridge::moveTabBy(nullptr, delta, useHistory);
+  tabBridge->moveTabBy(delta, useHistory);
 }
 
 void TabFlows::bufferChanged() {

@@ -32,7 +32,7 @@ public:
   bool pinTab(int tabId);
   bool unpinTab(int tabId);
   bool moveTab(int fromIndex, int toIndex);
-  static bool moveTabBy(neko::Buffer buffer, int delta, bool useHistory);
+  bool moveTabBy(int delta, bool useHistory);
   void setActiveTab(int tabId);
   void setTabScrollOffsets(int tabId, const neko::ScrollOffsetFfi &newOffsets);
   void notifyTabOpenedFromCore(int tabId);

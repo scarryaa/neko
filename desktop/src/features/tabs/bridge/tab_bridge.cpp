@@ -162,41 +162,36 @@ bool TabBridge::unpinTab(int tabId) {
   return true;
 }
 
-bool TabBridge::moveTabBy(neko::Buffer buffer, int delta, bool useHistory) {
-  // if (tabCoreApi == nullptr) {
-  //   return false;
-  // }
+bool TabBridge::moveTabBy(int delta, bool useHistory) {
+  neko::MoveActiveTabResult result =
+      tabController->move_active_tab_by(delta, useHistory);
+  int tabId = static_cast<int>(result.id);
+  TabScrollOffsets offsets;
 
-  // neko::MoveActiveTabResult result =
-  //     tabCoreApi->moveTabBy(buffer, delta, useHistory);
-  // int tabId = static_cast<int>(result.id);
-  // TabScrollOffsets offsets;
-  //
-  // if (result.reopened) {
-  //   TabPresentation presentation = fromSnapshot(result.snapshot);
-  //   auto snapshot = getTabsSnapshot();
-  //   offsets = presentation.scrollOffsets;
-  //
-  //   // Get the tab index
-  //   int index = 0;
-  //   for (int i = 0; i < static_cast<int>(snapshot.tabs.size()); ++i) {
-  //     if (static_cast<int>(snapshot.tabs[i].id) == tabId) {
-  //       index = i;
-  //       break;
-  //     }
-  //   }
-  //
-  //   emit tabOpened(presentation, index);
-  // }
-  //
-  // emit activeTabChanged(tabId);
-  //
-  // // Restore offsets after emitting activeTabChanged, since the handler tries
-  // to
-  // // restore scroll offsets on active change
-  // if (result.reopened) {
-  //   emit restoreScrollOffsetsForReopenedTab(offsets);
-  // }
+  if (result.reopened) {
+    TabPresentation presentation = fromSnapshot(result.snapshot);
+    auto snapshot = getTabsSnapshot();
+    offsets = presentation.scrollOffsets;
+
+    // Get the tab index
+    int index = 0;
+    for (int i = 0; i < static_cast<int>(snapshot.tabs.size()); ++i) {
+      if (static_cast<int>(snapshot.tabs[i].id) == tabId) {
+        index = i;
+        break;
+      }
+    }
+
+    emit tabOpened(presentation, index);
+  }
+
+  emit activeTabChanged(tabId);
+
+  // Re-restore scroll offsets manually after emitting `activeTabChanged`, since
+  // the handler tries to restore scroll offsets on active tab change.
+  if (result.reopened) {
+    emit restoreScrollOffsetsForReopenedTab(offsets);
+  }
 
   return true;
 }

@@ -1,7 +1,8 @@
 use crate::{
-    Buffer, Change, ChangeSet, CloseTabOperationType, Config, ConfigManager, Document,
-    DocumentError, DocumentId, DocumentManager, DocumentResult, Editor, FileSystemResult, FileTree,
-    JumpHistory, MoveActiveTabResult, Tab, TabError, TabId, TabManager, View, ViewId, ViewManager,
+    Buffer, Change, ChangeSet, CloseTabOperationType, ClosedTabInfo, Config, ConfigManager,
+    Document, DocumentError, DocumentId, DocumentManager, DocumentResult, Editor, FileSystemResult,
+    FileTree, JumpHistory, MoveActiveTabResult, Tab, TabError, TabId, TabManager, View, ViewId,
+    ViewManager,
 };
 use std::path::Path;
 
@@ -216,6 +217,36 @@ impl AppState {
             return Ok(vec![]);
         }
 
+        let mut tabs_with_info = Vec::new();
+
+        for &tab_id in &ids_to_close {
+            let mut info = None;
+
+            if let Ok(tab) = self.tab_manager.get_tab(tab_id) {
+                // Only save info if we can resolve the Document and the View.
+                if let Some(document) = self.document_manager.get_document(tab.get_document_id()) {
+                    if let Some(path) = &document.path {
+                        if let Some(view) = self.view_manager.get_view(tab.get_view_id()) {
+                            let editor = view.editor();
+
+                            let scroll_offsets = tab.get_scroll_offsets();
+                            info = Some(ClosedTabInfo {
+                                path: path.clone(),
+                                scroll_offsets: (
+                                    scroll_offsets.0 as usize,
+                                    scroll_offsets.1 as usize,
+                                ),
+                                cursors: editor.cursors().to_vec(),
+                                selections: editor.selection().clone(),
+                            });
+                        }
+                    }
+                }
+            }
+
+            tabs_with_info.push((tab_id, info));
+        }
+
         let mut views_and_documents_to_close = Vec::new();
         for &tab_id in &ids_to_close {
             if let Ok(tab) = self.tab_manager.get_tab(tab_id) {
@@ -223,30 +254,30 @@ impl AppState {
             }
         }
 
-        // Close the tabs
+        // Close the tabs.
         let history_enabled = self
             .config_manager()
             .get_snapshot()
             .editor
             .switch_to_last_visited_tab_on_close;
 
-        let closed_ids = self.tab_manager.close_tabs(ids_to_close, history_enabled)?;
+        let closed_ids = self
+            .tab_manager
+            .close_tabs(tabs_with_info, history_enabled)?;
 
-        // Clean up the relevant views and documents
         for (view_id, document_id) in views_and_documents_to_close {
             self.view_manager.remove_view(view_id);
 
-            // Only close the document if no other views are pointing to it
+            // Only close the document if no other views are pointing to it.
             if !self.view_manager.has_views_for_document(document_id) {
                 self.document_manager.close_document(document_id);
             }
         }
 
         let active_tab_id = self.tab_manager.get_active_tab_id();
-
-        // Check if there are any tabs left
+        // Check if there are any tabs left.
         if !self.tab_manager.get_tabs().is_empty() {
-            // Sync the active view
+            // Sync the active view.
             if let Ok(tab) = self.tab_manager.get_tab(active_tab_id) {
                 // TODO(scarlet) handle errors
                 _ = self.view_manager.set_active_view(tab.get_view_id());
@@ -308,75 +339,75 @@ impl AppState {
         Ok(tab_id)
     }
 
-    // TODO(scarlet): Fix this fn and rename it
-    pub fn move_active_tab_by(
-        &mut self,
-        _buffer: &mut Buffer,
-        _delta: i64,
-        _use_history: bool,
-    ) -> MoveActiveTabResult {
-        // let auto_reopen_closed_tabs_in_history = self
-        //     .config_manager()
-        //     .get_snapshot()
-        //     .editor
-        //     .auto_reopen_closed_tabs_in_history;
-        //
-        // let mut result = self.tab_manager.move_active_tab_by(
-        //     delta,
-        //     use_history,
-        //     auto_reopen_closed_tabs_in_history,
-        // );
-        //
-        // if result.reopened_tab {
-        //     if let Some(path) = &result.reopen_path {
-        //         let (new_id, _) = self.tab_manager.new_tab(false);
-        //
-        //         if self.open_file(buffer, &path.to_string_lossy()).is_ok() {
-        //             let _ = self.tab_manager.set_active_tab(new_id);
-        //
-        //             if let Some(old_id) = result.found_id {
-        //                 // Update the tab id in history
-        //                 self.tab_manager
-        //                     .get_history_manager_mut()
-        //                     .remap_id(old_id, new_id);
-        //             }
-        //
-        //             // Set the found_id to the new tab id
-        //             result.found_id = Some(new_id);
-        //
-        //             // Restore cursors, selections for reopened tab
-        //             if let Ok(tab) = self.tab_manager.get_tab_mut(new_id) {
-        //                 let editor = tab.get_editor_mut();
-        //
-        //                 if let Some(ref cursors) = result.cursors {
-        //                     editor.cursor_manager_mut().set_cursors(cursors.to_vec());
-        //                 }
-        //
-        //                 if let Some(ref selections) = result.selections {
-        //                     editor.selection_manager_mut().set_selection(selections);
-        //                 }
-        //             }
-        //         } else {
-        //             // Reopen failed, clear reopened flag
-        //             result.reopened_tab = false;
-        //             result.reopen_path = None;
-        //             result.scroll_offsets = None;
-        //             result.cursors = None;
-        //             result.selections = None;
-        //         }
-        //     }
-        // }
-        //
-        // result
+    // TODO(scarlet): Rename this function to be clearer about what it actually does, and to avoid
+    // confusion with `move_tab`.
+    pub fn move_active_tab_by(&mut self, delta: i64, use_history: bool) -> MoveActiveTabResult {
+        let auto_reopen = self
+            .config_manager()
+            .get_snapshot()
+            .editor
+            .auto_reopen_closed_tabs_in_history;
 
-        MoveActiveTabResult {
-            found_id: Some(TabId::new(1).expect("Tab id should not be 0")),
-            reopened_tab: false,
-            scroll_offsets: None,
-            cursors: None,
-            selections: None,
-            reopen_path: None,
+        let document_manager = &self.document_manager;
+        let tab_manager = &mut self.tab_manager;
+
+        let mut result = tab_manager.move_active_tab_by(delta, use_history, auto_reopen, |path| {
+            document_manager.find_document_id_by_path(path)
+        });
+
+        if result.reopened_tab {
+            if let Some(path) = &result.reopen_path {
+                // Ensure the tab exists.
+                if let Ok(new_tab_id) = self.ensure_tab_for_path(path, false) {
+                    _ = self.tab_manager.set_active_tab(new_tab_id);
+
+                    if let Some(old_id) = result.found_id {
+                        // Update the tab id in history.
+                        self.tab_manager
+                            .get_history_manager_mut()
+                            .remap_id(old_id, new_tab_id);
+                    }
+
+                    // Set the found_id to the new tab id.
+                    result.found_id = Some(new_tab_id);
+
+                    // Restore cursors, selections for reopened tab.
+                    if let Ok(tab) = self.tab_manager.get_tab_mut(new_tab_id) {
+                        let view_id = tab.get_view_id();
+                        if let Some(view) = self.view_manager.get_view_mut(view_id) {
+                            let editor = view.editor_mut();
+
+                            if let Some(ref cursors) = result.cursors {
+                                editor.cursor_manager_mut().set_cursors(cursors.to_vec());
+                            }
+
+                            if let Some(ref selections) = result.selections {
+                                editor.selection_manager_mut().set_selection(selections);
+                            }
+
+                            if let Some(ref scroll_offsets) = result.scroll_offsets {
+                                let converted_scroll_offsets =
+                                    (scroll_offsets.x as i32, scroll_offsets.y as i32);
+                                tab.set_scroll_offsets(converted_scroll_offsets);
+                            }
+                        }
+                    }
+                } else {
+                    // Failed to reopen file.
+                    result.reopened_tab = false;
+                    result.reopen_path = None;
+                }
+            }
         }
+
+        // Sync the active view.
+        if let Some(found_id) = result.found_id {
+            if let Ok(tab) = self.tab_manager.get_tab(found_id) {
+                _ = self.view_manager.set_active_view(tab.get_view_id());
+            }
+        }
+
+        result
     }
 
     pub fn pin_tab(&mut self, id: TabId) -> Result<(), TabError> {

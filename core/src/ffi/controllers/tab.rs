@@ -1,5 +1,5 @@
 use crate::{
-    AppState, Buffer, Tab, TabError, TabId,
+    AppState, Tab, TabError, TabId,
     ffi::{
         CloseManyTabsResult, CloseTabOperationTypeFfi, CreateDocumentTabAndViewResultFfi,
         MoveActiveTabResult, PinTabResult, ScrollOffsetFfi, TabSnapshot, TabSnapshotMaybe,
@@ -167,16 +167,11 @@ impl TabController {
         self.app_state.borrow_mut().move_tab(from, to).is_ok()
     }
 
-    pub fn move_active_tab_by(
-        &mut self,
-        buffer: &mut Buffer,
-        delta: i64,
-        use_history: bool,
-    ) -> MoveActiveTabResult {
+    pub fn move_active_tab_by(&mut self, delta: i64, use_history: bool) -> MoveActiveTabResult {
         let result = self
             .app_state
             .borrow_mut()
-            .move_active_tab_by(buffer, delta, use_history);
+            .move_active_tab_by(delta, use_history);
 
         // Try to find the tab with this id
         if let Some(found_id) = result.found_id {

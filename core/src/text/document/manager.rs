@@ -35,6 +35,11 @@ impl DocumentManager {
         self.next_document_id.take_next()
     }
 
+    /// Attempts to find the document id associated with the given path.
+    pub fn find_document_id_by_path(&self, path: &Path) -> Option<DocumentId> {
+        self.path_index.get(path).copied()
+    }
+
     /// Creates an empty [`Document`] and returns the corresponding [`DocumentId`].
     pub fn new_document(&mut self, title: Option<String>) -> DocumentId {
         let id = self.generate_next_id();

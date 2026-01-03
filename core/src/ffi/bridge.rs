@@ -450,7 +450,6 @@ pub mod ffi {
         // TODO(scarlet): Decouple this fn from the buffer arg if possible
         pub fn move_active_tab_by(
             self: &mut TabController,
-            buffer: &mut Buffer,
             delta: i64,
             use_history: bool,
         ) -> MoveActiveTabResult;

@@ -44,7 +44,7 @@ public:
                  bool forceClose);
   void newTab();
   void revealActiveTab();
-  static void moveTabBy(int delta, bool useHistory);
+  void moveTabBy(int delta, bool useHistory);
 
   // Save / close flows
   SaveResult saveTab(int tabId, bool isSaveAs);

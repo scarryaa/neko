@@ -45,7 +45,7 @@ pub enum CloseTabOperationType {
     All,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ClosedTabInfo {
     pub path: PathBuf,
     pub scroll_offsets: (usize, usize),
@@ -59,7 +59,7 @@ pub struct ScrollOffsets {
     pub y: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct MoveActiveTabResult {
     pub found_id: Option<TabId>,
     pub reopened_tab: bool,

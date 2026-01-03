@@ -31,6 +31,7 @@
 #include <QWheelEvent>
 #include <QtDebug>
 
+// TODO(scarlet): Add context menus for items/empty space right clicks.
 FileExplorerWidget::FileExplorerWidget(const FileExplorerProps &props,
                                        QWidget *parent)
     : QScrollArea(parent), fileTreeBridge(props.fileTreeBridge),

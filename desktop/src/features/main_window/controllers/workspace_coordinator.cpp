@@ -373,7 +373,7 @@ void WorkspaceCoordinator::revealActiveTab() {
 }
 
 void WorkspaceCoordinator::moveTabBy(int delta, bool useHistory) {
-  TabFlows::moveTabBy(delta, useHistory);
+  tabFlows.moveTabBy(delta, useHistory);
 }
 
 // TODO(scarlet): Wrap the neko:: type eventually so it doesn't leak into
