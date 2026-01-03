@@ -15,8 +15,9 @@ pub use commands::{
     Command, CommandResult, DocumentTarget, JumpAliasInfo, JumpCommand, JumpHistory,
     JumpManagementCommand, JumpManagementResult, LineTarget, TabCommand, TabCommandState,
     TabContext, UiIntent, execute_command, execute_jump_command, execute_jump_key,
-    execute_jump_management_command, get_available_commands, get_available_jump_commands,
-    get_available_tab_commands, run_tab_command, tab_command_state,
+    execute_jump_management_command, file_explorer_command_state, get_available_commands,
+    get_available_file_explorer_commands, get_available_jump_commands, get_available_tab_commands,
+    run_file_explorer_command, run_tab_command, tab_command_state,
 };
 pub use config::{Config, ConfigManager};
 pub use file_system::{FileNode, FileTree, error::*, result::*};

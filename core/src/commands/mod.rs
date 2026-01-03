@@ -5,7 +5,10 @@ pub mod tab;
 mod types;
 
 pub use executor::{execute_command, get_available_commands};
-pub use file_explorer::*;
+pub use file_explorer::{
+    file_explorer_command_state, get_available_file_explorer_commands, run_file_explorer_command,
+    types::*,
+};
 pub use jump::{
     DocumentTarget, JumpAliasInfo, JumpCommand, JumpHistory, JumpManagementCommand,
     JumpManagementResult, LineTarget, execute_jump_command, execute_jump_key,

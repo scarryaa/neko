@@ -289,8 +289,11 @@ pub mod ffi {
         item_path: String,
         target_is_item: bool,
         item_is_directory: bool,
+        new_item_name: String,
+        rename_item_name: String,
     }
 
+    #[derive(Default)]
     struct FileExplorerCommandStateFfi {
         can_make_new_file: bool,
         can_make_new_folder: bool,
@@ -533,7 +536,7 @@ pub mod ffi {
         ) -> bool;
         pub fn get_file_explorer_command_state(
             self: &CommandController,
-            id: u64,
+            path: String,
         ) -> FileExplorerCommandStateFfi;
         pub fn get_available_file_explorer_commands(
             self: &CommandController,

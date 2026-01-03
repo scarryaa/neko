@@ -3,6 +3,7 @@ use std::{path::PathBuf, str::FromStr};
 #[derive(Debug)]
 pub enum FileExplorerCommandError {
     UnknownCommand(String),
+    IoError(std::io::Error),
 }
 
 #[derive(Clone)]
@@ -100,11 +101,14 @@ impl FromStr for FileExplorerCommand {
 }
 
 pub struct FileExplorerContext {
-    item_path: PathBuf,
-    target_is_item: bool,
-    item_is_directory: bool,
+    pub item_path: PathBuf,
+    pub target_is_item: bool,
+    pub item_is_directory: bool,
+    pub new_item_name: String,
+    pub rename_item_name: String,
 }
 
+#[derive(Default)]
 pub struct FileExplorerCommandState {
     pub can_make_new_file: bool,
     pub can_make_new_folder: bool,

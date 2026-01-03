@@ -5,7 +5,8 @@ use crate::{
         FileExplorerCommandStateFfi, FileExplorerContextFfi, JumpCommandFfi, TabCommandFfi,
         TabCommandStateFfi, TabContextFfi,
     },
-    get_available_commands, get_available_jump_commands, get_available_tab_commands,
+    file_explorer_command_state, get_available_commands, get_available_file_explorer_commands,
+    get_available_jump_commands, get_available_tab_commands, run_file_explorer_command,
     run_tab_command, tab_command_state,
 };
 use std::{cell::RefCell, rc::Rc};
@@ -45,22 +46,12 @@ impl CommandController {
         run_file_explorer_command(&mut app_state, id, &ctx.into()).is_ok()
     }
 
-    pub fn get_file_explorer_command_state(&self, id: u64) -> FileExplorerCommandStateFfi {
+    pub fn get_file_explorer_command_state(&self, path: String) -> FileExplorerCommandStateFfi {
         let app_state = self.app_state.borrow();
 
-        match file_explorer_command_state(&app_state, id.into()) {
+        match file_explorer_command_state(&app_state, path.into()) {
             Ok(state) => state.into(),
-            Err(_) => TabCommandStateFfi {
-                can_close: false,
-                can_close_others: false,
-                can_close_left: false,
-                can_close_right: false,
-                can_close_all: false,
-                can_close_clean: false,
-                can_copy_path: false,
-                can_reveal: false,
-                is_pinned: false,
-            },
+            Err(_) => FileExplorerCommandStateFfi::default(),
         }
     }
 

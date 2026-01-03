@@ -28,4 +28,24 @@ impl FileIoManager {
     pub fn canonicalize<P: AsRef<Path>>(path: P) -> FileResult<PathBuf> {
         fs::canonicalize(path)
     }
+
+    pub fn create_directory<P: AsRef<Path>>(path: P) -> FileResult<()> {
+        fs::create_dir_all(path)
+    }
+
+    pub fn delete_file<P: AsRef<Path>>(path: P) -> FileResult<()> {
+        fs::remove_file(path)
+    }
+
+    pub fn delete_directory<P: AsRef<Path>>(path: P) -> FileResult<()> {
+        fs::remove_dir_all(path)
+    }
+
+    pub fn rename<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> FileResult<()> {
+        fs::rename(from, to)
+    }
+
+    pub fn exists<P: AsRef<Path>>(path: P) -> bool {
+        path.as_ref().exists()
+    }
 }

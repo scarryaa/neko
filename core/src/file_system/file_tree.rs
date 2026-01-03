@@ -197,6 +197,11 @@ impl FileTree {
         }
     }
 
+    /// Removes all paths from `expanded_paths`, effectively collapsing everything.
+    pub fn collapse_all(&mut self) {
+        self.expanded_paths.clear();
+    }
+
     /// Removes the provided path from `expanded_paths`, effectively marking it as collapsed.
     pub fn set_collapsed<P: AsRef<Path>>(&mut self, path: P) {
         let path_buf = path.as_ref().to_path_buf();

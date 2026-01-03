@@ -3,6 +3,7 @@ use crate::{
     AddCursorDirection, ChangeSet, CloseTabOperationType, Command, CommandResult, Config, Cursor,
     DocumentError, DocumentTarget, FileSystemError, JumpAliasInfo, JumpCommand,
     JumpManagementCommand, LineTarget, OpenTabResult, TabCommandState, TabContext, UiIntent,
+    commands::{FileExplorerCommandState, FileExplorerContext},
 };
 use std::{fmt, io, path::PathBuf};
 
@@ -467,6 +468,43 @@ impl From<JumpAliasInfoFfi> for JumpAliasInfo {
             spec: alias_info.spec,
             description: alias_info.description,
             is_builtin: alias_info.is_builtin,
+        }
+    }
+}
+
+// File Explorer Command Conversions
+impl From<FileExplorerCommandState> for FileExplorerCommandStateFfi {
+    fn from(command_state: FileExplorerCommandState) -> Self {
+        Self {
+            can_make_new_file: command_state.can_make_new_file,
+            can_make_new_folder: command_state.can_make_new_folder,
+            can_reveal_in_system: command_state.can_reveal_in_system,
+            can_open_in_terminal: command_state.can_open_in_terminal,
+            can_find_in_folder: command_state.can_find_in_folder,
+            can_cut: command_state.can_cut,
+            can_copy: command_state.can_copy,
+            can_duplicate: command_state.can_duplicate,
+            can_paste: command_state.can_paste,
+            can_copy_path: command_state.can_copy_path,
+            can_copy_relative_path: command_state.can_copy_relative_path,
+            can_show_history: command_state.can_show_history,
+            can_rename: command_state.can_rename,
+            can_delete: command_state.can_delete,
+            can_expand_item: command_state.can_expand_item,
+            can_collapse_item: command_state.can_collapse_item,
+            can_collapse_all: command_state.can_collapse_all,
+        }
+    }
+}
+
+impl From<FileExplorerContextFfi> for FileExplorerContext {
+    fn from(ctx: FileExplorerContextFfi) -> Self {
+        FileExplorerContext {
+            item_path: ctx.item_path.into(),
+            target_is_item: ctx.target_is_item,
+            item_is_directory: ctx.item_is_directory,
+            new_item_name: ctx.new_item_name,
+            rename_item_name: ctx.rename_item_name,
         }
     }
 }
