@@ -85,8 +85,8 @@ impl AppState {
 
     fn is_tab_modified(&self, tab_id: TabId) -> bool {
         if let Ok(tab) = self.tab_manager.get_tab(tab_id) {
-            if let Some(doc) = self.document_manager.get_document(tab.get_document_id()) {
-                return doc.modified;
+            if let Some(document) = self.document_manager.get_document(tab.get_document_id()) {
+                return document.modified;
             }
         }
 
@@ -208,11 +208,8 @@ impl AppState {
         anchor_tab_id: TabId,
         close_pinned: bool,
     ) -> Result<Vec<TabId>, TabError> {
-        let ids_to_close = self.tab_manager.get_close_tab_ids(
-            operation_type.clone(),
-            Some(anchor_tab_id),
-            close_pinned,
-        )?;
+        let ids_to_close =
+            self.get_close_tab_ids(operation_type.clone(), Some(anchor_tab_id), close_pinned)?;
 
         if ids_to_close.is_empty() {
             return Ok(vec![]);
@@ -232,12 +229,7 @@ impl AppState {
             .editor
             .switch_to_last_visited_tab_on_close;
 
-        let closed_ids = self.tab_manager.close_tabs(
-            operation_type,
-            anchor_tab_id,
-            history_enabled,
-            close_pinned,
-        )?;
+        let closed_ids = self.tab_manager.close_tabs(ids_to_close, history_enabled)?;
 
         // Clean up the relevant views and documents
         for (view_id, document_id) in views_and_documents_to_close {
@@ -395,17 +387,19 @@ impl AppState {
     }
 
     /// Executes an editor action on the specified view.
+    // TODO(scarlet): Fix document not being marked as clean when buffer returns to original state
+    // (e.g. via undo or deletion of added text)
     pub fn apply_editor_action<F>(&mut self, view_id: ViewId, action: F) -> Option<ChangeSet>
     where
         F: FnOnce(&mut Editor, &mut Buffer) -> ChangeSet,
     {
         let view = self.view_manager.get_view_mut(view_id)?;
-        let doc_id = view.document_id();
-        let doc = self.document_manager.get_document_mut(doc_id)?;
-        let change_set = action(view.editor_mut(), &mut doc.buffer);
+        let document_id = view.document_id();
+        let document = self.document_manager.get_document_mut(document_id)?;
+        let change_set = action(view.editor_mut(), &mut document.buffer);
 
         if change_set.change.contains(Change::BUFFER) {
-            doc.modified = true;
+            document.modified = true;
         }
 
         Some(change_set)

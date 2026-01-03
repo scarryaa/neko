@@ -173,12 +173,9 @@ impl TabManager {
 
     pub fn close_tabs(
         &mut self,
-        operation_type: CloseTabOperationType,
-        anchor_tab_id: TabId,
+        ids: Vec<TabId>,
         history_enabled: bool,
-        close_pinned: bool,
     ) -> Result<Vec<TabId>, TabError> {
-        let ids = self.get_close_tab_ids(operation_type, Some(anchor_tab_id), close_pinned)?;
         if ids.is_empty() {
             return Ok(ids);
         }
