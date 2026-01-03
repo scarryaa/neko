@@ -41,6 +41,8 @@ set(SKIP_UIC_SOURCES
   src/features/main_window/main_window.h
   src/features/main_window/flows/tab_flows.cpp
   src/features/main_window/flows/tab_flows.h
+  src/features/main_window/flows/file_explorer_flows.cpp
+  src/features/main_window/flows/file_explorer_flows.h
 )
 
 set_source_files_properties(
@@ -92,6 +94,8 @@ qt_add_executable(neko
     # Workspace Coordinator Flows
     src/features/main_window/flows/tab_flows.cpp
     src/features/main_window/flows/tab_flows.h
+    src/features/main_window/flows/file_explorer_flows.cpp
+    src/features/main_window/flows/file_explorer_flows.h
 
     # Widget Connections
     src/features/main_window/connections/editor_connections.cpp
@@ -194,6 +198,9 @@ qt_add_executable(neko
     # Utils
     src/utils/ui_utils.cpp
     src/utils/ui_utils.h
+
+    # Types
+    src/types/command_type.h
 
     # Forward declarations
     src/types/ffi_types_fwd.h

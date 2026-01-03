@@ -503,8 +503,6 @@ impl From<FileExplorerContextFfi> for FileExplorerContext {
             item_path: ctx.item_path.into(),
             target_is_item: ctx.target_is_item,
             item_is_directory: ctx.item_is_directory,
-            new_item_name: ctx.new_item_name,
-            rename_item_name: ctx.rename_item_name,
         }
     }
 }

@@ -2,6 +2,8 @@
 #define WORKSPACE_COORDINATOR_H
 
 #include "features/command_palette/types/types.h"
+#include "features/file_explorer/file_explorer_widget.h"
+#include "features/main_window/flows/file_explorer_flows.h"
 #include "features/main_window/flows/tab_flows.h"
 #include "features/main_window/interfaces/save_result.h"
 #include "features/main_window/ui_handles.h"
@@ -37,9 +39,33 @@ public:
                                 QObject *parent = nullptr);
   ~WorkspaceCoordinator() override = default;
 
+  template <typename Context>
+  void handleCommand(const std::string &commandId, const Context &ctx,
+                     bool forceClose) {
+    if constexpr (std::is_same_v<Context, neko::TabContextFfi>) {
+      const auto succeeded =
+          tabFlows.handleTabCommand(commandId, ctx, forceClose);
+
+      // TODO(scarlet): Figure out a better flow/handling for this and avoid
+      // matching on raw tab.reveal string.
+      if (succeeded && commandId == "tab.reveal") {
+        if (uiHandles.fileExplorerWidget->isHidden()) {
+          fileExplorerToggled();
+        }
+
+        emit tabRevealedInFileExplorer();
+      }
+    } else if constexpr (std::is_same_v<Context,
+                                        neko::FileExplorerContextFfi>) {
+      const auto succeeded =
+          fileExplorerFlows.handleFileExplorerCommand(commandId, ctx);
+    } else {
+      static_assert(sizeof(Context) == 0,
+                    "Unsupported Context type in handleCommand");
+    }
+  }
+
   // Tab commands & navigation
-  void handleTabCommand(const std::string &commandId,
-                        const neko::TabContextFfi &ctx, bool forceClose);
   void closeTabs(neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
                  bool forceClose);
   void newTab();
@@ -91,6 +117,7 @@ private:
   [[nodiscard]] QString getInitialDialogDirectory() const;
 
   TabFlows tabFlows;
+  FileExplorerFlows fileExplorerFlows;
 
   TabBridge *tabBridge;
   AppBridge *appBridge;

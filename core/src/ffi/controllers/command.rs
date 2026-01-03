@@ -41,9 +41,22 @@ impl CommandController {
     }
 
     // File Explorer Commands
-    pub fn run_file_explorer_command(&self, id: &str, ctx: FileExplorerContextFfi) -> bool {
+    pub fn run_file_explorer_command(
+        &self,
+        id: &str,
+        ctx: FileExplorerContextFfi,
+        new_item_name: String,
+        rename_item_name: String,
+    ) -> bool {
         let mut app_state = self.app_state.borrow_mut();
-        run_file_explorer_command(&mut app_state, id, &ctx.into()).is_ok()
+        run_file_explorer_command(
+            &mut app_state,
+            id,
+            &ctx.into(),
+            Some(new_item_name),
+            Some(rename_item_name),
+        )
+        .is_ok()
     }
 
     pub fn get_file_explorer_command_state(&self, path: String) -> FileExplorerCommandStateFfi {

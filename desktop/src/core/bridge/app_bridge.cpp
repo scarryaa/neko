@@ -30,7 +30,7 @@ AppBridge::getTabCommandState(const neko::TabContextFfi &ctx) const {
 
 neko::FileExplorerCommandStateFfi AppBridge::getFileExplorerCommandState(
     const neko::FileExplorerContextFfi &ctx) const {
-  return commandController->get_file_explorer_command_state(ctx.id);
+  return commandController->get_file_explorer_command_state(ctx.item_path);
 }
 
 std::vector<neko::CommandFfi> AppBridge::getAvailableCommands() {
@@ -54,12 +54,6 @@ void AppBridge::executeJumpKey(const QString &key) {
 std::vector<neko::TabCommandFfi> AppBridge::getAvailableTabCommands() {
   auto commands = commandController->get_available_tab_commands();
   return {commands.begin(), commands.end()};
-}
-
-void AppBridge::runTabCommand(const std::string &commandId,
-                              const neko::TabContextFfi &ctx,
-                              bool closePinned) {
-  commandController->run_tab_command(commandId, ctx, closePinned);
 }
 
 bool AppBridge::saveDocument(uint64_t documentId) {

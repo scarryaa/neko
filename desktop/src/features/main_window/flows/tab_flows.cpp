@@ -134,7 +134,8 @@ bool TabFlows::revealTab(const neko::TabContextFfi &ctx) {
     return false;
   }
 
-  appBridge->runTabCommand("tab.reveal", ctx, false);
+  appBridge->runCommand<neko::TabContextFfi>(CommandType::Tab, "tab.reveal",
+                                             ctx, false);
   return true;
 }
 

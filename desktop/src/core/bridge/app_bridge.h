@@ -1,6 +1,7 @@
 #ifndef APP_BRIDGE_H
 #define APP_BRIDGE_H
 
+#include "types/command_type.h"
 #include <QObject>
 #include <neko-core/src/ffi/bridge.rs.h>
 #include <vector>
@@ -61,8 +62,19 @@ public:
   void executeJumpCommand(const neko::JumpCommandFfi &jumpCommand);
   void executeJumpKey(const QString &key);
 
-  void runTabCommand(const std::string &commandId,
-                     const neko::TabContextFfi &ctx, bool closePinned);
+  template <typename Context, typename... AdditionalArgs>
+  void runCommand(const CommandType &commandType, const std::string &commandId,
+                  const Context &ctx, AdditionalArgs &&...additionalArgs) {
+    if constexpr (std::is_same_v<Context, neko::TabContextFfi>) {
+      commandController->run_tab_command(commandId, ctx, additionalArgs...);
+    } else if constexpr (std::is_same_v<Context,
+                                        neko::FileExplorerContextFfi>) {
+      commandController->run_file_explorer_command(commandId, ctx,
+                                                   additionalArgs...);
+    } else {
+      static_assert(sizeof(Context) == 0, "Unsupported Context type");
+    }
+  }
 
   bool saveDocument(uint64_t documentId);
   bool saveDocumentAs(uint64_t documentId, const std::string &path);

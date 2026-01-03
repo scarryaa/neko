@@ -289,8 +289,7 @@ pub mod ffi {
         item_path: String,
         target_is_item: bool,
         item_is_directory: bool,
-        new_item_name: String,
-        rename_item_name: String,
+        item_is_expanded: bool,
     }
 
     #[derive(Default)]
@@ -533,6 +532,8 @@ pub mod ffi {
             self: &CommandController,
             id: &str,
             ctx: FileExplorerContextFfi,
+            new_item_name: String,
+            rename_item_name: String,
         ) -> bool;
         pub fn get_file_explorer_command_state(
             self: &CommandController,

@@ -31,6 +31,8 @@ WorkspaceCoordinator::WorkspaceCoordinator(
                 .appBridge = props.appBridge,
                 .editorBridge = props.editorBridge,
                 .uiHandles = props.uiHandles}),
+      fileExplorerFlows(
+          {.appBridge = props.appBridge, .uiHandles = props.uiHandles}),
       QObject(parent) {
   // TabBridge -> WorkspaceCoordinator
   connect(tabBridge, &TabBridge::activeTabChanged, this,
@@ -320,23 +322,6 @@ void WorkspaceCoordinator::openConfig() {
   }
 }
 
-void WorkspaceCoordinator::handleTabCommand(const std::string &commandId,
-                                            const neko::TabContextFfi &ctx,
-                                            bool forceClose) {
-  const auto succeeded = tabFlows.handleTabCommand(commandId, ctx, forceClose);
-
-  // TODO(scarlet): Figure out a better flow/handling for this and avoid
-  // matching on raw tab.reveal string.
-  if (succeeded && commandId == "tab.reveal") {
-    // Reveal File Explorer if hidden.
-    if (uiHandles.fileExplorerWidget->isHidden()) {
-      fileExplorerToggled();
-    }
-
-    emit tabRevealedInFileExplorer();
-  }
-}
-
 void WorkspaceCoordinator::copyTabPath(int tabId) {
   tabFlows.copyTabPath(tabId);
 }
@@ -378,7 +363,7 @@ void WorkspaceCoordinator::revealActiveTab() {
     }
   }
 
-  handleTabCommand("tab.reveal", ctx, false);
+  handleCommand("tab.reveal", ctx, false);
 }
 
 void WorkspaceCoordinator::moveTabBy(int delta, bool useHistory) {

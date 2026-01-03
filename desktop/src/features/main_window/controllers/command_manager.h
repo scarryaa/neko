@@ -1,6 +1,7 @@
 #ifndef COMMAND_MANAGER_H
 #define COMMAND_MANAGER_H
 
+#include "types/command_type.h"
 class CommandRegistry;
 class ContextMenuRegistry;
 class WorkspaceCoordinator;
@@ -26,7 +27,8 @@ public:
   void registerCommands();
   void registerProviders();
 
-  void handleTabCommand(const QString &commandId, const QVariant &variant);
+  void handleCommand(CommandType commandType, const QString &commandId,
+                     const QVariant &variant);
 
 private:
   CommandRegistry *commandRegistry;

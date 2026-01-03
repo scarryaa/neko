@@ -7,6 +7,9 @@
 #include <cstdint>
 #include <map>
 
+Q_DECLARE_METATYPE(neko::TabContextFfi);
+Q_DECLARE_METATYPE(neko::FileExplorerContextFfi);
+
 namespace {
 enum class TabCommandGroup : uint8_t {
   ClosePrimary = 0,
@@ -81,8 +84,6 @@ const CommandSpec<FileExplorerCommandGroup> fileExplorerCommandSpecs[] = {
      FileExplorerCommandGroup::HistoryOrModify},
     {"fileExplorer.expand", "Expand", "E", "",
      FileExplorerCommandGroup::TreeOperations},
-    {"fileExplorer.collapse", "Collapse", "C", "",
-     FileExplorerCommandGroup::TreeOperations},
     {"fileExplorer.collapseAll", "Collapse All", "Shift+C", "",
      FileExplorerCommandGroup::TreeOperations},
 };
@@ -119,9 +120,32 @@ inline bool isTabCommandEnabled(const std::string &commandId,
 
   return enabledMap[commandId];
 };
-} // namespace
 
-Q_DECLARE_METATYPE(neko::TabContextFfi);
+inline bool
+isFileExplorerCommandEnabled(const std::string &commandId,
+                             const neko::FileExplorerCommandStateFfi state) {
+  std::map<std::string, bool> enabledMap{
+      {"fileExplorer.newFile", state.can_make_new_file},
+      {"fileExplorer.newFolder", state.can_make_new_folder},
+      {"fileExplorer.reveal", state.can_reveal_in_system},
+      {"fileExplorer.openInTerminal", state.can_open_in_terminal},
+      {"fileExplorer.findInFolder", state.can_find_in_folder},
+      {"fileExplorer.cut", state.can_cut},
+      {"fileExplorer.copy", state.can_copy},
+      {"fileExplorer.duplicate", state.can_duplicate},
+      {"fileExplorer.paste", state.can_paste},
+      {"fileExplorer.copyPath", state.can_copy_path},
+      {"fileExplorer.copyRelativePath", state.can_copy_relative_path},
+      {"fileExplorer.showHistory", state.can_show_history},
+      {"fileExplorer.rename", state.can_rename},
+      {"fileExplorer.delete", state.can_delete},
+      {"fileExplorer.expand", state.can_expand_item},
+      {"fileExplorer.collapseAll", state.can_collapse_all},
+  };
+
+  return enabledMap[commandId];
+};
+} // namespace
 
 CommandManager::CommandManager(const CommandManagerProps &props)
     : commandRegistry(props.commandRegistry),
@@ -134,47 +158,127 @@ CommandManager::CommandManager(const CommandManagerProps &props)
   registerCommands();
 }
 
+// TODO(scarlet): Convert these to a loop?
 void CommandManager::registerCommands() {
   // Tab commands
-  commandRegistry->registerCommand("tab.close",
-                                   [this](const QVariant &variant) {
-                                     handleTabCommand("tab.close", variant);
-                                   });
+  commandRegistry->registerCommand(
+      "tab.close", [this](const QVariant &variant) {
+        handleCommand(CommandType::Tab, "tab.close", variant);
+      });
   commandRegistry->registerCommand(
       "tab.closeOthers", [this](const QVariant &variant) {
-        handleTabCommand("tab.closeOthers", variant);
+        handleCommand(CommandType::Tab, "tab.closeOthers", variant);
       });
-  commandRegistry->registerCommand("tab.closeLeft",
-                                   [this](const QVariant &variant) {
-                                     handleTabCommand("tab.closeLeft", variant);
-                                   });
+  commandRegistry->registerCommand(
+      "tab.closeLeft", [this](const QVariant &variant) {
+        handleCommand(CommandType::Tab, "tab.closeLeft", variant);
+      });
   commandRegistry->registerCommand(
       "tab.closeRight", [this](const QVariant &variant) {
-        handleTabCommand("tab.closeRight", variant);
+        handleCommand(CommandType::Tab, "tab.closeRight", variant);
       });
-  commandRegistry->registerCommand("tab.closeAll",
-                                   [this](const QVariant &variant) {
-                                     handleTabCommand("tab.closeAll", variant);
-                                   });
+  commandRegistry->registerCommand(
+      "tab.closeAll", [this](const QVariant &variant) {
+        handleCommand(CommandType::Tab, "tab.closeAll", variant);
+      });
   commandRegistry->registerCommand(
       "tab.closeClean", [this](const QVariant &variant) {
-        handleTabCommand("tab.closeClean", variant);
+        handleCommand(CommandType::Tab, "tab.closeClean", variant);
       });
-  commandRegistry->registerCommand("tab.copyPath",
-                                   [this](const QVariant &variant) {
-                                     handleTabCommand("tab.copyPath", variant);
-                                   });
-  commandRegistry->registerCommand("tab.reveal",
-                                   [this](const QVariant &variant) {
-                                     handleTabCommand("tab.reveal", variant);
-                                   });
-  commandRegistry->registerCommand("tab.copyPath",
-                                   [this](const QVariant &variant) {
-                                     handleTabCommand("tab.copyPath", variant);
-                                   });
+  commandRegistry->registerCommand(
+      "tab.copyPath", [this](const QVariant &variant) {
+        handleCommand(CommandType::Tab, "tab.copyPath", variant);
+      });
+  commandRegistry->registerCommand(
+      "tab.reveal", [this](const QVariant &variant) {
+        handleCommand(CommandType::Tab, "tab.reveal", variant);
+      });
+  commandRegistry->registerCommand(
+      "tab.copyPath", [this](const QVariant &variant) {
+        handleCommand(CommandType::Tab, "tab.copyPath", variant);
+      });
   commandRegistry->registerCommand("tab.pin", [this](const QVariant &variant) {
-    handleTabCommand("tab.pin", variant);
+    handleCommand(CommandType::Tab, "tab.pin", variant);
   });
+
+  // File Explorer commands
+  commandRegistry->registerCommand(
+      "fileExplorer.newFile", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer, "fileExplorer.newFile",
+                      variant);
+      });
+  commandRegistry->registerCommand(
+      "fileExplorer.newFolder", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer, "fileExplorer.newFolder",
+                      variant);
+      });
+  commandRegistry->registerCommand(
+      "fileExplorer.reveal", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer, "fileExplorer.reveal",
+                      variant);
+      });
+  commandRegistry->registerCommand(
+      "fileExplorer.openInTerminal", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer, "fileExplorer.openInTerminal",
+                      variant);
+      });
+  commandRegistry->registerCommand(
+      "fileExplorer.findInFolder", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer, "fileExplorer.findInFolder",
+                      variant);
+      });
+  commandRegistry->registerCommand(
+      "fileExplorer.cut", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer, "fileExplorer.cut", variant);
+      });
+  commandRegistry->registerCommand(
+      "fileExplorer.copy", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer, "fileExplorer.copy", variant);
+      });
+  commandRegistry->registerCommand(
+      "fileExplorer.duplicate", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer, "fileExplorer.duplicate",
+                      variant);
+      });
+  commandRegistry->registerCommand(
+      "fileExplorer.paste", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer, "fileExplorer.paste", variant);
+      });
+  commandRegistry->registerCommand(
+      "fileExplorer.copyPath", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer, "fileExplorer.copyPath",
+                      variant);
+      });
+  commandRegistry->registerCommand(
+      "fileExplorer.copyRelativePath", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer,
+                      "fileExplorer.copyRelativePath", variant);
+      });
+  commandRegistry->registerCommand(
+      "fileExplorer.showHistory", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer, "fileExplorer.showHistory",
+                      variant);
+      });
+  commandRegistry->registerCommand(
+      "fileExplorer.rename", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer, "fileExplorer.rename",
+                      variant);
+      });
+  commandRegistry->registerCommand(
+      "fileExplorer.delete", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer, "fileExplorer.delete",
+                      variant);
+      });
+  commandRegistry->registerCommand(
+      "fileExplorer.expand", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer, "fileExplorer.expand",
+                      variant);
+      });
+  commandRegistry->registerCommand(
+      "fileExplorer.collapseAll", [this](const QVariant &variant) {
+        handleCommand(CommandType::FileExplorer, "fileExplorer.collapseAll",
+                      variant);
+      });
 }
 
 void CommandManager::registerProviders() {
@@ -258,13 +362,18 @@ void CommandManager::registerProviders() {
           firstItem = false;
           lastGroup = commandSpec.group;
 
-          bool enabled = isTabCommandEnabled(commandId.toStdString(), state);
-          bool checked = commandId == "tab.pin" ? state.is_pinned : false;
-          const auto &pinLabel = state.is_pinned ? "Unpin" : "Pin";
+          bool enabled =
+              isFileExplorerCommandEnabled(commandId.toStdString(), state);
+          bool checked =
+              commandId == "tab.expand" ? ctx.item_is_expanded : false;
+          const auto &expandOrCollapseLabel =
+              ctx.item_is_directory && !ctx.item_is_expanded ? "Expand"
+                                                             : "Collapse";
 
           addItem(items, ContextMenuItemKind::Action, commandId,
-                  QString::fromUtf8(commandId == "tab.pin" ? pinLabel
-                                                           : commandSpec.label),
+                  QString::fromUtf8(commandId == "tab.expand"
+                                        ? expandOrCollapseLabel
+                                        : commandSpec.label),
                   QString::fromUtf8(commandSpec.shortcut),
                   QString::fromUtf8(commandSpec.iconKey), enabled, true,
                   checked);
@@ -274,12 +383,24 @@ void CommandManager::registerProviders() {
       });
 }
 
-void CommandManager::handleTabCommand(const QString &commandId,
-                                      const QVariant &variant) {
-  const auto ctx = variant.value<neko::TabContextFfi>();
+void CommandManager::handleCommand(const CommandType commandType,
+                                   const QString &commandId,
+                                   const QVariant &variant) {
   const bool shiftHeld =
       QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier);
 
-  workspaceCoordinator->handleTabCommand(commandId.toStdString(), ctx,
-                                         shiftHeld);
+  switch (commandType) {
+  case CommandType::Tab: {
+    const auto ctx = variant.value<neko::TabContextFfi>();
+    workspaceCoordinator->handleCommand<neko::TabContextFfi>(
+        commandId.toStdString(), ctx, shiftHeld);
+    break;
+  }
+  case CommandType::FileExplorer: {
+    const auto ctx = variant.value<neko::FileExplorerContextFfi>();
+    workspaceCoordinator->handleCommand<neko::FileExplorerContextFfi>(
+        commandId.toStdString(), ctx, shiftHeld);
+    break;
+  }
+  }
 }

@@ -104,8 +104,6 @@ pub struct FileExplorerContext {
     pub item_path: PathBuf,
     pub target_is_item: bool,
     pub item_is_directory: bool,
-    pub new_item_name: String,
-    pub rename_item_name: String,
 }
 
 #[derive(Default)]

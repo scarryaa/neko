@@ -46,6 +46,8 @@ pub fn run_file_explorer_command(
     app_state: &mut AppState,
     id: &str,
     ctx: &FileExplorerContext,
+    new_item_name: Option<String>,
+    rename_item_name: Option<String>,
 ) -> Result<(), FileExplorerCommandError> {
     use FileExplorerCommand::*;
 
@@ -67,7 +69,11 @@ pub fn run_file_explorer_command(
 
     match command {
         NewFile => {
-            let name = PathBuf::from(ctx.new_item_name.clone());
+            let name = PathBuf::from(
+                new_item_name
+                    .expect("New item name is required for new file operation")
+                    .clone(),
+            );
 
             if FileIoManager::exists(target_directory.join(&name)) {
                 FileIoManager::write(target_directory.join(name), "")
@@ -79,7 +85,11 @@ pub fn run_file_explorer_command(
             tree.set_expanded(&target_directory);
         }
         NewFolder => {
-            let name = PathBuf::from(ctx.new_item_name.clone());
+            let name = PathBuf::from(
+                new_item_name
+                    .expect("New item name is required for new folder operation")
+                    .clone(),
+            );
 
             if FileIoManager::exists(target_directory.join(&name)) {
                 FileIoManager::create_directory(target_directory.join(name))
@@ -143,7 +153,9 @@ pub fn run_file_explorer_command(
             // TODO(scarlet): Implement this using git history.
         }
         Rename => {
-            let new_filename = PathBuf::from(&ctx.rename_item_name);
+            let new_filename = PathBuf::from(
+                &rename_item_name.expect("Rename item name is required for rename operation"),
+            );
             let parent_dir = ctx.item_path.parent().ok_or_else(|| {
                 FileExplorerCommandError::UnknownCommand(
                     "Cannot rename the file system root".into(),
