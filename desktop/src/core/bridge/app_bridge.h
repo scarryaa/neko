@@ -52,6 +52,8 @@ public:
   [[nodiscard]] rust::Box<neko::FileTreeController> getFileTreeController();
   [[nodiscard]] neko::TabCommandStateFfi
   getTabCommandState(const neko::TabContextFfi &ctx) const;
+  [[nodiscard]] neko::FileExplorerCommandStateFfi
+  getFileExplorerCommandState(const neko::FileExplorerContextFfi &ctx) const;
   std::vector<neko::TabCommandFfi> getAvailableTabCommands();
   std::vector<neko::CommandFfi> getAvailableCommands();
   std::vector<neko::JumpCommandFfi> getAvailableJumpCommands();

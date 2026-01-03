@@ -44,6 +44,10 @@ class TabCommandFfi;
 class TabContextFfi;
 class TabCommandStateFfi;
 
+class FileExplorerCommandFfi;
+class FileExplorerContextFfi;
+class FileExplorerCommandStateFfi;
+
 enum class AddCursorDirectionKind : uint8_t;
 enum class CloseTabOperationTypeFfi : uint8_t;
 class AddCursorDirectionFfi;

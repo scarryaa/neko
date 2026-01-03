@@ -1,0 +1,132 @@
+use std::{path::PathBuf, str::FromStr};
+
+#[derive(Debug)]
+pub enum FileExplorerCommandError {
+    UnknownCommand(String),
+}
+
+#[derive(Clone)]
+pub enum FileExplorerCommand {
+    NewFile,
+    NewFolder,
+    Reveal,
+    OpenInTerminal,
+    FindInFolder,
+    Cut,
+    Copy,
+    Duplicate,
+    Paste,
+    CopyPath,
+    CopyRelativePath,
+    ShowHistory,
+    Rename,
+    Delete,
+    Expand,
+    Collapse,
+    CollapseAll,
+}
+
+impl FileExplorerCommand {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            FileExplorerCommand::NewFile => "fileExplorer.newFile",
+            FileExplorerCommand::NewFolder => "fileExplorer.newFolder",
+            FileExplorerCommand::Reveal => "fileExplorer.reveal",
+            FileExplorerCommand::OpenInTerminal => "fileExplorer.openInTerminal",
+            FileExplorerCommand::FindInFolder => "fileExplorer.findInFolder",
+            FileExplorerCommand::Cut => "fileExplorer.cut",
+            FileExplorerCommand::Copy => "fileExplorer.copy",
+            FileExplorerCommand::Duplicate => "fileExplorer.duplicate",
+            FileExplorerCommand::Paste => "fileExplorer.paste",
+            FileExplorerCommand::CopyPath => "fileExplorer.copyPath",
+            FileExplorerCommand::CopyRelativePath => "fileExplorer.copyRelativePath",
+            FileExplorerCommand::ShowHistory => "fileExplorer.showHistory",
+            FileExplorerCommand::Rename => "fileExplorer.rename",
+            FileExplorerCommand::Delete => "fileExplorer.delete",
+            FileExplorerCommand::Expand => "fileExplorer.expand",
+            FileExplorerCommand::Collapse => "fileExplorer.collapse",
+            FileExplorerCommand::CollapseAll => "fileExplorer.collapseAll",
+        }
+    }
+
+    pub fn all() -> &'static [FileExplorerCommand] {
+        &[
+            FileExplorerCommand::NewFile,
+            FileExplorerCommand::NewFolder,
+            FileExplorerCommand::Reveal,
+            FileExplorerCommand::OpenInTerminal,
+            FileExplorerCommand::FindInFolder,
+            FileExplorerCommand::Cut,
+            FileExplorerCommand::Copy,
+            FileExplorerCommand::Duplicate,
+            FileExplorerCommand::Paste,
+            FileExplorerCommand::CopyPath,
+            FileExplorerCommand::CopyRelativePath,
+            FileExplorerCommand::ShowHistory,
+            FileExplorerCommand::Rename,
+            FileExplorerCommand::Delete,
+            FileExplorerCommand::Expand,
+            FileExplorerCommand::Collapse,
+            FileExplorerCommand::CollapseAll,
+        ]
+    }
+}
+
+impl FromStr for FileExplorerCommand {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "fileExplorer.newFile" => Ok(Self::NewFile),
+            "fileExplorer.newFolder" => Ok(Self::NewFolder),
+            "fileExplorer.reveal" => Ok(Self::Reveal),
+            "fileExplorer.openInTerminal" => Ok(Self::OpenInTerminal),
+            "fileExplorer.findInFolder" => Ok(Self::FindInFolder),
+            "fileExplorer.cut" => Ok(Self::Cut),
+            "fileExplorer.copy" => Ok(Self::Copy),
+            "fileExplorer.duplicate" => Ok(Self::Duplicate),
+            "fileExplorer.paste" => Ok(Self::Paste),
+            "fileExplorer.copyPath" => Ok(Self::CopyPath),
+            "fileExplorer.copyRelativePath" => Ok(Self::CopyRelativePath),
+            "fileExplorer.showHistory" => Ok(Self::ShowHistory),
+            "fileExplorer.rename" => Ok(Self::Rename),
+            "fileExplorer.delete" => Ok(Self::Delete),
+            "fileExplorer.expand" => Ok(Self::Expand),
+            "fileExplorer.collapse" => Ok(Self::Collapse),
+            "fileExplorer.collapseAll" => Ok(Self::CollapseAll),
+            _ => Err(()),
+        }
+    }
+}
+
+pub struct FileExplorerContext {
+    item_path: PathBuf,
+    target_is_item: bool,
+    item_is_directory: bool,
+}
+
+pub struct FileExplorerCommandState {
+    pub can_make_new_file: bool,
+    pub can_make_new_folder: bool,
+    pub can_reveal_in_system: bool,
+    pub can_open_in_terminal: bool,
+
+    pub can_find_in_folder: bool,
+
+    pub can_cut: bool,
+    pub can_copy: bool,
+    pub can_duplicate: bool,
+    pub can_paste: bool,
+
+    pub can_copy_path: bool,
+    pub can_copy_relative_path: bool,
+
+    pub can_show_history: bool,
+
+    pub can_rename: bool,
+    pub can_delete: bool,
+
+    pub can_expand_item: bool,
+    pub can_collapse_item: bool,
+    pub can_collapse_all: bool,
+}

@@ -28,6 +28,11 @@ AppBridge::getTabCommandState(const neko::TabContextFfi &ctx) const {
   return commandController->get_tab_command_state(ctx.id);
 }
 
+neko::FileExplorerCommandStateFfi AppBridge::getFileExplorerCommandState(
+    const neko::FileExplorerContextFfi &ctx) const {
+  return commandController->get_file_explorer_command_state(ctx.id);
+}
+
 std::vector<neko::CommandFfi> AppBridge::getAvailableCommands() {
   auto commands = commandController->get_available_commands();
   return {commands.begin(), commands.end()};

@@ -1,7 +1,8 @@
 use crate::{
     AppState, ConfigManager, ThemeManager, execute_command, execute_jump_command, execute_jump_key,
     ffi::{
-        CommandFfi, CommandKindFfi, CommandResultFfi, JumpCommandFfi, TabCommandFfi,
+        CommandFfi, CommandKindFfi, CommandResultFfi, FileExplorerCommandFfi,
+        FileExplorerCommandStateFfi, FileExplorerContextFfi, JumpCommandFfi, TabCommandFfi,
         TabCommandStateFfi, TabContextFfi,
     },
     get_available_commands, get_available_jump_commands, get_available_tab_commands,
@@ -36,6 +37,44 @@ impl CommandController {
         };
 
         commands.into_iter().map(|cmd| cmd.into()).collect()
+    }
+
+    // File Explorer Commands
+    pub fn run_file_explorer_command(&self, id: &str, ctx: FileExplorerContextFfi) -> bool {
+        let mut app_state = self.app_state.borrow_mut();
+        run_file_explorer_command(&mut app_state, id, &ctx.into()).is_ok()
+    }
+
+    pub fn get_file_explorer_command_state(&self, id: u64) -> FileExplorerCommandStateFfi {
+        let app_state = self.app_state.borrow();
+
+        match file_explorer_command_state(&app_state, id.into()) {
+            Ok(state) => state.into(),
+            Err(_) => TabCommandStateFfi {
+                can_close: false,
+                can_close_others: false,
+                can_close_left: false,
+                can_close_right: false,
+                can_close_all: false,
+                can_close_clean: false,
+                can_copy_path: false,
+                can_reveal: false,
+                is_pinned: false,
+            },
+        }
+    }
+
+    pub fn get_available_file_explorer_commands(&self) -> Vec<FileExplorerCommandFfi> {
+        let Ok(commands) = get_available_file_explorer_commands() else {
+            return Vec::new();
+        };
+
+        commands
+            .into_iter()
+            .map(|cmd| FileExplorerCommandFfi {
+                id: cmd.as_str().to_string(),
+            })
+            .collect()
     }
 
     // Tab Commands

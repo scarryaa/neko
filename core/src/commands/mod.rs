@@ -1,9 +1,11 @@
 mod executor;
+pub mod file_explorer;
 pub mod jump;
 pub mod tab;
 mod types;
 
 pub use executor::{execute_command, get_available_commands};
+pub use file_explorer::*;
 pub use jump::{
     DocumentTarget, JumpAliasInfo, JumpCommand, JumpHistory, JumpManagementCommand,
     JumpManagementResult, LineTarget, execute_jump_command, execute_jump_key,

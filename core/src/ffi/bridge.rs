@@ -285,6 +285,42 @@ pub mod ffi {
         file_path: String,
     }
 
+    struct FileExplorerContextFfi {
+        item_path: String,
+        target_is_item: bool,
+        item_is_directory: bool,
+    }
+
+    struct FileExplorerCommandStateFfi {
+        can_make_new_file: bool,
+        can_make_new_folder: bool,
+        can_reveal_in_system: bool,
+        can_open_in_terminal: bool,
+
+        can_find_in_folder: bool,
+
+        can_cut: bool,
+        can_copy: bool,
+        can_duplicate: bool,
+        can_paste: bool,
+
+        can_copy_path: bool,
+        can_copy_relative_path: bool,
+
+        can_show_history: bool,
+
+        can_rename: bool,
+        can_delete: bool,
+
+        can_expand_item: bool,
+        can_collapse_item: bool,
+        can_collapse_all: bool,
+    }
+
+    struct FileExplorerCommandFfi {
+        id: String,
+    }
+
     struct TabCommandStateFfi {
         can_close: bool,
         can_close_others: bool,
@@ -488,6 +524,20 @@ pub mod ffi {
         ) -> bool;
         pub fn get_tab_command_state(self: &CommandController, id: u64) -> TabCommandStateFfi;
         pub fn get_available_tab_commands(self: &CommandController) -> Vec<TabCommandFfi>;
+
+        // File Explorer Commands
+        pub fn run_file_explorer_command(
+            self: &CommandController,
+            id: &str,
+            ctx: FileExplorerContextFfi,
+        ) -> bool;
+        pub fn get_file_explorer_command_state(
+            self: &CommandController,
+            id: u64,
+        ) -> FileExplorerCommandStateFfi;
+        pub fn get_available_file_explorer_commands(
+            self: &CommandController,
+        ) -> Vec<FileExplorerCommandFfi>;
 
         // General Commands
         pub(crate) fn new_command(

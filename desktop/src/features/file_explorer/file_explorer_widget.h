@@ -1,7 +1,10 @@
 #ifndef FILE_EXPLORER_WIDGET_H
 #define FILE_EXPLORER_WIDGET_H
 
+#include "features/context_menu/command_registry.h"
+#include "features/context_menu/context_menu_registry.h"
 #include "features/file_explorer/bridge/file_tree_bridge.h"
+#include "theme/theme_provider.h"
 #include "theme/types/types.h"
 #include "types/qt_types_fwd.h"
 #include <QFont>
@@ -19,6 +22,9 @@ public:
     FileTreeBridge *fileTreeBridge;
     QFont font;
     FileExplorerTheme theme;
+    ThemeProvider *themeProvider;
+    ContextMenuRegistry *contextMenuRegistry;
+    CommandRegistry *commandRegistry;
   };
 
   explicit FileExplorerWidget(const FileExplorerProps &props,
@@ -36,6 +42,7 @@ protected:
   void resizeEvent(QResizeEvent *event) override;
   void focusInEvent(QFocusEvent *event) override;
   void focusOutEvent(QFocusEvent *event) override;
+  void contextMenuEvent(QContextMenuEvent *event) override;
 
 signals:
   void fileSelected(std::string path, bool shouldFocusEditor = true);
@@ -90,6 +97,9 @@ private:
 
   FileTreeBridge *fileTreeBridge;
   QPushButton *directorySelectionButton;
+  ContextMenuRegistry &contextMenuRegistry;
+  CommandRegistry &commandRegistry;
+  ThemeProvider *themeProvider;
 
   FileExplorerTheme theme;
   QFont font;

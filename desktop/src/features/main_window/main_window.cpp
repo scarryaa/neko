@@ -167,7 +167,10 @@ void MainWindow::setupWidgets(TabBridge *tabBridge, AppBridge *appBridge) {
   fileExplorerWidget =
       new FileExplorerWidget({.fileTreeBridge = fileTreeBridge,
                               .font = fonts.fileExplorerFont,
-                              .theme = themes.fileExplorerTheme},
+                              .theme = themes.fileExplorerTheme,
+                              .themeProvider = themeProvider,
+                              .contextMenuRegistry = &contextMenuRegistry,
+                              .commandRegistry = &commandRegistry},
                              this);
   commandPaletteWidget =
       new CommandPaletteWidget({.appBridge = appBridge,

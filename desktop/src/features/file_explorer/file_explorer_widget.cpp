@@ -1,4 +1,5 @@
 #include "file_explorer_widget.h"
+#include "features/context_menu/context_menu_widget.h"
 #include "features/file_explorer/bridge/file_tree_bridge.h"
 #include "utils/ui_utils.h"
 #include <QApplication>
@@ -35,7 +36,10 @@
 FileExplorerWidget::FileExplorerWidget(const FileExplorerProps &props,
                                        QWidget *parent)
     : QScrollArea(parent), fileTreeBridge(props.fileTreeBridge),
-      font(props.font), theme(props.theme), fontMetrics(font) {
+      font(props.font), theme(props.theme), fontMetrics(font),
+      contextMenuRegistry(*props.contextMenuRegistry),
+      commandRegistry(*props.commandRegistry),
+      themeProvider(props.themeProvider) {
   setFocusPolicy(Qt::StrongFocus);
   setFrameShape(QFrame::NoFrame);
   setAutoFillBackground(false);
@@ -828,4 +832,24 @@ int FileExplorerWidget::convertMousePositionToRow(double yPos) {
   const int targetRow = static_cast<int>((yPos + scrollY) / lineHeight);
 
   return targetRow;
+}
+
+void FileExplorerWidget::contextMenuEvent(QContextMenuEvent *event) {
+  neko::FileExplorerContextFfi ctx{
+      .item_path = "", .target_is_item = true, .item_is_directory = true};
+
+  const QVariant variant = QVariant::fromValue(ctx);
+  const auto items = contextMenuRegistry.build("fileExplorer", variant);
+
+  auto *menu = new ContextMenuWidget(
+      {.themeProvider = themeProvider, .font = font}, nullptr);
+  menu->setItems(items);
+
+  connect(menu, &ContextMenuWidget::actionTriggered, this,
+          [this, variant](const QString &actionId) {
+            commandRegistry.run(actionId, variant);
+          });
+
+  menu->showMenu(event->globalPos());
+  event->accept();
 }

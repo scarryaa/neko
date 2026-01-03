@@ -16,18 +16,27 @@ enum class TabCommandGroup : uint8_t {
   Path = 4,
 };
 
-struct TabCommandSpec {
+enum class FileExplorerCommandGroup : uint8_t {
+  CreateOrOpen = 1,        // New File / New Folder / Reveal / Open in Terminal
+  Search = 2,              // Find in Folder
+  ClipboardOperations = 3, // Cut / Copy / Paste / Duplicate
+  PathOperations = 4,      // Copy Path / Copy Relative Path
+  HistoryOrModify = 5,     // Show History / Rename / Delete
+  TreeOperations = 7,      // Expand / Collapse / Collapse All
+};
+
+template <typename T> struct CommandSpec {
   const char *id;
   const char *label;
   const char *shortcut;
   const char *iconKey;
-  TabCommandGroup group;
+  T group;
 };
 
 namespace k {
 // TODO(scarlet): Map between Cmd/Meta/Ctrl depending on platform
 // NOLINTNEXTLINE
-const TabCommandSpec tabCommandSpecs[] = {
+const CommandSpec<TabCommandGroup> tabCommandSpecs[] = {
     {"tab.close", "Close", "Ctrl+W", "", TabCommandGroup::ClosePrimary},
     {"tab.closeOthers", "Close Others", "", "", TabCommandGroup::ClosePrimary},
     {"tab.closeLeft", "Close Left", "", "", TabCommandGroup::CloseSides},
@@ -38,6 +47,44 @@ const TabCommandSpec tabCommandSpecs[] = {
     {"tab.copyPath", "Copy Path", "", "", TabCommandGroup::Path},
     {"tab.reveal", "Reveal in Explorer", "Cmd+Shift+E", "",
      TabCommandGroup::Path},
+};
+
+// NOLINTNEXTLINE
+const CommandSpec<FileExplorerCommandGroup> fileExplorerCommandSpecs[] = {
+    {"fileExplorer.newFile", "New File", "%", "",
+     FileExplorerCommandGroup::CreateOrOpen},
+    {"fileExplorer.newFolder", "New Folder", "D", "",
+     FileExplorerCommandGroup::CreateOrOpen},
+    {"fileExplorer.reveal", "Show on Disk", "X", "",
+     FileExplorerCommandGroup::CreateOrOpen},
+    {"fileExplorer.openInTerminal", "Open In Terminal", "", "",
+     FileExplorerCommandGroup::CreateOrOpen},
+    {"fileExplorer.findInFolder", "Find in Folder", "/", "",
+     FileExplorerCommandGroup::Search},
+    {"fileExplorer.cut", "Cut", "Ctrl+X", "",
+     FileExplorerCommandGroup::ClipboardOperations},
+    {"fileExplorer.copy", "Copy", "Ctrl+C", "",
+     FileExplorerCommandGroup::ClipboardOperations},
+    {"fileExplorer.duplicate", "Duplicate", "Ctrl+D", "",
+     FileExplorerCommandGroup::ClipboardOperations},
+    {"fileExplorer.paste", "Paste", "Ctrl+V", "",
+     FileExplorerCommandGroup::ClipboardOperations},
+    {"fileExplorer.copyPath", "Copy Path", "Ctrl+Option+C", "",
+     FileExplorerCommandGroup::PathOperations},
+    {"fileExplorer.copyRelativePath", "Copy Relative Path",
+     "Ctrl+Option+Shift+C", "", FileExplorerCommandGroup::PathOperations},
+    {"fileExplorer.showHistory", "File History", "", "",
+     FileExplorerCommandGroup::HistoryOrModify},
+    {"fileExplorer.rename", "Rename", "Shift+R", "",
+     FileExplorerCommandGroup::HistoryOrModify},
+    {"fileExplorer.delete", "Delete", "Shift+D", "",
+     FileExplorerCommandGroup::HistoryOrModify},
+    {"fileExplorer.expand", "Expand", "E", "",
+     FileExplorerCommandGroup::TreeOperations},
+    {"fileExplorer.collapse", "Collapse", "C", "",
+     FileExplorerCommandGroup::TreeOperations},
+    {"fileExplorer.collapseAll", "Collapse All", "Shift+C", "",
+     FileExplorerCommandGroup::TreeOperations},
 };
 } // namespace k
 
@@ -176,6 +223,55 @@ void CommandManager::registerProviders() {
 
     return items;
   });
+
+  contextMenuRegistry->registerProvider(
+      "fileExplorer", [this](const QVariant &variant) {
+        auto availableCommands = appBridge->getCommandController()
+                                     ->get_available_file_explorer_commands();
+
+        const auto ctx = variant.value<neko::FileExplorerContextFfi>();
+        const auto state = appBridge->getFileExplorerCommandState(ctx);
+        QVector<ContextMenuItem> items;
+
+        QSet<QString> availableIds;
+        for (auto &command : availableCommands) {
+          availableIds.insert(QString::fromStdString(command.id.c_str()));
+        }
+
+        bool firstItem = true;
+        std::optional<FileExplorerCommandGroup> lastGroup;
+
+        for (const auto &commandSpec : k::fileExplorerCommandSpecs) {
+          const QString commandId = QString::fromUtf8(commandSpec.id);
+          if (!availableIds.contains(commandId)) {
+            continue;
+          }
+
+          // Insert separators when changing groups
+          if (!firstItem) {
+            if (!lastGroup.has_value() ||
+                commandSpec.group != lastGroup.value()) {
+              addSeparatorIfNotEmpty(items);
+            }
+          }
+
+          firstItem = false;
+          lastGroup = commandSpec.group;
+
+          bool enabled = isTabCommandEnabled(commandId.toStdString(), state);
+          bool checked = commandId == "tab.pin" ? state.is_pinned : false;
+          const auto &pinLabel = state.is_pinned ? "Unpin" : "Pin";
+
+          addItem(items, ContextMenuItemKind::Action, commandId,
+                  QString::fromUtf8(commandId == "tab.pin" ? pinLabel
+                                                           : commandSpec.label),
+                  QString::fromUtf8(commandSpec.shortcut),
+                  QString::fromUtf8(commandSpec.iconKey), enabled, true,
+                  checked);
+        }
+
+        return items;
+      });
 }
 
 void CommandManager::handleTabCommand(const QString &commandId,
