@@ -21,44 +21,53 @@ TabFlows::TabFlows(const TabFlowsProps &props)
     : tabBridge(props.tabBridge), appBridge(props.appBridge),
       editorBridge(props.editorBridge), uiHandles(props.uiHandles) {}
 
-void TabFlows::handleTabCommand(const std::string &commandId,
+bool TabFlows::handleTabCommand(const std::string &commandId,
                                 const neko::TabContextFfi &ctx,
                                 bool forceClose) {
   if (commandId.empty()) {
-    return;
+    return false;
   }
 
   const int tabId = static_cast<int>(ctx.id);
 
   // TODO(scarlet): Avoid matching on hardcoded command ids
+  bool succeeded = false;
   if (commandId == "tab.close") {
-    closeTabs(neko::CloseTabOperationTypeFfi::Single, tabId, forceClose);
+    succeeded =
+        closeTabs(neko::CloseTabOperationTypeFfi::Single, tabId, forceClose);
   } else if (commandId == "tab.closeOthers") {
-    closeTabs(neko::CloseTabOperationTypeFfi::Others, tabId, forceClose);
+    succeeded =
+        closeTabs(neko::CloseTabOperationTypeFfi::Others, tabId, forceClose);
   } else if (commandId == "tab.closeLeft") {
-    closeTabs(neko::CloseTabOperationTypeFfi::Left, tabId, forceClose);
+    succeeded =
+        closeTabs(neko::CloseTabOperationTypeFfi::Left, tabId, forceClose);
   } else if (commandId == "tab.closeRight") {
-    closeTabs(neko::CloseTabOperationTypeFfi::Right, tabId, forceClose);
+    succeeded =
+        closeTabs(neko::CloseTabOperationTypeFfi::Right, tabId, forceClose);
   } else if (commandId == "tab.closeAll") {
-    closeTabs(neko::CloseTabOperationTypeFfi::All, tabId, forceClose);
+    succeeded =
+        closeTabs(neko::CloseTabOperationTypeFfi::All, tabId, forceClose);
   } else if (commandId == "tab.closeClean") {
-    closeTabs(neko::CloseTabOperationTypeFfi::Clean, tabId, forceClose);
+    succeeded =
+        closeTabs(neko::CloseTabOperationTypeFfi::Clean, tabId, forceClose);
   } else if (commandId == "tab.copyPath") {
-    copyTabPath(tabId);
+    succeeded = copyTabPath(tabId);
   } else if (commandId == "tab.reveal") {
-    revealTab(ctx);
+    succeeded = revealTab(ctx);
   } else if (commandId == "tab.pin") {
-    tabTogglePin(tabId, ctx.is_pinned);
+    succeeded = tabTogglePin(tabId, ctx.is_pinned);
   }
+
+  return succeeded;
 }
 
-void TabFlows::closeTabs(neko::CloseTabOperationTypeFfi operationType,
+bool TabFlows::closeTabs(neko::CloseTabOperationTypeFfi operationType,
                          int anchorTabId, bool forceClose) {
   const auto snapshot = tabBridge->getTabsSnapshot();
   if (!snapshot.active_present) {
     // Close the window if there are no tabs
     QApplication::quit();
-    return;
+    return false;
   }
 
   saveScrollOffsetsForActiveTab();
@@ -68,10 +77,10 @@ void TabFlows::closeTabs(neko::CloseTabOperationTypeFfi operationType,
 
   auto ids = tabBridge->getCloseTabIds(operationType, anchorTabId, closePinned);
 
-  closeManyTabs(ids, forceClose,
-                [this, anchorTabId, operationType, closePinned]() {
-                  tabBridge->closeTabs(operationType, anchorTabId, closePinned);
-                });
+  return closeManyTabs(
+      ids, forceClose, [this, anchorTabId, operationType, closePinned]() {
+        tabBridge->closeTabs(operationType, anchorTabId, closePinned);
+      });
 }
 
 void TabFlows::fileSaved(bool saveAs) {
@@ -90,15 +99,18 @@ void TabFlows::fileSaved(bool saveAs) {
   }
 }
 
-void TabFlows::tabTogglePin(int tabId, bool isPinned) {
+bool TabFlows::tabTogglePin(int tabId, bool isPinned) {
+  bool succeeded = false;
   if (isPinned) {
-    tabBridge->unpinTab(tabId);
+    succeeded = tabBridge->unpinTab(tabId);
   } else {
-    tabBridge->pinTab(tabId);
+    succeeded = tabBridge->pinTab(tabId);
   }
+
+  return succeeded;
 }
 
-void TabFlows::copyTabPath(int tabId) {
+bool TabFlows::copyTabPath(int tabId) {
   const auto snapshot = tabBridge->getTabsSnapshot();
   QString path;
 
@@ -110,10 +122,11 @@ void TabFlows::copyTabPath(int tabId) {
   }
 
   if (path.isEmpty()) {
-    return;
+    return false;
   }
 
   QApplication::clipboard()->setText(path);
+  return true;
 }
 
 bool TabFlows::revealTab(const neko::TabContextFfi &ctx) {

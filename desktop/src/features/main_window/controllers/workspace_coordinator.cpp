@@ -314,7 +314,18 @@ void WorkspaceCoordinator::openConfig() {
 void WorkspaceCoordinator::handleTabCommand(const std::string &commandId,
                                             const neko::TabContextFfi &ctx,
                                             bool forceClose) {
-  tabFlows.handleTabCommand(commandId, ctx, forceClose);
+  const auto succeeded = tabFlows.handleTabCommand(commandId, ctx, forceClose);
+
+  // TODO(scarlet): Figure out a better flow/handling for this and avoid
+  // matching on raw tab.reveal string.
+  if (succeeded && commandId == "tab.reveal") {
+    // Reveal File Explorer if hidden.
+    if (uiHandles.fileExplorerWidget->isHidden()) {
+      fileExplorerToggled();
+    }
+
+    emit tabRevealedInFileExplorer();
+  }
 }
 
 void WorkspaceCoordinator::copyTabPath(int tabId) {
@@ -339,6 +350,7 @@ SaveResult WorkspaceCoordinator::saveTab(int tabId, bool isSaveAs) {
   return tabFlows.saveTab(tabId, isSaveAs);
 }
 
+// TODO(scarlet): Merge this with the other tab command handling?
 void WorkspaceCoordinator::revealActiveTab() {
   const auto snapshot = tabBridge->getTabsSnapshot();
   if (!snapshot.active_present) {

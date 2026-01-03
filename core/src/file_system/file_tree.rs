@@ -271,7 +271,9 @@ impl FileTree {
         ancestor_paths.reverse();
 
         for ancestor_path in ancestor_paths {
-            self.set_expanded(&ancestor_path);
+            if self.expanded_paths.insert(ancestor_path.clone()) {
+                let _ = self.get_children(&ancestor_path);
+            }
         }
 
         Ok(())

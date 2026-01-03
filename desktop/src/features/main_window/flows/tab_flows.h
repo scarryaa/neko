@@ -30,10 +30,10 @@ public:
   ~TabFlows() = default;
 
   // High-level tab commands
-  void handleTabCommand(const std::string &commandId,
+  bool handleTabCommand(const std::string &commandId,
                         const neko::TabContextFfi &ctx, bool forceClose);
 
-  void closeTabs(neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
+  bool closeTabs(neko::CloseTabOperationTypeFfi operationType, int anchorTabId,
                  bool forceClose);
 
   void newTab();
@@ -42,9 +42,9 @@ public:
   static void moveTabBy(int delta, bool useHistory);
 
   // Actions on single tabs
-  void copyTabPath(int tabId);
+  bool copyTabPath(int tabId);
   bool revealTab(const neko::TabContextFfi &ctx);
-  void tabTogglePin(int tabId, bool isPinned);
+  bool tabTogglePin(int tabId, bool isPinned);
   void fileSaved(bool saveAs);
 
   // Editor / buffer changes
