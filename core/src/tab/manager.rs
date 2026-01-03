@@ -135,6 +135,12 @@ impl TabManager {
     }
 
     // Setters
+    pub fn update_tab_view_id(&mut self, tab_id: TabId, view_id: ViewId) -> Result<(), TabError> {
+        let tab = self.get_tab_mut(tab_id)?;
+        tab.set_view_id(view_id);
+        Ok(())
+    }
+
     /// Creates a new tab associated with a given [`DocumentId`] and activates it, optionally
     /// adding it to history.
     pub fn add_tab_for_document(

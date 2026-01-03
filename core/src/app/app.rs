@@ -118,7 +118,8 @@ impl AppState {
     }
 
     pub fn set_active_view_id(&mut self, id: ViewId) {
-        self.view_manager.set_active_view(id);
+        // TODO(scarlet) handle errors
+        _ = self.view_manager.set_active_view(id);
     }
 
     /// Helper to get the active view and its document.
@@ -247,7 +248,8 @@ impl AppState {
         if !self.tab_manager.get_tabs().is_empty() {
             // Sync the active view
             if let Ok(tab) = self.tab_manager.get_tab(active_tab_id) {
-                self.view_manager.set_active_view(tab.get_view_id());
+                // TODO(scarlet) handle errors
+                _ = self.view_manager.set_active_view(tab.get_view_id());
             }
         } else {
             self.view_manager.clear_active_view();
@@ -262,15 +264,35 @@ impl AppState {
         &mut self,
         path: &Path,
         add_to_history: bool,
-        // TODO(scarlet): Should not be a DocumentResult?
+        // TODO(scarlet): Make a generic AppStateError type?
     ) -> Result<TabId, DocumentError> {
         // Open (or reuse) the document for the given path
         let document_id = self.document_manager.open_document(path)?;
 
         // Try to find an existing tab for the document
         if let Some(tab_id) = self.tab_manager.find_tab_by_document(document_id) {
-            if let Ok(tab) = self.tab_manager.get_tab(tab_id) {
-                self.view_manager.set_active_view(tab.get_view_id());
+            let existing_view_id = self.tab_manager.get_tab(tab_id).map(|t| t.get_view_id());
+
+            if let Ok(view_id) = existing_view_id {
+                // Try to set the active view
+                if self.view_manager.set_active_view(view_id).is_ok() {
+                    return Ok(tab_id);
+                }
+
+                eprintln!("Adding missing view for tab {tab_id}");
+
+                let editor = Editor::default();
+                let new_view_id = self.view_manager.create_view(document_id, editor);
+
+                self.tab_manager
+                    .update_tab_view_id(tab_id, new_view_id)
+                    .map_err(|_| {
+                        // TODO(scarlet): Fix this error type
+                        DocumentError::NotFound(u64::from(tab_id).into())
+                    })?;
+
+                let _ = self.view_manager.set_active_view(new_view_id);
+
                 return Ok(tab_id);
             }
         }
@@ -281,8 +303,7 @@ impl AppState {
         let tab_id = self
             .tab_manager
             .add_tab_for_document(document_id, view_id, add_to_history);
-
-        self.view_manager.set_active_view(view_id);
+        let _ = self.view_manager.set_active_view(view_id);
 
         Ok(tab_id)
     }
@@ -377,7 +398,8 @@ impl AppState {
     pub fn set_active_tab(&mut self, id: TabId) -> Result<(), TabError> {
         self.tab_manager.set_active_tab(id)?;
         let view_id = self.tab_manager.get_tab(id)?.get_view_id();
-        self.view_manager.set_active_view(view_id);
+        // TODO(scarlet): Handle errors
+        _ = self.view_manager.set_active_view(view_id);
 
         Ok(())
     }
@@ -419,7 +441,8 @@ impl AppState {
         let tab_id = tab_manager.add_tab_for_document(document_id, view_id, add_tab_to_history);
 
         if activate_view {
-            view_manager.set_active_view(view_id);
+            // TODO(scarlet): Handle errors
+            _ = view_manager.set_active_view(view_id);
         }
 
         (document_id, tab_id, view_id)
@@ -453,7 +476,8 @@ impl AppState {
 
         self.tab_manager
             .add_tab_for_document(new_document_id, view_id, true);
-        self.view_manager.set_active_view(view_id);
+        // TODO(scarlet): Handle errors
+        _ = self.view_manager.set_active_view(view_id);
 
         Ok(new_document_id)
     }
@@ -466,7 +490,7 @@ impl AppState {
 
         self.tab_manager
             .add_tab_for_document(new_document_id, view_id, add_tab_to_history);
-        self.view_manager.set_active_view(view_id);
+        _ = self.view_manager.set_active_view(view_id);
 
         new_document_id
     }

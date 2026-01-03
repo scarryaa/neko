@@ -1,4 +1,4 @@
-use crate::{DocumentId, Editor, View, ViewId, Viewport};
+use crate::{DocumentId, Editor, View, ViewError, ViewId, Viewport};
 use std::collections::HashMap;
 
 /// Manages a collection of current [`View`]s.
@@ -42,9 +42,12 @@ impl ViewManager {
         self.active_view_id
     }
 
-    pub fn set_active_view(&mut self, id: ViewId) {
+    pub fn set_active_view(&mut self, id: ViewId) -> Result<(), ViewError> {
         if self.views.contains_key(&id) {
             self.active_view_id = Some(id);
+            Ok(())
+        } else {
+            Err(ViewError::NotFound(id))
         }
     }
 

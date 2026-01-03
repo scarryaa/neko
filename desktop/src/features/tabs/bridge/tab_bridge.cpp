@@ -93,7 +93,9 @@ void TabBridge::notifyTabOpenedFromCore(int tabId) {
 
 void TabBridge::fileOpened(const neko::TabSnapshot &snapshot) {
   auto presentation = fromSnapshot(snapshot);
-  emit tabUpdated(presentation);
+
+  emit tabOpened(presentation, presentation.id);
+  emit activeTabChanged(presentation.id);
 }
 
 void TabBridge::tabSaved(int tabId) {

@@ -1,6 +1,6 @@
 use crate::{DocumentId, TabId, ViewId};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Tab {
     id: TabId,
     document_id: DocumentId,
@@ -23,6 +23,10 @@ impl Tab {
     // Getters
     pub fn get_id(&self) -> TabId {
         self.id
+    }
+
+    pub fn set_view_id(&mut self, view_id: ViewId) {
+        self.view_id = view_id;
     }
 
     pub fn get_view_id(&self) -> ViewId {
