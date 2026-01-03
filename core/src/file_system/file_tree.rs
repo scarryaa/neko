@@ -47,15 +47,8 @@ impl FileTree {
             }
         };
 
-        let mut child_nodes = Vec::new();
-        for entry_res in FileIoManager::read_dir(&root_path_buf)? {
-            let entry = entry_res?;
-            let node = FileNode::from_entry(entry, 0)?;
-            child_nodes.push(node);
-        }
-
         let mut loaded_nodes = HashMap::new();
-        loaded_nodes.insert(root_path_buf.clone(), child_nodes.clone());
+        Self::get_children_impl(&mut loaded_nodes, &root_path_buf)?;
 
         let mut expanded_paths = HashSet::new();
         expanded_paths.insert(root_path_buf.clone());
@@ -97,10 +90,17 @@ impl FileTree {
         &mut self,
         directory_path: P,
     ) -> FileSystemResult<&[FileNode]> {
+        Self::get_children_impl(&mut self.loaded_nodes, directory_path)
+    }
+
+    pub fn get_children_impl<P: AsRef<Path>>(
+        loaded_nodes: &mut HashMap<PathBuf, Vec<FileNode>>,
+        directory_path: P,
+    ) -> FileSystemResult<&[FileNode]> {
         let path = directory_path.as_ref().to_path_buf();
 
         // If the nodes for the given path aren't already loaded, add them
-        if !self.loaded_nodes.contains_key(&path) {
+        if !loaded_nodes.contains_key(&path) {
             let mut children = Vec::new();
             for entry_res in FileIoManager::read_dir(&path)? {
                 let entry = entry_res?;
@@ -110,11 +110,11 @@ impl FileTree {
             }
 
             children.sort_by_key(|n| (!n.is_dir, n.name.to_lowercase()));
-            self.loaded_nodes.insert(path.clone(), children);
+            loaded_nodes.insert(path.clone(), children);
         }
 
         // Otherwise just return the already-loaded nodes
-        Ok(self.loaded_nodes.get(&path).unwrap())
+        Ok(loaded_nodes.get(&path).unwrap())
     }
 
     /// Marks the provided path as collapsed, then fetches its children., serving as a "refresh" for
