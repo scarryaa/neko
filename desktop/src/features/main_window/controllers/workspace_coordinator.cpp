@@ -274,7 +274,7 @@ void WorkspaceCoordinator::performFileOpen(const std::string &path) {
     const int newTabId = static_cast<int>(openResult.tab_id);
     if (openResult.tab_already_exists) {
       // If the tab already existed, just activate it.
-      tabBridge->activeTabChanged(newTabId);
+      tabBridge->setActiveTab(newTabId);
       return;
     }
 
