@@ -1,8 +1,8 @@
 use crate::{
     Buffer, Change, ChangeSet, CloseTabOperationType, ClosedTabInfo, Config, ConfigManager,
     Document, DocumentError, DocumentId, DocumentManager, DocumentResult, Editor, FileSystemResult,
-    FileTree, JumpHistory, MoveActiveTabResult, Tab, TabError, TabId, TabManager, View, ViewId,
-    ViewManager,
+    FileTree, JumpHistory, MoveActiveTabResult, OpenTabResult, Tab, TabError, TabId, TabManager,
+    View, ViewId, ViewManager,
 };
 use std::path::Path;
 
@@ -296,7 +296,7 @@ impl AppState {
         path: &Path,
         add_to_history: bool,
         // TODO(scarlet): Make a generic AppStateError type?
-    ) -> Result<TabId, DocumentError> {
+    ) -> Result<OpenTabResult, DocumentError> {
         // Open (or reuse) the document for the given path
         let document_id = self.document_manager.open_document(path)?;
 
@@ -307,7 +307,10 @@ impl AppState {
             if let Ok(view_id) = existing_view_id {
                 // Try to set the active view
                 if self.view_manager.set_active_view(view_id).is_ok() {
-                    return Ok(tab_id);
+                    return Ok(OpenTabResult {
+                        tab_id: Some(tab_id),
+                        tab_already_exists: true,
+                    });
                 }
 
                 eprintln!("Adding missing view for tab {tab_id}");
@@ -324,7 +327,10 @@ impl AppState {
 
                 let _ = self.view_manager.set_active_view(new_view_id);
 
-                return Ok(tab_id);
+                return Ok(OpenTabResult {
+                    tab_id: Some(tab_id),
+                    tab_already_exists: true,
+                });
             }
         }
 
@@ -336,7 +342,10 @@ impl AppState {
             .add_tab_for_document(document_id, view_id, add_to_history);
         let _ = self.view_manager.set_active_view(view_id);
 
-        Ok(tab_id)
+        Ok(OpenTabResult {
+            tab_id: Some(tab_id),
+            tab_already_exists: false,
+        })
     }
 
     // TODO(scarlet): Rename this function to be clearer about what it actually does, and to avoid
@@ -358,37 +367,39 @@ impl AppState {
         if result.reopened_tab {
             if let Some(path) = &result.reopen_path {
                 // Ensure the tab exists.
-                if let Ok(new_tab_id) = self.ensure_tab_for_path(path, false) {
-                    _ = self.tab_manager.set_active_tab(new_tab_id);
+                if let Ok(open_result) = self.ensure_tab_for_path(path, false) {
+                    if let Some(new_tab_id) = open_result.tab_id {
+                        _ = self.tab_manager.set_active_tab(new_tab_id);
 
-                    if let Some(old_id) = result.found_id {
-                        // Update the tab id in history.
-                        self.tab_manager
-                            .get_history_manager_mut()
-                            .remap_id(old_id, new_tab_id);
-                    }
+                        if let Some(old_id) = result.found_id {
+                            // Update the tab id in history.
+                            self.tab_manager
+                                .get_history_manager_mut()
+                                .remap_id(old_id, new_tab_id);
+                        }
 
-                    // Set the found_id to the new tab id.
-                    result.found_id = Some(new_tab_id);
+                        // Set the found_id to the new tab id.
+                        result.found_id = Some(new_tab_id);
 
-                    // Restore cursors, selections for reopened tab.
-                    if let Ok(tab) = self.tab_manager.get_tab_mut(new_tab_id) {
-                        let view_id = tab.get_view_id();
-                        if let Some(view) = self.view_manager.get_view_mut(view_id) {
-                            let editor = view.editor_mut();
+                        // Restore cursors, selections for reopened tab.
+                        if let Ok(tab) = self.tab_manager.get_tab_mut(new_tab_id) {
+                            let view_id = tab.get_view_id();
+                            if let Some(view) = self.view_manager.get_view_mut(view_id) {
+                                let editor = view.editor_mut();
 
-                            if let Some(ref cursors) = result.cursors {
-                                editor.cursor_manager_mut().set_cursors(cursors.to_vec());
-                            }
+                                if let Some(ref cursors) = result.cursors {
+                                    editor.cursor_manager_mut().set_cursors(cursors.to_vec());
+                                }
 
-                            if let Some(ref selections) = result.selections {
-                                editor.selection_manager_mut().set_selection(selections);
-                            }
+                                if let Some(ref selections) = result.selections {
+                                    editor.selection_manager_mut().set_selection(selections);
+                                }
 
-                            if let Some(ref scroll_offsets) = result.scroll_offsets {
-                                let converted_scroll_offsets =
-                                    (scroll_offsets.x as i32, scroll_offsets.y as i32);
-                                tab.set_scroll_offsets(converted_scroll_offsets);
+                                if let Some(ref scroll_offsets) = result.scroll_offsets {
+                                    let converted_scroll_offsets =
+                                        (scroll_offsets.x as i32, scroll_offsets.y as i32);
+                                    tab.set_scroll_offsets(converted_scroll_offsets);
+                                }
                             }
                         }
                     }

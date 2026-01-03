@@ -33,7 +33,7 @@ public:
                                   int anchorTabId, bool closePinned);
   neko::MoveActiveTabResult moveTabBy(neko::Buffer buffer, int delta,
                                       bool useHistory);
-  uint64_t openFile(const std::string &path, bool addToHistory);
+  neko::OpenTabResultFfi openFile(const std::string &path, bool addToHistory);
   bool moveTab(int fromIndex, int toIndex);
   neko::PinTabResult pinTab(int tabId);
   neko::PinTabResult unpinTab(int tabId);

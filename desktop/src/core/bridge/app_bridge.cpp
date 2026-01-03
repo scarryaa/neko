@@ -6,7 +6,8 @@ AppBridge::AppBridge(const AppBridgeProps &props)
           neko::new_app_controller(props.configManager, props.rootPath)),
       commandController(appController->command_controller()) {}
 
-uint64_t AppBridge::openFile(const std::string &path, bool addToHistory) {
+neko::OpenTabResultFfi AppBridge::openFile(const std::string &path,
+                                           bool addToHistory) {
   return appController->ensure_tab_for_path(path, addToHistory);
 }
 

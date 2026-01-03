@@ -269,12 +269,21 @@ void WorkspaceCoordinator::performFileOpen(const std::string &path) {
     tabFlows.saveScrollOffsetsForActiveTab();
   }
 
-  const auto newTabId = appBridge->openFile(path, true);
-  const auto newTabSnapshotMaybe =
-      tabBridge->getTabSnapshot(static_cast<int>(newTabId));
+  const auto openResult = appBridge->openFile(path, true);
+  if (openResult.found_tab_id) {
+    const int newTabId = static_cast<int>(openResult.tab_id);
+    if (openResult.tab_already_exists) {
+      // If the tab already existed, just activate it.
+      tabBridge->activeTabChanged(newTabId);
+      return;
+    }
 
-  if (newTabSnapshotMaybe.found) {
-    tabBridge->fileOpened(newTabSnapshotMaybe.snapshot);
+    // Otherwise, a new tab was opened.
+    const auto newTabSnapshotMaybe = tabBridge->getTabSnapshot(newTabId);
+
+    if (newTabSnapshotMaybe.found) {
+      tabBridge->fileOpened(newTabSnapshotMaybe.snapshot);
+    }
   }
 }
 

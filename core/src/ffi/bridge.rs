@@ -252,6 +252,12 @@ pub mod ffi {
         ViewNotFound,
     }
 
+    pub struct OpenTabResultFfi {
+        pub tab_id: u64,
+        pub found_tab_id: bool,
+        pub tab_already_exists: bool,
+    }
+
     struct FileNodeSnapshot {
         path: String,
         name: String,
@@ -330,7 +336,7 @@ pub mod ffi {
             self: &mut AppController,
             path: &str,
             add_to_history: bool,
-        ) -> Result<u64>;
+        ) -> Result<OpenTabResultFfi>;
 
         // EditorController
         pub fn select_word(self: &mut EditorController, row: usize, column: usize) -> ChangeSetFfi;

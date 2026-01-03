@@ -1,6 +1,6 @@
 use crate::{
     AppState, ConfigManager,
-    ffi::{DocumentErrorFfi, TabController},
+    ffi::{DocumentErrorFfi, OpenTabResultFfi, TabController},
 };
 use std::{cell::RefCell, path::Path, rc::Rc};
 
@@ -74,11 +74,11 @@ impl AppController {
         &mut self,
         path: &str,
         add_to_history: bool,
-    ) -> Result<u64, DocumentErrorFfi> {
+    ) -> Result<OpenTabResultFfi, DocumentErrorFfi> {
         self.app_state
             .borrow_mut()
             .ensure_tab_for_path(Path::new(path), add_to_history)
-            .map(|tab_id| tab_id.into())
+            .map(|result| result.into())
             .map_err(DocumentErrorFfi::from)
     }
 

@@ -68,3 +68,9 @@ pub struct MoveActiveTabResult {
     pub selections: Option<Selection>,
     pub reopen_path: Option<PathBuf>,
 }
+
+#[derive(Debug, Default)]
+pub struct OpenTabResult {
+    pub tab_id: Option<TabId>,
+    pub tab_already_exists: bool,
+}

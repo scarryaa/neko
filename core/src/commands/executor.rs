@@ -30,18 +30,24 @@ pub fn execute_command(
         Command::OpenConfig => {
             let config_path = ConfigManager::get_config_path();
 
-            let tab_id = app
+            // Try to open the config.
+            let tab_open_result = app
                 .ensure_tab_for_path(&config_path, true)
                 .map_err(|err| Error::new(ErrorKind::NotFound, err))?;
-
             let config_path_str = config_path.to_string_lossy().to_string();
 
-            Ok(CommandResult {
-                intents: vec![UiIntent::OpenConfig {
-                    id: tab_id,
-                    path: config_path_str,
-                }],
-            })
+            if let Some(opened_tab_id) = tab_open_result.tab_id {
+                // Tab was opened/found successfully.
+                Ok(CommandResult {
+                    intents: vec![UiIntent::OpenConfig {
+                        id: opened_tab_id,
+                        path: config_path_str,
+                    }],
+                })
+            } else {
+                // Tab was not opened successfully, so do nothing.
+                Ok(CommandResult { intents: vec![] })
+            }
         }
         Command::JumpManagement(cmd) => {
             let result = execute_jump_management_command(cmd, config)?;

@@ -2,7 +2,7 @@ use super::*;
 use crate::{
     AddCursorDirection, ChangeSet, CloseTabOperationType, Command, CommandResult, Config, Cursor,
     DocumentError, DocumentTarget, FileSystemError, JumpAliasInfo, JumpCommand,
-    JumpManagementCommand, LineTarget, TabCommandState, TabContext, UiIntent,
+    JumpManagementCommand, LineTarget, OpenTabResult, TabCommandState, TabContext, UiIntent,
 };
 use std::{fmt, io, path::PathBuf};
 
@@ -57,6 +57,16 @@ impl From<ChangeSet> for ChangeSetFfi {
             line_count_after: cs.line_count_after as u32,
             dirty_first_row: cs.dirty_first_row.map(|v| v as i32).unwrap_or(-1),
             dirty_last_row: cs.dirty_last_row.map(|v| v as i32).unwrap_or(-1),
+        }
+    }
+}
+
+impl From<OpenTabResult> for OpenTabResultFfi {
+    fn from(result: OpenTabResult) -> Self {
+        OpenTabResultFfi {
+            tab_id: result.tab_id.map(|id| id.into()).unwrap_or(0),
+            found_tab_id: result.tab_id.is_some(),
+            tab_already_exists: result.tab_already_exists,
         }
     }
 }
