@@ -846,7 +846,7 @@ void FileExplorerWidget::contextMenuEvent(QContextMenuEvent *event) {
   bool targetIsItem = false;
   bool itemIsDirectory = false;
   bool itemIsExpanded = false;
-  QString path;
+  QString path = QString::fromUtf8(snapshot.root.c_str());
   if (row < snapshot.nodes.size()) {
     // Click was over an item.
     const auto currentNode = snapshot.nodes[row];

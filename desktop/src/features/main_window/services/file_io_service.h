@@ -2,6 +2,7 @@
 #define FILE_IO_SERVICE
 
 #include <QString>
+#include <QVector>
 
 class FileIoService {
 public:
@@ -10,9 +11,20 @@ public:
     QString newPath;
   };
 
+  struct PasteItem {
+    QString originalPath;
+    QString newPath;
+  };
+
+  struct PasteResult {
+    bool success;
+    bool wasCutOperation;
+    QVector<PasteItem> items;
+  };
+
   static void cut(const QString &itemPath);
   static void copy(const QString &itemPath);
-  static bool paste(const QString &targetDirectory);
+  static PasteResult paste(const QString &targetDirectory);
   static DuplicateResult duplicate(const QString &itemPath);
   static bool deleteItem(const QString &itemPath);
 

@@ -43,13 +43,17 @@ void FileIoService::copy(const QString &itemPath) {
 // TODO(scarlet): Break this down.
 // TODO(scarlet): Check if the provided directory path is actually a
 // directory; either return if not or adjust it to the parent directory.
-bool FileIoService::paste(const QString &targetDirectory) {
+FileIoService::PasteResult
+FileIoService::paste(const QString &targetDirectory) {
   // Get the data from the clipboard.
   const QMimeData *mimeData = QApplication::clipboard()->mimeData();
+  PasteResult result{.success = false,
+                     .wasCutOperation = false,
+                     .items = QVector<PasteItem>()};
 
   // If there are no urls (i.e. file/directory paths), nothing to do.
   if (!mimeData->hasUrls()) {
-    return false;
+    return result;
   }
 
   const bool isCutOperation = mimeData->hasFormat(k::cutMimeType);
@@ -60,7 +64,7 @@ bool FileIoService::paste(const QString &targetDirectory) {
     QFileInfo srcInfo(srcPath);
 
     if (!srcInfo.exists()) {
-      qDebug() << "Source does not exist: " << srcPath;
+      qDebug() << "Source does not exist:" << srcPath;
       continue;
     }
 
@@ -68,8 +72,8 @@ bool FileIoService::paste(const QString &targetDirectory) {
         targetDirectory + QDir::separator() + srcInfo.fileName();
 
     // Avoid moving/copying a directory into itself or its own subtree.
-    if (destPath.startsWith(srcPath)) {
-      qDebug() << "Cannot copy a directory into itself: " << destPath;
+    if (destPath == srcPath && srcInfo.isDir()) {
+      qDebug() << "Cannot copy a directory into itself:" << destPath;
       continue;
     }
 
@@ -78,12 +82,12 @@ bool FileIoService::paste(const QString &targetDirectory) {
       if (isCutOperation) {
         // It's a cut operation; try to move (rename) the directory.
         if (!QDir().rename(srcPath, destPath)) {
-          qDebug() << "Rename (cut) failed: " << srcPath;
+          qDebug() << "Rename (cut) failed:" << srcPath;
         }
       } else {
         // It's a copy operation.
         if (!copyRecursively(srcPath, destPath)) {
-          qDebug() << "Failed to copy directory: " << srcPath;
+          qDebug() << "Failed to copy directory:" << srcPath;
         }
       }
     } else {
@@ -91,25 +95,31 @@ bool FileIoService::paste(const QString &targetDirectory) {
       if (QFile::exists(destPath)) {
         // TODO(scarlet): Show a confirmation dialog to cancel, replace the
         // file, or keep both. For now, just skip.
-        qDebug() << "File already exists: " << destPath;
+        qDebug() << "File already exists:" << destPath;
         continue;
       }
 
       if (isCutOperation) {
         // It's a cut operation on a single file.
         if (!QFile::rename(srcPath, destPath)) {
-          qDebug() << "Rename (cut) failed: " << srcPath;
+          qDebug() << "Rename (cut) failed:" << srcPath;
         }
       } else {
         // Regular copy operation on a single file.
         if (!QFile::copy(srcPath, destPath)) {
-          qDebug() << "Failed to copy file: " << srcPath;
+          qDebug() << "Failed to copy file:" << srcPath;
         }
       }
     }
+
+    PasteItem item{.originalPath = srcPath, .newPath = destPath};
+    result.items.push_back(item);
   }
 
-  return true;
+  result.success = true;
+  result.wasCutOperation = isCutOperation;
+
+  return result;
 }
 
 // Attempts to duplicate the provided file or directory (and its contents),
@@ -120,7 +130,7 @@ FileIoService::duplicate(const QString &itemPath) {
   DuplicateResult failureResult = {.success = false, .newPath = ""};
 
   if (!info.exists()) {
-    qDebug() << "Provided path does not exist: " << itemPath;
+    qDebug() << "Provided path does not exist:" << itemPath;
     return failureResult;
   }
 
@@ -165,7 +175,7 @@ bool FileIoService::deleteItem(const QString &itemPath) {
   QFileInfo info(itemPath);
 
   if (!info.exists()) {
-    qDebug() << "Provided path does not exist: " << itemPath;
+    qDebug() << "Provided path does not exist:" << itemPath;
     return false;
   }
 
@@ -177,7 +187,7 @@ bool FileIoService::deleteItem(const QString &itemPath) {
     QDir dir(itemPath);
 
     if (!dir.removeRecursively()) {
-      qDebug() << "Failed to remove directory: " << itemPath;
+      qDebug() << "Failed to remove directory:" << itemPath;
       return false;
     }
   } else {
@@ -185,7 +195,7 @@ bool FileIoService::deleteItem(const QString &itemPath) {
     QFile file(itemPath);
 
     if (!file.remove()) {
-      qDebug() << "Failed to remove file: " << itemPath;
+      qDebug() << "Failed to remove file:" << itemPath;
       return false;
     }
   }
@@ -220,7 +230,7 @@ bool FileIoService::copyRecursively(const QString &sourceFolder,
       copyRecursively(srcName, destName);
     } else {
       if (!QFile::copy(srcName, destName)) {
-        qDebug() << "Failed to copy file: " << srcName;
+        qDebug() << "Failed to copy file:" << srcName;
       }
     }
   }

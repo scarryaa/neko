@@ -25,13 +25,14 @@ bool FileExplorerFlows::handleFileExplorerCommand(
   // Handle Qt-side special cases.
   // TODO(scarlet): Move these to Rust eventually.
   // TODO(scarlet): Handle result.
+  // TODO(scarlet): Clean this up.
   if (commandId == "fileExplorer.cut") {
     FileIoService::cut(itemPath);
   } else if (commandId == "fileExplorer.copy") {
     FileIoService::copy(itemPath);
   } else if (commandId == "fileExplorer.duplicate") {
     shouldRedraw = true;
-    auto result = FileIoService::duplicate(itemPath);
+    const auto result = FileIoService::duplicate(itemPath);
 
     if (result.success) {
       const auto newItemPath = result.newPath;
@@ -40,8 +41,76 @@ bool FileExplorerFlows::handleFileExplorerCommand(
     }
   } else if (commandId == "fileExplorer.paste") {
     shouldRedraw = true;
-    FileIoService::paste(itemPath);
-    // TODO(scarlet): Select the new pasted item.
+    const auto result = FileIoService::paste(itemPath);
+    bool destinationIsDirectory = QFileInfo(itemPath).isDir();
+
+    if (result.success) {
+      if (result.wasCutOperation) {
+        // On a cut/paste, we need to refresh both the destination
+        // directory and the source directory.
+        if (destinationIsDirectory) {
+          fileTreeController->refresh_dir(itemPath.toStdString());
+
+          // TODO(scarlet): Handle multiple selected items eventually.
+          QString originalPath = result.items.first().originalPath;
+          bool sourceIsDirectory = QFileInfo(originalPath).isDir();
+
+          if (sourceIsDirectory) {
+            fileTreeController->refresh_dir(originalPath.toStdString());
+            fileTreeController->set_expanded(originalPath.toStdString());
+          } else {
+            const auto originalParentPath =
+                QString::fromUtf8(fileTreeController->get_path_of_parent(
+                    originalPath.toStdString()));
+            fileTreeController->refresh_dir(originalParentPath.toStdString());
+            fileTreeController->set_expanded(originalParentPath.toStdString());
+          }
+        } else {
+          fileTreeController->refresh_dir(parentItemPath.toStdString());
+
+          QString originalPath = result.items.first().originalPath;
+          bool sourceIsDirectory = QFileInfo(originalPath).isDir();
+
+          if (sourceIsDirectory) {
+            fileTreeController->refresh_dir(originalPath.toStdString());
+            fileTreeController->set_expanded(originalPath.toStdString());
+          } else {
+            const auto originalParentPath =
+                QString::fromUtf8(fileTreeController->get_path_of_parent(
+                    originalPath.toStdString()));
+            fileTreeController->refresh_dir(originalParentPath.toStdString());
+            fileTreeController->set_expanded(originalParentPath.toStdString());
+          }
+        }
+      } else {
+        // Otherwise, just refresh the destination directory.
+        if (destinationIsDirectory) {
+          fileTreeController->refresh_dir(itemPath.toStdString());
+        } else {
+          fileTreeController->refresh_dir(parentItemPath.toStdString());
+        }
+      }
+    } else {
+      // If the paste failed, exit.
+      return false;
+    }
+
+    // If the destination is a directory, refresh it. Otherwise, refresh the
+    // parent directory.
+    // TODO(scarlet): Avoid bypassing FileTreeBridge for fileTreeController.
+    if (destinationIsDirectory) {
+      fileTreeController->refresh_dir(itemPath.toStdString());
+    } else {
+      fileTreeController->refresh_dir(parentItemPath.toStdString());
+    }
+
+    // Avoid collapsing the directory on reload.
+    fileTreeController->set_expanded(destinationIsDirectory
+                                         ? itemPath.toStdString()
+                                         : parentItemPath.toStdString());
+
+    QString newItemPath = result.items.first().newPath;
+    fileTreeController->set_current_path(newItemPath.toStdString());
   } else if (commandId == "fileExplorer.copyPath") {
     // Path is likely already absolute, but convert it just in case.
     QFileInfo fileInfo(itemPath);
@@ -60,8 +129,6 @@ bool FileExplorerFlows::handleFileExplorerCommand(
   if (shouldRedraw) {
     // TODO(scarlet): Convert this to a signal.
     uiHandles.fileExplorerWidget->redraw();
-    // TODO(scarlet): Avoid bypassing FileTreeBridge.
-    fileTreeController->refresh_dir(parentItemPath.toStdString());
   }
 
   // TODO(scarlet): Get new item name and rename item name args from a dialog as
@@ -70,6 +137,8 @@ bool FileExplorerFlows::handleFileExplorerCommand(
       appBridge->runCommand<neko::FileExplorerCommandResultFfi>(
           CommandType::FileExplorer, commandId, ctx, "", "");
 
+  // TODO(scarlet): When deleting an item, re-expand the directory containing
+  // the item.
   for (const auto &intent : commandResult.intents) {
     switch (intent.kind) {
     case neko::FileExplorerUiIntentKindFfi::DirectoryRefreshed:
