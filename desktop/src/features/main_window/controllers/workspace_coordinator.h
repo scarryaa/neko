@@ -57,8 +57,8 @@ public:
       }
     } else if constexpr (std::is_same_v<Context,
                                         neko::FileExplorerContextFfi>) {
-      const auto succeeded =
-          fileExplorerFlows.handleFileExplorerCommand(commandId, ctx);
+      const auto succeeded = fileExplorerFlows.handleFileExplorerCommand(
+          commandId, ctx, forceClose);
     } else {
       static_assert(sizeof(Context) == 0,
                     "Unsupported Context type in handleCommand");

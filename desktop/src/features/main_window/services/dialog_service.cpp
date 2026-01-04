@@ -31,6 +31,31 @@ QString DialogService::openFileSelectionDialog(
   return QFileDialog::getOpenFileName(parent, tr("Open a file"), baseDir);
 }
 
+DialogService::DeleteDecision DialogService::openDeleteConfirmationDialog(
+    const QString &itemName, const DeleteItemType &itemType, QWidget *parent) {
+  QMessageBox deleteDialog(
+      QMessageBox::Warning,
+      tr("Delete ") +
+          (itemType == DeleteItemType::Directory ? "Directory" : "File"),
+      tr("Are you sure you want to delete ") + "'" + itemName + "'?",
+      QMessageBox::NoButton, parent);
+
+  auto *deleteButton =
+      deleteDialog.addButton(tr("Delete"), QMessageBox::DestructiveRole);
+  auto *cancelBtn = deleteDialog.addButton(QMessageBox::Cancel);
+
+  deleteDialog.setDefaultButton(cancelBtn);
+  deleteDialog.setEscapeButton(cancelBtn);
+
+  deleteDialog.exec();
+
+  if (deleteDialog.clickedButton() == deleteButton) {
+    return DeleteDecision::Delete;
+  }
+
+  return DeleteDecision::Cancel;
+}
+
 CloseDecision DialogService::openCloseConfirmationDialog(const QList<int> &ids,
                                                          int modifiedCount,
                                                          QWidget *parent) {

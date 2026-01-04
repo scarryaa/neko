@@ -19,7 +19,8 @@ public:
   ~FileExplorerFlows() = default;
 
   bool handleFileExplorerCommand(const std::string &commandId,
-                                 const neko::FileExplorerContextFfi &ctx);
+                                 const neko::FileExplorerContextFfi &ctx,
+                                 bool bypassDeleteConfirmation);
 
 private:
   static void handleCut(const QString &itemPath);

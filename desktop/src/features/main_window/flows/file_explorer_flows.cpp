@@ -11,7 +11,8 @@ FileExplorerFlows::FileExplorerFlows(const FileExplorerFlowsProps &props)
     : appBridge(props.appBridge), uiHandles(props.uiHandles) {}
 
 bool FileExplorerFlows::handleFileExplorerCommand(
-    const std::string &commandId, const neko::FileExplorerContextFfi &ctx) {
+    const std::string &commandId, const neko::FileExplorerContextFfi &ctx,
+    bool bypassDeleteConfirmation) {
   if (commandId.empty()) {
     return false;
   }
@@ -67,10 +68,6 @@ bool FileExplorerFlows::handleFileExplorerCommand(
     }
   }
 
-  if (commandId == "fileExplorer.delete") {
-    // TODO(scarlet): Show a confirmation prompt (unless shift is held).
-  }
-
   // TODO(scarlet): Get new item name and rename item name args from a dialog as
   // needed.
   bool isNewFileCommand = commandId == "fileExplorer.newFile";
@@ -80,12 +77,25 @@ bool FileExplorerFlows::handleFileExplorerCommand(
   bool itemIsDirectory = itemFileInfo.isDir();
   QString newItemName;
 
+  // Open a delete confirmation dialog unless bypassDeleteConfirmation is true.
+  if (commandId == "fileExplorer.delete" && !bypassDeleteConfirmation) {
+    using Type = DialogService::DeleteItemType;
+    using Decision = DialogService::DeleteDecision;
+    Type type = itemIsDirectory ? Type::Directory : Type::File;
+
+    const auto result = DialogService::openDeleteConfirmationDialog(
+        itemFileInfo.fileName(), type, uiHandles.window);
+    if (result == Decision::Cancel) {
+      return false;
+    }
+  }
+
   if (isNewFileCommand || isNewDirectoryCommand || isRenameCommand) {
     using Type = DialogService::OperationType;
 
     QFileInfo srcInfo(itemPath);
     QString originalItemName = srcInfo.fileName();
-    DialogService::OperationType type;
+    Type type;
 
     if (isNewFileCommand) {
       type = Type::NewFile;

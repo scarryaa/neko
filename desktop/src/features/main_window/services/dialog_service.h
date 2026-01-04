@@ -25,6 +25,13 @@ public:
     RenameDirectory
   };
 
+  enum class DeleteItemType : uint8_t { File, Directory };
+
+  enum class DeleteDecision : uint8_t {
+    Delete,
+    Cancel,
+  };
+
   explicit DialogService(QObject *parent = nullptr);
   ~DialogService() override = default;
 
@@ -35,6 +42,9 @@ public:
   static CloseDecision openCloseConfirmationDialog(const QList<int> &ids,
                                                    int modifiedCount,
                                                    QWidget *parent);
+  static DeleteDecision
+  openDeleteConfirmationDialog(const QString &itemName,
+                               const DeleteItemType &itemType, QWidget *parent);
   static QString openSaveAsDialog(std::optional<QString> initialDirectory,
                                   std::optional<QString> initialFileName,
                                   QWidget *parent);
