@@ -1,5 +1,7 @@
 #include "file_tree_bridge.h"
 
+// TODO(scarlet): Ideally convert all ::rust::String returns to c_str or
+// QString.
 FileTreeBridge::FileTreeBridge(FileTreeBridgeProps props, QObject *parent)
     : QObject(parent), fileTreeController(std::move(props.fileTreeController)) {
 }

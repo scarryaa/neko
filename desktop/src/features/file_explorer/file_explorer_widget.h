@@ -79,9 +79,10 @@ private:
   void handleEnter();
   void handleLeft();
   void handleRight();
+  void handleCut();
   void handleCopy();
   void handlePaste();
-  bool copyRecursively(const QString &sourceFolder, const QString &destFolder);
+  void handleDuplicate();
   void handleDeleteConfirm();
   void handleDeleteNoConfirm();
   void deleteItem(const std::string &path,

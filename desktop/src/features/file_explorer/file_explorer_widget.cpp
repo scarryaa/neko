@@ -1,6 +1,7 @@
 #include "file_explorer_widget.h"
 #include "features/context_menu/context_menu_widget.h"
 #include "features/file_explorer/bridge/file_tree_bridge.h"
+#include "features/main_window/services/file_io_service.h"
 #include "utils/ui_utils.h"
 #include <QApplication>
 #include <QClipboard>
@@ -125,24 +126,42 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   const bool shift = mods.testFlag(Qt::ShiftModifier);
 
   if (ctrl) {
+    bool shouldRedraw = false;
+
     switch (event->key()) {
     case Qt::Key_C:
       handleCopy();
       return;
     case Qt::Key_V:
+      shouldRedraw = true;
       handlePaste();
+      break;
+    case Qt::Key_X:
+      handleCut();
       return;
+    case Qt::Key_D:
+      shouldRedraw = true;
+      handleDuplicate();
+      break;
     case Qt::Key_Equal:
+      shouldRedraw = true;
       increaseFontSize();
-      return;
+      break;
     case Qt::Key_Minus:
+      shouldRedraw = true;
       decreaseFontSize();
-      return;
+      break;
     case Qt::Key_0:
+      shouldRedraw = true;
       resetFontSize();
-      return;
+      break;
     default:
       break;
+    }
+
+    if (shouldRedraw) {
+      redraw();
+      return;
     }
   }
 
@@ -551,107 +570,64 @@ void FileExplorerWidget::handleRight() {
   }
 }
 
-void FileExplorerWidget::handleCopy() {
+void FileExplorerWidget::handleCut() {
+  // TODO(scarlet): Get the current node path from the tree/bridge directly?
   auto snapshot = fileTreeBridge->getTreeSnapshot();
-  std::string currentNodePath;
+  QString currentNodePath;
+
   for (auto &node : snapshot.nodes) {
     if (node.is_current) {
-      currentNodePath = node.path.c_str();
+      currentNodePath = QString::fromUtf8(node.path);
     }
   }
 
-  auto *mimeData = new QMimeData();
+  FileIoService::cut(currentNodePath);
+}
 
-  QList<QUrl> urls;
-  urls.append(QUrl::fromLocalFile(currentNodePath.c_str()));
-  mimeData->setUrls(urls);
+void FileExplorerWidget::handleCopy() {
+  // TODO(scarlet): Get the current node path from the tree/bridge directly?
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
+  QString currentNodePath;
 
-  QApplication::clipboard()->setMimeData(mimeData);
+  for (auto &node : snapshot.nodes) {
+    if (node.is_current) {
+      currentNodePath = QString::fromUtf8(node.path);
+    }
+  }
+
+  FileIoService::copy(currentNodePath);
 }
 
 void FileExplorerWidget::handlePaste() {
+  // TODO(scarlet): Get the current node path from the tree/bridge directly?
   auto snapshot = fileTreeBridge->getTreeSnapshot();
-  std::string currentNodePath;
+  QString currentNodePath;
   bool currentNodeIsDirectory = false;
+
   for (auto &node : snapshot.nodes) {
     if (node.is_current) {
-      currentNodePath = node.path.c_str();
+      currentNodePath = QString::fromUtf8(node.path);
       currentNodeIsDirectory = node.is_dir;
     }
   }
 
-  auto parentNodePath = fileTreeBridge->getParentNodePath(currentNodePath);
-  QString targetDirectory = currentNodeIsDirectory
-                                ? QString::fromUtf8(currentNodePath)
-                                : QString::fromUtf8(parentNodePath);
+  auto parentNodePath = QString::fromUtf8(
+      fileTreeBridge->getParentNodePath(currentNodePath.toStdString()));
 
-  const QMimeData *mimeData = QApplication::clipboard()->mimeData();
-  if (!mimeData->hasUrls()) {
-    return;
-  }
+  QString targetDirectory =
+      currentNodeIsDirectory ? currentNodePath : parentNodePath;
 
-  QList<QUrl> urls = mimeData->urls();
-
-  for (const auto &url : urls) {
-    QString srcPath = url.toLocalFile();
-    QFileInfo srcInfo(srcPath);
-
-    QString destPath = targetDirectory + QDir::separator() + srcInfo.fileName();
-
-    if (destPath.startsWith(srcPath)) {
-      continue;
-    }
-
-    if (srcInfo.isDir()) {
-      copyRecursively(srcPath, destPath);
-    } else {
-      if (QFile::exists(destPath)) {
-        // QFile::remove(destPath);
-        qDebug() << "File already exists:" << destPath;
-      } else {
-        if (!QFile::copy(srcPath, destPath)) {
-          qDebug() << "Failed to copy file:" << srcPath;
-        }
-      }
-    }
-  }
-
-  fileTreeBridge->refreshDirectory(currentNodeIsDirectory ? currentNodePath
-                                                          : parentNodePath);
-}
-
-bool FileExplorerWidget::copyRecursively(const QString &sourceFolder,
-                                         const QString &destFolder) {
-  QDir sourceDir(sourceFolder);
-  if (!sourceDir.exists()) {
-    return false;
-  }
-
-  QDir destDir(destFolder);
-  if (!destDir.exists()) {
-    destDir.mkpath(".");
-  }
-
-  QStringList files = sourceDir.entryList(QDir::Files | QDir::Dirs |
-                                          QDir::NoDotAndDotDot | QDir::Hidden);
-
-  for (const QString &file : files) {
-    QString srcName = sourceFolder + QDir::separator() + file;
-    QString destName = destFolder + QDir::separator() + file;
-
-    QFileInfo info(srcName);
-    if (info.isDir()) {
-      copyRecursively(srcName, destName);
-    } else {
-      QFile::copy(srcName, destName);
-    }
-  }
-  return true;
+  FileIoService::paste(targetDirectory);
+  fileTreeBridge->refreshDirectory(currentNodeIsDirectory
+                                       ? currentNodePath.toStdString()
+                                       : parentNodePath.toStdString());
 }
 
 void FileExplorerWidget::handleDeleteConfirm() {
+  // TODO(scarlet): Get the current node path from the tree/bridge directly?
   auto snapshot = fileTreeBridge->getTreeSnapshot();
   neko::FileNodeSnapshot currentNode;
+
   for (auto &node : snapshot.nodes) {
     if (node.is_current) {
       currentNode = node;
@@ -659,6 +635,7 @@ void FileExplorerWidget::handleDeleteConfirm() {
     }
   }
 
+  // TODO(scarlet): Relocate this to the dialog service.
   QMessageBox::StandardButton reply;
   reply = QMessageBox::question(
       this, "Delete Item",
@@ -672,8 +649,10 @@ void FileExplorerWidget::handleDeleteConfirm() {
 }
 
 void FileExplorerWidget::handleDeleteNoConfirm() {
+  // TODO(scarlet): Get the current node path from the tree/bridge directly?
   auto snapshot = fileTreeBridge->getTreeSnapshot();
   neko::FileNodeSnapshot currentNode;
+
   for (auto &node : snapshot.nodes) {
     if (node.is_current) {
       currentNode = node;
@@ -690,26 +669,35 @@ void FileExplorerWidget::deleteItem(const std::string &path,
   auto parentPath = fileTreeBridge->getParentNodePath(path);
   bool currentIsDir = currentNode.is_dir;
 
-  if (currentIsDir) {
-    QDir dir = QDir(QString::fromStdString(path));
+  bool wasSuccessful = FileIoService::deleteItem(path.c_str());
 
-    if (dir.removeRecursively()) {
-      fileTreeBridge->refreshDirectory(parentPath);
+  if (wasSuccessful) {
+    fileTreeBridge->refreshDirectory(parentPath);
+    fileTreeBridge->setCurrent(prevNode.path.c_str());
+  }
+}
 
-      fileTreeBridge->setCurrent(prevNode.path.c_str());
-    } else {
-      qDebug() << "Failed to remove directory";
+void FileExplorerWidget::handleDuplicate() {
+  // TODO(scarlet): Get the current node path from the tree/bridge directly?
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
+  QString currentNodePath;
+  bool currentNodeIsDirectory = false;
+
+  for (auto &node : snapshot.nodes) {
+    if (node.is_current) {
+      currentNodePath = QString::fromUtf8(node.path);
+      currentNodeIsDirectory = node.is_dir;
     }
-  } else {
-    QFile file = QFile(QString::fromStdString(path));
+  }
 
-    if (file.remove()) {
-      fileTreeBridge->refreshDirectory(parentPath);
+  auto parentNodePath = QString::fromUtf8(
+      fileTreeBridge->getParentNodePath(currentNodePath.toStdString()));
 
-      fileTreeBridge->setCurrent(prevNode.path.c_str());
-    } else {
-      qDebug() << "Failed to remove file";
-    }
+  const auto duplicateResult = FileIoService::duplicate(currentNodePath);
+
+  if (duplicateResult.success) {
+    fileTreeBridge->refreshDirectory(parentNodePath.toStdString());
+    fileTreeBridge->setCurrent(duplicateResult.newPath.toStdString());
   }
 }
 

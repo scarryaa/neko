@@ -90,6 +90,8 @@ qt_add_executable(neko
     src/features/main_window/services/dialog_service.h
     src/features/main_window/services/app_config_service.cpp
     src/features/main_window/services/app_config_service.h
+    src/features/main_window/services/file_io_service.cpp
+    src/features/main_window/services/file_io_service.h
 
     # Workspace Coordinator Flows
     src/features/main_window/flows/tab_flows.cpp
