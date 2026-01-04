@@ -22,6 +22,19 @@ public:
                                  const neko::FileExplorerContextFfi &ctx);
 
 private:
+  static void handleCut(const QString &itemPath);
+  static void handleCopy(const QString &itemPath);
+  static bool handleDuplicate(const QString &itemPath,
+                              const QString &parentItemPath,
+                              neko::FileTreeController *fileTreeController);
+  static bool handlePaste(const QString &itemPath,
+                          const QString &parentItemPath,
+                          neko::FileTreeController *fileTreeController);
+  static void handleCopyPath(const QString &itemPath);
+  static void
+  handleCopyRelativePath(const QString &itemPath,
+                         neko::FileTreeController *fileTreeController);
+
   AppBridge *appBridge;
   const UiHandles uiHandles;
 };
