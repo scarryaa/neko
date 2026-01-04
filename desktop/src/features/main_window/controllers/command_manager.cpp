@@ -20,12 +20,14 @@ enum class TabCommandGroup : uint8_t {
 };
 
 enum class FileExplorerCommandGroup : uint8_t {
-  CreateOrOpen = 1,        // New File / New Folder / Reveal / Open in Terminal
-  Search = 2,              // Find in Folder
-  ClipboardOperations = 3, // Cut / Copy / Paste / Duplicate
-  PathOperations = 4,      // Copy Path / Copy Relative Path
-  HistoryOrModify = 5,     // Show History / Rename / Delete
-  TreeOperations = 7,      // Expand / Collapse / Collapse All
+  Create = 1,              // New File / New Folder
+  Open = 2,                // Reveal / Open in Terminal
+  Search = 3,              // Find in Folder
+  ClipboardOperations = 4, // Cut / Copy / Paste / Duplicate
+  PathOperations = 5,      // Copy Path / Copy Relative Path
+  History = 6,             // Show History
+  Modify = 7,              // Rename / Delete
+  TreeOperations = 8,      // Expand / Collapse / Collapse All
 };
 
 template <typename T> struct CommandSpec {
@@ -55,13 +57,13 @@ const CommandSpec<TabCommandGroup> tabCommandSpecs[] = {
 // NOLINTNEXTLINE
 const CommandSpec<FileExplorerCommandGroup> fileExplorerCommandSpecs[] = {
     {"fileExplorer.newFile", "New File", "%", "",
-     FileExplorerCommandGroup::CreateOrOpen},
+     FileExplorerCommandGroup::Create},
     {"fileExplorer.newFolder", "New Folder", "D", "",
-     FileExplorerCommandGroup::CreateOrOpen},
+     FileExplorerCommandGroup::Create},
     {"fileExplorer.reveal", "Show on Disk", "X", "",
-     FileExplorerCommandGroup::CreateOrOpen},
-    {"fileExplorer.openInTerminal", "Open In Terminal", "", "",
-     FileExplorerCommandGroup::CreateOrOpen},
+     FileExplorerCommandGroup::Open},
+    {"fileExplorer.openInTerminal", "Open in Terminal", "", "",
+     FileExplorerCommandGroup::Open},
     {"fileExplorer.findInFolder", "Find in Folder", "/", "",
      FileExplorerCommandGroup::Search},
     {"fileExplorer.cut", "Cut", "Ctrl+X", "",
@@ -77,11 +79,11 @@ const CommandSpec<FileExplorerCommandGroup> fileExplorerCommandSpecs[] = {
     {"fileExplorer.copyRelativePath", "Copy Relative Path",
      "Ctrl+Option+Shift+C", "", FileExplorerCommandGroup::PathOperations},
     {"fileExplorer.showHistory", "File History", "", "",
-     FileExplorerCommandGroup::HistoryOrModify},
+     FileExplorerCommandGroup::History},
     {"fileExplorer.rename", "Rename", "Shift+R", "",
-     FileExplorerCommandGroup::HistoryOrModify},
+     FileExplorerCommandGroup::Modify},
     {"fileExplorer.delete", "Delete", "Shift+D", "",
-     FileExplorerCommandGroup::HistoryOrModify},
+     FileExplorerCommandGroup::Modify},
     {"fileExplorer.expand", "Expand", "E", "",
      FileExplorerCommandGroup::TreeOperations},
     {"fileExplorer.collapseAll", "Collapse All", "Shift+C", "",
@@ -328,59 +330,58 @@ void CommandManager::registerProviders() {
     return items;
   });
 
-  contextMenuRegistry->registerProvider(
-      "fileExplorer", [this](const QVariant &variant) {
-        auto availableCommands = appBridge->getCommandController()
-                                     ->get_available_file_explorer_commands();
+  contextMenuRegistry->registerProvider("fileExplorer", [this](const QVariant
+                                                                   &variant) {
+    const auto ctx = variant.value<neko::FileExplorerContextFfi>();
+    auto availableCommands =
+        appBridge->getCommandController()->get_available_file_explorer_commands(
+            ctx);
 
-        const auto ctx = variant.value<neko::FileExplorerContextFfi>();
-        const auto state = appBridge->getFileExplorerCommandState(ctx);
-        QVector<ContextMenuItem> items;
+    const auto state = appBridge->getFileExplorerCommandState(ctx);
+    QVector<ContextMenuItem> items;
 
-        QSet<QString> availableIds;
-        for (auto &command : availableCommands) {
-          availableIds.insert(QString::fromStdString(command.id.c_str()));
+    QSet<QString> availableIds;
+    for (auto &command : availableCommands) {
+      availableIds.insert(QString::fromStdString(command.id.c_str()));
+    }
+
+    bool firstItem = true;
+    std::optional<FileExplorerCommandGroup> lastGroup;
+
+    for (const auto &commandSpec : k::fileExplorerCommandSpecs) {
+      const QString commandId = QString::fromUtf8(commandSpec.id);
+      if (!availableIds.contains(commandId)) {
+        continue;
+      }
+
+      // Insert separators when changing groups
+      if (!firstItem) {
+        if (!lastGroup.has_value() || commandSpec.group != lastGroup.value()) {
+          addSeparatorIfNotEmpty(items);
         }
+      }
 
-        bool firstItem = true;
-        std::optional<FileExplorerCommandGroup> lastGroup;
+      firstItem = false;
+      lastGroup = commandSpec.group;
 
-        for (const auto &commandSpec : k::fileExplorerCommandSpecs) {
-          const QString commandId = QString::fromUtf8(commandSpec.id);
-          if (!availableIds.contains(commandId)) {
-            continue;
-          }
+      bool enabled =
+          isFileExplorerCommandEnabled(commandId.toStdString(), state);
+      bool checked =
+          commandId == "fileExplorer.expand" ? ctx.item_is_expanded : false;
+      const auto &expandOrCollapseLabel =
+          (ctx.item_is_directory && !ctx.item_is_expanded) ? "Expand"
+                                                           : "Collapse";
 
-          // Insert separators when changing groups
-          if (!firstItem) {
-            if (!lastGroup.has_value() ||
-                commandSpec.group != lastGroup.value()) {
-              addSeparatorIfNotEmpty(items);
-            }
-          }
+      addItem(items, ContextMenuItemKind::Action, commandId,
+              QString::fromUtf8(commandId == "fileExplorer.expand"
+                                    ? expandOrCollapseLabel
+                                    : commandSpec.label),
+              QString::fromUtf8(commandSpec.shortcut),
+              QString::fromUtf8(commandSpec.iconKey), enabled, true, checked);
+    }
 
-          firstItem = false;
-          lastGroup = commandSpec.group;
-
-          bool enabled =
-              isFileExplorerCommandEnabled(commandId.toStdString(), state);
-          bool checked =
-              commandId == "tab.expand" ? ctx.item_is_expanded : false;
-          const auto &expandOrCollapseLabel =
-              ctx.item_is_directory && !ctx.item_is_expanded ? "Expand"
-                                                             : "Collapse";
-
-          addItem(items, ContextMenuItemKind::Action, commandId,
-                  QString::fromUtf8(commandId == "tab.expand"
-                                        ? expandOrCollapseLabel
-                                        : commandSpec.label),
-                  QString::fromUtf8(commandSpec.shortcut),
-                  QString::fromUtf8(commandSpec.iconKey), enabled, true,
-                  checked);
-        }
-
-        return items;
-      });
+    return items;
+  });
 }
 
 void CommandManager::handleCommand(const CommandType commandType,

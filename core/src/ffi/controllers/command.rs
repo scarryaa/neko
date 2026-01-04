@@ -68,8 +68,11 @@ impl CommandController {
         }
     }
 
-    pub fn get_available_file_explorer_commands(&self) -> Vec<FileExplorerCommandFfi> {
-        let Ok(commands) = get_available_file_explorer_commands() else {
+    pub fn get_available_file_explorer_commands(
+        &self,
+        ctx: FileExplorerContextFfi,
+    ) -> Vec<FileExplorerCommandFfi> {
+        let Ok(commands) = get_available_file_explorer_commands(ctx.into()) else {
             return Vec::new();
         };
 

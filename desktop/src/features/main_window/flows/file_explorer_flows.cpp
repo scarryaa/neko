@@ -1,4 +1,8 @@
 #include "file_explorer_flows.h"
+#include <QApplication>
+#include <QClipboard>
+#include <QDir>
+#include <QFileInfo>
 
 FileExplorerFlows::FileExplorerFlows(const FileExplorerFlowsProps &props)
     : appBridge(props.appBridge), uiHandles(props.uiHandles) {}
@@ -9,7 +13,33 @@ bool FileExplorerFlows::handleFileExplorerCommand(
     return false;
   }
 
-  // const std::string itemPath = ctx.item_path;
+  const auto itemPath = QString::fromUtf8(ctx.item_path);
+
+  // Handle Qt-side special cases.
+  // TODO(scarlet): Move these to Rust eventually.
+  if (commandId == "fileExplorer.cut") {
+
+  } else if (commandId == "fileExplorer.copy") {
+
+  } else if (commandId == "fileExplorer.duplicate") {
+
+  } else if (commandId == "fileExplorer.paste") {
+
+  } else if (commandId == "fileExplorer.copyPath") {
+    // Path is likely already absolute, but convert it just in case.
+    QFileInfo fileInfo(itemPath);
+
+    const auto absolutePath = fileInfo.absoluteFilePath();
+    QApplication::clipboard()->setText(absolutePath);
+  } else if (commandId == "fileExplorer.copyRelativePath") {
+    const QString workspaceRootPath =
+        QString::fromUtf8(appBridge->getFileTreeController()->get_root_path());
+    QDir rootDir(workspaceRootPath);
+
+    const QString relativePath = rootDir.relativeFilePath(itemPath);
+    QApplication::clipboard()->setText(relativePath);
+  }
+
   // TODO(scarlet): Get new item name and rename item name args from a dialog as
   // needed.
   appBridge->runCommand<neko::FileExplorerContextFfi>(CommandType::FileExplorer,

@@ -118,21 +118,41 @@ void ContextMenuWidget::showEvent(QShowEvent *event) {
 }
 
 void ContextMenuWidget::showMenu(const QPoint &position) {
-  // Close any previously open menu
+  // Close any previously open menu.
   if (g::currentMenu && g::currentMenu != this) {
     g::currentMenu->close();
   }
-
   g::currentMenu = this;
 
+  // Adjust for shadow margin.
   const int margin = static_cast<int>(k::shadowContentMargin);
-  // Adjust for shadow margin
-  int adjustedMargin = static_cast<int>(margin / k::marginAdjustmentDivisor);
+  const int adjustedMargin =
+      static_cast<int>(margin / k::marginAdjustmentDivisor);
 
-  move(position - QPoint(adjustedMargin, adjustedMargin));
+  QPoint globalPos = position;
+  if ((parentWidget() == nullptr) || !parentWidget()->isWindow()) {
+    globalPos = parentWidget()->mapToGlobal(position);
+  }
+
+  const QRect screenGeometry = screen()->availableGeometry();
+  const QSize menuSize = sizeHint();
+  QPoint finalPos = globalPos - QPoint(adjustedMargin, adjustedMargin);
+
+  // Adjust if the menu would go off the screen at the right.
+  const int rightLimit = screenGeometry.right() - adjustedMargin;
+  if (finalPos.x() + menuSize.width() > rightLimit) {
+    finalPos.setX(rightLimit - menuSize.width());
+  }
+
+  // Adjust if the menu would go off the screen at the bottom.
+  const int bottomLimit = screenGeometry.bottom() - adjustedMargin;
+  if (finalPos.y() + menuSize.height() > bottomLimit) {
+    finalPos.setY(globalPos.y() - menuSize.height() + (2 * adjustedMargin));
+  }
+
+  move(finalPos);
   show();
   setFocus(Qt::PopupFocusReason);
-
   qApp->installEventFilter(this);
 }
 

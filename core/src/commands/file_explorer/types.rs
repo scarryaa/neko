@@ -6,7 +6,7 @@ pub enum FileExplorerCommandError {
     IoError(std::io::Error),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub enum FileExplorerCommand {
     NewFile,
     NewFolder,
@@ -23,9 +23,27 @@ pub enum FileExplorerCommand {
     Rename,
     Delete,
     Expand,
-    Collapse,
     CollapseAll,
 }
+
+const ALL_IN_ORDER: &[FileExplorerCommand] = &[
+    FileExplorerCommand::NewFile,
+    FileExplorerCommand::NewFolder,
+    FileExplorerCommand::Reveal,
+    FileExplorerCommand::OpenInTerminal,
+    FileExplorerCommand::FindInFolder,
+    FileExplorerCommand::Cut,
+    FileExplorerCommand::Copy,
+    FileExplorerCommand::Duplicate,
+    FileExplorerCommand::Paste,
+    FileExplorerCommand::CopyPath,
+    FileExplorerCommand::CopyRelativePath,
+    FileExplorerCommand::ShowHistory,
+    FileExplorerCommand::Rename,
+    FileExplorerCommand::Delete,
+    FileExplorerCommand::Expand,
+    FileExplorerCommand::CollapseAll,
+];
 
 impl FileExplorerCommand {
     pub fn as_str(&self) -> &'static str {
@@ -45,31 +63,29 @@ impl FileExplorerCommand {
             FileExplorerCommand::Rename => "fileExplorer.rename",
             FileExplorerCommand::Delete => "fileExplorer.delete",
             FileExplorerCommand::Expand => "fileExplorer.expand",
-            FileExplorerCommand::Collapse => "fileExplorer.collapse",
             FileExplorerCommand::CollapseAll => "fileExplorer.collapseAll",
         }
     }
 
-    pub fn all() -> &'static [FileExplorerCommand] {
-        &[
-            FileExplorerCommand::NewFile,
-            FileExplorerCommand::NewFolder,
-            FileExplorerCommand::Reveal,
-            FileExplorerCommand::OpenInTerminal,
-            FileExplorerCommand::FindInFolder,
-            FileExplorerCommand::Cut,
-            FileExplorerCommand::Copy,
-            FileExplorerCommand::Duplicate,
-            FileExplorerCommand::Paste,
-            FileExplorerCommand::CopyPath,
-            FileExplorerCommand::CopyRelativePath,
-            FileExplorerCommand::ShowHistory,
-            FileExplorerCommand::Rename,
-            FileExplorerCommand::Delete,
-            FileExplorerCommand::Expand,
-            FileExplorerCommand::Collapse,
-            FileExplorerCommand::CollapseAll,
-        ]
+    fn should_include(cmd: FileExplorerCommand, ctx: &FileExplorerContext) -> bool {
+        match cmd {
+            // TODO(scarlet): Add these at a later date.
+            FileExplorerCommand::OpenInTerminal | FileExplorerCommand::FindInFolder => false,
+
+            FileExplorerCommand::ShowHistory => ctx.target_is_item && !ctx.item_is_directory,
+            FileExplorerCommand::Delete => ctx.target_is_item,
+            FileExplorerCommand::Expand => ctx.target_is_item && ctx.item_is_directory,
+            FileExplorerCommand::CollapseAll => !ctx.target_is_item,
+            _ => true,
+        }
+    }
+
+    pub fn all(ctx: &FileExplorerContext) -> Vec<FileExplorerCommand> {
+        ALL_IN_ORDER
+            .iter()
+            .copied()
+            .filter(|cmd| Self::should_include(*cmd, ctx))
+            .collect()
     }
 }
 
@@ -93,7 +109,6 @@ impl FromStr for FileExplorerCommand {
             "fileExplorer.rename" => Ok(Self::Rename),
             "fileExplorer.delete" => Ok(Self::Delete),
             "fileExplorer.expand" => Ok(Self::Expand),
-            "fileExplorer.collapse" => Ok(Self::Collapse),
             "fileExplorer.collapseAll" => Ok(Self::CollapseAll),
             _ => Err(()),
         }
@@ -104,6 +119,7 @@ pub struct FileExplorerContext {
     pub item_path: PathBuf,
     pub target_is_item: bool,
     pub item_is_directory: bool,
+    pub item_is_expanded: bool,
 }
 
 #[derive(Default)]

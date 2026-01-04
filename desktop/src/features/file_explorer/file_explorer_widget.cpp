@@ -198,30 +198,47 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
 }
 
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
+  const bool isLeftClick = (event->button() == Qt::LeftButton);
+
   auto snapshot = fileTreeBridge->getTreeSnapshot();
+  const int row = convertMousePositionToRow(event->pos().y());
+
   const bool refocusClick = focusReceivedFromMouse;
   focusReceivedFromMouse = false;
 
-  int row = convertMousePositionToRow(event->pos().y());
+  const int nodeCount = static_cast<int>(snapshot.nodes.size());
 
-  if (row >= snapshot.nodes.size()) {
-    if (refocusClick) {
-      setFocus();
-      return;
+  // Clicked below the last visible row.
+  if (row < 0 || row >= nodeCount) {
+    if (isLeftClick) {
+      if (refocusClick) {
+        setFocus();
+      } else {
+        fileTreeBridge->clearCurrent();
+        redraw();
+      }
+    } else {
+      // Non-left click outside items; just clear the selection.
+      fileTreeBridge->clearCurrent();
+      redraw();
     }
+    return;
+  }
 
-    fileTreeBridge->clearCurrent();
+  auto &currentNode = snapshot.nodes[row];
+  fileTreeBridge->setCurrent(currentNode.path.c_str());
+
+  // If it is a non-left click, just update the current node.
+  if (!isLeftClick) {
     redraw();
     return;
   }
 
-  auto currentNode = snapshot.nodes[row];
-  fileTreeBridge->setCurrent(currentNode.path.c_str());
-
+  // If it is a left click, open the target file or toggle the target directory.
   if (currentNode.is_dir) {
     fileTreeBridge->toggleExpanded(currentNode.path.c_str());
   } else {
-    QString fileStr = QString::fromUtf8(currentNode.path.c_str());
+    const auto fileStr = QString::fromUtf8(currentNode.path.c_str());
     emit fileSelected(fileStr.toStdString(), false);
   }
 
@@ -835,8 +852,26 @@ int FileExplorerWidget::convertMousePositionToRow(double yPos) {
 }
 
 void FileExplorerWidget::contextMenuEvent(QContextMenuEvent *event) {
-  neko::FileExplorerContextFfi ctx{
-      .item_path = "", .target_is_item = true, .item_is_directory = true};
+  auto snapshot = fileTreeBridge->getTreeSnapshot();
+  int row = convertMousePositionToRow(event->pos().y());
+
+  bool targetIsItem = false;
+  bool itemIsDirectory = false;
+  bool itemIsExpanded = false;
+  QString path;
+  if (row < snapshot.nodes.size()) {
+    // Click was over an item.
+    const auto currentNode = snapshot.nodes[row];
+    path = QString::fromUtf8(currentNode.path);
+    targetIsItem = true;
+    itemIsDirectory = targetIsItem && currentNode.is_dir;
+    itemIsExpanded = currentNode.is_expanded;
+  }
+
+  neko::FileExplorerContextFfi ctx{.item_path = path.toStdString(),
+                                   .target_is_item = targetIsItem,
+                                   .item_is_directory = itemIsDirectory,
+                                   .item_is_expanded = itemIsExpanded};
 
   const QVariant variant = QVariant::fromValue(ctx);
   const auto items = contextMenuRegistry.build("fileExplorer", variant);

@@ -452,6 +452,7 @@ pub mod ffi {
         // FileTreeController
         pub fn toggle_expanded(self: &mut FileTreeController, path: &str);
         pub(crate) fn set_root_path(self: &mut FileTreeController, path: &str) -> Result<()>;
+        pub fn get_root_path(self: &FileTreeController) -> String;
         pub(crate) fn get_next_node(
             self: &FileTreeController,
             current_path: &str,
@@ -541,6 +542,7 @@ pub mod ffi {
         ) -> FileExplorerCommandStateFfi;
         pub fn get_available_file_explorer_commands(
             self: &CommandController,
+            ctx: FileExplorerContextFfi,
         ) -> Vec<FileExplorerCommandFfi>;
 
         // General Commands

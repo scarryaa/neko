@@ -36,6 +36,16 @@ impl FileTreeController {
             .map_err(FileSystemErrorFfi::from)
     }
 
+    pub fn get_root_path(&self) -> String {
+        self.access(|tree| {
+            if let Some(root_path) = &tree.root_path {
+                root_path.to_str().unwrap_or("").to_string()
+            } else {
+                "".to_string()
+            }
+        })
+    }
+
     pub fn ensure_path_visible(
         self: &mut FileTreeController,
         path: &str,

@@ -66,11 +66,12 @@ public:
   void runCommand(const CommandType &commandType, const std::string &commandId,
                   const Context &ctx, AdditionalArgs &&...additionalArgs) {
     if constexpr (std::is_same_v<Context, neko::TabContextFfi>) {
-      commandController->run_tab_command(commandId, ctx, additionalArgs...);
+      commandController->run_tab_command(
+          commandId, ctx, std::forward<AdditionalArgs>(additionalArgs)...);
     } else if constexpr (std::is_same_v<Context,
                                         neko::FileExplorerContextFfi>) {
-      commandController->run_file_explorer_command(commandId, ctx,
-                                                   additionalArgs...);
+      commandController->run_file_explorer_command(
+          commandId, ctx, std::forward<AdditionalArgs>(additionalArgs)...);
     } else {
       static_assert(sizeof(Context) == 0, "Unsupported Context type");
     }

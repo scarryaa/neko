@@ -194,10 +194,11 @@ pub fn run_file_explorer_command(
             }
         }
         Expand => {
-            tree.set_expanded(ctx.item_path.clone());
-        }
-        Collapse => {
-            tree.set_collapsed(ctx.item_path.clone());
+            if ctx.item_is_directory && ctx.item_is_expanded {
+                tree.set_collapsed(ctx.item_path.clone());
+            } else {
+                tree.set_expanded(ctx.item_path.clone());
+            }
         }
         CollapseAll => {
             tree.collapse_all();
@@ -207,6 +208,8 @@ pub fn run_file_explorer_command(
     Ok(())
 }
 
-pub fn get_available_file_explorer_commands() -> io::Result<Vec<FileExplorerCommand>> {
-    Ok(FileExplorerCommand::all().to_vec())
+pub fn get_available_file_explorer_commands(
+    ctx: FileExplorerContext,
+) -> io::Result<Vec<FileExplorerCommand>> {
+    Ok(FileExplorerCommand::all(&ctx))
 }
