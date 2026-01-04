@@ -33,6 +33,7 @@ public:
 
   void initialize(const std::string &path);
   void setAndApplyTheme(const FileExplorerTheme &newTheme);
+  void redraw();
 
 protected:
   void keyPressEvent(QKeyEvent *event) override;
@@ -57,7 +58,6 @@ public slots:
   void applySelectedDirectory(const std::string &path);
 
 private:
-  void redraw();
   void drawFiles(QPainter *painter, size_t count,
                  rust::Vec<neko::FileNodeSnapshot>);
   void drawFile(QPainter *painter, double xPos, double yPos,

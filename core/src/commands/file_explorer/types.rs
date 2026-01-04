@@ -1,9 +1,25 @@
-use std::{path::PathBuf, str::FromStr};
+use std::{fmt, io, path::PathBuf, str::FromStr};
 
 #[derive(Debug)]
 pub enum FileExplorerCommandError {
     UnknownCommand(String),
-    IoError(std::io::Error),
+    IoError(String, io::Error),
+}
+
+impl fmt::Display for FileExplorerCommandError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FileExplorerCommandError::UnknownCommand(id) => {
+                write!(f, "Unknown File Explorer Command: {id}")
+            }
+            FileExplorerCommandError::IoError(id, error) => {
+                write!(
+                    f,
+                    "Encountered IO error during a File Explorer Command: {id} - {error}"
+                )
+            }
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -147,4 +163,14 @@ pub struct FileExplorerCommandState {
     pub can_expand_item: bool,
     pub can_collapse_item: bool,
     pub can_collapse_all: bool,
+}
+
+#[derive(Clone, Debug)]
+pub enum FileExplorerUiIntent {
+    DirectoryRefreshed { path: PathBuf },
+}
+
+#[derive(Clone, Debug)]
+pub struct FileExplorerCommandResult {
+    pub intents: Vec<FileExplorerUiIntent>,
 }

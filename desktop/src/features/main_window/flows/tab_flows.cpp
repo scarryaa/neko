@@ -30,7 +30,9 @@ bool TabFlows::handleTabCommand(const std::string &commandId,
 
   const int tabId = static_cast<int>(ctx.id);
 
-  // TODO(scarlet): Avoid matching on hardcoded command ids
+  // TODO(scarlet): Avoid matching on hardcoded command ids.
+  // TODO(scarlet): Aim to direct most calls to Rust instead of locally handling
+  // them.
   bool succeeded = false;
   if (commandId == "tab.close") {
     succeeded =
@@ -134,8 +136,8 @@ bool TabFlows::revealTab(const neko::TabContextFfi &ctx) {
     return false;
   }
 
-  appBridge->runCommand<neko::TabContextFfi>(CommandType::Tab, "tab.reveal",
-                                             ctx, false);
+  // TODO(scarlet): Create TabCommandResultFfi return type.
+  appBridge->runCommand<bool>(CommandType::Tab, "tab.reveal", ctx, false);
   return true;
 }
 

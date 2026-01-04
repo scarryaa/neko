@@ -2,8 +2,8 @@ use crate::{
     AppState, ConfigManager, ThemeManager, execute_command, execute_jump_command, execute_jump_key,
     ffi::{
         CommandFfi, CommandKindFfi, CommandResultFfi, FileExplorerCommandFfi,
-        FileExplorerCommandStateFfi, FileExplorerContextFfi, JumpCommandFfi, TabCommandFfi,
-        TabCommandStateFfi, TabContextFfi,
+        FileExplorerCommandResultFfi, FileExplorerCommandStateFfi, FileExplorerContextFfi,
+        JumpCommandFfi, TabCommandFfi, TabCommandStateFfi, TabContextFfi,
     },
     file_explorer_command_state, get_available_commands, get_available_file_explorer_commands,
     get_available_jump_commands, get_available_tab_commands, run_file_explorer_command,
@@ -47,16 +47,28 @@ impl CommandController {
         ctx: FileExplorerContextFfi,
         new_item_name: String,
         rename_item_name: String,
-    ) -> bool {
+    ) -> FileExplorerCommandResultFfi {
         let mut app_state = self.app_state.borrow_mut();
-        run_file_explorer_command(
+        let command_result = run_file_explorer_command(
             &mut app_state,
             id,
             &ctx.into(),
             Some(new_item_name),
             Some(rename_item_name),
-        )
-        .is_ok()
+        );
+
+        if let Ok(result) = command_result {
+            result.into()
+        } else {
+            eprintln!(
+                "File Explorer Command failed: {}",
+                command_result.unwrap_err()
+            );
+
+            FileExplorerCommandResultFfi {
+                intents: Vec::new(),
+            }
+        }
     }
 
     pub fn get_file_explorer_command_state(&self, path: String) -> FileExplorerCommandStateFfi {

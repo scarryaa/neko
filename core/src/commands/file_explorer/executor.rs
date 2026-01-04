@@ -1,4 +1,4 @@
-use crate::{AppState, FileIoManager};
+use crate::{AppState, FileExplorerCommandResult, FileExplorerUiIntent, FileIoManager};
 use std::{io, path::PathBuf};
 
 use super::{
@@ -16,10 +16,8 @@ pub fn file_explorer_command_state(
         return Ok(FileExplorerCommandState::default());
     }
 
-    let root_path = root_path_opt.unwrap();
-
     // Whether the context menu was opened on an item or "empty space".
-    let target_is_item = root_path == path;
+    let target_is_item = path.is_file() || is_directory;
 
     Ok(FileExplorerCommandState {
         can_make_new_file: true,
@@ -48,8 +46,17 @@ pub fn run_file_explorer_command(
     ctx: &FileExplorerContext,
     new_item_name: Option<String>,
     rename_item_name: Option<String>,
-) -> Result<(), FileExplorerCommandError> {
+) -> Result<FileExplorerCommandResult, FileExplorerCommandError> {
     use FileExplorerCommand::*;
+
+    let root_path_opt = app_state.get_file_tree().root_path.clone();
+    if root_path_opt.is_none() {
+        // Can't do anything if there is no root path, so return.
+        return Ok(FileExplorerCommandResult { intents: vec![] });
+    }
+
+    // Unwrapping here should be fine due to the check above.
+    let root_path = root_path_opt.unwrap();
 
     let command: FileExplorerCommand = id
         .parse()
@@ -67,6 +74,13 @@ pub fn run_file_explorer_command(
             .unwrap_or_else(|| ctx.item_path.clone())
     };
 
+    let mut ui_intents: Vec<FileExplorerUiIntent> = Vec::new();
+
+    // NOTE: The `DirectoryRefreshed` UI intent isn't strictly needed in most/all cases since
+    // `refresh_dir` reloads the directory items (and the UI side fetches a snapshot of the current
+    // state every draw), but is good to have anyway in case we start caching items on the UI side.
+    // TODO(scarlet): Implement a more granular refresh for new file/new folder/rename/delete operations?
+    // E.g. just add the new item to the tree/update (or remove) the item instead of reloading the whole directory.
     match command {
         NewFile => {
             let name = PathBuf::from(
@@ -77,12 +91,16 @@ pub fn run_file_explorer_command(
 
             if FileIoManager::exists(target_directory.join(&name)) {
                 FileIoManager::write(target_directory.join(name), "")
-                    .map_err(FileExplorerCommandError::IoError)?;
+                    .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?;
             }
 
+            // TODO(scarlet): Select the new file.
             // Refresh the directory so the new file appears in the tree.
             tree.refresh_dir(&target_directory).ok();
             tree.set_expanded(&target_directory);
+            ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed {
+                path: target_directory,
+            });
         }
         NewFolder => {
             let name = PathBuf::from(
@@ -93,12 +111,16 @@ pub fn run_file_explorer_command(
 
             if FileIoManager::exists(target_directory.join(&name)) {
                 FileIoManager::create_directory(target_directory.join(name))
-                    .map_err(FileExplorerCommandError::IoError)?;
+                    .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?;
             }
 
+            // TODO(scarlet): Select the new folder.
             // Refresh the directory so the new folder appears in the tree.
             tree.refresh_dir(&target_directory).ok();
             tree.set_expanded(&target_directory);
+            ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed {
+                path: target_directory,
+            });
         }
         Reveal => {
             // Opens the native OS file explorer pointing to the file.
@@ -165,32 +187,41 @@ pub fn run_file_explorer_command(
 
             // Check for naming collisions.
             if FileIoManager::exists(&new_path) {
-                return Err(FileExplorerCommandError::IoError(std::io::Error::new(
-                    std::io::ErrorKind::AlreadyExists,
-                    "A file with that name already exists",
-                )));
+                return Err(FileExplorerCommandError::IoError(
+                    id.to_string(),
+                    io::Error::new(
+                        io::ErrorKind::AlreadyExists,
+                        "A file with that name already exists",
+                    ),
+                ));
             }
 
             // Rename the item.
             FileIoManager::rename(&ctx.item_path, &new_path)
-                .map_err(FileExplorerCommandError::IoError)?;
+                .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?;
 
+            // TODO(scarlet): Reselect the renamed item.
             // Refresh the parent directory so the tree reflects the name change.
             tree.refresh_dir(parent_dir).ok();
-            // TODO(scarlet): Reselect the renamed item.
+            ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed {
+                path: parent_dir.to_path_buf(),
+            });
         }
         Delete => {
             // Delete the file or directory, then refresh the parent.
             if ctx.item_path.is_dir() {
                 FileIoManager::delete_directory(&ctx.item_path)
-                    .map_err(FileExplorerCommandError::IoError)?;
+                    .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?;
             } else {
                 FileIoManager::delete_file(&ctx.item_path)
-                    .map_err(FileExplorerCommandError::IoError)?;
+                    .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?;
             }
 
             if let Some(parent) = ctx.item_path.parent() {
                 tree.refresh_dir(parent).ok();
+                ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed {
+                    path: parent.to_path_buf(),
+                });
             }
         }
         Expand => {
@@ -202,10 +233,13 @@ pub fn run_file_explorer_command(
         }
         CollapseAll => {
             tree.collapse_all();
+            ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed { path: root_path });
         }
     }
 
-    Ok(())
+    Ok(FileExplorerCommandResult {
+        intents: ui_intents,
+    })
 }
 
 pub fn get_available_file_explorer_commands(

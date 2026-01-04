@@ -319,8 +319,25 @@ pub mod ffi {
         can_collapse_all: bool,
     }
 
+    #[derive(Clone, Debug)]
     struct FileExplorerCommandFfi {
         id: String,
+    }
+
+    #[derive(Clone, Debug)]
+    enum FileExplorerUiIntentKindFfi {
+        DirectoryRefreshed,
+    }
+
+    #[derive(Clone, Debug)]
+    struct FileExplorerUiIntentFfi {
+        pub kind: FileExplorerUiIntentKindFfi,
+        pub path: String,
+    }
+
+    #[derive(Clone, Debug)]
+    struct FileExplorerCommandResultFfi {
+        pub intents: Vec<FileExplorerUiIntentFfi>,
     }
 
     struct TabCommandStateFfi {
@@ -535,7 +552,7 @@ pub mod ffi {
             ctx: FileExplorerContextFfi,
             new_item_name: String,
             rename_item_name: String,
-        ) -> bool;
+        ) -> FileExplorerCommandResultFfi;
         pub fn get_file_explorer_command_state(
             self: &CommandController,
             path: String,

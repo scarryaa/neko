@@ -62,15 +62,16 @@ public:
   void executeJumpCommand(const neko::JumpCommandFfi &jumpCommand);
   void executeJumpKey(const QString &key);
 
-  template <typename Context, typename... AdditionalArgs>
-  void runCommand(const CommandType &commandType, const std::string &commandId,
-                  const Context &ctx, AdditionalArgs &&...additionalArgs) {
+  template <typename Result, typename Context, typename... AdditionalArgs>
+  Result runCommand(const CommandType &commandType,
+                    const std::string &commandId, const Context &ctx,
+                    AdditionalArgs &&...additionalArgs) {
     if constexpr (std::is_same_v<Context, neko::TabContextFfi>) {
-      commandController->run_tab_command(
+      return commandController->run_tab_command(
           commandId, ctx, std::forward<AdditionalArgs>(additionalArgs)...);
     } else if constexpr (std::is_same_v<Context,
                                         neko::FileExplorerContextFfi>) {
-      commandController->run_file_explorer_command(
+      return commandController->run_file_explorer_command(
           commandId, ctx, std::forward<AdditionalArgs>(additionalArgs)...);
     } else {
       static_assert(sizeof(Context) == 0, "Unsupported Context type");

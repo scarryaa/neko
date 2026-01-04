@@ -1,8 +1,9 @@
 use super::*;
 use crate::{
     AddCursorDirection, ChangeSet, CloseTabOperationType, Command, CommandResult, Config, Cursor,
-    DocumentError, DocumentTarget, FileSystemError, JumpAliasInfo, JumpCommand,
-    JumpManagementCommand, LineTarget, OpenTabResult, TabCommandState, TabContext, UiIntent,
+    DocumentError, DocumentTarget, FileExplorerCommandResult, FileExplorerUiIntent,
+    FileSystemError, JumpAliasInfo, JumpCommand, JumpManagementCommand, LineTarget, OpenTabResult,
+    TabCommandState, TabContext, UiIntent,
     commands::{FileExplorerCommandState, FileExplorerContext},
 };
 use std::{fmt, io, path::PathBuf};
@@ -256,6 +257,7 @@ impl From<Command> for CommandFfi {
     }
 }
 
+// Command Conversions
 impl From<CommandResult> for CommandResultFfi {
     fn from(command_result: CommandResult) -> Self {
         CommandResultFfi {
@@ -504,6 +506,58 @@ impl From<FileExplorerContextFfi> for FileExplorerContext {
             target_is_item: ctx.target_is_item,
             item_is_directory: ctx.item_is_directory,
             item_is_expanded: ctx.item_is_expanded,
+        }
+    }
+}
+
+impl From<FileExplorerCommandResult> for FileExplorerCommandResultFfi {
+    fn from(command_result: FileExplorerCommandResult) -> Self {
+        FileExplorerCommandResultFfi {
+            intents: command_result
+                .intents
+                .into_iter()
+                .map(FileExplorerUiIntentFfi::from)
+                .collect(),
+        }
+    }
+}
+
+impl From<FileExplorerCommandResultFfi> for FileExplorerCommandResult {
+    fn from(command_result: FileExplorerCommandResultFfi) -> Self {
+        FileExplorerCommandResult {
+            intents: command_result
+                .intents
+                .into_iter()
+                .map(FileExplorerUiIntent::from)
+                .collect(),
+        }
+    }
+}
+
+impl From<FileExplorerUiIntentFfi> for FileExplorerUiIntent {
+    fn from(intent: FileExplorerUiIntentFfi) -> Self {
+        match intent.kind {
+            FileExplorerUiIntentKindFfi::DirectoryRefreshed => {
+                FileExplorerUiIntent::DirectoryRefreshed {
+                    path: PathBuf::from(intent.path),
+                }
+            }
+            _ => unreachable!("All FileExplorerUiIntentKindFfi cases should be covered"),
+        }
+    }
+}
+
+impl From<FileExplorerUiIntent> for FileExplorerUiIntentFfi {
+    fn from(intent: FileExplorerUiIntent) -> Self {
+        match intent {
+            FileExplorerUiIntent::DirectoryRefreshed { path } => FileExplorerUiIntentFfi {
+                kind: FileExplorerUiIntentKindFfi::DirectoryRefreshed,
+                path: if let Some(path) = path.to_str() {
+                    path.to_string()
+                } else {
+                    "".to_string()
+                },
+            },
         }
     }
 }

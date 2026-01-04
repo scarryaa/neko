@@ -117,8 +117,8 @@ impl FileTree {
         Ok(loaded_nodes.get(&path).unwrap())
     }
 
-    /// Marks the provided path as collapsed, then fetches its children., serving as a "refresh" for
-    /// that path.
+    /// Marks the provided path as collapsed, removes its children, then refetches its children,
+    /// serving as a "refresh" for that path.
     ///
     /// Mostly used for scoped updates after, e.g. creating a new file/folder in a directory.
     pub fn refresh_dir<P: AsRef<Path>>(&mut self, path: P) -> FileSystemResult<()> {
@@ -126,6 +126,8 @@ impl FileTree {
 
         if path_buf.is_dir() {
             self.expanded_paths.remove(&path_buf);
+            // Remove the loaded node entries for this path to force a reload.
+            self.loaded_nodes.remove(&path_buf);
             self.get_children(path)?;
         }
 
