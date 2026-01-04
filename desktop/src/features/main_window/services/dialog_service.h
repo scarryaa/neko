@@ -6,6 +6,7 @@
 #include <QList>
 #include <QObject>
 #include <QString>
+#include <cstdint>
 #include <optional>
 
 QT_FWD(QWidget)
@@ -17,6 +18,13 @@ class DialogService : public QObject {
   Q_OBJECT
 
 public:
+  enum class OperationType : uint8_t {
+    NewFile,
+    NewDirectory,
+    RenameFile,
+    RenameDirectory
+  };
+
   explicit DialogService(QObject *parent = nullptr);
   ~DialogService() override = default;
 
@@ -30,6 +38,8 @@ public:
   static QString openSaveAsDialog(std::optional<QString> initialDirectory,
                                   std::optional<QString> initialFileName,
                                   QWidget *parent);
+  static QString openItemNameDialog(QWidget *parent, const OperationType &type,
+                                    const QString &initialText = "");
 };
 
 #endif

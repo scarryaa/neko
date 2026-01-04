@@ -550,8 +550,7 @@ pub mod ffi {
             self: &CommandController,
             id: &str,
             ctx: FileExplorerContextFfi,
-            new_item_name: String,
-            rename_item_name: String,
+            new_or_rename_item_name: String,
         ) -> FileExplorerCommandResultFfi;
         pub fn get_file_explorer_command_state(
             self: &CommandController,

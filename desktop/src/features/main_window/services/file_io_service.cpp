@@ -96,6 +96,7 @@ FileIoService::paste(const QString &targetDirectory) {
         // TODO(scarlet): Show a confirmation dialog to cancel, replace the
         // file, or keep both. For now, just skip.
         qDebug() << "File already exists:" << destPath;
+        // TODO(scarlet): This ends up crashing.
         continue;
       }
 

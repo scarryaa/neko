@@ -1,5 +1,6 @@
 #include "file_explorer_flows.h"
 #include "features/file_explorer/file_explorer_widget.h"
+#include "features/main_window/services/dialog_service.h"
 #include "features/main_window/services/file_io_service.h"
 #include <QApplication>
 #include <QClipboard>
@@ -58,7 +59,10 @@ bool FileExplorerFlows::handleFileExplorerCommand(
   bool itemIsExpanded = false;
   const auto snapshot = fileTreeController->get_tree_snapshot();
   for (const auto &node : snapshot.nodes) {
-    if (node.path == itemPath && node.is_dir) {
+    if ((node.path == itemPath && node.is_dir) ||
+        (node.path == parentItemPath && node.is_dir)) {
+      // Check if the node is expanded (if it is a directory). If not a
+      // directory, check if its parent is expanded.
       itemIsExpanded = node.is_expanded;
     }
   }
@@ -69,9 +73,40 @@ bool FileExplorerFlows::handleFileExplorerCommand(
 
   // TODO(scarlet): Get new item name and rename item name args from a dialog as
   // needed.
+  bool isNewFileCommand = commandId == "fileExplorer.newFile";
+  bool isNewDirectoryCommand = commandId == "fileExplorer.newFolder";
+  bool isRenameCommand = commandId == "fileExplorer.rename";
+  QFileInfo itemFileInfo(itemPath);
+  bool itemIsDirectory = itemFileInfo.isDir();
+  QString newItemName;
+
+  if (isNewFileCommand || isNewDirectoryCommand || isRenameCommand) {
+    using Type = DialogService::OperationType;
+
+    QFileInfo srcInfo(itemPath);
+    QString originalItemName = srcInfo.fileName();
+    DialogService::OperationType type;
+
+    if (isNewFileCommand) {
+      type = Type::NewFile;
+    } else if (isNewDirectoryCommand) {
+      type = Type::NewDirectory;
+    } else if (isRenameCommand) {
+      type = itemIsDirectory ? Type::RenameDirectory : Type::RenameFile;
+    }
+
+    newItemName = DialogService::openItemNameDialog(
+        uiHandles.window, type, isRenameCommand ? originalItemName : "");
+
+    if (newItemName.isEmpty()) {
+      // Command was canceled.
+      return false;
+    }
+  }
+
   const auto commandResult =
       appBridge->runCommand<neko::FileExplorerCommandResultFfi>(
-          CommandType::FileExplorer, commandId, ctx, "", "");
+          CommandType::FileExplorer, commandId, ctx, newItemName.toStdString());
 
   for (const auto &intent : commandResult.intents) {
     switch (intent.kind) {
@@ -99,14 +134,19 @@ bool FileExplorerFlows::handleFileExplorerCommand(
     }
   }
 
-  if (commandId == "fileExplorer.newFile" ||
-      commandId == "fileExplorer.newFolder" ||
+  if (isNewFileCommand || isNewDirectoryCommand ||
       commandId == "fileExplorer.duplicate") {
     fileTreeController->set_expanded(parentItemPath.toStdString());
   }
 
-  if (commandId == "fileExplorer.rename") {
-    if (itemIsExpanded) {
+  if (isRenameCommand) {
+    if (itemIsExpanded && itemIsDirectory) {
+      // Expand the renamed directory.
+      QString newItemPath =
+          itemFileInfo.dir().path() + QDir::separator() + newItemName;
+      fileTreeController->set_expanded(newItemPath.toStdString());
+    } else if (itemIsExpanded) {
+      // Expand the directory containing the renamed file.
       fileTreeController->set_expanded(parentItemPath.toStdString());
     }
   }

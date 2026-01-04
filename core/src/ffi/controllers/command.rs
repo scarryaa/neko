@@ -45,16 +45,14 @@ impl CommandController {
         &self,
         id: &str,
         ctx: FileExplorerContextFfi,
-        new_item_name: String,
-        rename_item_name: String,
+        new_or_rename_item_name: String,
     ) -> FileExplorerCommandResultFfi {
         let mut app_state = self.app_state.borrow_mut();
         let command_result = run_file_explorer_command(
             &mut app_state,
             id,
             &ctx.into(),
-            Some(new_item_name),
-            Some(rename_item_name),
+            Some(new_or_rename_item_name),
         );
 
         if let Ok(result) = command_result {

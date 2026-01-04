@@ -44,8 +44,7 @@ pub fn run_file_explorer_command(
     app_state: &mut AppState,
     id: &str,
     ctx: &FileExplorerContext,
-    new_item_name: Option<String>,
-    rename_item_name: Option<String>,
+    new_or_rename_item_name: Option<String>,
 ) -> Result<FileExplorerCommandResult, FileExplorerCommandError> {
     use FileExplorerCommand::*;
 
@@ -84,12 +83,13 @@ pub fn run_file_explorer_command(
     match command {
         NewFile => {
             let name = PathBuf::from(
-                new_item_name
+                new_or_rename_item_name
                     .expect("New item name is required for new file operation")
                     .clone(),
             );
 
-            if FileIoManager::exists(target_directory.join(&name)) {
+            // Only create the file if it doesn't already exist.
+            if !FileIoManager::exists(target_directory.join(&name)) {
                 FileIoManager::write(target_directory.join(name), "")
                     .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?;
             }
@@ -104,12 +104,13 @@ pub fn run_file_explorer_command(
         }
         NewFolder => {
             let name = PathBuf::from(
-                new_item_name
+                new_or_rename_item_name
                     .expect("New item name is required for new folder operation")
                     .clone(),
             );
 
-            if FileIoManager::exists(target_directory.join(&name)) {
+            // Only create the directory if it doesn't already exist.
+            if !FileIoManager::exists(target_directory.join(&name)) {
                 FileIoManager::create_directory(target_directory.join(name))
                     .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?;
             }
@@ -176,7 +177,8 @@ pub fn run_file_explorer_command(
         }
         Rename => {
             let new_filename = PathBuf::from(
-                &rename_item_name.expect("Rename item name is required for rename operation"),
+                &new_or_rename_item_name
+                    .expect("Rename item name is required for rename operation"),
             );
             let parent_dir = ctx.item_path.parent().ok_or_else(|| {
                 FileExplorerCommandError::UnknownCommand(

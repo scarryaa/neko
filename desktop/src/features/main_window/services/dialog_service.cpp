@@ -2,6 +2,7 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QInputDialog>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QWidget>
@@ -86,4 +87,40 @@ QString DialogService::openSaveAsDialog(std::optional<QString> initialDirectory,
   }
 
   return QFileDialog::getSaveFileName(parent, tr("Save As"), initialPath);
+}
+
+QString DialogService::openItemNameDialog(QWidget *parent,
+                                          const OperationType &type,
+                                          const QString &initialText) {
+  QString title;
+  QString label;
+
+  switch (type) {
+  case OperationType::NewFile: {
+    title = tr("New File");
+    label = tr("Enter a file name:");
+    break;
+  }
+  case OperationType::NewDirectory: {
+    title = tr("New Directory");
+    label = tr("Enter a directory name:");
+    break;
+  }
+  case OperationType::RenameFile: {
+    title = tr("Rename File");
+    label = tr("Enter a new file name:");
+    break;
+  }
+  case OperationType::RenameDirectory: {
+    title = tr("Rename Directory");
+    label = tr("Enter a new directory name:");
+    break;
+  }
+  }
+
+  bool accepted = false;
+  QString itemName = QInputDialog::getText(
+      parent, title, label, QLineEdit::Normal, initialText, &accepted);
+
+  return accepted ? itemName : "";
 }
