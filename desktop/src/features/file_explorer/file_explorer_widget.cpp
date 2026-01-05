@@ -1,6 +1,7 @@
 #include "file_explorer_widget.h"
 #include "features/context_menu/context_menu_widget.h"
 #include "features/file_explorer/bridge/file_tree_bridge.h"
+#include "features/main_window/services/dialog_service.h"
 #include "features/main_window/services/file_io_service.h"
 #include "utils/ui_utils.h"
 #include <QApplication>
@@ -33,6 +34,8 @@
 #include <QWheelEvent>
 #include <QtDebug>
 
+// TODO(scarlet): Allow inline renaming/item creation via an input field, rather
+// than showing a dialog.
 FileExplorerWidget::FileExplorerWidget(const FileExplorerProps &props,
                                        QWidget *parent)
     : QScrollArea(parent), fileTreeBridge(props.fileTreeBridge),
@@ -635,16 +638,19 @@ void FileExplorerWidget::handleDeleteConfirm() {
     }
   }
 
-  // TODO(scarlet): Relocate this to the dialog service.
-  QMessageBox::StandardButton reply;
-  reply = QMessageBox::question(
-      this, "Delete Item",
-      "Are you sure you want to delete " + currentNode.name +
-          "?\n\n(Hold shift to bypass this dialog)",
-      QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+  {
+    using ItemType = DialogService::DeleteItemType;
+    using Decision = DialogService::DeleteDecision;
 
-  if (reply == QMessageBox::Yes) {
-    deleteItem(currentNode.path.c_str(), currentNode);
+    ItemType itemType =
+        currentNode.is_dir ? ItemType::Directory : ItemType::File;
+
+    const auto decision = DialogService::openDeleteConfirmationDialog(
+        currentNode.name.c_str(), itemType, parentWidget());
+
+    if (decision == Decision::Delete) {
+      deleteItem(currentNode.path.c_str(), currentNode);
+    }
   }
 }
 
@@ -668,11 +674,11 @@ void FileExplorerWidget::deleteItem(const std::string &path,
   auto prevNode = fileTreeBridge->getPreviousNode(path);
   auto parentPath = fileTreeBridge->getParentNodePath(path);
   bool currentIsDir = currentNode.is_dir;
-
   bool wasSuccessful = FileIoService::deleteItem(path.c_str());
 
   if (wasSuccessful) {
     fileTreeBridge->refreshDirectory(parentPath);
+    fileTreeBridge->setExpanded(parentPath);
     fileTreeBridge->setCurrent(prevNode.path.c_str());
   }
 }
