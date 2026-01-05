@@ -28,36 +28,62 @@ bool TabFlows::handleTabCommand(const std::string &commandId,
     return false;
   }
 
-  const int tabId = static_cast<int>(ctx.id);
+  using OperationType = neko::CloseTabOperationTypeFfi;
+  using CommandKind = neko::TabCommandKindFfi;
 
-  // TODO(scarlet): Avoid matching on hardcoded command ids.
-  // TODO(scarlet): Aim to direct most calls to Rust instead of locally handling
-  // them.
+  // TODO(scarlet): Aim to direct most commands to Rust instead of locally
+  // handling them.
+  const int tabId = static_cast<int>(ctx.id);
+  const auto tabCommand = appBridge->parseCommand<CommandType::Tab>(commandId);
   bool succeeded = false;
-  if (commandId == "tab.close") {
-    succeeded =
-        closeTabs(neko::CloseTabOperationTypeFfi::Single, tabId, forceClose);
-  } else if (commandId == "tab.closeOthers") {
-    succeeded =
-        closeTabs(neko::CloseTabOperationTypeFfi::Others, tabId, forceClose);
-  } else if (commandId == "tab.closeLeft") {
-    succeeded =
-        closeTabs(neko::CloseTabOperationTypeFfi::Left, tabId, forceClose);
-  } else if (commandId == "tab.closeRight") {
-    succeeded =
-        closeTabs(neko::CloseTabOperationTypeFfi::Right, tabId, forceClose);
-  } else if (commandId == "tab.closeAll") {
-    succeeded =
-        closeTabs(neko::CloseTabOperationTypeFfi::All, tabId, forceClose);
-  } else if (commandId == "tab.closeClean") {
-    succeeded =
-        closeTabs(neko::CloseTabOperationTypeFfi::Clean, tabId, forceClose);
-  } else if (commandId == "tab.copyPath") {
+  bool isCloseCommand = true;
+  OperationType operationType;
+
+  // Switch on the command kind to determine the operation type.
+  switch (tabCommand) {
+  case CommandKind::Close:
+    operationType = OperationType::Single;
+    break;
+  case CommandKind::CloseOthers:
+    operationType = OperationType::Others;
+    break;
+  case CommandKind::CloseLeft:
+    operationType = OperationType::Left;
+    break;
+  case CommandKind::CloseRight:
+    operationType = OperationType::Right;
+    break;
+  case CommandKind::CloseAll:
+    operationType = OperationType::All;
+    break;
+  case CommandKind::CloseClean:
+    operationType = OperationType::Clean;
+    break;
+  default:
+    // It's not a close command, so we handle it separately.
+    isCloseCommand = false;
+    break;
+  }
+
+  if (isCloseCommand) {
+    succeeded = closeTabs(operationType, tabId, forceClose);
+  }
+
+  // Handle non-close tab commands.
+  switch (tabCommand) {
+  // TODO(scarlet): Add CopyRelativePath command?
+  case neko::TabCommandKindFfi::CopyPath:
     succeeded = copyTabPath(tabId);
-  } else if (commandId == "tab.reveal") {
+    break;
+  case neko::TabCommandKindFfi::Reveal:
     succeeded = revealTab(ctx);
-  } else if (commandId == "tab.pin") {
+    break;
+  case neko::TabCommandKindFfi::Pin:
     succeeded = tabTogglePin(tabId, ctx.is_pinned);
+    break;
+  default:
+    // Nothing to do.
+    break;
   }
 
   return succeeded;
@@ -67,7 +93,7 @@ bool TabFlows::closeTabs(neko::CloseTabOperationTypeFfi operationType,
                          int anchorTabId, bool forceClose) {
   const auto snapshot = tabBridge->getTabsSnapshot();
   if (!snapshot.active_present) {
-    // Close the window if there are no tabs
+    // Close the window if there are no tabs.
     QApplication::quit();
     return false;
   }
