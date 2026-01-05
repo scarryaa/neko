@@ -68,17 +68,31 @@ FileIoService::paste(const QString &targetDirectory) {
       continue;
     }
 
-    const QString destPath =
-        targetDirectory + QDir::separator() + srcInfo.fileName();
+    QFileInfo targetInfo(targetDirectory);
+    QString destPath;
 
-    // Avoid moving/copying a directory into itself or its own subtree.
-    if (destPath == srcPath && srcInfo.isDir()) {
-      qDebug() << "Cannot copy a directory into itself:" << destPath;
-      continue;
+    // Determine if a file path or directory path was provided.
+    if (targetInfo.isDir()) {
+      destPath = targetDirectory + QDir::separator() + srcInfo.fileName();
+    } else {
+      // A file path was passed in; adjust the path to target the parent
+      // directory.
+      const QString parentPath = targetInfo.dir().path();
+      destPath = parentPath + QDir::separator() + srcInfo.fileName();
     }
 
     // If the source is a directory, copy its contents.
     if (srcInfo.isDir()) {
+      // If the source and destination are the same, treat it as a duplicate
+      // operation.
+      if (destPath == srcPath) {
+        const auto duplicateResult = duplicate(srcPath);
+        result.success = duplicateResult.success;
+        result.items = {PasteItem{.originalPath = srcPath,
+                                  .newPath = duplicateResult.newPath}};
+        return result;
+      }
+
       if (isCutOperation) {
         // It's a cut operation; try to move (rename) the directory.
         if (!QDir().rename(srcPath, destPath)) {
@@ -93,11 +107,13 @@ FileIoService::paste(const QString &targetDirectory) {
     } else {
       // Source is a file.
       if (QFile::exists(destPath)) {
-        // TODO(scarlet): Show a confirmation dialog to cancel, replace the
-        // file, or keep both. For now, just skip.
-        qDebug() << "File already exists:" << destPath;
-        // TODO(scarlet): This ends up crashing.
-        continue;
+        // If the file exists, treat it as a duplicate
+        // operation.
+        const auto duplicateResult = duplicate(destPath);
+        result.success = duplicateResult.success;
+        result.items = {PasteItem{.originalPath = destPath,
+                                  .newPath = duplicateResult.newPath}};
+        return result;
       }
 
       if (isCutOperation) {

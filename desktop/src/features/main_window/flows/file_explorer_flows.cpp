@@ -96,6 +96,7 @@ FileExplorerFlows::handleFileExplorerCommand(
                                    .fileExplorerCommand = fileExplorerCommand};
 
   auto preProcessingResult = doPreCommandProcessing(preArgs);
+
   // Check if the command was canceled.
   if (!preProcessingResult.updatedResult.success) {
     result = preProcessingResult.updatedResult;
