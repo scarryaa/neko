@@ -3,6 +3,7 @@
 
 #include "core/bridge/app_bridge.h"
 #include "features/file_explorer/bridge/file_tree_bridge.h"
+#include "features/main_window/services/file_io_service.h"
 #include "features/main_window/ui_handles.h"
 #include <QFileInfo>
 #include <string>
@@ -71,6 +72,10 @@ private:
   bool handlePaste(const QString &itemPath, const QString &parentItemPath);
   static void handleCopyPath(const QString &itemPath);
   void handleCopyRelativePath(const QString &itemPath);
+
+  static std::string resolveRefreshPath(const QString &itemPath,
+                                        const QString &parentPath);
+  void refreshSourceAfterCut(const QString &originalPath);
 
   [[nodiscard]] PreCommandProcessingResult
   doPreCommandProcessing(PreCommandProcessingArgs &args) const;

@@ -192,16 +192,21 @@ void FileExplorerFlows::doPostCommandProcessing(
     }
   }
 
+  // If a new file/directory was created/duplicated, expand the parent
+  // directory.
   if (args.isNewFileCommand || args.isNewDirectoryCommand ||
       args.commandId == "fileExplorer.duplicate") {
     fileTreeBridge->setExpanded(args.parentItemPath.toStdString());
   }
 
+  // If it was a rename command and the target item was originally expanded,
+  // expand it again.
   if (args.isRenameCommand) {
     if (args.itemIsExpanded && args.itemIsDirectory) {
       // Expand the renamed directory.
       QString newItemPath =
           args.itemFileInfo.dir().path() + QDir::separator() + args.newItemName;
+
       fileTreeBridge->setExpanded(newItemPath.toStdString());
     } else if (args.itemIsExpanded) {
       // Expand the directory containing the renamed file.
@@ -218,6 +223,7 @@ void FileExplorerFlows::handleCopy(const QString &itemPath) {
   FileIoService::copy(itemPath);
 }
 
+// NOLINTNEXTLINE
 bool FileExplorerFlows::handleDuplicate(const QString &itemPath,
                                         const QString &parentItemPath) {
   const auto result = FileIoService::duplicate(itemPath);
@@ -231,78 +237,70 @@ bool FileExplorerFlows::handleDuplicate(const QString &itemPath,
   return result.success;
 }
 
-// TODO(scarlet): Clean this up.
+// TODO(scarlet): Handle case where a directory or file is cut/copied and pasted
+// in the same directory.
 bool FileExplorerFlows::handlePaste(const QString &itemPath,
                                     const QString &parentItemPath) {
+  // Attempt the paste operation.
   const auto result = FileIoService::paste(itemPath);
-  bool destinationIsDirectory = QFileInfo(itemPath).isDir();
 
-  if (result.success) {
-    if (result.wasCutOperation) {
-      // On a cut/paste, we need to refresh both the destination
-      // directory and the source directory.
-      if (destinationIsDirectory) {
-        fileTreeBridge->refreshDirectory(itemPath.toStdString());
-
-        // TODO(scarlet): Handle multiple selected items eventually.
-        QString originalPath = result.items.first().originalPath;
-        bool sourceIsDirectory = QFileInfo(originalPath).isDir();
-
-        if (sourceIsDirectory) {
-          fileTreeBridge->refreshDirectory(originalPath.toStdString());
-          fileTreeBridge->setExpanded(originalPath.toStdString());
-        } else {
-          const auto originalParentPath = QString::fromUtf8(
-              fileTreeBridge->getParentNodePath(originalPath.toStdString()));
-          fileTreeBridge->refreshDirectory(originalParentPath.toStdString());
-          fileTreeBridge->setExpanded(originalParentPath.toStdString());
-        }
-      } else {
-        fileTreeBridge->refreshDirectory(parentItemPath.toStdString());
-
-        QString originalPath = result.items.first().originalPath;
-        bool sourceIsDirectory = QFileInfo(originalPath).isDir();
-
-        if (sourceIsDirectory) {
-          fileTreeBridge->refreshDirectory(originalPath.toStdString());
-          fileTreeBridge->setExpanded(originalPath.toStdString());
-        } else {
-          const auto originalParentPath = QString::fromUtf8(
-              fileTreeBridge->getParentNodePath(originalPath.toStdString()));
-          fileTreeBridge->refreshDirectory(originalParentPath.toStdString());
-          fileTreeBridge->setExpanded(originalParentPath.toStdString());
-        }
-      }
-    } else {
-      // Otherwise, just refresh the destination directory.
-      if (destinationIsDirectory) {
-        fileTreeBridge->refreshDirectory(itemPath.toStdString());
-      } else {
-        fileTreeBridge->refreshDirectory(parentItemPath.toStdString());
-      }
-    }
-  } else {
-    // If the paste failed, exit.
+  if (!result.success) {
     return false;
   }
 
-  // If the destination is a directory, refresh it. Otherwise, refresh the
-  // parent directory.
-  if (destinationIsDirectory) {
-    fileTreeBridge->refreshDirectory(itemPath.toStdString());
-  } else {
-    fileTreeBridge->refreshDirectory(parentItemPath.toStdString());
+  // If it was a cut/paste operation, refresh the source directory.
+  if (result.wasCutOperation && !result.items.isEmpty()) {
+    // TODO(scarlet): Handle multiple selected items eventually.
+    refreshSourceAfterCut(result.items.first().originalPath);
   }
 
-  // Avoid collapsing the directory on reload.
-  fileTreeBridge->setExpanded(destinationIsDirectory
-                                  ? itemPath.toStdString()
-                                  : parentItemPath.toStdString());
+  // Refresh and expand the destination directory.
+  std::string destinationPathToRefresh =
+      resolveRefreshPath(itemPath, parentItemPath);
+  fileTreeBridge->refreshDirectory(destinationPathToRefresh);
+  fileTreeBridge->setExpanded(destinationPathToRefresh);
 
-  QString newItemPath = result.items.first().newPath;
-  fileTreeBridge->setCurrent(newItemPath.toStdString());
+  // Select the pasted item.
+  if (!result.items.isEmpty()) {
+    QString newItemPath = result.items.first().newPath;
+    fileTreeBridge->setCurrent(newItemPath.toStdString());
+  }
 
   return true;
+}
+
+// Determines whether to use the itemPath (if it's a directory)
+// or the parentPath.
+std::string FileExplorerFlows::resolveRefreshPath(const QString &itemPath,
+                                                  const QString &parentPath) {
+  QFileInfo fileInfo(itemPath);
+
+  if (fileInfo.isDir()) {
+    return itemPath.toStdString();
+  }
+
+  return parentPath.toStdString();
+}
+
+// Handles refreshing the source location after a 'cut' operation.
+void FileExplorerFlows::refreshSourceAfterCut(const QString &originalPath) {
+  QFileInfo originalPathInfo(originalPath);
+
+  // If the original path is a directory, just refresh it.
+  if (originalPathInfo.isDir()) {
+    std::string path = originalPath.toStdString();
+
+    fileTreeBridge->refreshDirectory(path);
+    fileTreeBridge->setExpanded(path);
+  } else {
+    // If the original path is not a directory, calculate the parent directory
+    // of the original file and refresh that.
+    std::string parentPath =
+        fileTreeBridge->getParentNodePath(originalPath.toStdString());
+
+    fileTreeBridge->refreshDirectory(parentPath);
+    fileTreeBridge->setExpanded(parentPath);
+  }
 }
 
 void FileExplorerFlows::handleCopyPath(const QString &itemPath) {
