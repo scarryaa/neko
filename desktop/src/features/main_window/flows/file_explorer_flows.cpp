@@ -250,8 +250,6 @@ bool FileExplorerFlows::handleDuplicate(const QString &itemPath,
   return result.success;
 }
 
-// TODO(scarlet): Handle case where a directory or file is cut/copied and pasted
-// in the same directory.
 bool FileExplorerFlows::handlePaste(const QString &itemPath,
                                     const QString &parentItemPath) {
   // Attempt the paste operation.

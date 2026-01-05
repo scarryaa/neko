@@ -1,6 +1,7 @@
 #ifndef FILE_IO_SERVICE
 #define FILE_IO_SERVICE
 
+#include <QFileInfo>
 #include <QString>
 #include <QVector>
 
@@ -31,6 +32,14 @@ public:
 private:
   static bool copyRecursively(const QString &sourceFolder,
                               const QString &destFolder);
+  static QString adjustPastePathIfNeeded(const QString &targetDirectory,
+                                         const QFileInfo &srcInfo);
+  static PasteItem handleDirectoryPaste(const QString &srcPath,
+                                        const QString &destPath,
+                                        bool isCutOperation);
+  static PasteItem handleFilePaste(const QString &srcPath,
+                                   const QString &destPath,
+                                   bool isCutOperation);
 };
 
 #endif
