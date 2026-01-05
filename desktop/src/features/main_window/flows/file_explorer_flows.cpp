@@ -11,11 +11,18 @@ FileExplorerFlows::FileExplorerFlows(const FileExplorerFlowsProps &props)
     : appBridge(props.appBridge), uiHandles(props.uiHandles),
       fileTreeBridge(props.fileTreeBridge) {}
 
-bool FileExplorerFlows::handleFileExplorerCommand(
+// TODO(scarlet): Handle open tab updates when, e.g., a file that is currently
+// open in a tab is deleted/renamed/moved/etc.
+FileExplorerFlows::FileExplorerFlowsCommandResult
+FileExplorerFlows::handleFileExplorerCommand(
     const std::string &commandId, const neko::FileExplorerContextFfi &ctx,
     bool bypassDeleteConfirmation) {
+  FileExplorerFlowsCommandResult result{
+      .success = false,
+      .shouldRedraw = false,
+      .intentKinds = std::vector<neko::FileExplorerUiIntentKindFfi>()};
   if (commandId.empty()) {
-    return false;
+    return result;
   }
 
   const auto itemPath = QString::fromUtf8(ctx.item_path);
@@ -25,9 +32,6 @@ bool FileExplorerFlows::handleFileExplorerCommand(
   auto parentItemPath = QString::fromUtf8(
       fileTreeBridge->getParentNodePath(itemPath.toStdString()));
 
-  bool shouldRedraw = false;
-  bool success = false;
-
   // Handle Qt-side special cases.
   // TODO(scarlet): Move these to Rust eventually.
   // TODO(scarlet): Avoid matching on hardcoded command ids?
@@ -36,12 +40,11 @@ bool FileExplorerFlows::handleFileExplorerCommand(
   } else if (commandId == "fileExplorer.copy") {
     handleCopy(itemPath);
   } else if (commandId == "fileExplorer.duplicate") {
-    // TODO(scarlet): Fix duplicated item not showing up in the tree.
-    shouldRedraw = true;
-    success = handleDuplicate(itemPath, parentItemPath);
+    result.shouldRedraw = true;
+    result.success = handleDuplicate(itemPath, parentItemPath);
   } else if (commandId == "fileExplorer.paste") {
-    shouldRedraw = true;
-    success = handlePaste(itemPath, parentItemPath);
+    result.shouldRedraw = true;
+    result.success = handlePaste(itemPath, parentItemPath);
   } else if (commandId == "fileExplorer.copyPath") {
     handleCopyPath(itemPath);
   } else if (commandId == "fileExplorer.copyRelativePath") {
@@ -49,11 +52,13 @@ bool FileExplorerFlows::handleFileExplorerCommand(
   } else {
     // Set success to true here if none of the command ids were a match, so we
     // can let Rust handle it.
-    success = true;
+    result.success = true;
   }
 
-  if (!success) {
-    return false;
+  if (!result.success) {
+    // Reset `shouldRedraw` if the command failed.
+    result.shouldRedraw = false;
+    return result;
   }
 
   bool itemIsExpanded = false;
@@ -67,8 +72,6 @@ bool FileExplorerFlows::handleFileExplorerCommand(
     }
   }
 
-  // TODO(scarlet): Get new item name and rename item name args from a dialog as
-  // needed.
   bool isNewFileCommand = commandId == "fileExplorer.newFile";
   bool isNewDirectoryCommand = commandId == "fileExplorer.newFolder";
   bool isRenameCommand = commandId == "fileExplorer.rename";
@@ -82,10 +85,11 @@ bool FileExplorerFlows::handleFileExplorerCommand(
     using Decision = DialogService::DeleteDecision;
     Type type = itemIsDirectory ? Type::Directory : Type::File;
 
-    const auto result = DialogService::openDeleteConfirmationDialog(
+    const auto deleteResult = DialogService::openDeleteConfirmationDialog(
         itemFileInfo.fileName(), type, uiHandles.window);
-    if (result == Decision::Cancel) {
-      return false;
+    if (deleteResult == Decision::Cancel) {
+      result.shouldRedraw = false;
+      return result;
     }
   }
 
@@ -109,7 +113,8 @@ bool FileExplorerFlows::handleFileExplorerCommand(
 
     if (newItemName.isEmpty()) {
       // Command was canceled.
-      return false;
+      result.shouldRedraw = false;
+      return result;
     }
   }
 
@@ -118,12 +123,7 @@ bool FileExplorerFlows::handleFileExplorerCommand(
           CommandType::FileExplorer, commandId, ctx, newItemName.toStdString());
 
   for (const auto &intent : commandResult.intents) {
-    switch (intent.kind) {
-    case neko::FileExplorerUiIntentKindFfi::DirectoryRefreshed:
-      // TODO(scarlet): Convert this to a signal.
-      uiHandles.fileExplorerWidget->redraw();
-      break;
-    }
+    result.intentKinds.push_back(intent.kind);
   }
 
   // TODO(scarlet): Move these to a fn?
@@ -160,12 +160,7 @@ bool FileExplorerFlows::handleFileExplorerCommand(
     }
   }
 
-  if (shouldRedraw) {
-    // TODO(scarlet): Convert this to a signal.
-    uiHandles.fileExplorerWidget->redraw();
-  }
-
-  return true;
+  return result;
 }
 
 void FileExplorerFlows::handleCut(const QString &itemPath) {

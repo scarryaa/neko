@@ -4,6 +4,7 @@
 #include "core/bridge/app_bridge.h"
 #include "features/file_explorer/bridge/file_tree_bridge.h"
 #include "features/main_window/ui_handles.h"
+#include <vector>
 
 /// \class FileExplorerFlows
 /// \brief Orchestrates file explorer-related workflows that involve multiple
@@ -17,12 +18,19 @@ public:
     const UiHandles uiHandles;
   };
 
+  struct FileExplorerFlowsCommandResult {
+    bool success;
+    bool shouldRedraw;
+    std::vector<neko::FileExplorerUiIntentKindFfi> intentKinds;
+  };
+
   explicit FileExplorerFlows(const FileExplorerFlowsProps &props);
   ~FileExplorerFlows() = default;
 
-  bool handleFileExplorerCommand(const std::string &commandId,
-                                 const neko::FileExplorerContextFfi &ctx,
-                                 bool bypassDeleteConfirmation);
+  FileExplorerFlowsCommandResult
+  handleFileExplorerCommand(const std::string &commandId,
+                            const neko::FileExplorerContextFfi &ctx,
+                            bool bypassDeleteConfirmation);
 
 private:
   static void handleCut(const QString &itemPath);

@@ -59,8 +59,21 @@ public:
       }
     } else if constexpr (std::is_same_v<Context,
                                         neko::FileExplorerContextFfi>) {
-      const auto succeeded = fileExplorerFlows.handleFileExplorerCommand(
+      const auto result = fileExplorerFlows.handleFileExplorerCommand(
           commandId, ctx, forceClose);
+
+      // Handle `shouldRedraw` result from Qt-handled commands.
+      if (result.success && result.shouldRedraw) {
+        emit requestFileExplorerRedraw();
+      }
+
+      // Handle 'should redraw' intents from Rust-handled commands.
+      for (const auto &intent : result.intentKinds) {
+        switch (intent) {
+        case neko::FileExplorerUiIntentKindFfi::DirectoryRefreshed:
+          emit requestFileExplorerRedraw();
+        }
+      }
     } else {
       static_assert(sizeof(Context) == 0,
                     "Unsupported Context type in handleCommand");
@@ -107,6 +120,7 @@ signals:
   void themeChanged(const std::string &themeName);
   void tabRevealedInFileExplorer();
   void fileOpened(const neko::TabSnapshot &tabSnapshot);
+  void requestFileExplorerRedraw();
 
 private:
   // Helpers

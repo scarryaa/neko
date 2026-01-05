@@ -64,6 +64,10 @@ WorkspaceCoordinator::WorkspaceCoordinator(
   connect(this, &WorkspaceCoordinator::fileOpened, tabBridge,
           &TabBridge::fileOpened);
 
+  // WorkspaceCoordinator -> FileExplorerWidget
+  connect(this, &WorkspaceCoordinator::requestFileExplorerRedraw,
+          uiHandles.fileExplorerWidget, &FileExplorerWidget::redraw);
+
   auto editorController = appBridge->getEditorController();
   setEditorController(std::move(editorController));
 }
