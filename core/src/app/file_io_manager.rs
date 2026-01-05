@@ -48,4 +48,14 @@ impl FileIoManager {
     pub fn exists<P: AsRef<Path>>(path: P) -> bool {
         path.as_ref().exists()
     }
+
+    pub fn dir_exists<P: AsRef<Path>>(path: P) -> bool {
+        let path_ref = path.as_ref();
+        path_ref.exists() && path_ref.is_dir()
+    }
+
+    pub fn file_exists<P: AsRef<Path>>(path: P) -> bool {
+        let path_ref = path.as_ref();
+        path_ref.exists() && path_ref.is_file()
+    }
 }

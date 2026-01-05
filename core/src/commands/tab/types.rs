@@ -1,10 +1,23 @@
 use crate::{TabError, TabId};
-use std::{path::PathBuf, str::FromStr};
+use std::{fmt, path::PathBuf, str::FromStr};
 
 #[derive(Debug)]
 pub enum TabCommandError {
     Tab(TabError),
     UnknownCommand(String),
+    ParseError(String),
+}
+
+impl fmt::Display for TabCommandError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            TabCommandError::Tab(error) => write!(f, "Tab command error: {error}"),
+            TabCommandError::UnknownCommand(id) => write!(f, "Unknwon tab command: {id}"),
+            TabCommandError::ParseError(id) => {
+                write!(f, "Unable to parse tab command from id: {id}")
+            }
+        }
+    }
 }
 
 impl From<TabError> for TabCommandError {

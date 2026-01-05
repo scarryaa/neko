@@ -2,6 +2,7 @@
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/services/dialog_service.h"
 #include "features/main_window/services/file_io_service.h"
+#include "types/command_type.h"
 #include <QApplication>
 #include <QClipboard>
 #include <QDir>
@@ -32,27 +33,38 @@ FileExplorerFlows::handleFileExplorerCommand(
   auto parentItemPath = QString::fromUtf8(
       fileTreeBridge->getParentNodePath(itemPath.toStdString()));
 
+  const auto fileExplorerCommand =
+      appBridge->parseCommand<CommandType::FileExplorer>(commandId);
+
   // Handle Qt-side special cases.
-  // TODO(scarlet): Move these to Rust eventually.
-  // TODO(scarlet): Avoid matching on hardcoded command ids?
-  if (commandId == "fileExplorer.cut") {
+  // TODO(scarlet): Move all of these to Rust eventually.
+  switch (fileExplorerCommand) {
+  case neko::FileExplorerCommandKindFfi::Cut:
     handleCut(itemPath);
-  } else if (commandId == "fileExplorer.copy") {
+    break;
+  case neko::FileExplorerCommandKindFfi::Copy:
     handleCopy(itemPath);
-  } else if (commandId == "fileExplorer.duplicate") {
+    break;
+  case neko::FileExplorerCommandKindFfi::Duplicate:
     result.shouldRedraw = true;
     result.success = handleDuplicate(itemPath, parentItemPath);
-  } else if (commandId == "fileExplorer.paste") {
+    break;
+  case neko::FileExplorerCommandKindFfi::Paste:
     result.shouldRedraw = true;
     result.success = handlePaste(itemPath, parentItemPath);
-  } else if (commandId == "fileExplorer.copyPath") {
+    break;
+  case neko::FileExplorerCommandKindFfi::CopyPath:
     handleCopyPath(itemPath);
-  } else if (commandId == "fileExplorer.copyRelativePath") {
+    break;
+  case neko::FileExplorerCommandKindFfi::CopyRelativePath:
     handleCopyRelativePath(itemPath);
-  } else {
-    // Set success to true here if none of the command ids were a match, so we
-    // can let Rust handle it.
+    break;
+  default:
+    // The rest of the commands are handled via Rust; we do some processing
+    // first before handing them off. To avoid returning early if there wasn't a
+    // previous match, set 'success' to true.
     result.success = true;
+    break;
   }
 
   if (!result.success) {
@@ -72,21 +84,16 @@ FileExplorerFlows::handleFileExplorerCommand(
     }
   }
 
-  bool isNewFileCommand = commandId == "fileExplorer.newFile";
-  bool isNewDirectoryCommand = commandId == "fileExplorer.newFolder";
-  bool isRenameCommand = commandId == "fileExplorer.rename";
   QFileInfo itemFileInfo(itemPath);
   bool itemIsDirectory = itemFileInfo.isDir();
-  PreCommandProcessingArgs preArgs{
-      .currentResult = result,
-      .commandId = commandId,
-      .itemPath = itemPath,
-      .bypassDeleteConfirmation = bypassDeleteConfirmation,
-      .itemIsDirectory = itemIsDirectory,
-      .itemFileInfo = itemFileInfo,
-      .isNewFileCommand = isNewFileCommand,
-      .isNewDirectoryCommand = isNewDirectoryCommand,
-      .isRenameCommand = isRenameCommand};
+  PreCommandProcessingArgs preArgs{.currentResult = result,
+                                   .commandId = commandId,
+                                   .itemPath = itemPath,
+                                   .bypassDeleteConfirmation =
+                                       bypassDeleteConfirmation,
+                                   .itemIsDirectory = itemIsDirectory,
+                                   .itemFileInfo = itemFileInfo,
+                                   .fileExplorerCommand = fileExplorerCommand};
 
   auto preProcessingResult = doPreCommandProcessing(preArgs);
   // Check if the command was canceled.
@@ -112,10 +119,7 @@ FileExplorerFlows::handleFileExplorerCommand(
       .itemFileInfo = itemFileInfo,
       .itemIsExpanded = itemIsExpanded,
       .itemIsDirectory = itemIsDirectory,
-      .isNewFileCommand = isNewFileCommand,
-      .isNewDirectoryCommand = isNewDirectoryCommand,
-      .isRenameCommand = isRenameCommand,
-  };
+      .fileExplorerCommand = fileExplorerCommand};
 
   doPostCommandProcessing(postArgs);
 
@@ -125,11 +129,13 @@ FileExplorerFlows::handleFileExplorerCommand(
 FileExplorerFlows::PreCommandProcessingResult
 FileExplorerFlows::doPreCommandProcessing(
     PreCommandProcessingArgs &args) const {
+  using CommandKind = neko::FileExplorerCommandKindFfi;
+
   PreCommandProcessingResult processingResult{
       .updatedResult = args.currentResult, .newItemName = ""};
 
   // Open a delete confirmation dialog unless bypassDeleteConfirmation is true.
-  if (args.commandId == "fileExplorer.delete" &&
+  if (args.fileExplorerCommand == CommandKind::Delete &&
       !args.bypassDeleteConfirmation) {
     using Type = DialogService::DeleteItemType;
     using Decision = DialogService::DeleteDecision;
@@ -144,24 +150,27 @@ FileExplorerFlows::doPreCommandProcessing(
     }
   }
 
-  if (args.isNewFileCommand || args.isNewDirectoryCommand ||
-      args.isRenameCommand) {
+  bool isNewFileCommand = args.fileExplorerCommand == CommandKind::NewFile;
+  bool isNewDirectoryCommand =
+      args.fileExplorerCommand == CommandKind::NewFolder;
+  bool isRenameCommand = args.fileExplorerCommand == CommandKind::Rename;
+  if (isNewFileCommand || isNewDirectoryCommand || isRenameCommand) {
     using Type = DialogService::OperationType;
 
     QFileInfo srcInfo(args.itemPath);
     QString originalItemName = srcInfo.fileName();
     Type type;
 
-    if (args.isNewFileCommand) {
+    if (isNewFileCommand) {
       type = Type::NewFile;
-    } else if (args.isNewDirectoryCommand) {
+    } else if (isNewDirectoryCommand) {
       type = Type::NewDirectory;
-    } else if (args.isRenameCommand) {
+    } else if (isRenameCommand) {
       type = args.itemIsDirectory ? Type::RenameDirectory : Type::RenameFile;
     }
 
     processingResult.newItemName = DialogService::openItemNameDialog(
-        uiHandles.window, type, args.isRenameCommand ? originalItemName : "");
+        uiHandles.window, type, isRenameCommand ? originalItemName : "");
 
     if (processingResult.newItemName.isEmpty()) {
       // Command was canceled.
@@ -176,10 +185,12 @@ FileExplorerFlows::doPreCommandProcessing(
 
 void FileExplorerFlows::doPostCommandProcessing(
     PostCommandProcessingArgs &args) {
+  using CommandKind = neko::FileExplorerCommandKindFfi;
+
   // When creating or modifying an item, unconditionally re-expand the directory
   // containing the item (except for rename operations, we only re-expand if it
   // was expanded to begin with).
-  if (args.commandId == "fileExplorer.delete") {
+  if (args.fileExplorerCommand == CommandKind::Delete) {
     // Prevent expanding the root's parent (which is not part of the tree -- and
     // the root would be deleted anyway if the deletion target was the root
     // directory).
@@ -194,14 +205,15 @@ void FileExplorerFlows::doPostCommandProcessing(
 
   // If a new file/directory was created/duplicated, expand the parent
   // directory.
-  if (args.isNewFileCommand || args.isNewDirectoryCommand ||
-      args.commandId == "fileExplorer.duplicate") {
+  if (args.fileExplorerCommand == CommandKind::NewFile ||
+      args.fileExplorerCommand == CommandKind::NewFolder ||
+      args.fileExplorerCommand == CommandKind::Duplicate) {
     fileTreeBridge->setExpanded(args.parentItemPath.toStdString());
   }
 
   // If it was a rename command and the target item was originally expanded,
   // expand it again.
-  if (args.isRenameCommand) {
+  if (args.fileExplorerCommand == CommandKind::Rename) {
     if (args.itemIsExpanded && args.itemIsDirectory) {
       // Expand the renamed directory.
       QString newItemPath =

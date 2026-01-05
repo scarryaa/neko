@@ -1,9 +1,9 @@
 use super::*;
 use crate::{
     AddCursorDirection, ChangeSet, CloseTabOperationType, Command, CommandResult, Config, Cursor,
-    DocumentError, DocumentTarget, FileExplorerCommandResult, FileExplorerUiIntent,
-    FileSystemError, JumpAliasInfo, JumpCommand, JumpManagementCommand, LineTarget, OpenTabResult,
-    TabCommandState, TabContext, UiIntent,
+    DocumentError, DocumentTarget, FileExplorerCommand, FileExplorerCommandResult,
+    FileExplorerUiIntent, FileSystemError, JumpAliasInfo, JumpCommand, JumpManagementCommand,
+    LineTarget, OpenTabResult, TabCommand, TabCommandState, TabContext, UiIntent,
     commands::{FileExplorerCommandState, FileExplorerContext},
 };
 use std::{fmt, io, path::PathBuf};
@@ -499,6 +499,55 @@ impl From<FileExplorerCommandState> for FileExplorerCommandStateFfi {
     }
 }
 
+impl From<FileExplorerCommand> for FileExplorerCommandKindFfi {
+    fn from(command: FileExplorerCommand) -> Self {
+        match command {
+            FileExplorerCommand::NewFile => FileExplorerCommandKindFfi::NewFile,
+            FileExplorerCommand::NewFolder => FileExplorerCommandKindFfi::NewFolder,
+            FileExplorerCommand::Reveal => FileExplorerCommandKindFfi::Reveal,
+            FileExplorerCommand::OpenInTerminal => FileExplorerCommandKindFfi::OpenInTerminal,
+            FileExplorerCommand::FindInFolder => FileExplorerCommandKindFfi::FindInFolder,
+            FileExplorerCommand::Cut => FileExplorerCommandKindFfi::Cut,
+            FileExplorerCommand::Copy => FileExplorerCommandKindFfi::Copy,
+            FileExplorerCommand::Duplicate => FileExplorerCommandKindFfi::Duplicate,
+            FileExplorerCommand::Paste => FileExplorerCommandKindFfi::Paste,
+            FileExplorerCommand::CopyPath => FileExplorerCommandKindFfi::CopyPath,
+            FileExplorerCommand::CopyRelativePath => FileExplorerCommandKindFfi::CopyRelativePath,
+            FileExplorerCommand::ShowHistory => FileExplorerCommandKindFfi::ShowHistory,
+            FileExplorerCommand::Rename => FileExplorerCommandKindFfi::Rename,
+            FileExplorerCommand::Delete => FileExplorerCommandKindFfi::Delete,
+            FileExplorerCommand::Expand => FileExplorerCommandKindFfi::Expand,
+            FileExplorerCommand::CollapseAll => FileExplorerCommandKindFfi::CollapseAll,
+        }
+    }
+}
+
+impl From<FileExplorerCommandKindFfi> for FileExplorerCommand {
+    fn from(command: FileExplorerCommandKindFfi) -> Self {
+        match command {
+            FileExplorerCommandKindFfi::NewFile => FileExplorerCommand::NewFile,
+            FileExplorerCommandKindFfi::NewFolder => FileExplorerCommand::NewFolder,
+            FileExplorerCommandKindFfi::Reveal => FileExplorerCommand::Reveal,
+            FileExplorerCommandKindFfi::OpenInTerminal => FileExplorerCommand::OpenInTerminal,
+            FileExplorerCommandKindFfi::FindInFolder => FileExplorerCommand::FindInFolder,
+            FileExplorerCommandKindFfi::Cut => FileExplorerCommand::Cut,
+            FileExplorerCommandKindFfi::Copy => FileExplorerCommand::Copy,
+            FileExplorerCommandKindFfi::Duplicate => FileExplorerCommand::Duplicate,
+            FileExplorerCommandKindFfi::Paste => FileExplorerCommand::Paste,
+            FileExplorerCommandKindFfi::CopyPath => FileExplorerCommand::CopyPath,
+            FileExplorerCommandKindFfi::CopyRelativePath => FileExplorerCommand::CopyRelativePath,
+            FileExplorerCommandKindFfi::ShowHistory => FileExplorerCommand::ShowHistory,
+            FileExplorerCommandKindFfi::Rename => FileExplorerCommand::Rename,
+            FileExplorerCommandKindFfi::Delete => FileExplorerCommand::Delete,
+            FileExplorerCommandKindFfi::Expand => FileExplorerCommand::Expand,
+            FileExplorerCommandKindFfi::CollapseAll => FileExplorerCommand::CollapseAll,
+            _ => unreachable!(
+                "All FileExplorerCommandKindFfi => FileExplorerCommand cases should be covered"
+            ),
+        }
+    }
+}
+
 impl From<FileExplorerContextFfi> for FileExplorerContext {
     fn from(ctx: FileExplorerContextFfi) -> Self {
         FileExplorerContext {
@@ -590,6 +639,39 @@ impl From<TabContextFfi> for TabContext {
             } else {
                 None
             },
+        }
+    }
+}
+
+impl From<TabCommand> for TabCommandKindFfi {
+    fn from(command: TabCommand) -> Self {
+        match command {
+            TabCommand::Close => TabCommandKindFfi::Close,
+            TabCommand::CloseOthers => TabCommandKindFfi::CloseOthers,
+            TabCommand::CloseLeft => TabCommandKindFfi::CloseLeft,
+            TabCommand::CloseRight => TabCommandKindFfi::CloseRight,
+            TabCommand::CloseAll => TabCommandKindFfi::CloseAll,
+            TabCommand::CloseClean => TabCommandKindFfi::CloseClean,
+            TabCommand::CopyPath => TabCommandKindFfi::CopyPath,
+            TabCommand::Reveal => TabCommandKindFfi::Reveal,
+            TabCommand::Pin => TabCommandKindFfi::Pin,
+        }
+    }
+}
+
+impl From<TabCommandKindFfi> for TabCommand {
+    fn from(command: TabCommandKindFfi) -> Self {
+        match command {
+            TabCommandKindFfi::Close => TabCommand::Close,
+            TabCommandKindFfi::CloseOthers => TabCommand::CloseOthers,
+            TabCommandKindFfi::CloseLeft => TabCommand::CloseLeft,
+            TabCommandKindFfi::CloseRight => TabCommand::CloseRight,
+            TabCommandKindFfi::CloseAll => TabCommand::CloseAll,
+            TabCommandKindFfi::CloseClean => TabCommand::CloseClean,
+            TabCommandKindFfi::CopyPath => TabCommand::CopyPath,
+            TabCommandKindFfi::Reveal => TabCommand::Reveal,
+            TabCommandKindFfi::Pin => TabCommand::Pin,
+            _ => unreachable!("All TabCommandKindFfi => TabCommand cases should be covered"),
         }
     }
 }

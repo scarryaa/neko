@@ -1,9 +1,12 @@
 use crate::{
-    AppState, ConfigManager, ThemeManager, execute_command, execute_jump_command, execute_jump_key,
+    AppState, ConfigManager, FileExplorerCommand, TabCommand, ThemeManager,
+    commands::{FileExplorerCommandError, TabCommandError},
+    execute_command, execute_jump_command, execute_jump_key,
     ffi::{
         CommandFfi, CommandKindFfi, CommandResultFfi, FileExplorerCommandFfi,
-        FileExplorerCommandResultFfi, FileExplorerCommandStateFfi, FileExplorerContextFfi,
-        JumpCommandFfi, TabCommandFfi, TabCommandStateFfi, TabContextFfi,
+        FileExplorerCommandKindFfi, FileExplorerCommandResultFfi, FileExplorerCommandStateFfi,
+        FileExplorerContextFfi, JumpCommandFfi, TabCommandFfi, TabCommandKindFfi,
+        TabCommandStateFfi, TabContextFfi,
     },
     file_explorer_command_state, get_available_commands, get_available_file_explorer_commands,
     get_available_jump_commands, get_available_tab_commands, run_file_explorer_command,
@@ -69,6 +72,15 @@ impl CommandController {
         }
     }
 
+    pub fn parse_file_explorer_command_id(
+        &self,
+        id: &str,
+    ) -> Result<FileExplorerCommandKindFfi, FileExplorerCommandError> {
+        id.parse::<FileExplorerCommand>()
+            .map(Into::into)
+            .map_err(|_| FileExplorerCommandError::ParseError(id.to_string()))
+    }
+
     pub fn get_file_explorer_command_state(&self, path: String) -> FileExplorerCommandStateFfi {
         let app_state = self.app_state.borrow();
 
@@ -130,6 +142,15 @@ impl CommandController {
                 id: cmd.as_str().to_string(),
             })
             .collect()
+    }
+
+    pub fn parse_tab_command_id(
+        self: &CommandController,
+        id: &str,
+    ) -> Result<TabCommandKindFfi, TabCommandError> {
+        id.parse::<TabCommand>()
+            .map(Into::into)
+            .map_err(|_| TabCommandError::ParseError(id.to_string()))
     }
 
     // General Commands

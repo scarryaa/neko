@@ -3,7 +3,6 @@
 
 #include "core/bridge/app_bridge.h"
 #include "features/file_explorer/bridge/file_tree_bridge.h"
-#include "features/main_window/services/file_io_service.h"
 #include "features/main_window/ui_handles.h"
 #include <QFileInfo>
 #include <string>
@@ -48,9 +47,7 @@ private:
     bool bypassDeleteConfirmation;
     bool itemIsDirectory;
     QFileInfo itemFileInfo;
-    bool isNewFileCommand;
-    bool isNewDirectoryCommand;
-    bool isRenameCommand;
+    neko::FileExplorerCommandKindFfi fileExplorerCommand;
   };
 
   struct PostCommandProcessingArgs {
@@ -61,9 +58,7 @@ private:
     QFileInfo itemFileInfo;
     bool itemIsExpanded;
     bool itemIsDirectory;
-    bool isNewFileCommand;
-    bool isNewDirectoryCommand;
-    bool isRenameCommand;
+    neko::FileExplorerCommandKindFfi fileExplorerCommand;
   };
 
   static void handleCut(const QString &itemPath);

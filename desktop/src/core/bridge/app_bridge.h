@@ -62,6 +62,14 @@ public:
   void executeJumpCommand(const neko::JumpCommandFfi &jumpCommand);
   void executeJumpKey(const QString &key);
 
+  template <CommandType K> auto parseCommand(const std::string &commandId) {
+    if constexpr (K == CommandType::Tab) {
+      return commandController->parse_tab_command_id(commandId);
+    } else if constexpr (K == CommandType::FileExplorer) {
+      return commandController->parse_file_explorer_command_id(commandId);
+    }
+  }
+
   template <typename Result, typename Context, typename... AdditionalArgs>
   Result runCommand(const CommandType &commandType,
                     const std::string &commandId, const Context &ctx,

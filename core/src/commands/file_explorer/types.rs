@@ -3,6 +3,7 @@ use std::{fmt, io, path::PathBuf, str::FromStr};
 #[derive(Debug)]
 pub enum FileExplorerCommandError {
     UnknownCommand(String),
+    ParseError(String),
     IoError(String, io::Error),
 }
 
@@ -11,6 +12,9 @@ impl fmt::Display for FileExplorerCommandError {
         match self {
             FileExplorerCommandError::UnknownCommand(id) => {
                 write!(f, "Unknown File Explorer Command: {id}")
+            }
+            FileExplorerCommandError::ParseError(id) => {
+                write!(f, "Unable to parse command id {id}")
             }
             FileExplorerCommandError::IoError(id, error) => {
                 write!(

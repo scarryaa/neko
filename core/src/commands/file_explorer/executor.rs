@@ -89,7 +89,7 @@ pub fn run_file_explorer_command(
             );
 
             // Only create the file if it doesn't already exist.
-            if !FileIoManager::exists(target_directory.join(&name)) {
+            if !FileIoManager::file_exists(target_directory.join(&name)) {
                 FileIoManager::write(target_directory.join(name), "")
                     .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?;
             }
@@ -110,7 +110,7 @@ pub fn run_file_explorer_command(
             );
 
             // Only create the directory if it doesn't already exist.
-            if !FileIoManager::exists(target_directory.join(&name)) {
+            if !FileIoManager::dir_exists(target_directory.join(&name)) {
                 FileIoManager::create_directory(target_directory.join(name))
                     .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?;
             }

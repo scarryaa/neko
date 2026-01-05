@@ -325,6 +325,26 @@ pub mod ffi {
     }
 
     #[derive(Clone, Debug)]
+    enum FileExplorerCommandKindFfi {
+        NewFile,
+        NewFolder,
+        Reveal,
+        OpenInTerminal,
+        FindInFolder,
+        Cut,
+        Copy,
+        Duplicate,
+        Paste,
+        CopyPath,
+        CopyRelativePath,
+        ShowHistory,
+        Rename,
+        Delete,
+        Expand,
+        CollapseAll,
+    }
+
+    #[derive(Clone, Debug)]
     enum FileExplorerUiIntentKindFfi {
         DirectoryRefreshed,
     }
@@ -354,6 +374,18 @@ pub mod ffi {
 
     struct TabCommandFfi {
         id: String,
+    }
+
+    enum TabCommandKindFfi {
+        Close,
+        CloseOthers,
+        CloseLeft,
+        CloseRight,
+        CloseAll,
+        CloseClean,
+        CopyPath,
+        Reveal,
+        Pin,
     }
 
     struct CreateDocumentTabAndViewResultFfi {
@@ -544,6 +576,10 @@ pub mod ffi {
         ) -> bool;
         pub fn get_tab_command_state(self: &CommandController, id: u64) -> TabCommandStateFfi;
         pub fn get_available_tab_commands(self: &CommandController) -> Vec<TabCommandFfi>;
+        pub fn parse_tab_command_id(
+            self: &CommandController,
+            id: &str,
+        ) -> Result<TabCommandKindFfi>;
 
         // File Explorer Commands
         pub fn run_file_explorer_command(
@@ -560,6 +596,10 @@ pub mod ffi {
             self: &CommandController,
             ctx: FileExplorerContextFfi,
         ) -> Vec<FileExplorerCommandFfi>;
+        pub fn parse_file_explorer_command_id(
+            self: &CommandController,
+            id: &str,
+        ) -> Result<FileExplorerCommandKindFfi>;
 
         // General Commands
         pub(crate) fn new_command(
