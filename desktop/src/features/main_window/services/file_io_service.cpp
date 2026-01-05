@@ -9,6 +9,8 @@
 namespace k {
 // Custom MIME type to identify cut operations.
 static const char *cutMimeType = "application/x-neko-cut";
+// Suffix used for duplicate operations - e.g. "file1" becomes "file1 copy",
+// "file1 copy" becomes "file1 copy copy", and so on.
 static const char *duplicateSuffix = " copy";
 } // namespace k
 
@@ -20,6 +22,7 @@ void FileIoService::cut(const QString &itemPath) {
 
   urls.append(QUrl::fromLocalFile(itemPath));
   mimeData->setUrls(urls);
+
   // Mark this clipboard data as a cut operation.
   mimeData->setData(k::cutMimeType, "1");
 

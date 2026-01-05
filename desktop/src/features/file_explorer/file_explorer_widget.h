@@ -34,6 +34,7 @@ public:
   void initialize(const std::string &path);
   void setAndApplyTheme(const FileExplorerTheme &newTheme);
   void redraw();
+  void updateDimensions();
 
 protected:
   void keyPressEvent(QKeyEvent *event) override;
@@ -67,7 +68,6 @@ private:
   void loadDirectory(const std::string &path);
 
   double measureContent();
-  void updateDimensions();
   void handleViewportUpdate();
   void scrollToNode(int index);
 

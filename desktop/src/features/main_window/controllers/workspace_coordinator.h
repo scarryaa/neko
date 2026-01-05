@@ -63,15 +63,19 @@ public:
           commandId, ctx, forceClose);
 
       // Handle `shouldRedraw` result from Qt-handled commands.
+      // We also request a geometry/size update.
       if (result.success && result.shouldRedraw) {
         emit requestFileExplorerRedraw();
+        emit requestFileExplorerSizeUpdate();
       }
 
       // Handle 'should redraw' intents from Rust-handled commands.
+      // We also request a geometry/size update.
       for (const auto &intent : result.intentKinds) {
         switch (intent) {
         case neko::FileExplorerUiIntentKindFfi::DirectoryRefreshed:
           emit requestFileExplorerRedraw();
+          emit requestFileExplorerSizeUpdate();
         }
       }
     } else {
@@ -121,6 +125,7 @@ signals:
   void tabRevealedInFileExplorer();
   void fileOpened(const neko::TabSnapshot &tabSnapshot);
   void requestFileExplorerRedraw();
+  void requestFileExplorerSizeUpdate();
 
 private:
   // Helpers

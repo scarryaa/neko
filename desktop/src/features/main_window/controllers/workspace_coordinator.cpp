@@ -67,6 +67,8 @@ WorkspaceCoordinator::WorkspaceCoordinator(
   // WorkspaceCoordinator -> FileExplorerWidget
   connect(this, &WorkspaceCoordinator::requestFileExplorerRedraw,
           uiHandles.fileExplorerWidget, &FileExplorerWidget::redraw);
+  connect(this, &WorkspaceCoordinator::requestFileExplorerSizeUpdate,
+          uiHandles.fileExplorerWidget, &FileExplorerWidget::updateDimensions);
 
   auto editorController = appBridge->getEditorController();
   setEditorController(std::move(editorController));
