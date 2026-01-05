@@ -31,8 +31,9 @@ WorkspaceCoordinator::WorkspaceCoordinator(
                 .appBridge = props.appBridge,
                 .editorBridge = props.editorBridge,
                 .uiHandles = props.uiHandles}),
-      fileExplorerFlows(
-          {.appBridge = props.appBridge, .uiHandles = props.uiHandles}),
+      fileExplorerFlows({.appBridge = props.appBridge,
+                         .fileTreeBridge = props.fileTreeBridge,
+                         .uiHandles = props.uiHandles}),
       QObject(parent) {
   // TabBridge -> WorkspaceCoordinator
   connect(tabBridge, &TabBridge::activeTabChanged, this,

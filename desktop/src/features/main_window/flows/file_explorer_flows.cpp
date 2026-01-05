@@ -8,7 +8,8 @@
 #include <QFileInfo>
 
 FileExplorerFlows::FileExplorerFlows(const FileExplorerFlowsProps &props)
-    : appBridge(props.appBridge), uiHandles(props.uiHandles) {}
+    : appBridge(props.appBridge), uiHandles(props.uiHandles),
+      fileTreeBridge(props.fileTreeBridge) {}
 
 bool FileExplorerFlows::handleFileExplorerCommand(
     const std::string &commandId, const neko::FileExplorerContextFfi &ctx,
@@ -18,13 +19,11 @@ bool FileExplorerFlows::handleFileExplorerCommand(
   }
 
   const auto itemPath = QString::fromUtf8(ctx.item_path);
-  // TODO(scarlet): Avoid bypassing FileTreeBridge.
-  auto fileTreeController = appBridge->getFileTreeController();
 
   // Get the parent path ahead of time, in case the operation is a
   // delete/rename, after which the original item path would not exist anymore.
   auto parentItemPath = QString::fromUtf8(
-      fileTreeController->get_path_of_parent(itemPath.toStdString()));
+      fileTreeBridge->getParentNodePath(itemPath.toStdString()));
 
   bool shouldRedraw = false;
   bool success = false;
@@ -39,14 +38,14 @@ bool FileExplorerFlows::handleFileExplorerCommand(
   } else if (commandId == "fileExplorer.duplicate") {
     // TODO(scarlet): Fix duplicated item not showing up in the tree.
     shouldRedraw = true;
-    success = handleDuplicate(itemPath, parentItemPath, &*fileTreeController);
+    success = handleDuplicate(itemPath, parentItemPath);
   } else if (commandId == "fileExplorer.paste") {
     shouldRedraw = true;
-    success = handlePaste(itemPath, parentItemPath, &*fileTreeController);
+    success = handlePaste(itemPath, parentItemPath);
   } else if (commandId == "fileExplorer.copyPath") {
     handleCopyPath(itemPath);
   } else if (commandId == "fileExplorer.copyRelativePath") {
-    handleCopyRelativePath(itemPath, &*fileTreeController);
+    handleCopyRelativePath(itemPath);
   } else {
     // Set success to true here if none of the command ids were a match, so we
     // can let Rust handle it.
@@ -58,7 +57,7 @@ bool FileExplorerFlows::handleFileExplorerCommand(
   }
 
   bool itemIsExpanded = false;
-  const auto snapshot = fileTreeController->get_tree_snapshot();
+  const auto snapshot = fileTreeBridge->getTreeSnapshot();
   for (const auto &node : snapshot.nodes) {
     if ((node.path == itemPath && node.is_dir) ||
         (node.path == parentItemPath && node.is_dir)) {
@@ -136,17 +135,17 @@ bool FileExplorerFlows::handleFileExplorerCommand(
     // the root would be deleted anyway if the deletion target was the root
     // directory).
     // TODO(scarlet): Handle case where root folder is deleted.
-    const QString workspaceRootPath =
-        QString::fromUtf8(fileTreeController->get_root_path());
+    const auto snapshot = fileTreeBridge->getTreeSnapshot();
+    const QString workspaceRootPath = QString::fromUtf8(snapshot.root);
 
     if (itemPath != workspaceRootPath) {
-      fileTreeController->set_expanded(parentItemPath.toStdString());
+      fileTreeBridge->setExpanded(parentItemPath.toStdString());
     }
   }
 
   if (isNewFileCommand || isNewDirectoryCommand ||
       commandId == "fileExplorer.duplicate") {
-    fileTreeController->set_expanded(parentItemPath.toStdString());
+    fileTreeBridge->setExpanded(parentItemPath.toStdString());
   }
 
   if (isRenameCommand) {
@@ -154,10 +153,10 @@ bool FileExplorerFlows::handleFileExplorerCommand(
       // Expand the renamed directory.
       QString newItemPath =
           itemFileInfo.dir().path() + QDir::separator() + newItemName;
-      fileTreeController->set_expanded(newItemPath.toStdString());
+      fileTreeBridge->setExpanded(newItemPath.toStdString());
     } else if (itemIsExpanded) {
       // Expand the directory containing the renamed file.
-      fileTreeController->set_expanded(parentItemPath.toStdString());
+      fileTreeBridge->setExpanded(parentItemPath.toStdString());
     }
   }
 
@@ -177,25 +176,22 @@ void FileExplorerFlows::handleCopy(const QString &itemPath) {
   FileIoService::copy(itemPath);
 }
 
-bool FileExplorerFlows::handleDuplicate(
-    const QString &itemPath, const QString &parentItemPath,
-    neko::FileTreeController *fileTreeController) {
+bool FileExplorerFlows::handleDuplicate(const QString &itemPath,
+                                        const QString &parentItemPath) {
   const auto result = FileIoService::duplicate(itemPath);
 
   if (result.success) {
     const auto newItemPath = result.newPath;
-    // TODO(scarlet): Avoid bypassing FileTreeBridge.
-    fileTreeController->refresh_dir(parentItemPath.toStdString());
-    fileTreeController->set_current_path(newItemPath.toStdString());
+    fileTreeBridge->refreshDirectory(parentItemPath.toStdString());
+    fileTreeBridge->setCurrent(newItemPath.toStdString());
   }
 
   return result.success;
 }
 
 // TODO(scarlet): Clean this up.
-bool FileExplorerFlows::handlePaste(
-    const QString &itemPath, const QString &parentItemPath,
-    neko::FileTreeController *fileTreeController) {
+bool FileExplorerFlows::handlePaste(const QString &itemPath,
+                                    const QString &parentItemPath) {
   const auto result = FileIoService::paste(itemPath);
   bool destinationIsDirectory = QFileInfo(itemPath).isDir();
 
@@ -204,45 +200,43 @@ bool FileExplorerFlows::handlePaste(
       // On a cut/paste, we need to refresh both the destination
       // directory and the source directory.
       if (destinationIsDirectory) {
-        fileTreeController->refresh_dir(itemPath.toStdString());
+        fileTreeBridge->refreshDirectory(itemPath.toStdString());
 
         // TODO(scarlet): Handle multiple selected items eventually.
         QString originalPath = result.items.first().originalPath;
         bool sourceIsDirectory = QFileInfo(originalPath).isDir();
 
         if (sourceIsDirectory) {
-          fileTreeController->refresh_dir(originalPath.toStdString());
-          fileTreeController->set_expanded(originalPath.toStdString());
+          fileTreeBridge->refreshDirectory(originalPath.toStdString());
+          fileTreeBridge->setExpanded(originalPath.toStdString());
         } else {
-          const auto originalParentPath =
-              QString::fromUtf8(fileTreeController->get_path_of_parent(
-                  originalPath.toStdString()));
-          fileTreeController->refresh_dir(originalParentPath.toStdString());
-          fileTreeController->set_expanded(originalParentPath.toStdString());
+          const auto originalParentPath = QString::fromUtf8(
+              fileTreeBridge->getParentNodePath(originalPath.toStdString()));
+          fileTreeBridge->refreshDirectory(originalParentPath.toStdString());
+          fileTreeBridge->setExpanded(originalParentPath.toStdString());
         }
       } else {
-        fileTreeController->refresh_dir(parentItemPath.toStdString());
+        fileTreeBridge->refreshDirectory(parentItemPath.toStdString());
 
         QString originalPath = result.items.first().originalPath;
         bool sourceIsDirectory = QFileInfo(originalPath).isDir();
 
         if (sourceIsDirectory) {
-          fileTreeController->refresh_dir(originalPath.toStdString());
-          fileTreeController->set_expanded(originalPath.toStdString());
+          fileTreeBridge->refreshDirectory(originalPath.toStdString());
+          fileTreeBridge->setExpanded(originalPath.toStdString());
         } else {
-          const auto originalParentPath =
-              QString::fromUtf8(fileTreeController->get_path_of_parent(
-                  originalPath.toStdString()));
-          fileTreeController->refresh_dir(originalParentPath.toStdString());
-          fileTreeController->set_expanded(originalParentPath.toStdString());
+          const auto originalParentPath = QString::fromUtf8(
+              fileTreeBridge->getParentNodePath(originalPath.toStdString()));
+          fileTreeBridge->refreshDirectory(originalParentPath.toStdString());
+          fileTreeBridge->setExpanded(originalParentPath.toStdString());
         }
       }
     } else {
       // Otherwise, just refresh the destination directory.
       if (destinationIsDirectory) {
-        fileTreeController->refresh_dir(itemPath.toStdString());
+        fileTreeBridge->refreshDirectory(itemPath.toStdString());
       } else {
-        fileTreeController->refresh_dir(parentItemPath.toStdString());
+        fileTreeBridge->refreshDirectory(parentItemPath.toStdString());
       }
     }
   } else {
@@ -252,20 +246,19 @@ bool FileExplorerFlows::handlePaste(
 
   // If the destination is a directory, refresh it. Otherwise, refresh the
   // parent directory.
-  // TODO(scarlet): Avoid bypassing FileTreeBridge for fileTreeController.
   if (destinationIsDirectory) {
-    fileTreeController->refresh_dir(itemPath.toStdString());
+    fileTreeBridge->refreshDirectory(itemPath.toStdString());
   } else {
-    fileTreeController->refresh_dir(parentItemPath.toStdString());
+    fileTreeBridge->refreshDirectory(parentItemPath.toStdString());
   }
 
   // Avoid collapsing the directory on reload.
-  fileTreeController->set_expanded(destinationIsDirectory
-                                       ? itemPath.toStdString()
-                                       : parentItemPath.toStdString());
+  fileTreeBridge->setExpanded(destinationIsDirectory
+                                  ? itemPath.toStdString()
+                                  : parentItemPath.toStdString());
 
   QString newItemPath = result.items.first().newPath;
-  fileTreeController->set_current_path(newItemPath.toStdString());
+  fileTreeBridge->setCurrent(newItemPath.toStdString());
 
   return true;
 }
@@ -278,10 +271,9 @@ void FileExplorerFlows::handleCopyPath(const QString &itemPath) {
   QApplication::clipboard()->setText(absolutePath);
 }
 
-void FileExplorerFlows::handleCopyRelativePath(
-    const QString &itemPath, neko::FileTreeController *fileTreeController) {
-  const QString workspaceRootPath =
-      QString::fromUtf8(fileTreeController->get_root_path());
+void FileExplorerFlows::handleCopyRelativePath(const QString &itemPath) {
+  const auto snapshot = fileTreeBridge->getTreeSnapshot();
+  const QString workspaceRootPath = QString::fromUtf8(snapshot.root);
   QDir rootDir(workspaceRootPath);
 
   const QString relativePath = rootDir.relativeFilePath(itemPath);

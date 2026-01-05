@@ -2,6 +2,7 @@
 #define FILE_EXPLORER_FLOWS_H
 
 #include "core/bridge/app_bridge.h"
+#include "features/file_explorer/bridge/file_tree_bridge.h"
 #include "features/main_window/ui_handles.h"
 
 /// \class FileExplorerFlows
@@ -12,6 +13,7 @@ class FileExplorerFlows {
 public:
   struct FileExplorerFlowsProps {
     AppBridge *appBridge;
+    FileTreeBridge *fileTreeBridge;
     const UiHandles uiHandles;
   };
 
@@ -25,17 +27,12 @@ public:
 private:
   static void handleCut(const QString &itemPath);
   static void handleCopy(const QString &itemPath);
-  static bool handleDuplicate(const QString &itemPath,
-                              const QString &parentItemPath,
-                              neko::FileTreeController *fileTreeController);
-  static bool handlePaste(const QString &itemPath,
-                          const QString &parentItemPath,
-                          neko::FileTreeController *fileTreeController);
+  bool handleDuplicate(const QString &itemPath, const QString &parentItemPath);
+  bool handlePaste(const QString &itemPath, const QString &parentItemPath);
   static void handleCopyPath(const QString &itemPath);
-  static void
-  handleCopyRelativePath(const QString &itemPath,
-                         neko::FileTreeController *fileTreeController);
+  void handleCopyRelativePath(const QString &itemPath);
 
+  FileTreeBridge *fileTreeBridge;
   AppBridge *appBridge;
   const UiHandles uiHandles;
 };

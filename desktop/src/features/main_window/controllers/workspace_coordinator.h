@@ -2,6 +2,7 @@
 #define WORKSPACE_COORDINATOR_H
 
 #include "features/command_palette/types/types.h"
+#include "features/file_explorer/bridge/file_tree_bridge.h"
 #include "features/file_explorer/file_explorer_widget.h"
 #include "features/main_window/flows/file_explorer_flows.h"
 #include "features/main_window/flows/tab_flows.h"
@@ -29,6 +30,7 @@ public:
   struct WorkspaceCoordinatorProps {
     TabBridge *tabBridge;
     AppBridge *appBridge;
+    FileTreeBridge *fileTreeBridge;
     EditorBridge *editorBridge;
     AppConfigService *appConfigService;
     CommandExecutor *commandExecutor;

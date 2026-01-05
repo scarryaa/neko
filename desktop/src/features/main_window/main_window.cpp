@@ -69,6 +69,8 @@ MainWindow::MainWindow(QWidget *parent)
 
   auto *tabBridge = new TabBridge(
       TabBridge::TabBridgeProps{.tabController = std::move(tabController)});
+  auto *fileTreeBridge = new FileTreeBridge(
+      {.fileTreeController = appBridge->getFileTreeController()}, this);
 
   appConfigService =
       new AppConfigService({.configManager = &*configManager}, this);
@@ -83,7 +85,7 @@ MainWindow::MainWindow(QWidget *parent)
       this);
 
   applyTheme();
-  setupWidgets(tabBridge, appBridge);
+  setupWidgets(tabBridge, appBridge, fileTreeBridge);
 
   // Layout
   MainWindowLayoutBuilder layoutBuilder(
@@ -121,6 +123,7 @@ MainWindow::MainWindow(QWidget *parent)
       {
           .tabBridge = tabBridge,
           .appBridge = appBridge,
+          .fileTreeBridge = fileTreeBridge,
           .editorBridge = editorBridge,
           .appConfigService = appConfigService,
           .commandExecutor = commandExecutor,
@@ -151,14 +154,12 @@ MainWindow::MainWindow(QWidget *parent)
   themeProvider->reload();
 }
 
-void MainWindow::setupWidgets(TabBridge *tabBridge, AppBridge *appBridge) {
+void MainWindow::setupWidgets(TabBridge *tabBridge, AppBridge *appBridge,
+                              FileTreeBridge *fileTreeBridge) {
   auto themes = themeProvider->getCurrentThemes();
   auto fonts = uiStyleManager->getCurrentFonts();
   auto snapshot = appConfigService->getSnapshot();
   const bool fileExplorerShown = snapshot.file_explorer.shown;
-
-  auto *fileTreeBridge = new FileTreeBridge(
-      {.fileTreeController = appBridge->getFileTreeController()}, this);
   const auto jumpHints = WorkspaceCoordinator::buildJumpHintRows(appBridge);
 
   emptyStateWidget = new QWidget(this);

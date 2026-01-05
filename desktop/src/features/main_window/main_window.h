@@ -17,6 +17,7 @@ class TabBridge;
 class AppBridge;
 class AppConfigService;
 class UiStyleManager;
+class FileTreeBridge;
 
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
@@ -35,7 +36,8 @@ public:
   ~MainWindow() override = default;
 
 private:
-  void setupWidgets(TabBridge *tabBridge, AppBridge *appBridge);
+  void setupWidgets(TabBridge *tabBridge, AppBridge *appBridge,
+                    FileTreeBridge *fileTreeBridge);
   void applyTheme();
   void connectSignals();
 
