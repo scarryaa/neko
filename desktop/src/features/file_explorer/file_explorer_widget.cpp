@@ -33,7 +33,6 @@
 #include <QWheelEvent>
 #include <QtDebug>
 
-// TODO(scarlet): Add context menus for items/empty space right clicks.
 FileExplorerWidget::FileExplorerWidget(const FileExplorerProps &props,
                                        QWidget *parent)
     : QScrollArea(parent), fileTreeBridge(props.fileTreeBridge),
@@ -256,6 +255,7 @@ void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
   // If it is a left click, open the target file or toggle the target directory.
   if (currentNode.is_dir) {
     fileTreeBridge->toggleExpanded(currentNode.path.c_str());
+    updateDimensions();
   } else {
     const auto fileStr = QString::fromUtf8(currentNode.path.c_str());
     emit fileSelected(fileStr.toStdString(), false);
