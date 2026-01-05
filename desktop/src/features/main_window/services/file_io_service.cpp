@@ -68,7 +68,7 @@ FileIoService::paste(const QString &targetDirectory) {
       continue;
     }
 
-    QString destPath = adjustPastePathIfNeeded(targetDirectory, srcInfo);
+    QString destPath = adjustDestinationPath(targetDirectory, srcInfo);
     PasteItem item;
 
     if (srcInfo.isDir()) {
@@ -88,15 +88,15 @@ FileIoService::paste(const QString &targetDirectory) {
   return result;
 }
 
-// Adjusts the destination path as needed for a paste operation.
+// Adjusts the destination path an operation.
 //
 // If the provided path is a directory, it is adjusted to target within the
 // directory.
 //
 // If the provided path is a file, it is adjusted to target the parent
 // directory.
-QString FileIoService::adjustPastePathIfNeeded(const QString &targetDirectory,
-                                               const QFileInfo &srcInfo) {
+QString FileIoService::adjustDestinationPath(const QString &targetDirectory,
+                                             const QFileInfo &srcInfo) {
   QFileInfo targetInfo(targetDirectory);
   QString destPath;
 
@@ -272,25 +272,45 @@ bool FileIoService::copyRecursively(const QString &sourceFolder,
     return false;
   }
 
+  QString absSrc = QFileInfo(sourceFolder).absoluteFilePath();
+  QString absDest = QFileInfo(destFolder).absoluteFilePath();
+
+  // Prevent copying a folder into itself.
+  if (absSrc == absDest) {
+    return false;
+  }
+
+  // Prevent copying a folder into its own subdirectory.
+  QString srcBoundary = absSrc + QDir::separator();
+
+  if (absDest.startsWith(srcBoundary)) {
+    return false;
+  }
+
   // Make the destination directory if it does not exist.
   if (!destDir.exists()) {
     destDir.mkpath(".");
   }
 
-  // Get the list of files in the source directory.
-  QStringList files = sourceDir.entryList(QDir::Files | QDir::Dirs |
+  // Get the list of items in the source directory.
+  QStringList items = sourceDir.entryList(QDir::Files | QDir::Dirs |
                                           QDir::NoDotAndDotDot | QDir::Hidden);
 
-  for (const QString &file : files) {
-    QString srcName = sourceFolder + QDir::separator() + file;
-    QString destName = destFolder + QDir::separator() + file;
+  // NOLINTNEXTLINE(readability-use-anyofallof)
+  for (const QString &item : items) {
+    QString srcName = sourceFolder + QDir::separator() + item;
+    QString destName = destFolder + QDir::separator() + item;
+
     QFileInfo info(srcName);
 
     if (info.isDir()) {
-      copyRecursively(srcName, destName);
+      if (!copyRecursively(srcName, destName)) {
+        return false;
+      }
     } else {
       if (!QFile::copy(srcName, destName)) {
-        qDebug() << "Failed to copy file:" << srcName;
+        qDebug() << "Failed to copy file:" << srcName
+                 << " to destination:" << destName;
       }
     }
   }

@@ -195,7 +195,6 @@ void FileExplorerFlows::doPostCommandProcessing(
     // Prevent expanding the root's parent (which is not part of the tree -- and
     // the root would be deleted anyway if the deletion target was the root
     // directory).
-    // TODO(scarlet): Handle case where root folder is deleted.
     const auto snapshot = fileTreeBridge->getTreeSnapshot();
     const QString workspaceRootPath = QString::fromUtf8(snapshot.root);
 
