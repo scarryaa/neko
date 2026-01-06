@@ -39,6 +39,10 @@ FileTreeBridge::getNextNode(const QString &currentNodePath) {
   return fileTreeController->get_next_node(currentNodePath.toStdString());
 }
 
+QString FileTreeBridge::getRootPath() {
+  return {fileTreeController->get_root_path().c_str()};
+}
+
 void FileTreeBridge::setRootDirectory(const QString &rootDirectoryPath) {
   fileTreeController->set_root_path(rootDirectoryPath.toStdString());
 }

@@ -180,7 +180,12 @@ FileExplorerController::KeyboardResult FileExplorerController::handleLeft() {
   // If current node is collapsed, go to the parent node (directory), select it,
   // and collapse it.
   if (!currentNode.is_expanded) {
+    auto rootNodePath = fileTreeBridge->getRootPath();
     auto parentNodePath = fileTreeBridge->getParentNodePath(currentNodePath);
+
+    if (rootNodePath == parentNodePath) {
+      return {.action = Action::None, .filePath = currentNodePath};
+    }
 
     fileTreeBridge->setCurrent(parentNodePath);
     fileTreeBridge->setCollapsed(parentNodePath);

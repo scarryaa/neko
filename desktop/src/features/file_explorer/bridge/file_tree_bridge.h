@@ -21,6 +21,7 @@ public:
   getVisibleChildren(const QString &directoryPath);
   neko::FileNodeSnapshot getPreviousNode(const QString &currentNodePath);
   neko::FileNodeSnapshot getNextNode(const QString &currentNodePath);
+  QString getRootPath();
 
   void setRootDirectory(const QString &rootDirectoryPath);
   void setExpanded(const QString &directoryPath);
