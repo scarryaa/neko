@@ -132,15 +132,15 @@ WorkspaceCoordinator::buildJumpHintRows(AppBridge *appBridge) {
   return result;
 }
 
-std::optional<std::string>
+std::optional<QString>
 WorkspaceCoordinator::requestFileExplorerDirectory() const {
-  const QString dir =
-      DialogService::openDirectorySelectionDialog(uiHandles.window);
+  QString dir = DialogService::openDirectorySelectionDialog(uiHandles.window);
+
   if (dir.isEmpty()) {
     return std::nullopt;
   }
 
-  return dir.toStdString();
+  return dir;
 }
 
 void WorkspaceCoordinator::commandPaletteGoToPosition(
@@ -271,7 +271,7 @@ QString WorkspaceCoordinator::getInitialDialogDirectory() const {
   return QDir::homePath();
 }
 
-void WorkspaceCoordinator::performFileOpen(const std::string &path) {
+void WorkspaceCoordinator::performFileOpen(const QString &path) {
   // Save scroll offsets for the current tab
   if (const auto snapshot = tabBridge->getTabsSnapshot();
       snapshot.active_present) {
@@ -305,11 +305,10 @@ void WorkspaceCoordinator::openFile() {
     return;
   }
 
-  performFileOpen(filePath.toStdString());
+  performFileOpen(filePath);
 }
 
-void WorkspaceCoordinator::fileSelected(const std::string &path,
-                                        bool focusEditor) {
+void WorkspaceCoordinator::fileSelected(const QString &path, bool focusEditor) {
   performFileOpen(path);
 
   if (focusEditor) {
@@ -324,7 +323,7 @@ void WorkspaceCoordinator::fileSaved(bool saveAs) {
 void WorkspaceCoordinator::openConfig() {
   const auto configPath = appConfigService->getConfigPath();
 
-  if (!configPath.empty()) {
+  if (!configPath.isEmpty()) {
     fileSelected(configPath, true);
   }
 }

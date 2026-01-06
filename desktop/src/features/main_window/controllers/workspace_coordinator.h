@@ -99,10 +99,10 @@ public:
   void openFile();
   void applyInitialState();
   void openConfig();
-  void fileSelected(const std::string &path, bool focusEditor);
+  void fileSelected(const QString &path, bool focusEditor);
 
   // Utilities
-  [[nodiscard]] std::optional<std::string> requestFileExplorerDirectory() const;
+  [[nodiscard]] std::optional<QString> requestFileExplorerDirectory() const;
   static std::vector<ShortcutHintRow> buildJumpHintRows(AppBridge *appBridge);
 
   // NOLINTNEXTLINE(readability-redundant-access-specifiers)
@@ -134,7 +134,7 @@ private:
   void refreshUiForActiveTab(bool focusEditor);
   void setEditorController(rust::Box<neko::EditorController> editorController);
   void refreshStatusBarCursorInfo();
-  void performFileOpen(const std::string &path);
+  void performFileOpen(const QString &path);
   [[nodiscard]] QString getInitialDialogDirectory() const;
 
   TabFlows tabFlows;

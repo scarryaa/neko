@@ -68,8 +68,8 @@ private:
   static void handleCopyPath(const QString &itemPath);
   void handleCopyRelativePath(const QString &itemPath);
 
-  static std::string resolveRefreshPath(const QString &itemPath,
-                                        const QString &parentPath);
+  static QString resolveRefreshPath(const QString &itemPath,
+                                    const QString &parentPath);
   void refreshSourceAfterCut(const QString &originalPath);
 
   [[nodiscard]] PreCommandProcessingResult

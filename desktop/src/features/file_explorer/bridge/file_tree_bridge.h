@@ -16,20 +16,20 @@ public:
   ~FileTreeBridge() override = default;
 
   neko::FileTreeSnapshot getTreeSnapshot();
-  std::string getParentNodePath(const std::string &path);
+  QString getParentNodePath(const QString &path);
   std::vector<neko::FileNodeSnapshot>
-  getVisibleChildren(const std::string &directoryPath);
-  neko::FileNodeSnapshot getPreviousNode(const std::string &currentNodePath);
-  neko::FileNodeSnapshot getNextNode(const std::string &currentNodePath);
+  getVisibleChildren(const QString &directoryPath);
+  neko::FileNodeSnapshot getPreviousNode(const QString &currentNodePath);
+  neko::FileNodeSnapshot getNextNode(const QString &currentNodePath);
 
-  void setRootDir(const std::string &path);
-  void setExpanded(const std::string &directoryPath);
-  void setCurrent(const std::string &itemPath);
+  void setRootDirectory(const QString &rootDirectoryPath);
+  void setExpanded(const QString &directoryPath);
+  void setCurrent(const QString &itemPath);
   void clearCurrent();
-  void toggleExpanded(const std::string &directoryPath);
-  void toggleSelect(const std::string &nodePath);
-  void setCollapsed(const std::string &directoryPath);
-  void refreshDirectory(const std::string &directoryPath);
+  void toggleExpanded(const QString &directoryPath);
+  void toggleSelect(const QString &nodePath);
+  void setCollapsed(const QString &directoryPath);
+  void refreshDirectory(const QString &directoryPath);
 
 private:
   rust::Box<neko::FileTreeController> fileTreeController;

@@ -4,6 +4,7 @@
 #include "features/context_menu/command_registry.h"
 #include "features/context_menu/context_menu_registry.h"
 #include "features/file_explorer/bridge/file_tree_bridge.h"
+#include "features/file_explorer/controllers/file_explorer_controller.h"
 #include "theme/theme_provider.h"
 #include "theme/types/types.h"
 #include "types/qt_types_fwd.h"
@@ -31,7 +32,6 @@ public:
                               QWidget *parent = nullptr);
   ~FileExplorerWidget() override = default;
 
-  void initialize(const std::string &path);
   void setAndApplyTheme(const FileExplorerTheme &newTheme);
   void redraw();
   void updateDimensions();
@@ -47,16 +47,17 @@ protected:
   void contextMenuEvent(QContextMenuEvent *event) override;
 
 signals:
-  void fileSelected(std::string path, bool shouldFocusEditor = true);
+  void fileSelected(QString path, bool shouldFocusEditor = true);
   void fontSizeChanged(double newSize);
-  void directoryPersistRequested(const std::string &path);
-  void directorySelected(const std::string &path);
+  void directoryPersistRequested(const QString &path);
+  void directorySelected(const QString &path);
   void directorySelectionRequested();
 
 public slots:
-  void loadSavedDirectory(const std::string &path);
   void itemRevealRequested();
-  void applySelectedDirectory(const std::string &path);
+  void applySelectedDirectory(const QString &path);
+
+  void onRootDirectoryChanged();
 
 private:
   void drawFiles(QPainter *painter, size_t count,
@@ -67,7 +68,7 @@ private:
 
   void loadDirectory(const std::string &path);
 
-  double measureContent();
+  double measureContentWidth();
   void handleViewportUpdate();
   void scrollToNode(int index);
 
@@ -76,27 +77,10 @@ private:
   void resetFontSize();
   void setFontSize(double newFontSize);
 
-  void handleEnter();
-  void handleLeft();
-  void handleRight();
-  void handleCut();
-  void handleCopy();
-  void handlePaste();
-  void handleDuplicate();
-  void handleDeleteConfirm();
-  void handleDeleteNoConfirm();
-  void deleteItem(const std::string &path,
-                  const neko::FileNodeSnapshot &currentNode);
-
-  void selectNextNode();
-  void selectPrevNode();
-  void toggleSelectNode();
-  void expandNode();
-  void collapseNode();
-
   int convertMousePositionToRow(double yPos);
 
-  FileTreeBridge *fileTreeBridge;
+  FileExplorerController fileExplorerController;
+
   QPushButton *directorySelectionButton;
   ContextMenuRegistry &contextMenuRegistry;
   CommandRegistry &commandRegistry;

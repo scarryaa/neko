@@ -23,7 +23,7 @@ FileExplorerConnections::FileExplorerConnections(
   // FileExplorerConnections -> FileExplorerWidget (load saved dir)
   connect(this, &FileExplorerConnections::savedDirectoryLoaded,
           uiHandles.fileExplorerWidget,
-          &FileExplorerWidget::loadSavedDirectory);
+          &FileExplorerWidget::applySelectedDirectory);
 
   // FileExplorerWidget -> AppConfigService (update font size)
   connect(uiHandles.fileExplorerWidget, &FileExplorerWidget::fontSizeChanged,
@@ -34,7 +34,7 @@ FileExplorerConnections::FileExplorerConnections(
   // FileExplorerWidget -> AppConfigService (persist directory)
   connect(uiHandles.fileExplorerWidget,
           &FileExplorerWidget::directoryPersistRequested, appConfigService,
-          [appConfigService](const std::string &path) {
+          [appConfigService](const QString &path) {
             appConfigService->setFileExplorerDirectory(path);
           });
 
@@ -43,6 +43,6 @@ FileExplorerConnections::FileExplorerConnections(
   if (snapshot.file_explorer.directory_present &&
       !snapshot.file_explorer.directory.empty()) {
     emit savedDirectoryLoaded(
-        QString::fromUtf8(snapshot.file_explorer.directory).toStdString());
+        QString::fromUtf8(snapshot.file_explorer.directory));
   }
 }

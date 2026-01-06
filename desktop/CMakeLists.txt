@@ -154,6 +154,10 @@ qt_add_executable(neko
     src/features/file_explorer/file_explorer_widget.cpp
     src/features/file_explorer/file_explorer_widget.h
 
+    # File Explorer Controllers
+    src/features/file_explorer/controllers/file_explorer_controller.cpp
+    src/features/file_explorer/controllers/file_explorer_controller.h
+
     # File Explorer Bridge
     src/features/file_explorer/bridge/file_tree_bridge.cpp
     src/features/file_explorer/bridge/file_tree_bridge.h

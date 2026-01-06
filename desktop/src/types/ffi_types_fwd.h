@@ -3,6 +3,7 @@
 
 #include <cstdint>
 
+// TODO(scarlet): Organize this.
 namespace neko {
 class Editor;
 class EditorHandle;
@@ -51,6 +52,8 @@ class FileExplorerCommandStateFfi;
 enum class AddCursorDirectionKind : uint8_t;
 enum class CloseTabOperationTypeFfi : uint8_t;
 class AddCursorDirectionFfi;
+
+class FileNodeSnapshot;
 } // namespace neko
 
 #endif

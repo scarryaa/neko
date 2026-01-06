@@ -9,7 +9,7 @@ neko::ConfigSnapshotFfi AppConfigService::getSnapshot() const {
   return configManager->get_config_snapshot();
 }
 
-std::string AppConfigService::getConfigPath() const {
+QString AppConfigService::getConfigPath() const {
   return configManager->get_config_path().c_str();
 }
 
@@ -50,11 +50,11 @@ void AppConfigService::setFileExplorerFontSize(int fontSize) {
       EmitConfigChanged::Yes);
 }
 
-void AppConfigService::setFileExplorerDirectory(const std::string &path) {
+void AppConfigService::setFileExplorerDirectory(const QString &path) {
   updateConfig(
       [&path](neko::ConfigSnapshotFfi &snapshot) {
         snapshot.file_explorer.directory_present = true;
-        snapshot.file_explorer.directory = path;
+        snapshot.file_explorer.directory = path.toStdString();
       },
       EmitConfigChanged::Yes);
 }

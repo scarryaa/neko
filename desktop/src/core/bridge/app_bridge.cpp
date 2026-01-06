@@ -6,9 +6,9 @@ AppBridge::AppBridge(const AppBridgeProps &props)
           neko::new_app_controller(props.configManager, props.rootPath)),
       commandController(appController->command_controller()) {}
 
-neko::OpenTabResultFfi AppBridge::openFile(const std::string &path,
+neko::OpenTabResultFfi AppBridge::openFile(const QString &path,
                                            bool addToHistory) {
-  return appController->ensure_tab_for_path(path, addToHistory);
+  return appController->ensure_tab_for_path(path.toStdString(), addToHistory);
 }
 
 rust::Box<neko::EditorController> AppBridge::getEditorController() const {

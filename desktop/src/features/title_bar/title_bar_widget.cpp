@@ -38,9 +38,8 @@ TitleBarWidget::TitleBarWidget(const TitleBarProps &props, QWidget *parent)
   setAndApplyTheme(m_theme);
 }
 
-void TitleBarWidget::directoryChanged(const std::string &newDirectoryPath) {
-  auto newDirectoryPathQStr = QString::fromStdString(newDirectoryPath);
-  auto displayName = TitleBarWidget::getDisplayNameForDir(newDirectoryPathQStr);
+void TitleBarWidget::directoryChanged(const QString &newDirectoryPath) {
+  auto displayName = TitleBarWidget::getDisplayNameForDir(newDirectoryPath);
   m_directorySelectionButton->setText(displayName);
 }
 

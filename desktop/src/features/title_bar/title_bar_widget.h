@@ -6,7 +6,6 @@
 #include <QPoint>
 #include <QString>
 #include <QWidget>
-#include <string>
 
 QT_FWD(QPushButton, QMouseEvent, QPaintEvent)
 
@@ -29,7 +28,7 @@ signals:
   void directorySelectionButtonPressed();
 
 public slots:
-  void directoryChanged(const std::string &newDirectoryPath);
+  void directoryChanged(const QString &newDirectoryPath);
 
 protected:
   void paintEvent(QPaintEvent *event) override;

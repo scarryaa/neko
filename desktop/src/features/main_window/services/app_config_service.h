@@ -33,14 +33,14 @@ public:
                             QObject *parent = nullptr);
 
   [[nodiscard]] neko::ConfigSnapshotFfi getSnapshot() const;
-  [[nodiscard]] std::string getConfigPath() const;
+  [[nodiscard]] QString getConfigPath() const;
 
   // NOLINTNEXTLINE(readability-redundant-access-specifiers)
 public slots:
   void setInterfaceFontSize(int fontSize);
   void setEditorFontSize(int fontSize);
   void setFileExplorerFontSize(int fontSize);
-  void setFileExplorerDirectory(const std::string &path);
+  void setFileExplorerDirectory(const QString &path);
   void setFileExplorerShown(bool shown);
   void setFileExplorerWidth(double width);
 

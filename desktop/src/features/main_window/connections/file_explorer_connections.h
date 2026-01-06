@@ -21,7 +21,7 @@ public:
   ~FileExplorerConnections() override = default;
 
 signals:
-  void savedDirectoryLoaded(const std::string &newSavedDir);
+  void savedDirectoryLoaded(const QString &newSavedDir);
 };
 
 #endif
