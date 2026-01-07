@@ -406,12 +406,14 @@ void FileExplorerController::handlePaste() {
                                 ? nodeInfo.nodeSnapshot.path.c_str()
                                 : parentNodePath;
 
-  FileIoService::paste(targetDirectory);
+  auto pasteResult = FileIoService::paste(targetDirectory);
 
-  fileTreeBridge->refreshDirectory(targetDirectory);
-
-  // TODO(scarlet): return action results?
-  // return { ... };
+  // If the paste was successful, refresh the parent directory and select the
+  // new item.
+  if (pasteResult.success) {
+    fileTreeBridge->refreshDirectory(parentNodePath);
+    fileTreeBridge->setCurrent(pasteResult.items.first().newPath);
+  }
 }
 
 // Handles a 'duplicate' operation.

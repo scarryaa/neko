@@ -6,6 +6,7 @@
 #include <QMimeData>
 #include <QUrl>
 
+// TODO(scarlet): Make enum for duplicate/paste/cut/etc cases?
 namespace k {
 // Custom MIME type to identify cut operations.
 static const char *cutMimeType = "application/x-neko-cut";
@@ -68,7 +69,8 @@ FileIoService::paste(const QString &targetDirectory) {
       continue;
     }
 
-    QString destPath = adjustDestinationPath(targetDirectory, srcInfo);
+    QString destPath =
+        adjustDestinationPath(targetDirectory, srcInfo, url.fileName());
     PasteItem item;
 
     if (srcInfo.isDir()) {
@@ -96,15 +98,21 @@ FileIoService::paste(const QString &targetDirectory) {
 // If the provided path is a file, it is adjusted to target the parent
 // directory.
 QString FileIoService::adjustDestinationPath(const QString &targetDirectory,
-                                             const QFileInfo &srcInfo) {
+                                             const QFileInfo &srcInfo,
+                                             const QString &itemFileName) {
   QFileInfo targetInfo(targetDirectory);
   QString destPath;
 
   // Determine if a file path or directory path was provided.
   if (targetInfo.isDir()) {
-    // A directory path was provided; adjust the path to target within the
-    // directory.
-    destPath = targetDirectory + QDir::separator() + srcInfo.fileName();
+    // If the source path and the target path is the same, don't adjust so it
+    // gets identified as a duplicate operation.
+    if (srcInfo.path() + QDir::separator() + itemFileName == targetDirectory) {
+      destPath = targetDirectory;
+    } else {
+      // Otherwise, adjust the path to target within the directory.
+      destPath = targetDirectory + QDir::separator() + srcInfo.fileName();
+    }
   } else {
     // A file path was provided; adjust the path to target the parent
     // directory.
@@ -123,6 +131,30 @@ FileIoService::PasteItem FileIoService::handleDirectoryPaste(
     const QString &srcPath, const QString &destPath, bool isCutOperation) {
   PasteItem item{.originalPath = srcPath, .newPath = destPath};
 
+  if (isCutOperation) {
+    // It's a cut operation; try to move (rename) the directory.
+    if (!QFile::rename(srcPath, destPath)) {
+      qDebug() << "Rename (cut) failed:" << srcPath
+               << "trying duplicate instead.";
+
+      // If the cut operation fails due to collision, duplicate it and delete
+      // the original file instead.
+      auto duplicateResult = duplicate(srcPath);
+
+      if (!duplicateResult.success) {
+        // If the duplicate fails too, just return.
+        qDebug() << "Duplicate (cut) failed:" << srcPath;
+
+        return {.originalPath = srcPath, .newPath = srcPath};
+      }
+
+      // If it succeeded, delete the original file.
+      deleteItem(srcPath);
+
+      return {.originalPath = srcPath, .newPath = duplicateResult.newPath};
+    }
+  }
+
   // If the source and destination are the same, treat it as a duplicate
   // operation.
   if (destPath == srcPath) {
@@ -133,16 +165,9 @@ FileIoService::PasteItem FileIoService::handleDirectoryPaste(
     return item;
   }
 
-  if (isCutOperation) {
-    // It's a cut operation; try to move (rename) the directory.
-    if (!QDir().rename(srcPath, destPath)) {
-      qDebug() << "Rename (cut) failed:" << srcPath;
-    }
-  } else {
-    // It's a copy operation.
-    if (!copyRecursively(srcPath, destPath)) {
-      qDebug() << "Failed to copy directory:" << srcPath;
-    }
+  // It's a copy operation.
+  if (!copyRecursively(srcPath, destPath)) {
+    qDebug() << "Failed to copy directory:" << srcPath;
   }
 
   return item;
@@ -157,26 +182,42 @@ FileIoService::PasteItem FileIoService::handleFilePaste(const QString &srcPath,
                                                         bool isCutOperation) {
   PasteItem item{.originalPath = srcPath, .newPath = destPath};
 
+  if (isCutOperation) {
+    // It's a cut operation on a single file.
+    if (!QFile::rename(srcPath, destPath)) {
+      qDebug() << "Rename (cut) failed:" << srcPath
+               << "trying duplicate instead.";
+
+      // If the cut operation fails due to collision, duplicate it and delete
+      // the original file instead.
+      auto duplicateResult = duplicate(srcPath);
+
+      if (!duplicateResult.success) {
+        // If the duplicate fails too, just return.
+        qDebug() << "Duplicate (cut) failed:" << srcPath;
+
+        return {.originalPath = srcPath, .newPath = srcPath};
+      }
+
+      // If it succeeded, delete the original file.
+      deleteItem(srcPath);
+
+      return {.originalPath = srcPath, .newPath = duplicateResult.newPath};
+    }
+  }
+
   if (QFile::exists(destPath)) {
     // If the file exists, treat it as a duplicate
     // operation.
     const auto duplicateResult = duplicate(destPath);
 
     // Convert the `DuplicateResult` to a `PasteItem`.
-    item = {.originalPath = destPath, .newPath = duplicateResult.newPath};
-    return item;
+    return {.originalPath = destPath, .newPath = duplicateResult.newPath};
   }
 
-  if (isCutOperation) {
-    // It's a cut operation on a single file.
-    if (!QFile::rename(srcPath, destPath)) {
-      qDebug() << "Rename (cut) failed:" << srcPath;
-    }
-  } else {
-    // Regular copy operation on a single file.
-    if (!QFile::copy(srcPath, destPath)) {
-      qDebug() << "Failed to copy file:" << srcPath;
-    }
+  // Regular copy operation on a single file.
+  if (!QFile::copy(srcPath, destPath)) {
+    qDebug() << "Failed to copy file:" << srcPath;
   }
 
   return item;

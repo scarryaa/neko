@@ -33,7 +33,8 @@ private:
   static bool copyRecursively(const QString &sourceFolder,
                               const QString &destFolder);
   static QString adjustDestinationPath(const QString &targetDirectory,
-                                       const QFileInfo &srcInfo);
+                                       const QFileInfo &srcInfo,
+                                       const QString &itemFileName);
   static PasteItem handleDirectoryPaste(const QString &srcPath,
                                         const QString &destPath,
                                         bool isCutOperation);
