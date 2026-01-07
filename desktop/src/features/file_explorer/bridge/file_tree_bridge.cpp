@@ -6,6 +6,14 @@ FileTreeBridge::FileTreeBridge(FileTreeBridgeProps props, QObject *parent)
     : QObject(parent), fileTreeController(std::move(props.fileTreeController)) {
 }
 
+neko::MaybeFileNodeSnapshot FileTreeBridge::getLastNode() {
+  return fileTreeController->get_last_node();
+}
+
+neko::MaybeFileNodeSnapshot FileTreeBridge::getFirstNode() {
+  return fileTreeController->get_first_node();
+}
+
 neko::FileTreeSnapshot FileTreeBridge::getTreeSnapshot() {
   return fileTreeController->get_tree_snapshot();
 }

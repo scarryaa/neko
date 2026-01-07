@@ -14,6 +14,10 @@ void FileExplorerController::loadDirectory(const QString &rootDirectoryPath) {
   emit rootDirectoryChanged(rootDirectoryPath);
 }
 
+void FileExplorerController::toggleExpanded(const QString &directoryPath) {
+  fileTreeBridge->toggleExpanded(directoryPath);
+}
+
 void FileExplorerController::setExpanded(const QString &directoryPath) {
   fileTreeBridge->setExpanded(directoryPath);
 }
@@ -22,26 +26,28 @@ void FileExplorerController::setCollapsed(const QString &directoryPath) {
   fileTreeBridge->setCollapsed(directoryPath);
 }
 
-void FileExplorerController::toggleExpanded(const QString &directoryPath) {
-  fileTreeBridge->toggleExpanded(directoryPath);
-}
-
 FileExplorerController::FileNodeInfo FileExplorerController::getFirstNode() {
-  auto snapshot = fileTreeBridge->getTreeSnapshot();
-  int index = 0;
+  auto maybeFirstNode = fileTreeBridge->getFirstNode();
 
-  auto firstNode = snapshot.nodes.front();
+  // First node was found and is valid.
+  if (maybeFirstNode.found_node) {
+    return {.index = 0, .nodeSnapshot = maybeFirstNode.node};
+  }
 
-  return {.index = index, .nodeSnapshot = firstNode};
+  // First node was not found.
+  return {.index = -1};
 }
 
 FileExplorerController::FileNodeInfo FileExplorerController::getLastNode() {
-  auto snapshot = fileTreeBridge->getTreeSnapshot();
+  auto maybeLastNode = fileTreeBridge->getLastNode();
 
-  int index = static_cast<int>(snapshot.nodes.size() - 1);
-  auto lastNode = snapshot.nodes.back();
+  // Last node was found and is valid.
+  if (maybeLastNode.found_node) {
+    return {.index = getNodeCount() - 1, .nodeSnapshot = maybeLastNode.node};
+  }
 
-  return {.index = index, .nodeSnapshot = lastNode};
+  // Last node was not found.
+  return {.index = -1};
 }
 
 int FileExplorerController::getNodeCount() {

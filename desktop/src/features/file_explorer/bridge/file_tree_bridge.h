@@ -15,6 +15,8 @@ public:
   explicit FileTreeBridge(FileTreeBridgeProps props, QObject *parent = nullptr);
   ~FileTreeBridge() override = default;
 
+  neko::MaybeFileNodeSnapshot getLastNode();
+  neko::MaybeFileNodeSnapshot getFirstNode();
   neko::FileTreeSnapshot getTreeSnapshot();
   QString getParentNodePath(const QString &path);
   std::vector<neko::FileNodeSnapshot>

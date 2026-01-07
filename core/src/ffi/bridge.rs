@@ -258,6 +258,7 @@ pub mod ffi {
         pub tab_already_exists: bool,
     }
 
+    #[derive(Default, Clone)]
     struct FileNodeSnapshot {
         path: String,
         name: String,
@@ -269,6 +270,11 @@ pub mod ffi {
         size: u64,
         modified: u64,
         depth: usize,
+    }
+
+    struct MaybeFileNodeSnapshot {
+        found_node: bool,
+        node: FileNodeSnapshot,
     }
 
     struct FileTreeSnapshot {
@@ -523,6 +529,8 @@ pub mod ffi {
         ) -> Result<Vec<FileNodeSnapshot>>;
         pub(crate) fn refresh_dir(self: &mut FileTreeController, path: &str) -> Result<()>;
         pub(crate) fn get_tree_snapshot(self: &FileTreeController) -> FileTreeSnapshot;
+        pub fn get_first_node(self: &FileTreeController) -> MaybeFileNodeSnapshot;
+        pub fn get_last_node(self: &FileTreeController) -> MaybeFileNodeSnapshot;
 
         // TabController
         pub fn set_active_tab(self: &mut TabController, id: u64) -> Result<()>;

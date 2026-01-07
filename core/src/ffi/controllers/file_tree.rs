@@ -1,9 +1,8 @@
-use std::{cell::RefCell, collections::HashSet, path::PathBuf, rc::Rc};
-
 use crate::{
     AppState, FileNode, FileTree,
-    ffi::{FileNodeSnapshot, FileSystemErrorFfi, FileTreeSnapshot},
+    ffi::{FileNodeSnapshot, FileSystemErrorFfi, FileTreeSnapshot, MaybeFileNodeSnapshot},
 };
+use std::{cell::RefCell, collections::HashSet, path::PathBuf, rc::Rc};
 
 pub struct FileTreeController {
     pub(crate) app_state: Rc<RefCell<AppState>>,
@@ -215,6 +214,56 @@ impl FileTreeController {
                 root_present,
                 root,
                 nodes,
+            }
+        })
+    }
+
+    pub fn get_first_node(&self) -> MaybeFileNodeSnapshot {
+        self.access(|tree| {
+            let selected_paths = tree.selected_owned();
+            let expanded_paths = tree.expanded_owned();
+            let current_path = tree.current_path();
+
+            if let Some(first_node) = tree.visible_nodes().first() {
+                MaybeFileNodeSnapshot {
+                    found_node: true,
+                    node: Self::make_file_node_snapshot(
+                        first_node,
+                        &selected_paths,
+                        &expanded_paths,
+                        current_path.as_ref(),
+                    ),
+                }
+            } else {
+                MaybeFileNodeSnapshot {
+                    found_node: false,
+                    node: FileNodeSnapshot::default(),
+                }
+            }
+        })
+    }
+
+    pub fn get_last_node(&self) -> MaybeFileNodeSnapshot {
+        self.access(|tree| {
+            let selected_paths = tree.selected_owned();
+            let expanded_paths = tree.expanded_owned();
+            let current_path = tree.current_path();
+
+            if let Some(last_node) = tree.visible_nodes().last() {
+                MaybeFileNodeSnapshot {
+                    found_node: true,
+                    node: Self::make_file_node_snapshot(
+                        last_node,
+                        &selected_paths,
+                        &expanded_paths,
+                        current_path.as_ref(),
+                    ),
+                }
+            } else {
+                MaybeFileNodeSnapshot {
+                    found_node: false,
+                    node: FileNodeSnapshot::default(),
+                }
             }
         })
     }
