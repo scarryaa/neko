@@ -152,28 +152,31 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
 
   // Handle node/navigation operations.
   switch (event->key()) {
+    using Direction = FileExplorerController::NavigationDirection;
+    using ActionKey = FileExplorerController::ActionKey;
+
   case Qt::Key_Up:
-    fileExplorerController.handleUp();
+    fileExplorerController.handleNavigation(Direction::Up);
     shouldScroll = true;
     break;
   case Qt::Key_Down:
-    fileExplorerController.handleDown();
+    fileExplorerController.handleNavigation(Direction::Down);
     shouldScroll = true;
     break;
   case Qt::Key_Left:
-    fileExplorerController.handleLeft();
+    fileExplorerController.handleNavigation(Direction::Left);
     shouldScroll = true;
     break;
   case Qt::Key_Right:
-    fileExplorerController.handleRight();
+    fileExplorerController.handleNavigation(Direction::Right);
     shouldScroll = true;
     break;
   case Qt::Key_Space:
-    fileExplorerController.handleSpace();
+    fileExplorerController.handleActionKey(ActionKey::Space);
     break;
   case Qt::Key_Enter:
   case Qt::Key_Return:
-    fileExplorerController.handleEnter();
+    fileExplorerController.handleActionKey(ActionKey::Enter);
     break;
   case Qt::Key_Delete:
     if (shift) {

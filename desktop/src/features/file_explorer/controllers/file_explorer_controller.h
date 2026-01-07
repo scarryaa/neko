@@ -25,6 +25,8 @@ class FileExplorerController : QObject {
 
 public:
   enum class Action : uint8_t { None, LayoutChanged, FileSelected };
+  enum class NavigationDirection : uint8_t { Left, Right, Up, Down };
+  enum class ActionKey : uint8_t { Space, Enter };
 
   struct FileExplorerControllerProps {
     FileTreeBridge *fileTreeBridge;
@@ -80,9 +82,8 @@ public:
 
   FileExplorerController::FileNodeInfo getFirstNode();
   FileExplorerController::FileNodeInfo getLastNode();
-
-  int getNodeCount();
   neko::FileTreeSnapshot getTreeSnapshot();
+  int getNodeCount();
 
   void loadDirectory(const QString &rootDirectoryPath);
   void setExpanded(const QString &directoryPath);
@@ -91,20 +92,14 @@ public:
   void clearSelection();
 
   ClickResult handleNodeClick(int index, bool isLeftClick);
-  KeyboardResult handleEnter();
-  KeyboardResult handleSpace();
-  KeyboardResult handleLeft();
-  KeyboardResult handleRight();
-  KeyboardResult handleDown();
-  KeyboardResult handleUp();
+  KeyboardResult handleNavigation(NavigationDirection direction);
+  KeyboardResult handleActionKey(ActionKey key);
+  void handleDelete(bool shouldConfirm);
 
   void handleCut();
   void handleCopy();
   void handlePaste();
   void handleDuplicate();
-  void handleDelete(bool shouldConfirm);
-  void deleteItem(const QString &path,
-                  const neko::FileNodeSnapshot &currentNode);
 
 signals:
   void rootDirectoryChanged(const QString &rootDirectoryPath);
@@ -113,6 +108,16 @@ private:
   SelectFirstTreeNodeResult selectFirstTreeNode();
   CheckValidNodeResult
   checkForValidNode(FileExplorerController::FileNodeInfo &nodeInfo);
+
+  KeyboardResult handleLeft(neko::FileNodeSnapshot currentNode);
+  KeyboardResult handleRight(neko::FileNodeSnapshot currentNode);
+  KeyboardResult handleDown(neko::FileNodeSnapshot currentNode);
+  KeyboardResult handleUp(neko::FileNodeSnapshot currentNode);
+  KeyboardResult handleEnter(neko::FileNodeSnapshot currentNode);
+  KeyboardResult handleSpace(neko::FileNodeSnapshot currentNode);
+
+  void deleteItem(const QString &path,
+                  const neko::FileNodeSnapshot &currentNode);
 
   FileTreeBridge *fileTreeBridge;
 };

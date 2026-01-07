@@ -7,6 +7,8 @@ FileExplorerController::FileExplorerController(
     const FileExplorerControllerProps &props, QObject *parent)
     : fileTreeBridge(props.fileTreeBridge), QObject(parent) {}
 
+// Loads the provided directory path and expands it. I.e. initializes the file
+// tree.
 void FileExplorerController::loadDirectory(const QString &rootDirectoryPath) {
   fileTreeBridge->setRootDirectory(rootDirectoryPath);
   setExpanded(rootDirectoryPath);
@@ -14,18 +16,22 @@ void FileExplorerController::loadDirectory(const QString &rootDirectoryPath) {
   emit rootDirectoryChanged(rootDirectoryPath);
 }
 
+// Toggles the provided directory path expanded/collapsed state.
 void FileExplorerController::toggleExpanded(const QString &directoryPath) {
   fileTreeBridge->toggleExpanded(directoryPath);
 }
 
+// Sets the provided directory path to expanded.
 void FileExplorerController::setExpanded(const QString &directoryPath) {
   fileTreeBridge->setExpanded(directoryPath);
 }
 
+// Sets the provided directory path to collapsed.
 void FileExplorerController::setCollapsed(const QString &directoryPath) {
   fileTreeBridge->setCollapsed(directoryPath);
 }
 
+// Attempts to retrieve the first node in the tree.
 FileExplorerController::FileNodeInfo FileExplorerController::getFirstNode() {
   auto maybeFirstNode = fileTreeBridge->getFirstNode();
 
@@ -38,6 +44,7 @@ FileExplorerController::FileNodeInfo FileExplorerController::getFirstNode() {
   return {.index = -1};
 }
 
+// Attempts to retrieve the last node in the tree.
 FileExplorerController::FileNodeInfo FileExplorerController::getLastNode() {
   auto maybeLastNode = fileTreeBridge->getLastNode();
 
@@ -50,20 +57,28 @@ FileExplorerController::FileNodeInfo FileExplorerController::getLastNode() {
   return {.index = -1};
 }
 
+// Returns the number of nodes in the tree.
 int FileExplorerController::getNodeCount() {
   auto snapshot = fileTreeBridge->getTreeSnapshot();
 
   return static_cast<int>(snapshot.nodes.size());
 }
 
+// Returns a snapshot of the current tree state.
 neko::FileTreeSnapshot FileExplorerController::getTreeSnapshot() {
   return fileTreeBridge->getTreeSnapshot();
 }
 
+// Clears the current selected/focused node.
 void FileExplorerController::clearSelection() {
   fileTreeBridge->clearCurrent();
 }
 
+// Handles clicking on a specified node.
+//
+// If the provided index is in range, the associated node is focused/selected.
+// If the node is a directory, it is either expanded or collapsed; if the node
+// is a file, it is selected (marked to be opened in the editor).
 FileExplorerController::ClickResult
 FileExplorerController::handleNodeClick(int index, bool isLeftClick) {
   auto snapshot = fileTreeBridge->getTreeSnapshot();
@@ -94,15 +109,15 @@ FileExplorerController::handleNodeClick(int index, bool isLeftClick) {
   return {Action::FileSelected, nodePath};
 }
 
-// Handles the 'Enter' keypress event.
+// Handles an "action" keypress event (e.g. space, enter).
 //
-// If a valid node is selected:
-// - If it's a directory, the expansion state is toggled.
-// - If it's a file, it's marked to be opened.
+// Attempts to retrieve the current node first -- if the node does not exist or
+// is otherwise invalid, the first tree node is selected (if possible).
 //
-// If the node does not exist or is otherwise invalid, the first tree node is
-// selected (if possible).
-FileExplorerController::KeyboardResult FileExplorerController::handleEnter() {
+// If the current node is valid, it then delegates to the various handlers --
+// `handleSpace`, and `handleEnter`.
+FileExplorerController::KeyboardResult
+FileExplorerController::handleActionKey(ActionKey key) {
   neko::FileNodeSnapshot currentNode;
   QString currentNodePath;
 
@@ -117,6 +132,23 @@ FileExplorerController::KeyboardResult FileExplorerController::handleEnter() {
     // Current node was invalid and was updated, so return.
     return {.action = Action::None, .filePath = validNodeResult.nodePath};
   }
+
+  switch (key) {
+  case ActionKey::Space:
+    return handleSpace(currentNode);
+  case ActionKey::Enter:
+    return handleEnter(currentNode);
+  }
+}
+
+// Handles the 'Enter' keypress event.
+//
+// If a valid node is selected:
+// - If it's a directory, the expansion state is toggled.
+// - If it's a file, it's marked to be opened.
+FileExplorerController::KeyboardResult
+FileExplorerController::handleEnter(neko::FileNodeSnapshot currentNode) {
+  QString currentNodePath = currentNode.path.c_str();
 
   // If the current node is a directory, toggle it.
   if (currentNode.is_dir) {
@@ -132,10 +164,25 @@ FileExplorerController::KeyboardResult FileExplorerController::handleEnter() {
 // Handles the 'Space' keypress event.
 //
 // If a valid node is focused, it is selected/deselected.
+FileExplorerController::KeyboardResult
+FileExplorerController::handleSpace(neko::FileNodeSnapshot currentNode) {
+  QString currentNodePath = currentNode.path.c_str();
+
+  // Toggle the current node's selection state.
+  fileTreeBridge->toggleSelect(currentNodePath);
+
+  return {.action = Action::None, .filePath = currentNodePath};
+}
+
+// Handles a directional arrow keypress event.
 //
-// If the node does not exist or is otherwise invalid, the first tree node is
-// selected (if possible).
-FileExplorerController::KeyboardResult FileExplorerController::handleSpace() {
+// Attempts to retrieve the current node first -- if the node does not exist or
+// is otherwise invalid, the first tree node is selected (if possible).
+//
+// If the current node is valid, it then delegates to the various directional
+// handlers -- `handleLeft`, `handleRight`, `handleUp`, and `handleDown`.
+FileExplorerController::KeyboardResult FileExplorerController::handleNavigation(
+    FileExplorerController::NavigationDirection direction) {
   neko::FileNodeSnapshot currentNode;
   QString currentNodePath;
 
@@ -151,10 +198,16 @@ FileExplorerController::KeyboardResult FileExplorerController::handleSpace() {
     return {.action = Action::None, .filePath = validNodeResult.nodePath};
   }
 
-  // If the current node is valid, toggle the selection state.
-  fileTreeBridge->toggleSelect(currentNodePath);
-
-  return {.action = Action::None, .filePath = currentNodePath};
+  switch (direction) {
+  case NavigationDirection::Left:
+    return handleLeft(currentNode);
+  case NavigationDirection::Right:
+    return handleRight(currentNode);
+  case NavigationDirection::Up:
+    return handleUp(currentNode);
+  case NavigationDirection::Down:
+    return handleDown(currentNode);
+  }
 }
 
 // Handles the 'Left' arrow keypress event.
@@ -163,25 +216,10 @@ FileExplorerController::KeyboardResult FileExplorerController::handleSpace() {
 // - If it's a directory:
 //    - Expanded: Set to collapsed.
 //    - Collapsed: Move to the parent node (directory), select it, and collapse
-//    it.
-//
-// If the node does not exist or is otherwise invalid, the first tree node is
-// selected (if possible).
-FileExplorerController::KeyboardResult FileExplorerController::handleLeft() {
-  neko::FileNodeSnapshot currentNode;
-  QString currentNodePath;
-
-  auto nodeInfo = getNode([](const auto &node) { return node.is_current; });
-  auto validNodeResult = checkForValidNode(nodeInfo);
-
-  if (validNodeResult.validNode) {
-    // Current node was valid, continue.
-    currentNodePath = validNodeResult.nodePath;
-    currentNode = nodeInfo.nodeSnapshot;
-  } else {
-    // Current node was invalid and was updated, so return.
-    return {.action = Action::None, .filePath = validNodeResult.nodePath};
-  }
+//      it.
+FileExplorerController::KeyboardResult
+FileExplorerController::handleLeft(neko::FileNodeSnapshot currentNode) {
+  QString currentNodePath = currentNode.path.c_str();
 
   // If current node is collapsed, go to the parent node (directory), select it,
   // and collapse it.
@@ -211,24 +249,9 @@ FileExplorerController::KeyboardResult FileExplorerController::handleLeft() {
 // - If it's a directory:
 //    - Expanded: Move to the first child node and select it.
 //    - Collapsed: Set to expanded.
-//
-// If the node does not exist or is otherwise invalid, the first tree node is
-// selected (if possible).
-FileExplorerController::KeyboardResult FileExplorerController::handleRight() {
-  neko::FileNodeSnapshot currentNode;
-  QString currentNodePath;
-
-  auto nodeInfo = getNode([](const auto &node) { return node.is_current; });
-  auto validNodeResult = checkForValidNode(nodeInfo);
-
-  if (validNodeResult.validNode) {
-    // Current node was valid, continue.
-    currentNodePath = validNodeResult.nodePath;
-    currentNode = nodeInfo.nodeSnapshot;
-  } else {
-    // Current node was invalid and was updated, so return.
-    return {.action = Action::None, .filePath = validNodeResult.nodePath};
-  }
+FileExplorerController::KeyboardResult
+FileExplorerController::handleRight(neko::FileNodeSnapshot currentNode) {
+  QString currentNodePath = currentNode.path.c_str();
 
   // If current node is collapsed, expand it.
   if (!currentNode.is_expanded) {
@@ -247,7 +270,6 @@ FileExplorerController::KeyboardResult FileExplorerController::handleRight() {
     return {.action = Action::None, .filePath = children[0].path.c_str()};
   }
 
-  // TODO(scarlet): What do we do when the current node does not have children?
   return {.action = Action::None, .filePath = currentNodePath};
 }
 
@@ -255,25 +277,9 @@ FileExplorerController::KeyboardResult FileExplorerController::handleRight() {
 //
 // Attempts to move the selection to the previous node in the tree. If at the
 // very first node, it wraps around to the end of the tree.
-//
-// If the node does not exist or is otherwise invalid, the first tree node is
-// selected (if possible).
-FileExplorerController::KeyboardResult FileExplorerController::handleUp() {
-  neko::FileNodeSnapshot currentNode;
-  QString currentNodePath;
-
-  auto nodeInfo = getNode([](const auto &node) { return node.is_current; });
-  auto validNodeResult = checkForValidNode(nodeInfo);
-
-  if (validNodeResult.validNode) {
-    // Current node was valid, continue.
-    currentNodePath = validNodeResult.nodePath;
-    currentNode = nodeInfo.nodeSnapshot;
-  } else {
-    // Current node was invalid and was updated, so return.
-    return {.action = Action::None, .filePath = validNodeResult.nodePath};
-  }
-
+FileExplorerController::KeyboardResult
+FileExplorerController::handleUp(neko::FileNodeSnapshot currentNode) {
+  QString currentNodePath = currentNode.path.c_str();
   auto firstNodeInfo = getFirstNode();
 
   // If we failed to get the first node, exit.
@@ -297,7 +303,6 @@ FileExplorerController::KeyboardResult FileExplorerController::handleUp() {
   }
 
   // Otherwise, select the previous node.
-  // TODO(scarlet): Update the Rust fn to wrap around?
   auto previousNode = fileTreeBridge->getPreviousNode(currentNodePath);
   fileTreeBridge->setCurrent(previousNode.path.c_str());
 
@@ -308,25 +313,9 @@ FileExplorerController::KeyboardResult FileExplorerController::handleUp() {
 //
 // Attempts to move the selection to the next node in the tree. If at the
 // very last node, it wraps around to the beginning of the tree.
-
-// If the node does not exist or is otherwise invalid, the first tree node is
-// selected (if possible).
-FileExplorerController::KeyboardResult FileExplorerController::handleDown() {
-  neko::FileNodeSnapshot currentNode;
-  QString currentNodePath;
-
-  auto nodeInfo = getNode([](const auto &node) { return node.is_current; });
-  auto validNodeResult = checkForValidNode(nodeInfo);
-
-  if (validNodeResult.validNode) {
-    // Current node was valid, continue.
-    currentNodePath = validNodeResult.nodePath;
-    currentNode = nodeInfo.nodeSnapshot;
-  } else {
-    // Current node was invalid and was updated, so return.
-    return {.action = Action::None, .filePath = validNodeResult.nodePath};
-  }
-
+FileExplorerController::KeyboardResult
+FileExplorerController::handleDown(neko::FileNodeSnapshot currentNode) {
+  QString currentNodePath = currentNode.path.c_str();
   auto lastNodeInfo = getLastNode();
 
   // If we failed to get the last node, exit.
@@ -350,7 +339,6 @@ FileExplorerController::KeyboardResult FileExplorerController::handleDown() {
   }
 
   // Otherwise, select the next node.
-  // TODO(scarlet): Update the Rust fn to wrap around?
   auto nextNode = fileTreeBridge->getNextNode(currentNodePath);
   fileTreeBridge->setCurrent(nextNode.path.c_str());
 
@@ -368,9 +356,6 @@ void FileExplorerController::handleCut() {
   if (nodeInfo.foundNode()) {
     FileIoService::cut(nodeInfo.nodeSnapshot.path.c_str());
   }
-
-  // TODO(scarlet): return action results?
-  // return { ... };
 }
 
 // Handles a 'copy' operation.
@@ -384,9 +369,6 @@ void FileExplorerController::handleCopy() {
   if (nodeInfo.foundNode()) {
     FileIoService::copy(nodeInfo.nodeSnapshot.path.c_str());
   }
-
-  // TODO(scarlet): return action results?
-  // return { ... };
 }
 
 // Handles a 'paste' operation.
@@ -448,9 +430,6 @@ void FileExplorerController::handleDuplicate() {
     fileTreeBridge->refreshDirectory(parentNodePath);
     fileTreeBridge->setCurrent(duplicateResult.newPath);
   }
-
-  // TODO(scarlet): return action results?
-  // return { ... };
 }
 
 // Initiates a 'delete' operation.
