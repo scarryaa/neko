@@ -15,12 +15,14 @@ public:
   struct PasteItem {
     QString originalPath;
     QString newPath;
+    bool originalWasDeleted = false;
   };
 
   struct PasteResult {
     bool success;
     bool wasCutOperation;
     QVector<PasteItem> items;
+    bool originalWasDeleted = false;
   };
 
   static void cut(const QString &itemPath);
@@ -41,6 +43,8 @@ private:
   static PasteItem handleFilePaste(const QString &srcPath,
                                    const QString &destPath,
                                    bool isCutOperation);
+
+  static void removeFromClipboard(const QString &pathToRemove);
 };
 
 #endif

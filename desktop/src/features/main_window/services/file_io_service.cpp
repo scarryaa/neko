@@ -15,6 +15,36 @@ static const char *cutMimeType = "application/x-neko-cut";
 static const char *duplicateSuffix = " copy";
 } // namespace k
 
+void FileIoService::removeFromClipboard(const QString &pathToRemove) {
+  QClipboard *clipboard = QApplication::clipboard();
+  const QMimeData *currentData = clipboard->mimeData();
+
+  // If there is data on the clipboard, continue.
+  if ((currentData != nullptr) && currentData->hasUrls()) {
+    QList<QUrl> urls = currentData->urls();
+    QList<QUrl> remainingUrls;
+    QUrl urlToRemove = QUrl::fromLocalFile(pathToRemove);
+
+    // Filter out the specific file.
+    for (const QUrl &url : urls) {
+      if (url != urlToRemove) {
+        remainingUrls.append(url);
+      }
+    }
+
+    if (remainingUrls.isEmpty()) {
+      // If that was the only file, clear the clipboard completely.
+      clipboard->clear();
+    } else {
+      // Otherwise, update clipboard with the remaining files.
+      auto *newData = new QMimeData();
+
+      newData->setUrls(remainingUrls);
+      clipboard->setMimeData(newData);
+    }
+  }
+}
+
 // Cuts a file or directory (and its contents), placing it on the clipboard and
 // marking it as a cut operation.
 void FileIoService::cut(const QString &itemPath) {
@@ -138,7 +168,7 @@ FileIoService::PasteItem FileIoService::handleDirectoryPaste(
                << "trying duplicate instead.";
 
       // If the cut operation fails due to collision, duplicate it and delete
-      // the original file instead.
+      // the original directory instead.
       auto duplicateResult = duplicate(srcPath);
 
       if (!duplicateResult.success) {
@@ -148,8 +178,11 @@ FileIoService::PasteItem FileIoService::handleDirectoryPaste(
         return {.originalPath = srcPath, .newPath = srcPath};
       }
 
-      // If it succeeded, delete the original file.
+      // If it succeeded, delete the original directory.
       deleteItem(srcPath);
+
+      // Remove the original directory from the clipboard.
+      removeFromClipboard(srcPath);
 
       return {.originalPath = srcPath, .newPath = duplicateResult.newPath};
     }
@@ -201,6 +234,9 @@ FileIoService::PasteItem FileIoService::handleFilePaste(const QString &srcPath,
 
       // If it succeeded, delete the original file.
       deleteItem(srcPath);
+
+      // Remove the original file from the clipboard.
+      removeFromClipboard(srcPath);
 
       return {.originalPath = srcPath, .newPath = duplicateResult.newPath};
     }
@@ -300,6 +336,9 @@ bool FileIoService::deleteItem(const QString &itemPath) {
       return false;
     }
   }
+
+  // Remove the original item from the clipboard.
+  removeFromClipboard(itemPath);
 
   return true;
 }
