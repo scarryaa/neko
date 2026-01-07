@@ -96,7 +96,8 @@ FileIoService::paste(const QString &targetDirectory) {
 
     if (!srcInfo.exists()) {
       qDebug() << "Source does not exist:" << srcPath;
-      continue;
+
+      return result;
     }
 
     QString destPath =
@@ -268,6 +269,7 @@ FileIoService::duplicate(const QString &itemPath) {
 
   if (!info.exists()) {
     qDebug() << "Provided path does not exist:" << itemPath;
+
     return failureResult;
   }
 
@@ -313,6 +315,7 @@ bool FileIoService::deleteItem(const QString &itemPath) {
 
   if (!info.exists()) {
     qDebug() << "Provided path does not exist:" << itemPath;
+
     return false;
   }
 
