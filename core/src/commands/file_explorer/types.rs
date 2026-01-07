@@ -55,6 +55,7 @@ pub enum FileExplorerCommand {
     Navigation(FileExplorerNavigationDirection),
     ToggleSelect,
     Action,
+    ActionIndex,
 }
 
 const ALL_IN_ORDER: &[FileExplorerCommand] = &[
@@ -103,6 +104,7 @@ impl FileExplorerCommand {
             },
             FileExplorerCommand::ToggleSelect => "fileExplorer.toggleSelect",
             FileExplorerCommand::Action => "fileExplorer.action",
+            FileExplorerCommand::ActionIndex => "fileExplorer.actionIndex",
         }
     }
 
@@ -162,12 +164,14 @@ impl FromStr for FileExplorerCommand {
             }
             "fileExplorer.toggleSelect" => Ok(Self::ToggleSelect),
             "fileExplorer.action" => Ok(Self::Action),
+            "fileExplorer.actionIndex" => Ok(Self::ActionIndex),
             _ => Err(()),
         }
     }
 }
 
 pub struct FileExplorerContext {
+    pub index: usize,
     pub item_path: PathBuf,
     pub target_is_item: bool,
     pub item_is_directory: bool,

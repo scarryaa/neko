@@ -83,7 +83,7 @@ private:
   int convertMousePositionToRow(double yPos);
 
   void triggerCommand(const std::string &commandId,
-                      bool bypassDeleteConfirmation = false);
+                      bool bypassDeleteConfirmation = false, int index = 0);
 
   FileExplorerController *fileExplorerController;
 

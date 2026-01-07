@@ -92,41 +92,6 @@ FileExplorerController::getCurrentContext() {
   return std::nullopt;
 }
 
-// Handles clicking on a specified node.
-//
-// If the provided index is in range, the associated node is focused/selected.
-// If the node is a directory, it is either expanded or collapsed; if the node
-// is a file, it is selected (marked to be opened in the editor).
-FileExplorerController::ClickResult
-FileExplorerController::handleNodeClick(int index, bool isLeftClick) {
-  auto snapshot = fileTreeBridge->getTreeSnapshot();
-
-  // Check if the index is out of bounds.
-  if (index < 0 || index >= snapshot.nodes.size()) {
-    return {Action::None};
-  }
-
-  const auto &node = snapshot.nodes[index];
-  const QString &nodePath = QString::fromUtf8(node.path);
-
-  // Set the current selected node.
-  fileTreeBridge->setCurrent(nodePath);
-
-  // Return if it is a right click.
-  if (!isLeftClick) {
-    return {Action::None};
-  }
-
-  // If the clicked on node is a directory, toggle it.
-  if (node.is_dir) {
-    fileTreeBridge->toggleExpanded(nodePath);
-    return {Action::LayoutChanged};
-  }
-
-  // Otherwise, select the clicked on file node.
-  return {Action::FileSelected, nodePath};
-}
-
 // Handles a 'cut' operation.
 //
 // Retrieves the current node information, and then calls `FileIoService` to

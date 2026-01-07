@@ -529,6 +529,7 @@ impl From<FileExplorerCommand> for FileExplorerCommandKindFfi {
             },
             FileExplorerCommand::ToggleSelect => FileExplorerCommandKindFfi::ToggleSelect,
             FileExplorerCommand::Action => FileExplorerCommandKindFfi::Action,
+            FileExplorerCommand::ActionIndex => FileExplorerCommandKindFfi::ActionIndex,
         }
     }
 }
@@ -572,6 +573,7 @@ impl From<FileExplorerCommandKindFfi> for FileExplorerCommand {
             }
             FileExplorerCommandKindFfi::ToggleSelect => FileExplorerCommand::ToggleSelect,
             FileExplorerCommandKindFfi::Action => FileExplorerCommand::Action,
+            FileExplorerCommandKindFfi::ActionIndex => FileExplorerCommand::ActionIndex,
             _ => unreachable!(
                 "All FileExplorerCommandKindFfi => FileExplorerCommand cases should be covered"
             ),
@@ -582,6 +584,7 @@ impl From<FileExplorerCommandKindFfi> for FileExplorerCommand {
 impl From<FileExplorerContextFfi> for FileExplorerContext {
     fn from(ctx: FileExplorerContextFfi) -> Self {
         FileExplorerContext {
+            index: ctx.index,
             item_path: ctx.item_path.into(),
             target_is_item: ctx.target_is_item,
             item_is_directory: ctx.item_is_directory,

@@ -292,6 +292,7 @@ pub mod ffi {
     }
 
     struct FileExplorerContextFfi {
+        index: usize,
         item_path: String,
         target_is_item: bool,
         item_is_directory: bool,
@@ -354,6 +355,7 @@ pub mod ffi {
         NavigationDown,
         ToggleSelect,
         Action,
+        ActionIndex,
     }
 
     #[derive(Clone, Debug)]

@@ -387,10 +387,34 @@ pub fn run_file_explorer_command(
 
             if ctx.item_is_directory {
                 tree.toggle_expanded(current_node_path);
+
+                ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed {
+                    path: target_directory,
+                });
             } else {
                 ui_intents.push(FileExplorerUiIntent::OpenFile {
                     path: current_node_path,
                 });
+            }
+        }
+        FileExplorerCommand::ActionIndex => {
+            let index = ctx.index;
+            let children = tree.visible_nodes();
+
+            if let Some(target_node) = children.get(index) {
+                let target_node_path = target_node.path.clone();
+
+                if target_node.is_dir {
+                    tree.toggle_expanded(&target_node_path);
+
+                    ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed {
+                        path: target_node_path,
+                    });
+                } else {
+                    ui_intents.push(FileExplorerUiIntent::OpenFile {
+                        path: target_node_path,
+                    });
+                }
             }
         }
     }

@@ -247,8 +247,10 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
 }
 
 void FileExplorerWidget::triggerCommand(const std::string &commandId,
-                                        bool bypassDeleteConfirmation) {
+                                        bool bypassDeleteConfirmation,
+                                        int index) {
   auto ctx = fileExplorerController->getCurrentContext();
+  ctx->index = index;
 
   // If the context retrevial was successful, continue.
   if (ctx.has_value()) {
@@ -278,22 +280,7 @@ void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
     return;
   }
 
-  auto clickResult = fileExplorerController->handleNodeClick(row, isLeftClick);
-
-  switch (clickResult.action) {
-  case FileExplorerController::Action::LayoutChanged:
-    // A directory was expanded or collapsed.
-    updateDimensions();
-    break;
-  case FileExplorerController::Action::FileSelected:
-    // A file was selected.
-    emit fileSelected(clickResult.filePath, false);
-    break;
-  case FileExplorerController::Action::None:
-    // Nothing changed, just redraw (done below).
-    break;
-  }
-
+  triggerCommand("fileExplorer.actionIndex", false, row);
   redraw();
 }
 

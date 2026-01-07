@@ -51,11 +51,6 @@ public:
     QString nodePath;
   };
 
-  struct ClickResult {
-    Action action = Action::None;
-    QString filePath;
-  };
-
   struct KeyboardResult {
     Action action = Action::None;
     QString filePath;
@@ -92,7 +87,6 @@ public:
   void toggleExpanded(const QString &directoryPath);
   void clearSelection();
 
-  ClickResult handleNodeClick(int index, bool isLeftClick);
   void handleDelete(bool shouldConfirm);
   void handleNewItem(NewItemType type);
 
