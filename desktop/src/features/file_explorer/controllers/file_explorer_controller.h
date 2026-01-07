@@ -93,7 +93,6 @@ public:
   void clearSelection();
 
   ClickResult handleNodeClick(int index, bool isLeftClick);
-  KeyboardResult handleNavigation(NavigationDirection direction);
   KeyboardResult handleActionKey(ActionKey key);
   void handleDelete(bool shouldConfirm);
   void handleNewItem(NewItemType type);
@@ -113,10 +112,6 @@ private:
   CheckValidNodeResult
   checkForValidNode(FileExplorerController::FileNodeInfo &nodeInfo);
 
-  KeyboardResult handleLeft(neko::FileNodeSnapshot currentNode);
-  KeyboardResult handleRight(neko::FileNodeSnapshot currentNode);
-  KeyboardResult handleDown(neko::FileNodeSnapshot currentNode);
-  KeyboardResult handleUp(neko::FileNodeSnapshot currentNode);
   KeyboardResult handleEnter(neko::FileNodeSnapshot currentNode);
   KeyboardResult handleSpace(neko::FileNodeSnapshot currentNode);
 

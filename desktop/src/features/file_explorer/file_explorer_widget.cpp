@@ -103,12 +103,15 @@ void FileExplorerWidget::itemRevealRequested() {
 }
 
 // TODO(scarlet): Align shortcuts with context menu.
+// TODO(scarlet): Add customizable keybindings/vim keybinds.
+// TODO(scarlet): Convert the switches to a map?
 void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   bool shouldScroll = false;
 
   const auto mods = event->modifiers();
   const bool ctrl = mods.testFlag(Qt::ControlModifier);
   const bool shift = mods.testFlag(Qt::ShiftModifier);
+  const bool alt = mods.testFlag(Qt::AltModifier);
 
   if (ctrl) {
     bool shouldRedraw = false;
@@ -116,7 +119,15 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
     // Handle node or font operations.
     switch (event->key()) {
     case Qt::Key_C:
-      fileExplorerController.handleCopy();
+      if (alt) {
+        if (shift) {
+          triggerCommand("fileExplorer.copyRelativePath");
+        } else {
+          triggerCommand("fileExplorer.copyPath");
+        }
+      } else {
+        fileExplorerController.handleCopy();
+      }
       return;
     case Qt::Key_V:
       shouldRedraw = true;
@@ -141,6 +152,9 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
       shouldRedraw = true;
       resetFontSize();
       break;
+    case Qt::Key_Backslash:
+      triggerCommand("fileExplorer.findInFolder");
+      break;
     default:
       break;
     }
@@ -158,45 +172,63 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
     using NewItemType = FileExplorerController::NewItemType;
 
   case Qt::Key_Up:
-    fileExplorerController.handleNavigation(Direction::Up);
+    triggerCommand("fileExplorer.navigateUp");
     shouldScroll = true;
     break;
   case Qt::Key_Down:
-    fileExplorerController.handleNavigation(Direction::Down);
+    triggerCommand("fileExplorer.navigateDown");
     shouldScroll = true;
     break;
   case Qt::Key_Left:
-    fileExplorerController.handleNavigation(Direction::Left);
+    triggerCommand("fileExplorer.navigateLeft");
     shouldScroll = true;
     break;
   case Qt::Key_Right:
-    fileExplorerController.handleNavigation(Direction::Right);
+    triggerCommand("fileExplorer.navigateRight");
     shouldScroll = true;
     break;
   case Qt::Key_Space:
+    // Toggle select for this node.
+    // TODO(scarlet): Add support operations on multiple nodes.
     fileExplorerController.handleActionKey(ActionKey::Space);
     break;
   case Qt::Key_Enter:
   case Qt::Key_Return:
+  case Qt::Key_E:
+    // Toggle expand/collapse for this node.
     fileExplorerController.handleActionKey(ActionKey::Enter);
     break;
   case Qt::Key_Delete:
     if (shift) {
-      // Skip the delete confirmation dialog.
+      // Delete and skip the delete confirmation dialog.
       fileExplorerController.handleDelete(false);
     } else {
-      // Show the delete confirmation dialog.
+      // Delete, but show the delete confirmation dialog.
       fileExplorerController.handleDelete(true);
     }
     break;
+  case Qt::Key_R:
+    if (shift) {
+      triggerCommand("fileExplorer.rename");
+    }
+    break;
+  case Qt::Key_X:
+    triggerCommand("fileExplorer.reveal");
+    break;
   case Qt::Key_D:
     if (shift) {
+      triggerCommand("fileExplorer.delete");
+    } else {
       triggerCommand("fileExplorer.newFolder");
     }
     break;
   case Qt::Key_Percent:
-    fileExplorerController.handleNewItem(NewItemType::File);
+    triggerCommand("fileExplorer.newFile");
     break;
+  case Qt::Key_C:
+    if (shift) {
+      triggerCommand("fileExplorer.collapseAll");
+    }
   default:
     break;
   }

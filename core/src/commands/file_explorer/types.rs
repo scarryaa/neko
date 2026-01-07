@@ -27,6 +27,14 @@ impl fmt::Display for FileExplorerCommandError {
 }
 
 #[derive(Clone, Copy)]
+pub enum FileExplorerNavigationDirection {
+    Left,
+    Right,
+    Up,
+    Down,
+}
+
+#[derive(Clone, Copy)]
 pub enum FileExplorerCommand {
     NewFile,
     NewFolder,
@@ -44,6 +52,7 @@ pub enum FileExplorerCommand {
     Delete,
     Expand,
     CollapseAll,
+    Navigation(FileExplorerNavigationDirection),
 }
 
 const ALL_IN_ORDER: &[FileExplorerCommand] = &[
@@ -84,6 +93,12 @@ impl FileExplorerCommand {
             FileExplorerCommand::Delete => "fileExplorer.delete",
             FileExplorerCommand::Expand => "fileExplorer.expand",
             FileExplorerCommand::CollapseAll => "fileExplorer.collapseAll",
+            FileExplorerCommand::Navigation(direction) => match direction {
+                FileExplorerNavigationDirection::Left => "fileExplorer.navigateLeft",
+                FileExplorerNavigationDirection::Right => "fileExplorer.navigateRight",
+                FileExplorerNavigationDirection::Up => "fileExplorer.navigateUp",
+                FileExplorerNavigationDirection::Down => "fileExplorer.navigateDown",
+            },
         }
     }
 
@@ -130,6 +145,17 @@ impl FromStr for FileExplorerCommand {
             "fileExplorer.delete" => Ok(Self::Delete),
             "fileExplorer.expand" => Ok(Self::Expand),
             "fileExplorer.collapseAll" => Ok(Self::CollapseAll),
+
+            "fileExplorer.navigateLeft" => {
+                Ok(Self::Navigation(FileExplorerNavigationDirection::Left))
+            }
+            "fileExplorer.navigateRight" => {
+                Ok(Self::Navigation(FileExplorerNavigationDirection::Right))
+            }
+            "fileExplorer.navigateUp" => Ok(Self::Navigation(FileExplorerNavigationDirection::Up)),
+            "fileExplorer.navigateDown" => {
+                Ok(Self::Navigation(FileExplorerNavigationDirection::Down))
+            }
             _ => Err(()),
         }
     }

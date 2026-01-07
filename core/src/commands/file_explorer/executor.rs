@@ -1,9 +1,9 @@
-use crate::{AppState, FileExplorerCommandResult, FileExplorerUiIntent, FileIoManager};
-use std::{io, path::PathBuf};
-
 use super::{
     FileExplorerCommand, FileExplorerCommandError, FileExplorerCommandState, FileExplorerContext,
+    FileExplorerNavigationDirection,
 };
+use crate::{AppState, FileExplorerCommandResult, FileExplorerUiIntent, FileIoManager};
+use std::{io, path::PathBuf};
 
 pub fn file_explorer_command_state(
     app_state: &AppState,
@@ -47,6 +47,7 @@ pub fn run_file_explorer_command(
     new_or_rename_item_name: Option<String>,
 ) -> Result<FileExplorerCommandResult, FileExplorerCommandError> {
     use FileExplorerCommand::*;
+    use FileExplorerNavigationDirection::*;
 
     let root_path_opt = app_state.get_file_tree().root_path.clone();
     if root_path_opt.is_none() {
@@ -237,6 +238,138 @@ pub fn run_file_explorer_command(
             tree.collapse_all();
             ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed { path: root_path });
         }
+        Navigation(direction) => match direction {
+            // Handles the 'Left' navigation event.
+            //
+            // If a valid node is selected:
+            // - If it's a directory:
+            //    - Expanded: Set to collapsed.
+            //    - Collapsed: Move to the parent node (directory), select it, and collapse
+            //      it.
+            Left => {
+                let current_node_path = ctx.item_path.clone();
+
+                // If the current node is collapsed, go to the parent node (directory), select it,
+                // and collapse it.
+                if !ctx.item_is_expanded {
+                    let root_node_path_opt = tree.root_path.clone();
+                    let parent_node_opt = tree.get_parent(&current_node_path);
+
+                    if let Some(parent_node) = parent_node_opt
+                        && let Some(root_node_path) = root_node_path_opt
+                    {
+                        let parent_node_path = parent_node.path.clone();
+
+                        // If the parent node IS the root node, do nothing.
+                        if root_node_path != parent_node_path {
+                            tree.set_current_path(&parent_node_path);
+                            tree.set_collapsed(parent_node_path);
+                        }
+                    }
+                } else {
+                    // Otherwise, if the current node is expanded, just collapse it.
+                    tree.set_collapsed(current_node_path);
+                }
+            }
+            // Handles the 'Right' navigation event.
+            //
+            // If a valid node is selected:
+            // - If it's a directory:
+            //    - Expanded: Move to the first child node and select it.
+            //    - Collapsed: Set to expanded.
+            Right => {
+                let current_node_path = ctx.item_path.clone();
+
+                // If the current node is collapsed, expand it.
+                if !ctx.item_is_expanded {
+                    tree.set_expanded(current_node_path);
+                } else {
+                    // Otherwise, if the current node is expanded and it has children, move to the
+                    // first child and select it.
+                    let children = tree.get_children(current_node_path);
+
+                    if let Ok(children) = children {
+                        let first_child_opt = children.first();
+
+                        if let Some(first_child) = first_child_opt {
+                            let first_child_path = first_child.path.clone();
+
+                            if !children.is_empty() {
+                                tree.set_current_path(first_child_path);
+                            }
+                        }
+                    }
+                }
+            }
+            // Handles the 'Up' navigation event.
+            //
+            // Attempts to move the selection to the previous node in the tree. If at the
+            // very first node, it wraps around to the end of the tree.
+            Up => {
+                let current_node_path = ctx.item_path.clone();
+                let nodes = tree.get_children(root_path);
+
+                // Try to get the first node.
+                if let Ok(nodes) = nodes {
+                    let first_node_opt = nodes.first();
+
+                    if let Some(first_node) = first_node_opt {
+                        let first_node_path = first_node.path.clone();
+
+                        // If at the top of the tree, wrap to the end of the tree.
+                        if current_node_path == first_node_path {
+                            let last_node_opt = nodes.last();
+
+                            if let Some(last_node) = last_node_opt {
+                                let last_node_path = last_node.path.clone();
+
+                                tree.set_current_path(last_node_path);
+                            }
+                        }
+
+                        // Otherwise, select the previous node.
+                        let previous_node = tree.prev(current_node_path);
+                        if let Some(previous_node) = previous_node {
+                            tree.set_current_path(previous_node.path);
+                        }
+                    }
+                }
+            }
+            // Handles the 'Down' navigation event.
+            //
+            // Attempts to move the selection to the next node in the tree. If at the
+            // very last node, it wraps around to the beginning of the tree.
+            Down => {
+                let current_node_path = ctx.item_path.clone();
+                let nodes = tree.get_children(root_path);
+
+                // Try to get the last node.
+                if let Ok(nodes) = nodes {
+                    let last_node_opt = nodes.last();
+
+                    if let Some(last_node) = last_node_opt {
+                        let last_node_path = last_node.path.clone();
+
+                        // If at the bottom of the tree, wrap to the top of the tree.
+                        if current_node_path == last_node_path {
+                            let first_node_opt = nodes.first();
+
+                            if let Some(first_node) = first_node_opt {
+                                let first_node_path = first_node.path.clone();
+
+                                tree.set_current_path(first_node_path);
+                            }
+                        }
+
+                        // Otherwise, select the next node.
+                        let next_node = tree.next(current_node_path);
+                        if let Some(next_node) = next_node {
+                            tree.set_current_path(next_node.path);
+                        }
+                    }
+                }
+            }
+        },
     }
 
     Ok(FileExplorerCommandResult {

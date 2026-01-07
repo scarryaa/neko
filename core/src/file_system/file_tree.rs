@@ -86,6 +86,17 @@ impl FileTree {
         Ok(())
     }
 
+    pub fn get_parent<P: AsRef<Path>>(&self, path: P) -> Option<&FileNode> {
+        let path = path.as_ref();
+
+        let parent_path = path.parent()?;
+        let grandparent_path = parent_path.parent()?;
+        let siblings = self.loaded_nodes.get(grandparent_path)?;
+
+        // Attempt to get the parent node path.
+        siblings.iter().find(|node| node.path == parent_path)
+    }
+
     pub fn get_children<P: AsRef<Path>>(
         &mut self,
         directory_path: P,
@@ -99,12 +110,12 @@ impl FileTree {
     ) -> FileSystemResult<&[FileNode]> {
         let path = directory_path.as_ref().to_path_buf();
 
-        // If the nodes for the given path aren't already loaded, add them
+        // If the nodes for the given path aren't already loaded, add them.
         if !loaded_nodes.contains_key(&path) {
             let mut children = Vec::new();
             for entry_res in FileIoManager::read_dir(&path)? {
                 let entry = entry_res?;
-                // Actual depth will be updated later
+                // Actual depth will be updated later.
                 let node = FileNode::from_entry(entry, 1)?;
                 children.push(node);
             }
@@ -113,7 +124,7 @@ impl FileTree {
             loaded_nodes.insert(path.clone(), children);
         }
 
-        // Otherwise just return the already-loaded nodes
+        // Otherwise just return the already-loaded nodes.
         Ok(loaded_nodes.get(&path).unwrap())
     }
 

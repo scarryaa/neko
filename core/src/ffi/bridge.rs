@@ -348,6 +348,10 @@ pub mod ffi {
         Delete,
         Expand,
         CollapseAll,
+        NavigationLeft,
+        NavigationRight,
+        NavigationUp,
+        NavigationDown,
     }
 
     #[derive(Clone, Debug)]

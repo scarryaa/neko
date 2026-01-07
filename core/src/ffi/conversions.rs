@@ -2,8 +2,9 @@ use super::*;
 use crate::{
     AddCursorDirection, ChangeSet, CloseTabOperationType, Command, CommandResult, Config, Cursor,
     DocumentError, DocumentTarget, FileExplorerCommand, FileExplorerCommandResult,
-    FileExplorerUiIntent, FileSystemError, JumpAliasInfo, JumpCommand, JumpManagementCommand,
-    LineTarget, OpenTabResult, TabCommand, TabCommandState, TabContext, UiIntent,
+    FileExplorerNavigationDirection, FileExplorerUiIntent, FileSystemError, JumpAliasInfo,
+    JumpCommand, JumpManagementCommand, LineTarget, OpenTabResult, TabCommand, TabCommandState,
+    TabContext, UiIntent,
     commands::{FileExplorerCommandState, FileExplorerContext},
 };
 use std::{fmt, io, path::PathBuf};
@@ -518,6 +519,26 @@ impl From<FileExplorerCommand> for FileExplorerCommandKindFfi {
             FileExplorerCommand::Delete => FileExplorerCommandKindFfi::Delete,
             FileExplorerCommand::Expand => FileExplorerCommandKindFfi::Expand,
             FileExplorerCommand::CollapseAll => FileExplorerCommandKindFfi::CollapseAll,
+            FileExplorerCommand::Navigation(direction) => match direction {
+                FileExplorerNavigationDirection::Left => FileExplorerCommandKindFfi::NavigationLeft,
+                FileExplorerNavigationDirection::Right => {
+                    FileExplorerCommandKindFfi::NavigationRight
+                }
+                FileExplorerNavigationDirection::Up => FileExplorerCommandKindFfi::NavigationUp,
+                FileExplorerNavigationDirection::Down => FileExplorerCommandKindFfi::NavigationDown,
+            },
+        }
+    }
+}
+
+impl FileExplorerCommandKindFfi {
+    fn navigation_dir(self) -> FileExplorerNavigationDirection {
+        match self {
+            Self::NavigationLeft => FileExplorerNavigationDirection::Left,
+            Self::NavigationRight => FileExplorerNavigationDirection::Right,
+            Self::NavigationUp => FileExplorerNavigationDirection::Up,
+            Self::NavigationDown => FileExplorerNavigationDirection::Down,
+            _ => unreachable!("Non-navigation kind passed to navigation_dir"),
         }
     }
 }
@@ -541,6 +562,12 @@ impl From<FileExplorerCommandKindFfi> for FileExplorerCommand {
             FileExplorerCommandKindFfi::Delete => FileExplorerCommand::Delete,
             FileExplorerCommandKindFfi::Expand => FileExplorerCommand::Expand,
             FileExplorerCommandKindFfi::CollapseAll => FileExplorerCommand::CollapseAll,
+            FileExplorerCommandKindFfi::NavigationLeft
+            | FileExplorerCommandKindFfi::NavigationRight
+            | FileExplorerCommandKindFfi::NavigationUp
+            | FileExplorerCommandKindFfi::NavigationDown => {
+                FileExplorerCommand::Navigation(command.navigation_dir())
+            }
             _ => unreachable!(
                 "All FileExplorerCommandKindFfi => FileExplorerCommand cases should be covered"
             ),
