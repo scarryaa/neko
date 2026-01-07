@@ -1,6 +1,7 @@
 #include "file_explorer_controller.h"
 #include "features/main_window/services/dialog_service.h"
 #include "features/main_window/services/file_io_service.h"
+#include <optional>
 
 // TODO(scarlet): Cache tree snapshots?
 FileExplorerController::FileExplorerController(
@@ -72,6 +73,23 @@ neko::FileTreeSnapshot FileExplorerController::getTreeSnapshot() {
 // Clears the current selected/focused node.
 void FileExplorerController::clearSelection() {
   fileTreeBridge->clearCurrent();
+}
+
+std::optional<neko::FileExplorerContextFfi>
+FileExplorerController::getCurrentContext() {
+  auto currentNode = getNode([](const auto &node) { return node.is_current; });
+  auto validNodeResult = checkForValidNode(currentNode);
+
+  // If the found node is valid, construct and return the context.
+  if (validNodeResult.validNode) {
+    return neko::FileExplorerContextFfi{
+        .item_path = validNodeResult.nodePath.toStdString(),
+        .item_is_directory = currentNode.nodeSnapshot.is_dir,
+        .item_is_expanded = currentNode.nodeSnapshot.is_expanded};
+  }
+
+  // Otherwise, return.
+  return std::nullopt;
 }
 
 // Handles clicking on a specified node.
@@ -399,6 +417,9 @@ void FileExplorerController::handlePaste() {
   // If the paste was successful, refresh the parent directory and select the
   // new item.
   if (pasteResult.success) {
+    // If the original item was deleted, remove it from the clipboard.
+    if (pasteResult.originalWasDeleted) {
+    }
     fileTreeBridge->refreshDirectory(parentNodePath);
     fileTreeBridge->setCurrent(pasteResult.items.first().newPath);
   }
@@ -476,19 +497,43 @@ void FileExplorerController::handleDelete(bool shouldConfirm) {
 // focuses the previous node in the tree.
 void FileExplorerController::deleteItem(
     const QString &path, const neko::FileNodeSnapshot &currentNode) {
+  // Retrieve the first node to later check if the deleted item was the very
+  // first node.
+  auto originalFirstNode = getFirstNode();
   bool wasSuccessful = FileIoService::deleteItem(path);
 
   // If the deletion succeeded, update the tree state.
   if (wasSuccessful) {
-    auto previousNode = fileTreeBridge->getPreviousNode(path);
     auto parentPath = fileTreeBridge->getParentNodePath(path);
-    bool currentIsDir = currentNode.is_dir;
 
     fileTreeBridge->refreshDirectory(parentPath);
     fileTreeBridge->setExpanded(parentPath);
-    fileTreeBridge->setCurrent(previousNode.path.c_str());
+
+    // If the deleted node was the first tree item, get the new first item
+    // instead.
+    if (originalFirstNode.foundNode() &&
+        originalFirstNode.nodeSnapshot.path == path) {
+      auto newFirstNode = getFirstNode();
+
+      if (newFirstNode.foundNode()) {
+        fileTreeBridge->setCurrent(newFirstNode.nodeSnapshot.path.c_str());
+      }
+    } else {
+      // Check if the deleted item was the first child of a directory.
+      if (path.contains(parentPath)) {
+        // If so, set the current node to the parent node.
+        fileTreeBridge->setCurrent(parentPath);
+      } else {
+        // Otherwise, get the previous node and set it as current.
+        auto previousNode = fileTreeBridge->getPreviousNode(path);
+
+        fileTreeBridge->setCurrent(previousNode.path.c_str());
+      }
+    }
   }
 }
+
+void FileExplorerController::handleNewItem(NewItemType type) {}
 
 FileExplorerController::SelectFirstTreeNodeResult
 FileExplorerController::selectFirstTreeNode() {

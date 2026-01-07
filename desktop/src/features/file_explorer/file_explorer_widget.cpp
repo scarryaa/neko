@@ -102,6 +102,7 @@ void FileExplorerWidget::itemRevealRequested() {
   }
 }
 
+// TODO(scarlet): Align shortcuts with context menu.
 void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   bool shouldScroll = false;
 
@@ -154,6 +155,7 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   switch (event->key()) {
     using Direction = FileExplorerController::NavigationDirection;
     using ActionKey = FileExplorerController::ActionKey;
+    using NewItemType = FileExplorerController::NewItemType;
 
   case Qt::Key_Up:
     fileExplorerController.handleNavigation(Direction::Up);
@@ -186,6 +188,15 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
       // Show the delete confirmation dialog.
       fileExplorerController.handleDelete(true);
     }
+    break;
+  case Qt::Key_D:
+    if (shift) {
+      triggerCommand("fileExplorer.newFolder");
+    }
+    break;
+  case Qt::Key_Percent:
+    fileExplorerController.handleNewItem(NewItemType::File);
+    break;
   default:
     break;
   }
@@ -200,6 +211,16 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   }
 
   redraw();
+}
+
+void FileExplorerWidget::triggerCommand(const std::string &commandId,
+                                        bool bypassDeleteConfirmation) {
+  auto ctx = fileExplorerController.getCurrentContext();
+
+  // If the context retrevial was successful, continue.
+  if (ctx.has_value()) {
+    emit commandRequested(commandId, ctx.value(), bypassDeleteConfirmation);
+  }
 }
 
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {

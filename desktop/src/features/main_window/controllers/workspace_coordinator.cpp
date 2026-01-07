@@ -70,6 +70,13 @@ WorkspaceCoordinator::WorkspaceCoordinator(
   connect(this, &WorkspaceCoordinator::requestFileExplorerSizeUpdate,
           uiHandles.fileExplorerWidget, &FileExplorerWidget::updateDimensions);
 
+  // FileExplorerWidget -> FileExplorerFlows
+  connect(uiHandles.fileExplorerWidget, &FileExplorerWidget::commandRequested,
+          [this](auto commandId, auto ctx, auto bypassDeleteConfirmation) {
+            fileExplorerFlows.handleFileExplorerCommand(
+                commandId, ctx, bypassDeleteConfirmation);
+          });
+
   auto editorController = appBridge->getEditorController();
   setEditorController(std::move(editorController));
 }

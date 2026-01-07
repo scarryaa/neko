@@ -52,6 +52,9 @@ signals:
   void directoryPersistRequested(const QString &path);
   void directorySelected(const QString &path);
   void directorySelectionRequested();
+  void commandRequested(const std::string &commandId,
+                        const neko::FileExplorerContextFfi &ctx,
+                        bool bypassDeleteConfirmation);
 
 public slots:
   void itemRevealRequested();
@@ -78,6 +81,9 @@ private:
   void setFontSize(double newFontSize);
 
   int convertMousePositionToRow(double yPos);
+
+  void triggerCommand(const std::string &commandId,
+                      bool bypassDeleteConfirmation = false);
 
   FileExplorerController fileExplorerController;
 

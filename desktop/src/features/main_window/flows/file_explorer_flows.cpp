@@ -154,6 +154,7 @@ FileExplorerFlows::doPreCommandProcessing(
   bool isNewDirectoryCommand =
       args.fileExplorerCommand == CommandKind::NewFolder;
   bool isRenameCommand = args.fileExplorerCommand == CommandKind::Rename;
+
   if (isNewFileCommand || isNewDirectoryCommand || isRenameCommand) {
     using Type = DialogService::OperationType;
 

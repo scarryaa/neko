@@ -27,6 +27,7 @@ public:
   enum class Action : uint8_t { None, LayoutChanged, FileSelected };
   enum class NavigationDirection : uint8_t { Left, Right, Up, Down };
   enum class ActionKey : uint8_t { Space, Enter };
+  enum class NewItemType : uint8_t { File, Directory };
 
   struct FileExplorerControllerProps {
     FileTreeBridge *fileTreeBridge;
@@ -95,11 +96,14 @@ public:
   KeyboardResult handleNavigation(NavigationDirection direction);
   KeyboardResult handleActionKey(ActionKey key);
   void handleDelete(bool shouldConfirm);
+  void handleNewItem(NewItemType type);
 
   void handleCut();
   void handleCopy();
   void handlePaste();
   void handleDuplicate();
+
+  std::optional<neko::FileExplorerContextFfi> getCurrentContext();
 
 signals:
   void rootDirectoryChanged(const QString &rootDirectoryPath);
