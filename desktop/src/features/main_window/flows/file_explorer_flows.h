@@ -23,7 +23,7 @@ public:
   struct FileExplorerFlowsCommandResult {
     bool success;
     bool shouldRedraw;
-    std::vector<neko::FileExplorerUiIntentKindFfi> intentKinds;
+    std::vector<neko::FileExplorerUiIntentFfi> intents;
   };
 
   explicit FileExplorerFlows(const FileExplorerFlowsProps &props);

@@ -352,11 +352,14 @@ pub mod ffi {
         NavigationRight,
         NavigationUp,
         NavigationDown,
+        ToggleSelect,
+        Action,
     }
 
     #[derive(Clone, Debug)]
     enum FileExplorerUiIntentKindFfi {
         DirectoryRefreshed,
+        OpenFile,
     }
 
     #[derive(Clone, Debug)]

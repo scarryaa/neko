@@ -93,7 +93,6 @@ public:
   void clearSelection();
 
   ClickResult handleNodeClick(int index, bool isLeftClick);
-  KeyboardResult handleActionKey(ActionKey key);
   void handleDelete(bool shouldConfirm);
   void handleNewItem(NewItemType type);
 
@@ -111,9 +110,6 @@ private:
   SelectFirstTreeNodeResult selectFirstTreeNode();
   CheckValidNodeResult
   checkForValidNode(FileExplorerController::FileNodeInfo &nodeInfo);
-
-  KeyboardResult handleEnter(neko::FileNodeSnapshot currentNode);
-  KeyboardResult handleSpace(neko::FileNodeSnapshot currentNode);
 
   void deleteItem(const QString &path,
                   const neko::FileNodeSnapshot &currentNode);

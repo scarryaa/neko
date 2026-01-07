@@ -41,8 +41,8 @@ FileExplorerWidget::FileExplorerWidget(const FileExplorerProps &props,
       fontMetrics(font), contextMenuRegistry(*props.contextMenuRegistry),
       commandRegistry(*props.commandRegistry),
       themeProvider(props.themeProvider),
-      fileExplorerController(FileExplorerController(
-          {.fileTreeBridge = props.fileTreeBridge}, parent)) {
+      fileExplorerController(new FileExplorerController(
+          {.fileTreeBridge = props.fileTreeBridge}, this)) {
   setFocusPolicy(Qt::StrongFocus);
   setFrameShape(QFrame::NoFrame);
   setAutoFillBackground(false);
@@ -92,7 +92,7 @@ void FileExplorerWidget::setAndApplyTheme(const FileExplorerTheme &newTheme) {
 }
 
 void FileExplorerWidget::itemRevealRequested() {
-  auto nodeInfo = fileExplorerController.getNode(
+  auto nodeInfo = fileExplorerController->getNode(
       [](const auto node) { return node.is_current; });
 
   if (nodeInfo.foundNode()) {
@@ -126,19 +126,19 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
           triggerCommand("fileExplorer.copyPath");
         }
       } else {
-        fileExplorerController.handleCopy();
+        fileExplorerController->handleCopy();
       }
       return;
     case Qt::Key_V:
       shouldRedraw = true;
-      fileExplorerController.handlePaste();
+      fileExplorerController->handlePaste();
       break;
     case Qt::Key_X:
-      fileExplorerController.handleCut();
+      fileExplorerController->handleCut();
       return;
     case Qt::Key_D:
       shouldRedraw = true;
-      fileExplorerController.handleDuplicate();
+      fileExplorerController->handleDuplicate();
       break;
     case Qt::Key_Equal:
       shouldRedraw = true;
@@ -190,21 +190,22 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   case Qt::Key_Space:
     // Toggle select for this node.
     // TODO(scarlet): Add support operations on multiple nodes.
-    fileExplorerController.handleActionKey(ActionKey::Space);
+    triggerCommand("fileExplorer.toggleSelect");
     break;
   case Qt::Key_Enter:
   case Qt::Key_Return:
   case Qt::Key_E:
-    // Toggle expand/collapse for this node.
-    fileExplorerController.handleActionKey(ActionKey::Enter);
+    // Toggle expand/collapse for this node if it's a directory, or open it if
+    // it's a file.
+    triggerCommand("fileExplorer.action");
     break;
   case Qt::Key_Delete:
     if (shift) {
       // Delete and skip the delete confirmation dialog.
-      fileExplorerController.handleDelete(false);
+      fileExplorerController->handleDelete(false);
     } else {
       // Delete, but show the delete confirmation dialog.
-      fileExplorerController.handleDelete(true);
+      fileExplorerController->handleDelete(true);
     }
     break;
   case Qt::Key_R:
@@ -234,7 +235,7 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   }
 
   if (shouldScroll) {
-    auto nodeInfo = fileExplorerController.getNode(
+    auto nodeInfo = fileExplorerController->getNode(
         [](const auto node) { return node.is_current; });
 
     if (nodeInfo.foundNode()) {
@@ -247,7 +248,7 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
 
 void FileExplorerWidget::triggerCommand(const std::string &commandId,
                                         bool bypassDeleteConfirmation) {
-  auto ctx = fileExplorerController.getCurrentContext();
+  auto ctx = fileExplorerController->getCurrentContext();
 
   // If the context retrevial was successful, continue.
   if (ctx.has_value()) {
@@ -260,7 +261,7 @@ void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
   const bool refocusClick = focusReceivedFromMouse;
 
   const int row = convertMousePositionToRow(event->pos().y());
-  const int nodeCount = fileExplorerController.getNodeCount();
+  const int nodeCount = fileExplorerController->getNodeCount();
 
   // Reset the focus flag.
   focusReceivedFromMouse = false;
@@ -270,14 +271,14 @@ void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
     if (isLeftClick && refocusClick) {
       setFocus();
     } else {
-      fileExplorerController.clearSelection();
+      fileExplorerController->clearSelection();
       redraw();
     }
 
     return;
   }
 
-  auto clickResult = fileExplorerController.handleNodeClick(row, isLeftClick);
+  auto clickResult = fileExplorerController->handleNodeClick(row, isLeftClick);
 
   switch (clickResult.action) {
   case FileExplorerController::Action::LayoutChanged:
@@ -298,7 +299,7 @@ void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
 
 void FileExplorerWidget::paintEvent(QPaintEvent *event) {
   QPainter painter(viewport());
-  auto snapshot = fileExplorerController.getTreeSnapshot();
+  auto snapshot = fileExplorerController->getTreeSnapshot();
 
   drawFiles(&painter, snapshot.nodes.size(), snapshot.nodes);
 }
@@ -339,7 +340,7 @@ void FileExplorerWidget::applySelectedDirectory(const QString &path) {
     return;
   }
 
-  fileExplorerController.loadDirectory(path);
+  fileExplorerController->loadDirectory(path);
   directorySelectionButton->hide();
 
   emit directorySelected(path);
@@ -450,7 +451,7 @@ void FileExplorerWidget::onRootDirectoryChanged() {
 }
 
 double FileExplorerWidget::measureContentWidth() {
-  auto snapshot = fileExplorerController.getTreeSnapshot();
+  auto snapshot = fileExplorerController->getTreeSnapshot();
   double finalWidth = 0;
 
   // TODO(scarlet): Make this faster if possible?
@@ -463,7 +464,7 @@ double FileExplorerWidget::measureContentWidth() {
 }
 
 void FileExplorerWidget::updateDimensions() {
-  auto nodeCount = fileExplorerController.getNodeCount();
+  auto nodeCount = fileExplorerController->getNodeCount();
 
   const double lineHeight = fontMetrics.height();
   const double viewportHeight = std::max(
@@ -521,7 +522,7 @@ int FileExplorerWidget::convertMousePositionToRow(double yPos) {
 }
 
 void FileExplorerWidget::contextMenuEvent(QContextMenuEvent *event) {
-  auto snapshot = fileExplorerController.getTreeSnapshot();
+  auto snapshot = fileExplorerController->getTreeSnapshot();
   int row = convertMousePositionToRow(event->pos().y());
 
   bool targetIsItem = false;

@@ -53,6 +53,8 @@ pub enum FileExplorerCommand {
     Expand,
     CollapseAll,
     Navigation(FileExplorerNavigationDirection),
+    ToggleSelect,
+    Action,
 }
 
 const ALL_IN_ORDER: &[FileExplorerCommand] = &[
@@ -99,6 +101,8 @@ impl FileExplorerCommand {
                 FileExplorerNavigationDirection::Up => "fileExplorer.navigateUp",
                 FileExplorerNavigationDirection::Down => "fileExplorer.navigateDown",
             },
+            FileExplorerCommand::ToggleSelect => "fileExplorer.toggleSelect",
+            FileExplorerCommand::Action => "fileExplorer.action",
         }
     }
 
@@ -156,6 +160,8 @@ impl FromStr for FileExplorerCommand {
             "fileExplorer.navigateDown" => {
                 Ok(Self::Navigation(FileExplorerNavigationDirection::Down))
             }
+            "fileExplorer.toggleSelect" => Ok(Self::ToggleSelect),
+            "fileExplorer.action" => Ok(Self::Action),
             _ => Err(()),
         }
     }
@@ -198,6 +204,7 @@ pub struct FileExplorerCommandState {
 #[derive(Clone, Debug)]
 pub enum FileExplorerUiIntent {
     DirectoryRefreshed { path: PathBuf },
+    OpenFile { path: PathBuf },
 }
 
 #[derive(Clone, Debug)]

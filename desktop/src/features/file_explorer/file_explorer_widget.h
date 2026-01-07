@@ -85,7 +85,7 @@ private:
   void triggerCommand(const std::string &commandId,
                       bool bypassDeleteConfirmation = false);
 
-  FileExplorerController fileExplorerController;
+  FileExplorerController *fileExplorerController;
 
   QPushButton *directorySelectionButton;
   ContextMenuRegistry &contextMenuRegistry;

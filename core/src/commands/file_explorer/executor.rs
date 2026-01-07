@@ -370,6 +370,29 @@ pub fn run_file_explorer_command(
                 }
             }
         },
+        // Handles the 'Toggle Select' event.
+        //
+        // If a valid node is focused, it is selected/deselected.
+        FileExplorerCommand::ToggleSelect => {
+            let current_node_path = ctx.item_path.clone();
+            tree.toggle_select_for_path(current_node_path);
+        }
+        // Handles the 'Action' event.
+        //
+        // If a valid node is selected:
+        // - If it's a directory, the expansion state is toggled.
+        // - If it's a file, it's marked to be opened.
+        FileExplorerCommand::Action => {
+            let current_node_path = ctx.item_path.clone();
+
+            if ctx.item_is_directory {
+                tree.toggle_expanded(current_node_path);
+            } else {
+                ui_intents.push(FileExplorerUiIntent::OpenFile {
+                    path: current_node_path,
+                });
+            }
+        }
     }
 
     Ok(FileExplorerCommandResult {

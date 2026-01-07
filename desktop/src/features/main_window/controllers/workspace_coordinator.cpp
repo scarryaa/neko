@@ -70,11 +70,10 @@ WorkspaceCoordinator::WorkspaceCoordinator(
   connect(this, &WorkspaceCoordinator::requestFileExplorerSizeUpdate,
           uiHandles.fileExplorerWidget, &FileExplorerWidget::updateDimensions);
 
-  // FileExplorerWidget -> FileExplorerFlows
+  // FileExplorerWidget -> WorkspaceCoordinator
   connect(uiHandles.fileExplorerWidget, &FileExplorerWidget::commandRequested,
           [this](auto commandId, auto ctx, auto bypassDeleteConfirmation) {
-            fileExplorerFlows.handleFileExplorerCommand(
-                commandId, ctx, bypassDeleteConfirmation);
+            handleCommand(commandId, ctx, bypassDeleteConfirmation);
           });
 
   auto editorController = appBridge->getEditorController();

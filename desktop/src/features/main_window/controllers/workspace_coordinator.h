@@ -71,11 +71,15 @@ public:
 
       // Handle 'should redraw' intents from Rust-handled commands.
       // We also request a geometry/size update.
-      for (const auto &intent : result.intentKinds) {
-        switch (intent) {
+      for (const neko::FileExplorerUiIntentFfi &intent : result.intents) {
+        switch (intent.kind) {
         case neko::FileExplorerUiIntentKindFfi::DirectoryRefreshed:
           emit requestFileExplorerRedraw();
           emit requestFileExplorerSizeUpdate();
+          break;
+        case neko::FileExplorerUiIntentKindFfi::OpenFile:
+          emit fileSelected(QString::fromUtf8(intent.path), true);
+          break;
         }
       }
     } else {

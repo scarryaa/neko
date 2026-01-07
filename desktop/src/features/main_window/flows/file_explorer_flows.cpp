@@ -21,7 +21,7 @@ FileExplorerFlows::handleFileExplorerCommand(
   FileExplorerFlowsCommandResult result{
       .success = false,
       .shouldRedraw = false,
-      .intentKinds = std::vector<neko::FileExplorerUiIntentKindFfi>()};
+      .intents = std::vector<neko::FileExplorerUiIntentFfi>()};
   if (commandId.empty()) {
     return result;
   }
@@ -108,7 +108,7 @@ FileExplorerFlows::handleFileExplorerCommand(
           preProcessingResult.newItemName.toStdString());
 
   for (const auto &intent : commandResult.intents) {
-    result.intentKinds.push_back(intent.kind);
+    result.intents.push_back(intent);
   }
 
   PostCommandProcessingArgs postArgs{

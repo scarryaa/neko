@@ -527,6 +527,8 @@ impl From<FileExplorerCommand> for FileExplorerCommandKindFfi {
                 FileExplorerNavigationDirection::Up => FileExplorerCommandKindFfi::NavigationUp,
                 FileExplorerNavigationDirection::Down => FileExplorerCommandKindFfi::NavigationDown,
             },
+            FileExplorerCommand::ToggleSelect => FileExplorerCommandKindFfi::ToggleSelect,
+            FileExplorerCommand::Action => FileExplorerCommandKindFfi::Action,
         }
     }
 }
@@ -568,6 +570,8 @@ impl From<FileExplorerCommandKindFfi> for FileExplorerCommand {
             | FileExplorerCommandKindFfi::NavigationDown => {
                 FileExplorerCommand::Navigation(command.navigation_dir())
             }
+            FileExplorerCommandKindFfi::ToggleSelect => FileExplorerCommand::ToggleSelect,
+            FileExplorerCommandKindFfi::Action => FileExplorerCommand::Action,
             _ => unreachable!(
                 "All FileExplorerCommandKindFfi => FileExplorerCommand cases should be covered"
             ),
@@ -628,6 +632,14 @@ impl From<FileExplorerUiIntent> for FileExplorerUiIntentFfi {
         match intent {
             FileExplorerUiIntent::DirectoryRefreshed { path } => FileExplorerUiIntentFfi {
                 kind: FileExplorerUiIntentKindFfi::DirectoryRefreshed,
+                path: if let Some(path) = path.to_str() {
+                    path.to_string()
+                } else {
+                    "".to_string()
+                },
+            },
+            FileExplorerUiIntent::OpenFile { path } => FileExplorerUiIntentFfi {
+                kind: FileExplorerUiIntentKindFfi::OpenFile,
                 path: if let Some(path) = path.to_str() {
                     path.to_string()
                 } else {
