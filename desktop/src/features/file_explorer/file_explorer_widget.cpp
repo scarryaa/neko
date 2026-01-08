@@ -231,6 +231,8 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
     if (shift) {
       triggerCommand("fileExplorer.collapseAll");
     }
+  case Qt::Key_Escape:
+    triggerCommand("fileExplorer.clearSelected");
   default:
     break;
   }

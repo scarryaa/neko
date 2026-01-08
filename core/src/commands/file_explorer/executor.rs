@@ -422,6 +422,17 @@ pub fn run_file_explorer_command(
                 }
             }
         }
+        // Handles the 'Clear Selected' event.
+        //
+        // First clears the selected node(s) (if any), then clears the current node if no nodes are
+        // selected.
+        FileExplorerCommand::ClearSelected => {
+            if tree.has_selected_nodes() {
+                tree.clear_selected_paths();
+            } else {
+                tree.clear_current_path();
+            }
+        }
     }
 
     Ok(FileExplorerCommandResult {

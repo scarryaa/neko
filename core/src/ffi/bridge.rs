@@ -356,6 +356,7 @@ pub mod ffi {
         ToggleSelect,
         Action,
         ActionIndex,
+        ClearSelected,
     }
 
     #[derive(Clone, Debug)]

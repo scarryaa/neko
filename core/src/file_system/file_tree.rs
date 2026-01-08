@@ -344,6 +344,11 @@ impl FileTree {
         }
     }
 
+    /// Returns `true` if there are selected nodes, or `false` if there aren't.
+    pub fn has_selected_nodes(&self) -> bool {
+        !self.selected_paths.is_empty()
+    }
+
     /// Sets the `current_path` from the path provided.
     pub fn set_current_path<P: AsRef<Path>>(&mut self, path: P) {
         self.current_path = Some(path.as_ref().to_path_buf());

@@ -503,33 +503,32 @@ impl From<FileExplorerCommandState> for FileExplorerCommandStateFfi {
 impl From<FileExplorerCommand> for FileExplorerCommandKindFfi {
     fn from(command: FileExplorerCommand) -> Self {
         match command {
-            FileExplorerCommand::NewFile => FileExplorerCommandKindFfi::NewFile,
-            FileExplorerCommand::NewFolder => FileExplorerCommandKindFfi::NewFolder,
-            FileExplorerCommand::Reveal => FileExplorerCommandKindFfi::Reveal,
-            FileExplorerCommand::OpenInTerminal => FileExplorerCommandKindFfi::OpenInTerminal,
-            FileExplorerCommand::FindInFolder => FileExplorerCommandKindFfi::FindInFolder,
-            FileExplorerCommand::Cut => FileExplorerCommandKindFfi::Cut,
-            FileExplorerCommand::Copy => FileExplorerCommandKindFfi::Copy,
-            FileExplorerCommand::Duplicate => FileExplorerCommandKindFfi::Duplicate,
-            FileExplorerCommand::Paste => FileExplorerCommandKindFfi::Paste,
-            FileExplorerCommand::CopyPath => FileExplorerCommandKindFfi::CopyPath,
-            FileExplorerCommand::CopyRelativePath => FileExplorerCommandKindFfi::CopyRelativePath,
-            FileExplorerCommand::ShowHistory => FileExplorerCommandKindFfi::ShowHistory,
-            FileExplorerCommand::Rename => FileExplorerCommandKindFfi::Rename,
-            FileExplorerCommand::Delete => FileExplorerCommandKindFfi::Delete,
-            FileExplorerCommand::Expand => FileExplorerCommandKindFfi::Expand,
-            FileExplorerCommand::CollapseAll => FileExplorerCommandKindFfi::CollapseAll,
+            FileExplorerCommand::NewFile => Self::NewFile,
+            FileExplorerCommand::NewFolder => Self::NewFolder,
+            FileExplorerCommand::Reveal => Self::Reveal,
+            FileExplorerCommand::OpenInTerminal => Self::OpenInTerminal,
+            FileExplorerCommand::FindInFolder => Self::FindInFolder,
+            FileExplorerCommand::Cut => Self::Cut,
+            FileExplorerCommand::Copy => Self::Copy,
+            FileExplorerCommand::Duplicate => Self::Duplicate,
+            FileExplorerCommand::Paste => Self::Paste,
+            FileExplorerCommand::CopyPath => Self::CopyPath,
+            FileExplorerCommand::CopyRelativePath => Self::CopyRelativePath,
+            FileExplorerCommand::ShowHistory => Self::ShowHistory,
+            FileExplorerCommand::Rename => Self::Rename,
+            FileExplorerCommand::Delete => Self::Delete,
+            FileExplorerCommand::Expand => Self::Expand,
+            FileExplorerCommand::CollapseAll => Self::CollapseAll,
             FileExplorerCommand::Navigation(direction) => match direction {
-                FileExplorerNavigationDirection::Left => FileExplorerCommandKindFfi::NavigationLeft,
-                FileExplorerNavigationDirection::Right => {
-                    FileExplorerCommandKindFfi::NavigationRight
-                }
-                FileExplorerNavigationDirection::Up => FileExplorerCommandKindFfi::NavigationUp,
-                FileExplorerNavigationDirection::Down => FileExplorerCommandKindFfi::NavigationDown,
+                FileExplorerNavigationDirection::Left => Self::NavigationLeft,
+                FileExplorerNavigationDirection::Right => Self::NavigationRight,
+                FileExplorerNavigationDirection::Up => Self::NavigationUp,
+                FileExplorerNavigationDirection::Down => Self::NavigationDown,
             },
-            FileExplorerCommand::ToggleSelect => FileExplorerCommandKindFfi::ToggleSelect,
-            FileExplorerCommand::Action => FileExplorerCommandKindFfi::Action,
-            FileExplorerCommand::ActionIndex => FileExplorerCommandKindFfi::ActionIndex,
+            FileExplorerCommand::ToggleSelect => Self::ToggleSelect,
+            FileExplorerCommand::Action => Self::Action,
+            FileExplorerCommand::ActionIndex => Self::ActionIndex,
+            FileExplorerCommand::ClearSelected => Self::ClearSelected,
         }
     }
 }
@@ -549,31 +548,32 @@ impl FileExplorerCommandKindFfi {
 impl From<FileExplorerCommandKindFfi> for FileExplorerCommand {
     fn from(command: FileExplorerCommandKindFfi) -> Self {
         match command {
-            FileExplorerCommandKindFfi::NewFile => FileExplorerCommand::NewFile,
-            FileExplorerCommandKindFfi::NewFolder => FileExplorerCommand::NewFolder,
-            FileExplorerCommandKindFfi::Reveal => FileExplorerCommand::Reveal,
-            FileExplorerCommandKindFfi::OpenInTerminal => FileExplorerCommand::OpenInTerminal,
-            FileExplorerCommandKindFfi::FindInFolder => FileExplorerCommand::FindInFolder,
-            FileExplorerCommandKindFfi::Cut => FileExplorerCommand::Cut,
-            FileExplorerCommandKindFfi::Copy => FileExplorerCommand::Copy,
-            FileExplorerCommandKindFfi::Duplicate => FileExplorerCommand::Duplicate,
-            FileExplorerCommandKindFfi::Paste => FileExplorerCommand::Paste,
-            FileExplorerCommandKindFfi::CopyPath => FileExplorerCommand::CopyPath,
-            FileExplorerCommandKindFfi::CopyRelativePath => FileExplorerCommand::CopyRelativePath,
-            FileExplorerCommandKindFfi::ShowHistory => FileExplorerCommand::ShowHistory,
-            FileExplorerCommandKindFfi::Rename => FileExplorerCommand::Rename,
-            FileExplorerCommandKindFfi::Delete => FileExplorerCommand::Delete,
-            FileExplorerCommandKindFfi::Expand => FileExplorerCommand::Expand,
-            FileExplorerCommandKindFfi::CollapseAll => FileExplorerCommand::CollapseAll,
+            FileExplorerCommandKindFfi::NewFile => Self::NewFile,
+            FileExplorerCommandKindFfi::NewFolder => Self::NewFolder,
+            FileExplorerCommandKindFfi::Reveal => Self::Reveal,
+            FileExplorerCommandKindFfi::OpenInTerminal => Self::OpenInTerminal,
+            FileExplorerCommandKindFfi::FindInFolder => Self::FindInFolder,
+            FileExplorerCommandKindFfi::Cut => Self::Cut,
+            FileExplorerCommandKindFfi::Copy => Self::Copy,
+            FileExplorerCommandKindFfi::Duplicate => Self::Duplicate,
+            FileExplorerCommandKindFfi::Paste => Self::Paste,
+            FileExplorerCommandKindFfi::CopyPath => Self::CopyPath,
+            FileExplorerCommandKindFfi::CopyRelativePath => Self::CopyRelativePath,
+            FileExplorerCommandKindFfi::ShowHistory => Self::ShowHistory,
+            FileExplorerCommandKindFfi::Rename => Self::Rename,
+            FileExplorerCommandKindFfi::Delete => Self::Delete,
+            FileExplorerCommandKindFfi::Expand => Self::Expand,
+            FileExplorerCommandKindFfi::CollapseAll => Self::CollapseAll,
             FileExplorerCommandKindFfi::NavigationLeft
             | FileExplorerCommandKindFfi::NavigationRight
             | FileExplorerCommandKindFfi::NavigationUp
             | FileExplorerCommandKindFfi::NavigationDown => {
-                FileExplorerCommand::Navigation(command.navigation_dir())
+                Self::Navigation(command.navigation_dir())
             }
-            FileExplorerCommandKindFfi::ToggleSelect => FileExplorerCommand::ToggleSelect,
-            FileExplorerCommandKindFfi::Action => FileExplorerCommand::Action,
-            FileExplorerCommandKindFfi::ActionIndex => FileExplorerCommand::ActionIndex,
+            FileExplorerCommandKindFfi::ToggleSelect => Self::ToggleSelect,
+            FileExplorerCommandKindFfi::Action => Self::Action,
+            FileExplorerCommandKindFfi::ActionIndex => Self::ActionIndex,
+            FileExplorerCommandKindFfi::ClearSelected => Self::ClearSelected,
             _ => unreachable!(
                 "All FileExplorerCommandKindFfi => FileExplorerCommand cases should be covered"
             ),

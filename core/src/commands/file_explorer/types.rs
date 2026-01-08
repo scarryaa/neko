@@ -56,6 +56,7 @@ pub enum FileExplorerCommand {
     ToggleSelect,
     Action,
     ActionIndex,
+    ClearSelected,
 }
 
 const ALL_IN_ORDER: &[FileExplorerCommand] = &[
@@ -105,6 +106,7 @@ impl FileExplorerCommand {
             FileExplorerCommand::ToggleSelect => "fileExplorer.toggleSelect",
             FileExplorerCommand::Action => "fileExplorer.action",
             FileExplorerCommand::ActionIndex => "fileExplorer.actionIndex",
+            FileExplorerCommand::ClearSelected => "fileExplorer.clearSelected",
         }
     }
 
@@ -165,6 +167,7 @@ impl FromStr for FileExplorerCommand {
             "fileExplorer.toggleSelect" => Ok(Self::ToggleSelect),
             "fileExplorer.action" => Ok(Self::Action),
             "fileExplorer.actionIndex" => Ok(Self::ActionIndex),
+            "fileExplorer.clearSelected" => Ok(Self::ClearSelected),
             _ => Err(()),
         }
     }
