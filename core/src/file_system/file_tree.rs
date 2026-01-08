@@ -62,6 +62,18 @@ impl FileTree {
         })
     }
 
+    /// Returns `true` if there are no loaded children, or `false` if there are.
+    pub fn is_empty(&self) -> bool {
+        self.loaded_nodes.is_empty()
+    }
+
+    /// Returns `true` if there are no loaded children for the given path, or `false` if there are.
+    pub fn path_is_empty<P: AsRef<Path>>(&self, path: P) -> bool {
+        self.loaded_nodes
+            .get(path.as_ref())
+            .is_none_or(|children| children.is_empty())
+    }
+
     /// Creates an empty `FileTree` with no root path and no loaded nodes.
     ///
     /// This represents a valid tree in an "uninitialized" state; no files are

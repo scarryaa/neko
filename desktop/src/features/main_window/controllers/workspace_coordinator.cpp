@@ -37,7 +37,7 @@ WorkspaceCoordinator::WorkspaceCoordinator(
       QObject(parent) {
   // TabBridge -> WorkspaceCoordinator
   connect(tabBridge, &TabBridge::activeTabChanged, this,
-          &WorkspaceCoordinator::refreshUiForActiveTab);
+          [this] { refreshUiForActiveTab(false); });
   connect(tabBridge, &TabBridge::allTabsClosed, this,
           [this] { refreshUiForActiveTab(false); });
   connect(tabBridge, &TabBridge::restoreScrollOffsetsForReopenedTab, this,
@@ -75,6 +75,9 @@ WorkspaceCoordinator::WorkspaceCoordinator(
           [this](auto commandId, auto ctx, auto bypassDeleteConfirmation) {
             handleCommand(commandId, ctx, bypassDeleteConfirmation);
           });
+  connect(
+      uiHandles.fileExplorerWidget, &FileExplorerWidget::requestFocusEditor,
+      [this](bool shouldFocus) { shouldFocusEditorOnFileOpen = shouldFocus; });
 
   auto editorController = appBridge->getEditorController();
   setEditorController(std::move(editorController));
@@ -278,6 +281,11 @@ QString WorkspaceCoordinator::getInitialDialogDirectory() const {
 }
 
 void WorkspaceCoordinator::performFileOpen(const QString &path) {
+  // If the path is empty, return.
+  if (path.isEmpty()) {
+    return;
+  }
+
   // Save scroll offsets for the current tab
   if (const auto snapshot = tabBridge->getTabsSnapshot();
       snapshot.active_present) {
@@ -319,6 +327,8 @@ void WorkspaceCoordinator::fileSelected(const QString &path, bool focusEditor) {
 
   if (focusEditor) {
     uiHandles.editorWidget->setFocus();
+  } else {
+    uiHandles.fileExplorerWidget->setFocus();
   }
 }
 

@@ -1,7 +1,6 @@
 #include "file_explorer_controller.h"
 #include "features/main_window/services/dialog_service.h"
 #include "features/main_window/services/file_io_service.h"
-#include <optional>
 
 // TODO(scarlet): Cache tree snapshots?
 FileExplorerController::FileExplorerController(
@@ -75,21 +74,19 @@ void FileExplorerController::clearSelection() {
   fileTreeBridge->clearCurrent();
 }
 
-std::optional<neko::FileExplorerContextFfi>
-FileExplorerController::getCurrentContext() {
+neko::FileExplorerContextFfi FileExplorerController::getCurrentContext() {
   auto currentNode = getNode([](const auto &node) { return node.is_current; });
-  auto validNodeResult = checkForValidNode(currentNode);
 
   // If the found node is valid, construct and return the context.
-  if (validNodeResult.validNode) {
+  if (currentNode.foundNode()) {
     return neko::FileExplorerContextFfi{
-        .item_path = validNodeResult.nodePath.toStdString(),
+        .item_path = currentNode.nodeSnapshot.path,
         .item_is_directory = currentNode.nodeSnapshot.is_dir,
         .item_is_expanded = currentNode.nodeSnapshot.is_expanded};
   }
 
-  // Otherwise, return.
-  return std::nullopt;
+  // Otherwise, return an empty context.
+  return neko::FileExplorerContextFfi{};
 }
 
 // Handles a 'cut' operation.
@@ -261,8 +258,6 @@ void FileExplorerController::deleteItem(
     }
   }
 }
-
-void FileExplorerController::handleNewItem(NewItemType type) {}
 
 FileExplorerController::SelectFirstTreeNodeResult
 FileExplorerController::selectFirstTreeNode() {

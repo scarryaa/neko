@@ -88,14 +88,13 @@ public:
   void clearSelection();
 
   void handleDelete(bool shouldConfirm);
-  void handleNewItem(NewItemType type);
 
   void handleCut();
   void handleCopy();
   void handlePaste();
   void handleDuplicate();
 
-  std::optional<neko::FileExplorerContextFfi> getCurrentContext();
+  neko::FileExplorerContextFfi getCurrentContext();
 
 signals:
   void rootDirectoryChanged(const QString &rootDirectoryPath);

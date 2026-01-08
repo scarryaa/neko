@@ -197,6 +197,7 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   case Qt::Key_E:
     // Toggle expand/collapse for this node if it's a directory, or open it if
     // it's a file.
+    emit requestFocusEditor(true);
     triggerCommand("fileExplorer.action");
     break;
   case Qt::Key_Delete:
@@ -249,37 +250,26 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
 void FileExplorerWidget::triggerCommand(const std::string &commandId,
                                         bool bypassDeleteConfirmation,
                                         int index) {
+  // Retreive the context.
   auto ctx = fileExplorerController->getCurrentContext();
-  ctx->index = index;
+  ctx.index = index;
 
-  // If the context retrevial was successful, continue.
-  if (ctx.has_value()) {
-    emit commandRequested(commandId, ctx.value(), bypassDeleteConfirmation);
-  }
+  emit commandRequested(commandId, ctx, bypassDeleteConfirmation);
 }
 
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
-  const bool isLeftClick = (event->button() == Qt::LeftButton);
-  const bool refocusClick = focusReceivedFromMouse;
-
   const int row = convertMousePositionToRow(event->pos().y());
-  const int nodeCount = fileExplorerController->getNodeCount();
 
-  // Reset the focus flag.
-  focusReceivedFromMouse = false;
+  // Trigger an action but do NOT focus the editor (if opening a file).
+  triggerCommand("fileExplorer.actionIndex", false, row);
+  redraw();
+}
 
-  // Clear the selected node if click is not on a node.
-  if (row < 0 || row >= nodeCount) {
-    if (isLeftClick && refocusClick) {
-      setFocus();
-    } else {
-      fileExplorerController->clearSelection();
-      redraw();
-    }
+void FileExplorerWidget::mouseDoubleClickEvent(QMouseEvent *event) {
+  const int row = convertMousePositionToRow(event->pos().y());
 
-    return;
-  }
-
+  // Trigger an action AND focus the editor (if opening a file).
+  emit requestFocusEditor(true);
   triggerCommand("fileExplorer.actionIndex", false, row);
   redraw();
 }
@@ -289,6 +279,10 @@ void FileExplorerWidget::paintEvent(QPaintEvent *event) {
   auto snapshot = fileExplorerController->getTreeSnapshot();
 
   drawFiles(&painter, snapshot.nodes.size(), snapshot.nodes);
+}
+
+void FileExplorerWidget::mouseMoveEvent(QMouseEvent *event) {
+  // TODO(scarlet): Add hover effects, drag and drop.
 }
 
 void FileExplorerWidget::wheelEvent(QWheelEvent *event) {
@@ -309,16 +303,6 @@ void FileExplorerWidget::wheelEvent(QWheelEvent *event) {
 
 void FileExplorerWidget::resizeEvent(QResizeEvent *event) {
   updateDimensions();
-}
-
-void FileExplorerWidget::focusInEvent(QFocusEvent *event) {
-  focusReceivedFromMouse = event->reason() == Qt::MouseFocusReason;
-  QScrollArea::focusInEvent(event);
-}
-
-void FileExplorerWidget::focusOutEvent(QFocusEvent *event) {
-  focusReceivedFromMouse = false;
-  QScrollArea::focusOutEvent(event);
 }
 
 void FileExplorerWidget::applySelectedDirectory(const QString &path) {
@@ -502,7 +486,6 @@ void FileExplorerWidget::setFontSize(double newFontSize) {
 int FileExplorerWidget::convertMousePositionToRow(double yPos) {
   const double lineHeight = fontMetrics.height();
   const int scrollY = verticalScrollBar()->value();
-
   const int targetRow = static_cast<int>((yPos + scrollY) / lineHeight);
 
   return targetRow;

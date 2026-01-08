@@ -292,7 +292,7 @@ pub mod ffi {
     }
 
     struct FileExplorerContextFfi {
-        index: usize,
+        index: i64,
         item_path: String,
         target_is_item: bool,
         item_is_directory: bool,

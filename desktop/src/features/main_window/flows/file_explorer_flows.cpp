@@ -30,7 +30,8 @@ FileExplorerFlows::handleFileExplorerCommand(
 
   // Get the parent path ahead of time, in case the operation is a
   // delete/rename, after which the original item path would not exist anymore.
-  auto parentItemPath = fileTreeBridge->getParentNodePath(itemPath);
+  auto parentItemPath =
+      itemPath.isEmpty() ? "" : fileTreeBridge->getParentNodePath(itemPath);
 
   const auto fileExplorerCommand =
       appBridge->parseCommand<CommandType::FileExplorer>(commandId);

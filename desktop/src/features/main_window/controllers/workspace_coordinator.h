@@ -78,10 +78,14 @@ public:
           emit requestFileExplorerSizeUpdate();
           break;
         case neko::FileExplorerUiIntentKindFfi::OpenFile:
-          emit fileSelected(QString::fromUtf8(intent.path), true);
+          fileSelected(QString::fromUtf8(intent.path),
+                       shouldFocusEditorOnFileOpen);
           break;
         }
       }
+
+      // Clear the focus flag.
+      shouldFocusEditorOnFileOpen = false;
     } else {
       static_assert(sizeof(Context) == 0,
                     "Unsupported Context type in handleCommand");
@@ -140,6 +144,11 @@ private:
   void refreshStatusBarCursorInfo();
   void performFileOpen(const QString &path);
   [[nodiscard]] QString getInitialDialogDirectory() const;
+
+  // Indicates whether we should switch focus to the editor when opening a file.
+  // Set by the `requestFocusEditor` signal from the file explorer, which is
+  // emitted when double clicking on a file.
+  bool shouldFocusEditorOnFileOpen = false;
 
   TabFlows tabFlows;
   FileExplorerFlows fileExplorerFlows;

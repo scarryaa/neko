@@ -171,7 +171,7 @@ impl FromStr for FileExplorerCommand {
 }
 
 pub struct FileExplorerContext {
-    pub index: usize,
+    pub index: i64,
     pub item_path: PathBuf,
     pub target_is_item: bool,
     pub item_is_directory: bool,

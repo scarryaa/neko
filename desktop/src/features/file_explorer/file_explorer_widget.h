@@ -39,11 +39,11 @@ public:
 protected:
   void keyPressEvent(QKeyEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
+  void mouseDoubleClickEvent(QMouseEvent *event) override;
+  void mouseMoveEvent(QMouseEvent *event) override;
   void paintEvent(QPaintEvent *event) override;
   void wheelEvent(QWheelEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
-  void focusInEvent(QFocusEvent *event) override;
-  void focusOutEvent(QFocusEvent *event) override;
   void contextMenuEvent(QContextMenuEvent *event) override;
 
 signals:
@@ -55,6 +55,7 @@ signals:
   void commandRequested(const std::string &commandId,
                         const neko::FileExplorerContextFfi &ctx,
                         bool bypassDeleteConfirmation);
+  void requestFocusEditor(bool shouldFocus);
 
 public slots:
   void itemRevealRequested();
@@ -83,7 +84,7 @@ private:
   int convertMousePositionToRow(double yPos);
 
   void triggerCommand(const std::string &commandId,
-                      bool bypassDeleteConfirmation = false, int index = 0);
+                      bool bypassDeleteConfirmation = false, int index = -1);
 
   FileExplorerController *fileExplorerController;
 
@@ -95,7 +96,6 @@ private:
   FileExplorerTheme theme;
   QFont font;
   QFontMetricsF fontMetrics;
-  bool focusReceivedFromMouse = false;
 
   static constexpr double ICON_EDGE_PADDING = 10.0;
   static constexpr double ICON_ADJUSTMENT = 6.0;
