@@ -87,12 +87,9 @@ public:
   void toggleExpanded(const QString &directoryPath);
   void clearSelection();
 
-  void handleDelete(bool shouldConfirm);
-
   void handleCut();
   void handleCopy();
   void handlePaste();
-  void handleDuplicate();
 
   neko::FileExplorerContextFfi getCurrentContext();
 
@@ -103,9 +100,6 @@ private:
   SelectFirstTreeNodeResult selectFirstTreeNode();
   CheckValidNodeResult
   checkForValidNode(FileExplorerController::FileNodeInfo &nodeInfo);
-
-  void deleteItem(const QString &path,
-                  const neko::FileNodeSnapshot &currentNode);
 
   FileTreeBridge *fileTreeBridge;
 };

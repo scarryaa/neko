@@ -102,7 +102,6 @@ void FileExplorerWidget::itemRevealRequested() {
   }
 }
 
-// TODO(scarlet): Align shortcuts with context menu.
 // TODO(scarlet): Add customizable keybindings/vim keybinds.
 // TODO(scarlet): Convert the switches to a map?
 void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
@@ -131,14 +130,14 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
       return;
     case Qt::Key_V:
       shouldRedraw = true;
-      fileExplorerController->handlePaste();
+      triggerCommand("fileExplorer.paste");
       break;
     case Qt::Key_X:
-      fileExplorerController->handleCut();
+      triggerCommand("fileExplorer.cut");
       return;
     case Qt::Key_D:
       shouldRedraw = true;
-      fileExplorerController->handleDuplicate();
+      triggerCommand("fileExplorer.duplicate");
       break;
     case Qt::Key_Equal:
       shouldRedraw = true;
@@ -203,10 +202,10 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   case Qt::Key_Delete:
     if (shift) {
       // Delete and skip the delete confirmation dialog.
-      fileExplorerController->handleDelete(false);
+      triggerCommand("fileExplorer.delete", true);
     } else {
       // Delete, but show the delete confirmation dialog.
-      fileExplorerController->handleDelete(true);
+      triggerCommand("fileExplorer.delete");
     }
     break;
   case Qt::Key_R:
@@ -219,6 +218,7 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
     break;
   case Qt::Key_D:
     if (shift) {
+      // Delete, but show the delete confirmation dialog.
       triggerCommand("fileExplorer.delete");
     } else {
       triggerCommand("fileExplorer.newFolder");
@@ -260,6 +260,11 @@ void FileExplorerWidget::triggerCommand(const std::string &commandId,
 }
 
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
+  // If the click was not the left mouse button, don't do anything.
+  if (event->button() != Qt::LeftButton) {
+    return;
+  }
+
   const int row = convertMousePositionToRow(event->pos().y());
 
   // Trigger an action but do NOT focus the editor (if opening a file).
@@ -268,6 +273,11 @@ void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
 }
 
 void FileExplorerWidget::mouseDoubleClickEvent(QMouseEvent *event) {
+  // If the click was not the left mouse button, don't do anything.
+  if (event->button() != Qt::LeftButton) {
+    return;
+  }
+
   const int row = convertMousePositionToRow(event->pos().y());
 
   // Trigger an action AND focus the editor (if opening a file).

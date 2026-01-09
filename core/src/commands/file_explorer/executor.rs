@@ -3,7 +3,10 @@ use super::{
     FileExplorerNavigationDirection,
 };
 use crate::{AppState, FileExplorerCommandResult, FileExplorerUiIntent, FileIoManager, FileTree};
-use std::{io, path::PathBuf};
+use std::{
+    fs, io,
+    path::{Path, PathBuf},
+};
 
 pub fn file_explorer_command_state(
     app_state: &AppState,
@@ -187,13 +190,180 @@ pub fn run_file_explorer_command(
         FindInFolder => {
             // TODO(scarlet): Implement this once search is added.
         }
+        // Handles the 'Duplicate' event.
+        //
+        // Attempts to duplicate the current node (directory or file).
+        Duplicate => {
+            fn copy_recursively<P: AsRef<Path>>(
+                source_path: P,
+                destination_path: P,
+            ) -> Result<(), io::Error> {
+                if !source_path.as_ref().exists() {
+                    return Err(io::Error::new(
+                        io::ErrorKind::NotFound,
+                        "Source file or directory was not found",
+                    ));
+                }
+
+                if let (Ok(absolute_source_path), Ok(absolute_destination_path)) = (
+                    std::path::absolute(&source_path),
+                    std::path::absolute(&destination_path),
+                ) {
+                    // Prevent copying a directory into itself.
+                    if absolute_source_path == absolute_destination_path {
+                        return Err(io::Error::new(
+                            io::ErrorKind::IsADirectory,
+                            "Cannot copy a directory into itself",
+                        ));
+                    }
+
+                    // Prevent copying a directory into its own subdirectory.
+                    let source_boundary_string =
+                        absolute_source_path.to_string_lossy() + std::path::MAIN_SEPARATOR_STR;
+
+                    if absolute_destination_path
+                        .starts_with(PathBuf::from(source_boundary_string.as_ref()))
+                    {
+                        return Err(io::Error::new(
+                            io::ErrorKind::IsADirectory,
+                            "Cannot copy a directory into its own subdirectory",
+                        ));
+                    }
+
+                    // Make the destination directory if it does not exist.
+                    if !destination_path.as_ref().exists()
+                        && fs::create_dir_all(&destination_path).is_err()
+                    {
+                        return Err(io::Error::other(
+                            "Creating the destination directory failed",
+                        ));
+                    }
+
+                    // Get the list of items in the source directory.
+                    for entry in fs::read_dir(&source_path)? {
+                        let entry = entry?;
+                        let entry_file_name = entry.file_name();
+
+                        let source_path = source_path.as_ref().to_string_lossy()
+                            + std::path::MAIN_SEPARATOR_STR
+                            + entry_file_name.to_string_lossy();
+                        let destination_path = destination_path.as_ref().to_string_lossy()
+                            + std::path::MAIN_SEPARATOR_STR
+                            + entry_file_name.to_string_lossy();
+
+                        if AsRef::<Path>::as_ref(source_path.as_ref()).is_dir() {
+                            if copy_recursively(source_path.as_ref(), destination_path.as_ref())
+                                .is_err()
+                            {
+                                return Err(io::Error::new(
+                                    io::ErrorKind::IsADirectory,
+                                    "Copying directory failed",
+                                ));
+                            }
+                        } else if fs::copy(source_path.as_ref(), destination_path.as_ref()).is_err()
+                        {
+                            return Err(io::Error::new(
+                                io::ErrorKind::IsADirectory,
+                                "Copying file failed",
+                            ));
+                        }
+                    }
+                }
+
+                Ok(())
+            }
+
+            const DUPLICATE_SUFFIX: &str = " copy";
+            let item_path_string = ctx.item_path.as_os_str().to_string_lossy();
+
+            if !ctx.item_path.exists() {
+                return Err(FileExplorerCommandError::IoError(
+                    id.to_string(),
+                    io::Error::new(
+                        io::ErrorKind::NotFound,
+                        "Provided item path does not exist ",
+                    ),
+                ));
+            }
+
+            let parent_directory_path = ctx.item_path.parent();
+            let basename = ctx.item_path.file_name();
+            let suffix = ctx.item_path.extension();
+            let extension = suffix
+                .map(|suffix| ".".to_owned() + &suffix.to_string_lossy())
+                .unwrap_or("".to_string());
+
+            let Some(basename) = basename
+                .map(|n| n.to_string_lossy())
+                .filter(|n| !n.is_empty())
+            else {
+                return Err(FileExplorerCommandError::IoError(
+                    id.to_string(),
+                    io::Error::new(
+                        io::ErrorKind::NotFound,
+                        "Provided item path file name cannot be empty",
+                    ),
+                ));
+            };
+
+            let mut base_duplicate_name = basename + DUPLICATE_SUFFIX;
+            let mut candidate_name = base_duplicate_name.as_ref().to_owned() + &extension;
+
+            if let Some(parent_directory_path) =
+                parent_directory_path.map(|path| path.to_string_lossy())
+            {
+                let mut destination_path = parent_directory_path.to_string()
+                    + std::path::MAIN_SEPARATOR_STR
+                    + &candidate_name;
+
+                // Append " copy" to the destination file/directory name until it does not overlap with
+                // existing items.
+                while AsRef::<Path>::as_ref(&destination_path).exists() {
+                    base_duplicate_name += DUPLICATE_SUFFIX;
+                    candidate_name = base_duplicate_name.as_ref().to_owned() + &extension;
+                    destination_path = parent_directory_path.as_ref().to_owned()
+                        + std::path::MAIN_SEPARATOR_STR
+                        + &candidate_name;
+                }
+
+                if ctx.item_path.is_dir() {
+                    // Provided path is a directory.
+                    if copy_recursively(
+                        ctx.item_path.clone(),
+                        AsRef::<Path>::as_ref(&destination_path).into(),
+                    )
+                    .is_err()
+                    {
+                        eprintln!("Failed to duplicate directory: {item_path_string}");
+                    } else {
+                        tree.refresh_dir(parent_directory_path.as_ref()).ok();
+
+                        // Select the new item.
+                        tree.set_current_path(destination_path);
+                        ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed {
+                            path: parent_directory_path.as_ref().into(),
+                        });
+                    }
+                } else {
+                    // Provided path is a file.
+                    if fs::copy(ctx.item_path.clone(), &destination_path).is_err() {
+                        eprintln!("Failed to duplicate file: {item_path_string}");
+                    } else {
+                        tree.refresh_dir(parent_directory_path.as_ref()).ok();
+
+                        // Select the new item.
+                        tree.set_current_path(destination_path);
+                        ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed {
+                            path: parent_directory_path.as_ref().into(),
+                        });
+                    }
+                }
+            }
+        }
         Cut => {
             // Implemented by UI (for now).
         }
         Copy => {
-            // Implemented by UI (for now).
-        }
-        Duplicate => {
             // Implemented by UI (for now).
         }
         Paste => {

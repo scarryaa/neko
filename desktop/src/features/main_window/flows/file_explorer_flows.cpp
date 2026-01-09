@@ -45,10 +45,6 @@ FileExplorerFlows::handleFileExplorerCommand(
   case neko::FileExplorerCommandKindFfi::Copy:
     handleCopy(itemPath);
     break;
-  case neko::FileExplorerCommandKindFfi::Duplicate:
-    result.shouldRedraw = true;
-    result.success = handleDuplicate(itemPath, parentItemPath);
-    break;
   case neko::FileExplorerCommandKindFfi::Paste:
     result.shouldRedraw = true;
     result.success = handlePaste(itemPath, parentItemPath);
