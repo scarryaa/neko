@@ -12,6 +12,17 @@ public:
     QString newPath;
   };
 
+  // TODO(scarlet): Rename this.
+  struct TempPasteItem {
+    QString path;
+    bool isDirectory;
+  };
+
+  struct PasteInfo {
+    std::vector<TempPasteItem> items;
+    bool isCutOperation;
+  };
+
   struct PasteItem {
     QString originalPath;
     QString newPath;
@@ -30,6 +41,7 @@ public:
   static PasteResult paste(const QString &targetDirectory);
   static DuplicateResult duplicate(const QString &itemPath);
   static bool deleteItem(const QString &itemPath);
+  static PasteInfo getClipboardItems();
 
 private:
   static bool copyRecursively(const QString &sourceFolder,

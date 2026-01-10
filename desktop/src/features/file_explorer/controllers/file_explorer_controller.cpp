@@ -75,17 +75,31 @@ void FileExplorerController::clearSelection() {
 
 neko::FileExplorerContextFfi FileExplorerController::getCurrentContext() {
   auto currentNode = getNode([](const auto &node) { return node.is_current; });
+  auto pasteInfo = FileIoService::getClipboardItems();
+  rust::Vec<neko::PasteItemFfi> rustPasteItems;
+
+  for (const auto &item : pasteInfo.items) {
+    rustPasteItems.push_back(
+        {.path = item.path.toStdString(), .is_dir = item.isDirectory});
+  }
 
   // If the found node is valid, construct and return the context.
   if (currentNode.foundNode()) {
     return neko::FileExplorerContextFfi{
         .item_path = currentNode.nodeSnapshot.path,
         .item_is_directory = currentNode.nodeSnapshot.is_dir,
-        .item_is_expanded = currentNode.nodeSnapshot.is_expanded};
+        .item_is_expanded = currentNode.nodeSnapshot.is_expanded,
+        .paste_info = {.items = rustPasteItems,
+                       .is_cut_operation = pasteInfo.isCutOperation}};
   }
 
   // Otherwise, return an empty context.
-  return neko::FileExplorerContextFfi{};
+  //
+  // We still include the paste info/items, since pasting without a current node
+  // is considered to be a paste into the root directory.
+  return neko::FileExplorerContextFfi{
+      .paste_info = {.items = rustPasteItems,
+                     .is_cut_operation = pasteInfo.isCutOperation}};
 }
 
 // Handles a 'cut' operation.
@@ -111,42 +125,6 @@ void FileExplorerController::handleCopy() {
   // If the node was found, perform the copy.
   if (nodeInfo.foundNode()) {
     FileIoService::copy(nodeInfo.nodeSnapshot.path.c_str());
-  }
-}
-
-// Handles a 'paste' operation.
-//
-// Retrieves the current node information, and then calls `FileIoService` to
-// perform the actual operation.
-//
-// After, it triggers a refresh of the target directory to make sure the new
-// items appear.
-void FileExplorerController::handlePaste() {
-  auto nodeInfo = getNode([](const auto &node) { return node.is_current; });
-
-  // If the node was not found, return.
-  if (!nodeInfo.foundNode()) {
-    return;
-  }
-
-  // Determine whether to target the parent node or the current node, based on
-  // whether the current node is a directory.
-  auto parentNodePath =
-      fileTreeBridge->getParentNodePath(nodeInfo.nodeSnapshot.path.c_str());
-  QString targetDirectory = nodeInfo.nodeSnapshot.is_dir
-                                ? nodeInfo.nodeSnapshot.path.c_str()
-                                : parentNodePath;
-
-  auto pasteResult = FileIoService::paste(targetDirectory);
-
-  // If the paste was successful, refresh the parent directory and select the
-  // new item.
-  if (pasteResult.success) {
-    // If the original item was deleted, remove it from the clipboard.
-    if (pasteResult.originalWasDeleted) {
-    }
-    fileTreeBridge->refreshDirectory(parentNodePath);
-    fileTreeBridge->setCurrent(pasteResult.items.first().newPath);
   }
 }
 

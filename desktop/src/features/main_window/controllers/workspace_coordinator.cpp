@@ -227,6 +227,8 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &key,
 
   auto result = commandExecutor->execute(rustKey, displayName, kind, argument);
 
+  // TODO(scarlet): Add intent for a successful paste  (so we can remove the
+  // file from the clipboard?)
   for (auto &intent : result.intents) {
     switch (intent.kind) {
     case neko::UiIntentKindFfi::ToggleFileExplorer:

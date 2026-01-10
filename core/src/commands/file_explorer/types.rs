@@ -173,12 +173,25 @@ impl FromStr for FileExplorerCommand {
     }
 }
 
+#[derive(Clone)]
+pub struct PasteItem {
+    pub path: PathBuf,
+    pub is_dir: bool,
+}
+
+#[derive(Clone)]
+pub struct PasteInfo {
+    pub items: Vec<PasteItem>,
+    pub is_cut_operation: bool,
+}
+
 pub struct FileExplorerContext {
     pub index: i64,
     pub item_path: PathBuf,
     pub target_is_item: bool,
     pub item_is_directory: bool,
     pub item_is_expanded: bool,
+    pub paste_info: PasteInfo,
 }
 
 #[derive(Default)]

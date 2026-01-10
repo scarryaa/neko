@@ -15,6 +15,28 @@ static const char *cutMimeType = "application/x-neko-cut";
 static const char *duplicateSuffix = " copy";
 } // namespace k
 
+FileIoService::PasteInfo FileIoService::getClipboardItems() {
+  const QMimeData *mimeData = QApplication::clipboard()->mimeData();
+
+  // If there are no urls (i.e. file/directory paths), nothing to do.
+  if (!mimeData->hasUrls()) {
+    return {};
+  }
+
+  const bool isCutOperation = mimeData->hasFormat(k::cutMimeType);
+  QList<QUrl> urls = mimeData->urls();
+  auto pasteItems = std::vector<TempPasteItem>();
+
+  for (const auto &url : urls) {
+    const QString srcPath = url.toLocalFile();
+    QFileInfo srcInfo(srcPath);
+
+    pasteItems.push_back({.path = srcPath, .isDirectory = srcInfo.isDir()});
+  }
+
+  return {.items = pasteItems, .isCutOperation = isCutOperation};
+}
+
 void FileIoService::removeFromClipboard(const QString &pathToRemove) {
   QClipboard *clipboard = QApplication::clipboard();
   const QMimeData *currentData = clipboard->mimeData();

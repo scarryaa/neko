@@ -63,8 +63,6 @@ private:
 
   static void handleCut(const QString &itemPath);
   static void handleCopy(const QString &itemPath);
-  bool handleDuplicate(const QString &itemPath, const QString &parentItemPath);
-  bool handlePaste(const QString &itemPath, const QString &parentItemPath);
   static void handleCopyPath(const QString &itemPath);
   void handleCopyRelativePath(const QString &itemPath);
 

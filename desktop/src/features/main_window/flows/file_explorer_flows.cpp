@@ -45,10 +45,6 @@ FileExplorerFlows::handleFileExplorerCommand(
   case neko::FileExplorerCommandKindFfi::Copy:
     handleCopy(itemPath);
     break;
-  case neko::FileExplorerCommandKindFfi::Paste:
-    result.shouldRedraw = true;
-    result.success = handlePaste(itemPath, parentItemPath);
-    break;
   case neko::FileExplorerCommandKindFfi::CopyPath:
     handleCopyPath(itemPath);
     break;
@@ -230,49 +226,6 @@ void FileExplorerFlows::handleCut(const QString &itemPath) {
 
 void FileExplorerFlows::handleCopy(const QString &itemPath) {
   FileIoService::copy(itemPath);
-}
-
-// NOLINTNEXTLINE
-bool FileExplorerFlows::handleDuplicate(const QString &itemPath,
-                                        const QString &parentItemPath) {
-  const auto result = FileIoService::duplicate(itemPath);
-
-  if (result.success) {
-    const auto newItemPath = result.newPath;
-    fileTreeBridge->refreshDirectory(parentItemPath);
-    fileTreeBridge->setCurrent(newItemPath);
-  }
-
-  return result.success;
-}
-
-bool FileExplorerFlows::handlePaste(const QString &itemPath,
-                                    const QString &parentItemPath) {
-  // Attempt the paste operation.
-  const auto result = FileIoService::paste(itemPath);
-
-  if (!result.success) {
-    return false;
-  }
-
-  // If it was a cut/paste operation, refresh the source directory.
-  if (result.wasCutOperation && !result.items.isEmpty()) {
-    // TODO(scarlet): Handle multiple selected items eventually.
-    refreshSourceAfterCut(result.items.first().originalPath);
-  }
-
-  // Refresh and expand the destination directory.
-  auto destinationPathToRefresh = resolveRefreshPath(itemPath, parentItemPath);
-  fileTreeBridge->refreshDirectory(destinationPathToRefresh);
-  fileTreeBridge->setExpanded(destinationPathToRefresh);
-
-  // Select the pasted item.
-  if (!result.items.isEmpty()) {
-    QString newItemPath = result.items.first().newPath;
-    fileTreeBridge->setCurrent(newItemPath);
-  }
-
-  return true;
 }
 
 // Determines whether to use the itemPath (if it's a directory)

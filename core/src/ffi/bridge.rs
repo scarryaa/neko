@@ -8,6 +8,7 @@ use crate::{
 
 #[cxx::bridge(namespace = "neko")]
 pub mod ffi {
+
     enum FontType {
         Editor,
         FileExplorer,
@@ -291,12 +292,25 @@ pub mod ffi {
         file_path: String,
     }
 
+    #[derive(Clone)]
+    struct PasteItemFfi {
+        path: String,
+        is_dir: bool,
+    }
+
+    #[derive(Clone)]
+    struct PasteInfoFfi {
+        items: Vec<PasteItemFfi>,
+        is_cut_operation: bool,
+    }
+
     struct FileExplorerContextFfi {
         index: i64,
         item_path: String,
         target_is_item: bool,
         item_is_directory: bool,
         item_is_expanded: bool,
+        paste_info: PasteInfoFfi,
     }
 
     #[derive(Default)]

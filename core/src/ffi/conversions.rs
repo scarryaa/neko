@@ -5,7 +5,7 @@ use crate::{
     FileExplorerNavigationDirection, FileExplorerUiIntent, FileSystemError, JumpAliasInfo,
     JumpCommand, JumpManagementCommand, LineTarget, OpenTabResult, TabCommand, TabCommandState,
     TabContext, UiIntent,
-    commands::{FileExplorerCommandState, FileExplorerContext},
+    commands::{FileExplorerCommandState, FileExplorerContext, PasteInfo, PasteItem},
 };
 use std::{fmt, io, path::PathBuf};
 
@@ -581,6 +581,15 @@ impl From<FileExplorerCommandKindFfi> for FileExplorerCommand {
     }
 }
 
+impl From<PasteItemFfi> for PasteItem {
+    fn from(item: PasteItemFfi) -> Self {
+        Self {
+            path: item.path.into(),
+            is_dir: item.is_dir,
+        }
+    }
+}
+
 impl From<FileExplorerContextFfi> for FileExplorerContext {
     fn from(ctx: FileExplorerContextFfi) -> Self {
         FileExplorerContext {
@@ -589,6 +598,15 @@ impl From<FileExplorerContextFfi> for FileExplorerContext {
             target_is_item: ctx.target_is_item,
             item_is_directory: ctx.item_is_directory,
             item_is_expanded: ctx.item_is_expanded,
+            paste_info: PasteInfo {
+                items: ctx
+                    .paste_info
+                    .items
+                    .iter()
+                    .map(|item| Into::<PasteItem>::into(item.clone()))
+                    .collect(),
+                is_cut_operation: ctx.paste_info.is_cut_operation,
+            },
         }
     }
 }

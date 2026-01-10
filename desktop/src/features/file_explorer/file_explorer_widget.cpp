@@ -503,7 +503,9 @@ int FileExplorerWidget::convertMousePositionToRow(double yPos) {
   return targetRow;
 }
 
+// TODO(scarlet): Change this to use getCurrentContext().
 void FileExplorerWidget::contextMenuEvent(QContextMenuEvent *event) {
+  auto pasteInfo = fileExplorerController->getCurrentContext().paste_info;
   auto snapshot = fileExplorerController->getTreeSnapshot();
   int row = convertMousePositionToRow(event->pos().y());
 
@@ -523,7 +525,8 @@ void FileExplorerWidget::contextMenuEvent(QContextMenuEvent *event) {
   neko::FileExplorerContextFfi ctx{.item_path = path.toStdString(),
                                    .target_is_item = targetIsItem,
                                    .item_is_directory = itemIsDirectory,
-                                   .item_is_expanded = itemIsExpanded};
+                                   .item_is_expanded = itemIsExpanded,
+                                   .paste_info = pasteInfo};
 
   const QVariant variant = QVariant::fromValue(ctx);
   const auto items = contextMenuRegistry.build("fileExplorer", variant);
