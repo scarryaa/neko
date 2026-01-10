@@ -76,6 +76,21 @@ public:
     return {};
   }
 
+  FileExplorerController::FileNodeInfo getNodeByIndex(int targetIndex) {
+    auto snapshot = fileTreeBridge->getTreeSnapshot();
+    int index = 0;
+
+    for (const auto &node : snapshot.nodes) {
+      if (targetIndex == index) {
+        return {.index = index, .nodeSnapshot = node};
+      }
+
+      index++;
+    }
+
+    return {};
+  }
+
   FileExplorerController::FileNodeInfo getFirstNode();
   FileExplorerController::FileNodeInfo getLastNode();
   neko::FileTreeSnapshot getTreeSnapshot();
@@ -85,6 +100,7 @@ public:
   void setExpanded(const QString &directoryPath);
   void setCollapsed(const QString &directoryPath);
   void toggleExpanded(const QString &directoryPath);
+  void setCurrent(const QString &targetPath);
   void clearSelection();
 
   void handleCut();

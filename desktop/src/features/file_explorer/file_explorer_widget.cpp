@@ -260,12 +260,16 @@ void FileExplorerWidget::triggerCommand(const std::string &commandId,
 }
 
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
-  // If the click was not the left mouse button, don't do anything.
+  const int row = convertMousePositionToRow(event->pos().y());
+
+  // If the click was not the left mouse button, only select the target node.
   if (event->button() != Qt::LeftButton) {
+    const auto targetNode = fileExplorerController->getNodeByIndex(row);
+    fileExplorerController->setCurrent(
+        QString::fromUtf8(targetNode.nodeSnapshot.path));
+
     return;
   }
-
-  const int row = convertMousePositionToRow(event->pos().y());
 
   // Trigger an action but do NOT focus the editor (if opening a file).
   triggerCommand("fileExplorer.actionIndex", false, row);

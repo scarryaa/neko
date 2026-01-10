@@ -116,7 +116,6 @@ pub fn run_file_explorer_command(
 
     // TODO(scarlet): Implement a more granular refresh for new file/new folder/rename/delete operations?
     // E.g. just add the new item to the tree/update (or remove) the item instead of reloading the whole directory.
-    // TODO(scarlet): Add escape handling to clear the current selection?
     match command {
         // Handles the 'New File' event.
         //
@@ -129,16 +128,19 @@ pub fn run_file_explorer_command(
                     .clone(),
             );
 
+            let target_path = target_directory.join(name);
+
             // Only create the file if it doesn't already exist.
-            if !FileIoManager::file_exists(target_directory.join(&name)) {
-                FileIoManager::write_file(target_directory.join(name), "")
+            if !FileIoManager::file_exists(&target_path) {
+                FileIoManager::write_file(&target_path, "")
                     .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?;
             }
 
-            // TODO(scarlet): Select the new file.
             // Refresh the directory so the new file appears in the tree.
             tree.refresh_dir(&target_directory).ok();
             tree.set_expanded(&target_directory);
+            tree.set_current_path(target_path);
+
             ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed {
                 path: target_directory,
             });
@@ -154,16 +156,19 @@ pub fn run_file_explorer_command(
                     .clone(),
             );
 
+            let target_path = target_directory.join(name);
+
             // Only create the directory if it doesn't already exist.
-            if !FileIoManager::directory_exists(target_directory.join(&name)) {
-                FileIoManager::create_directory(target_directory.join(name))
+            if !FileIoManager::directory_exists(&target_path) {
+                FileIoManager::create_directory(&target_path)
                     .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?;
             }
 
-            // TODO(scarlet): Select the new folder.
             // Refresh the directory so the new folder appears in the tree.
             tree.refresh_dir(&target_directory).ok();
             tree.set_expanded(&target_directory);
+            tree.set_current_path(target_path);
+
             ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed {
                 path: target_directory,
             });
@@ -328,6 +333,7 @@ pub fn run_file_explorer_command(
                     "Cannot rename the file system root".into(),
                 )
             })?;
+
             let new_path = parent_dir.join(&new_filename);
 
             // Check for naming collisions.
@@ -345,9 +351,10 @@ pub fn run_file_explorer_command(
             FileIoManager::rename(&ctx.item_path, &new_path)
                 .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?;
 
-            // TODO(scarlet): Reselect the renamed item.
             // Refresh the parent directory so the tree reflects the name change.
             tree.refresh_dir(parent_dir).ok();
+            tree.set_current_path(new_path);
+
             ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed {
                 path: parent_dir.to_path_buf(),
             });

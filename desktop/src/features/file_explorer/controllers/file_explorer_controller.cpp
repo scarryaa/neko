@@ -20,6 +20,11 @@ void FileExplorerController::toggleExpanded(const QString &directoryPath) {
   fileTreeBridge->toggleExpanded(directoryPath);
 }
 
+// Sets the current node to the provided path.
+void FileExplorerController::setCurrent(const QString &targetPath) {
+  fileTreeBridge->setCurrent(targetPath);
+}
+
 // Sets the provided directory path to expanded.
 void FileExplorerController::setExpanded(const QString &directoryPath) {
   fileTreeBridge->setExpanded(directoryPath);
