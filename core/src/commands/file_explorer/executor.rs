@@ -256,17 +256,19 @@ pub fn run_file_explorer_command(
                     .map_err(|e| FileExplorerCommandError::IoError(id.to_string(), e))?;
 
                     if item.is_dir {
-                        final_path = FileOperationsManager::handle_directory_paste(
+                        final_path = FileOperationsManager::handle_paste(
                             item.path.clone(),
                             destination_path,
                             is_cut_operation,
+                            true,
                         )
                         .map_err(|e| FileExplorerCommandError::IoError(id.to_string(), e))?;
                     } else {
-                        final_path = FileOperationsManager::handle_file_paste(
+                        final_path = FileOperationsManager::handle_paste(
                             item.path.clone(),
                             destination_path,
                             is_cut_operation,
+                            false,
                         )
                         .map_err(|e| FileExplorerCommandError::IoError(id.to_string(), e))?;
                     }

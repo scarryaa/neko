@@ -141,105 +141,59 @@ impl FileOperationsManager {
         Ok(destination_path.into())
     }
 
-    // Helper to handle a directory paste operation.
+    // Helper to handle a paste operation.
     //
     // Handles cases like colliding paths (treated as a duplicate operation), a
     // cut/paste sequence, or a normal copy/paste sequence.
-    pub fn handle_directory_paste(
+    pub fn handle_paste(
         source_path: PathBuf,
         destination_path: PathBuf,
         is_cut_operation: bool,
+        is_for_directory: bool,
     ) -> OperationResult<PathBuf> {
         let mut final_path = Default::default();
 
         if is_cut_operation {
-            // It's a cut operation on a directory.
+            // It's a cut operation on an item.
             if FileIoManager::rename(&source_path, &destination_path).is_err() {
-                // If the cut operation fails due to collision, duplicate it and delete the
-                // original directory instead.
-                Self::duplicate(source_path)
-                            .map_err(|_| {
-                                io::Error::new(
-                                    io::ErrorKind::NotFound,
-                                    "Directory cut/paste operation failed -- backup duplicate operation also failed"
-                                )
-                            })
-                            .map(|path| final_path = path)
+                // If the cut operation failed due to collision, duplicate the item and delete the
+                // original instead.
+                Self::duplicate(source_path).map(|path| final_path = path)?
             } else {
-                // If it succeeded, delete the original directory.
-                FileIoManager::remove_directory_all(source_path)?;
-                final_path = destination_path;
+                // If it succeeded, delete the original item.
+                match is_for_directory {
+                    true => {
+                        FileIoManager::remove_directory_all(source_path)?;
+                        final_path = destination_path;
 
-                return Ok(final_path);
+                        return Ok(final_path);
+                    }
+                    false => {
+                        FileIoManager::remove_file(source_path)?;
+                        final_path = destination_path;
+
+                        return Ok(final_path);
+                    }
+                }
             }
         } else {
-            // If the directory exists, treat it as a duplicate operation.
+            // If the item already exists, treat it as a duplicate operation.
             if FileIoManager::exists(&destination_path)? {
-                Self::duplicate(destination_path)
-                    .map_err(|_| {
-                        io::Error::new(
-                            io::ErrorKind::NotFound,
-                            "Directory paste (duplicate) failed",
-                        )
-                    })
-                    .map(|path| final_path = path)
+                Self::duplicate(destination_path).map(|path| final_path = path)?
             } else {
-                // Copy operation on a directory.
-                FileIoManager::copy_recursively(source_path, destination_path)
-                    .map_err(|_| io::Error::new(io::ErrorKind::NotFound, "Directory paste failed"))
-                    .map(|_| ())
+                match is_for_directory {
+                    true => {
+                        // Copy operation on a directory.
+                        FileIoManager::copy_recursively(source_path, destination_path)
+                            .map(|_| ())?
+                    }
+                    false => {
+                        // Regular copy operation on a single file.
+                        FileIoManager::copy_file(source_path, destination_path).map(|_| ())?
+                    }
+                }
             }
-        }?;
-
-        Ok(final_path)
-    }
-
-    // Helper to handle a file paste operation.
-    //
-    // Handles cases like colliding paths (treated as a duplicate operation), a
-    // cut/paste sequence, or a normal copy/paste sequence.
-    pub fn handle_file_paste(
-        source_path: PathBuf,
-        destination_path: PathBuf,
-        is_cut_operation: bool,
-    ) -> OperationResult<PathBuf> {
-        let mut final_path = Default::default();
-
-        if is_cut_operation {
-            // It's a cut operation on a single file.
-            if FileIoManager::rename(&source_path, &destination_path).is_err() {
-                // If the cut operation fails due to collision, duplicate it and delete the
-                // original file instead.
-                Self::duplicate(source_path)
-                            .map_err(|_| {
-                                io::Error::new(
-                                    io::ErrorKind::NotFound,
-                                    "File cut/paste operation failed -- backup duplicate operation also failed"
-                                )
-                            })
-                            .map(|path| final_path = path)
-            } else {
-                // If it succeeded, delete the original file.
-                FileIoManager::remove_file(source_path)?;
-                final_path = destination_path;
-
-                return Ok(final_path);
-            }
-        } else {
-            // If the file exists, treat it as a duplicate operation.
-            if FileIoManager::exists(&destination_path)? {
-                Self::duplicate(destination_path)
-                    .map_err(|_| {
-                        io::Error::new(io::ErrorKind::NotFound, "File paste (duplicate) failed")
-                    })
-                    .map(|path| final_path = path)
-            } else {
-                // Regular copy operation on a single file.
-                FileIoManager::copy_file(source_path, destination_path)
-                    .map_err(|_| io::Error::new(io::ErrorKind::NotFound, "File paste failed"))
-                    .map(|_| ())
-            }
-        }?;
+        }
 
         Ok(final_path)
     }
