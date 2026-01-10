@@ -10,7 +10,7 @@ pub mod test_utils;
 pub mod text;
 pub mod theme;
 
-pub use app::{AppState, FileIoManager};
+pub use app::{AppState, FileIoManager, FileOperationsManager};
 pub use commands::{
     Command, CommandResult, DocumentTarget, FileExplorerCommand, FileExplorerCommandResult,
     FileExplorerNavigationDirection, FileExplorerUiIntent, JumpAliasInfo, JumpCommand, JumpHistory,

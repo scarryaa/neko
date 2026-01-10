@@ -2,11 +2,11 @@ use super::{
     FileExplorerCommand, FileExplorerCommandError, FileExplorerCommandState, FileExplorerContext,
     FileExplorerNavigationDirection,
 };
-use crate::{AppState, FileExplorerCommandResult, FileExplorerUiIntent, FileIoManager, FileTree};
-use std::{
-    io,
-    path::{Path, PathBuf},
+use crate::{
+    AppState, FileExplorerCommandResult, FileExplorerUiIntent, FileIoManager,
+    FileOperationsManager, FileTree,
 };
+use std::{io, path::PathBuf};
 
 pub fn file_explorer_command_state(
     app_state: &AppState,
@@ -108,163 +108,11 @@ pub fn run_file_explorer_command(
         }
     };
 
-    fn copy_recursively<P: AsRef<Path>>(
-        source_path: P,
-        destination_path: P,
-    ) -> Result<(), io::Error> {
-        if !source_path.as_ref().exists() {
-            return Err(io::Error::new(
-                io::ErrorKind::NotFound,
-                "Source file or directory was not found",
-            ));
-        }
-
-        if let (Ok(absolute_source_path), Ok(absolute_destination_path)) = (
-            std::path::absolute(&source_path),
-            std::path::absolute(&destination_path),
-        ) {
-            // Prevent copying a directory into itself.
-            if absolute_source_path == absolute_destination_path {
-                return Err(io::Error::new(
-                    io::ErrorKind::IsADirectory,
-                    "Cannot copy a directory into itself",
-                ));
-            }
-
-            // Prevent copying a directory into its own subdirectory.
-            let source_boundary_string =
-                absolute_source_path.to_string_lossy() + std::path::MAIN_SEPARATOR_STR;
-
-            if absolute_destination_path.starts_with(PathBuf::from(source_boundary_string.as_ref()))
-            {
-                return Err(io::Error::new(
-                    io::ErrorKind::IsADirectory,
-                    "Cannot copy a directory into its own subdirectory",
-                ));
-            }
-
-            // Make the destination directory if it does not exist.
-            if !destination_path.as_ref().exists()
-                && FileIoManager::create_directory_all(&destination_path).is_err()
-            {
-                return Err(io::Error::other(
-                    "Creating the destination directory failed",
-                ));
-            }
-
-            // Get the list of items in the source directory.
-            for entry in FileIoManager::read_directory(&source_path)? {
-                let entry = entry?;
-                let entry_file_name = entry.file_name();
-
-                let source_path = source_path.as_ref().to_string_lossy()
-                    + std::path::MAIN_SEPARATOR_STR
-                    + entry_file_name.to_string_lossy();
-                let destination_path = destination_path.as_ref().to_string_lossy()
-                    + std::path::MAIN_SEPARATOR_STR
-                    + entry_file_name.to_string_lossy();
-
-                if AsRef::<Path>::as_ref(source_path.as_ref()).is_dir() {
-                    if copy_recursively(source_path.as_ref(), destination_path.as_ref()).is_err() {
-                        return Err(io::Error::new(
-                            io::ErrorKind::IsADirectory,
-                            "Copying directory failed",
-                        ));
-                    }
-                } else if FileIoManager::copy_file(source_path.as_ref(), destination_path.as_ref())
-                    .is_err()
-                {
-                    return Err(io::Error::new(
-                        io::ErrorKind::IsADirectory,
-                        "Copying file failed",
-                    ));
-                }
-            }
-        }
-
-        Ok(())
-    }
-
     let mut ui_intents: Vec<FileExplorerUiIntent> = Vec::new();
 
     // NOTE: The `DirectoryRefreshed` UI intent isn't strictly needed in most/all cases since
     // `refresh_dir` reloads the directory items (and the UI side fetches a snapshot of the current
     // state every draw), but is good to have anyway in case we start caching items on the UI side.
-
-    let duplicate = |item_path: PathBuf| -> Result<PathBuf, FileExplorerCommandError> {
-        const DUPLICATE_SUFFIX: &str = " copy";
-        let item_path_string = item_path.as_os_str().to_string_lossy();
-
-        if !ctx.item_path.exists() {
-            return Err(FileExplorerCommandError::IoError(
-                id.to_string(),
-                io::Error::new(
-                    io::ErrorKind::NotFound,
-                    "Provided item path does not exist ",
-                ),
-            ));
-        }
-
-        let parent_directory_path = item_path.parent();
-        let basename = item_path.file_name();
-        let suffix = item_path.extension();
-        let extension = suffix
-            .map(|suffix| ".".to_owned() + &suffix.to_string_lossy())
-            .unwrap_or("".to_string());
-
-        let Some(basename) = basename
-            .map(|n| n.to_string_lossy())
-            .filter(|n| !n.is_empty())
-        else {
-            return Err(FileExplorerCommandError::IoError(
-                id.to_string(),
-                io::Error::new(
-                    io::ErrorKind::NotFound,
-                    "Provided item path file name cannot be empty",
-                ),
-            ));
-        };
-
-        let mut base_duplicate_name = basename + DUPLICATE_SUFFIX;
-        let mut candidate_name = base_duplicate_name.as_ref().to_owned() + &extension;
-        let mut destination_path = "".to_string();
-
-        if let Some(parent_directory_path) =
-            parent_directory_path.map(|path| path.to_string_lossy())
-        {
-            destination_path =
-                parent_directory_path.to_string() + std::path::MAIN_SEPARATOR_STR + &candidate_name;
-
-            // Append " copy" to the destination file/directory name until it does not overlap with
-            // existing items.
-            while AsRef::<Path>::as_ref(&destination_path).exists() {
-                base_duplicate_name += DUPLICATE_SUFFIX;
-                candidate_name = base_duplicate_name.as_ref().to_owned() + &extension;
-                destination_path = parent_directory_path.as_ref().to_owned()
-                    + std::path::MAIN_SEPARATOR_STR
-                    + &candidate_name;
-            }
-
-            if item_path.is_dir() {
-                // Provided path is a directory.
-                if copy_recursively(
-                    item_path.clone(),
-                    AsRef::<Path>::as_ref(&destination_path).into(),
-                )
-                .is_err()
-                {
-                    eprintln!("Failed to duplicate directory: {item_path_string}");
-                }
-            } else {
-                // Provided path is a file.
-                if FileIoManager::copy_file(item_path.clone(), &destination_path).is_err() {
-                    eprintln!("Failed to duplicate file: {item_path_string}");
-                }
-            }
-        }
-
-        Ok(destination_path.into())
-    };
 
     // TODO(scarlet): Implement a more granular refresh for new file/new folder/rename/delete operations?
     // E.g. just add the new item to the tree/update (or remove) the item instead of reloading the whole directory.
@@ -347,7 +195,8 @@ pub fn run_file_explorer_command(
         //
         // Attempts to duplicate the current node (directory or file).
         Duplicate => {
-            let destination_path = duplicate(ctx.item_path.clone())?;
+            let destination_path = FileOperationsManager::duplicate(ctx.item_path.clone())
+                .map_err(|e| FileExplorerCommandError::IoError(id.to_string(), e))?;
 
             if let Some(parent_directory_path) = ctx.item_path.parent()
                 && !destination_path.to_string_lossy().is_empty()
@@ -370,65 +219,6 @@ pub fn run_file_explorer_command(
         // Pastes an item from the clipboard (in this case, receives a list of files to paste from
         // the UI).
         Paste => {
-            /// Adjusts the destination path of a paste operation.
-            ///
-            /// If the provided path is a directory, it is adjusted to target within the
-            /// directory.
-            ///
-            /// If the provided path is a file, it is adjusted to target the parent
-            /// directory.
-            // TODO(scarlet): Move this to FileIoManager?
-            fn get_destination_path(
-                source_path: PathBuf,
-                target_path: PathBuf,
-                item_file_name: &str,
-            ) -> Result<PathBuf, io::Error> {
-                // Determine if a file path or a directory path was provided.
-                if target_path.is_dir() {
-                    // If the source path and the target path are the same, don't adjust the path,
-                    // so it gets identified as a duplicate operation.
-                    if source_path.to_string_lossy()
-                        + std::path::MAIN_SEPARATOR_STR
-                        + item_file_name
-                        == target_path.to_string_lossy()
-                    {
-                        Ok(target_path)
-                    } else {
-                        // Otherwise, adjust the path to target within the directory.
-                        if let Some(source_file_name) =
-                            source_path.file_name().map(|path| path.to_string_lossy())
-                        {
-                            Ok((target_path.to_string_lossy()
-                                + std::path::MAIN_SEPARATOR_STR
-                                + source_file_name)
-                                .as_ref()
-                                .into())
-                        } else {
-                            Err(io::Error::new(
-                                io::ErrorKind::NotFound,
-                                "Could not get source path file name",
-                            ))
-                        }
-                    }
-                } else {
-                    // A file path was provided; adjust the path to target the parent directory.
-                    if let Some(parent_path) = target_path.parent()
-                        && let Some(source_path_file_name) = source_path.file_name()
-                    {
-                        Ok((parent_path.to_string_lossy()
-                            + std::path::MAIN_SEPARATOR_STR
-                            + source_path_file_name.to_string_lossy())
-                        .as_ref()
-                        .into())
-                    } else {
-                        Err(io::Error::new(
-                            io::ErrorKind::NotFound,
-                            "Could not get target path parent",
-                        ))
-                    }
-                }
-            }
-
             let is_cut_operation = ctx.paste_info.is_cut_operation;
             let paste_items = ctx.paste_info.items.clone();
 
@@ -455,10 +245,10 @@ pub fn run_file_explorer_command(
                     ));
                 }
 
-                let mut final_path = Default::default();
+                let final_path: PathBuf;
 
                 if let Some(item_file_name) = item.path.clone().file_name() {
-                    let destination_path = get_destination_path(
+                    let destination_path = FileOperationsManager::get_destination_path(
                         item.path.clone(),
                         ctx.item_path.clone(),
                         &item_file_name.to_string_lossy(),
@@ -466,133 +256,19 @@ pub fn run_file_explorer_command(
                     .map_err(|e| FileExplorerCommandError::IoError(id.to_string(), e))?;
 
                     if item.is_dir {
-                        // Helper to handle a directory paste operation.
-                        //
-                        // Handles cases like colliding paths (treated as a duplicate operation), a
-                        // cut/paste sequence, or a normal copy/paste sequence.
-                        // TODO(scarlet): Move this to FileIoManager?
-                        let mut handle_directory_paste =
-                            |source_path: PathBuf,
-                             destination_path: PathBuf,
-                             is_cut_operation: bool|
-                             -> Result<(), io::Error> {
-                                if is_cut_operation {
-                                    // It's a cut operation on a directory.
-                                    if FileIoManager::rename(&source_path, &destination_path)
-                                        .is_err()
-                                    {
-                                        // If the cut operation fails due to collision, duplicate it and delete the
-                                        // original directory instead.
-                                        duplicate(source_path)
-                            .map_err(|_| {
-                                io::Error::new(
-                                    io::ErrorKind::NotFound,
-                                    "Directory cut/paste operation failed -- backup duplicate operation also failed"
-                                )
-                            })
-                            .map(|path| final_path = path)
-                                    } else {
-                                        // If it succeeded, delete the original directory.
-                                        FileIoManager::remove_directory_all(source_path)?;
-                                        final_path = destination_path;
-
-                                        return Ok(());
-                                    }
-                                } else {
-                                    // If the directory exists, treat it as a duplicate operation.
-                                    if FileIoManager::exists(&destination_path)? {
-                                        duplicate(destination_path)
-                                            .map_err(|_| {
-                                                io::Error::new(
-                                                    io::ErrorKind::NotFound,
-                                                    "Directory paste (duplicate) failed",
-                                                )
-                                            })
-                                            .map(|path| final_path = path)
-                                    } else {
-                                        // Copy operation on a directory.
-                                        copy_recursively(source_path, destination_path)
-                                            .map_err(|_| {
-                                                io::Error::new(
-                                                    io::ErrorKind::NotFound,
-                                                    "Directory paste failed",
-                                                )
-                                            })
-                                            .map(|_| ())
-                                    }
-                                }?;
-
-                                Ok(())
-                            };
-
-                        handle_directory_paste(
+                        final_path = FileOperationsManager::handle_directory_paste(
                             item.path.clone(),
                             destination_path,
                             is_cut_operation,
                         )
                         .map_err(|e| FileExplorerCommandError::IoError(id.to_string(), e))?;
                     } else {
-                        // Helper to handle a file paste operation.
-                        //
-                        // Handles cases like colliding paths (treated as a duplicate operation), a
-                        // cut/paste sequence, or a normal copy/paste sequence.
-                        // TODO(scarlet): Move this to FileIoManager?
-                        let mut handle_file_paste =
-                            |source_path: PathBuf,
-                             destination_path: PathBuf,
-                             is_cut_operation: bool|
-                             -> Result<(), io::Error> {
-                                if is_cut_operation {
-                                    // It's a cut operation on a single file.
-                                    if FileIoManager::rename(&source_path, &destination_path)
-                                        .is_err()
-                                    {
-                                        // If the cut operation fails due to collision, duplicate it and delete the
-                                        // original file instead.
-                                        duplicate(source_path)
-                            .map_err(|_| {
-                                io::Error::new(
-                                    io::ErrorKind::NotFound,
-                                    "File cut/paste operation failed -- backup duplicate operation also failed"
-                                )
-                            })
-                            .map(|path| final_path = path)
-                                    } else {
-                                        // If it succeeded, delete the original file.
-                                        FileIoManager::remove_file(source_path)?;
-                                        final_path = destination_path;
-
-                                        return Ok(());
-                                    }
-                                } else {
-                                    // If the file exists, treat it as a duplicate operation.
-                                    if FileIoManager::exists(&destination_path)? {
-                                        duplicate(destination_path)
-                                            .map_err(|_| {
-                                                io::Error::new(
-                                                    io::ErrorKind::NotFound,
-                                                    "File paste (duplicate) failed",
-                                                )
-                                            })
-                                            .map(|path| final_path = path)
-                                    } else {
-                                        // Regular copy operation on a single file.
-                                        FileIoManager::copy_file(source_path, destination_path)
-                                            .map_err(|_| {
-                                                io::Error::new(
-                                                    io::ErrorKind::NotFound,
-                                                    "File paste failed",
-                                                )
-                                            })
-                                            .map(|_| ())
-                                    }
-                                }?;
-
-                                Ok(())
-                            };
-
-                        handle_file_paste(item.path.clone(), destination_path, is_cut_operation)
-                            .map_err(|e| FileExplorerCommandError::IoError(id.to_string(), e))?;
+                        final_path = FileOperationsManager::handle_file_paste(
+                            item.path.clone(),
+                            destination_path,
+                            is_cut_operation,
+                        )
+                        .map_err(|e| FileExplorerCommandError::IoError(id.to_string(), e))?;
                     }
                 } else {
                     return Err(FileExplorerCommandError::IoError(
