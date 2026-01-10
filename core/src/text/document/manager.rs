@@ -71,7 +71,7 @@ impl DocumentManager {
         }
 
         // Read file content into a new document
-        let file_content = FileIoManager::read(&canon_path)?;
+        let file_content = FileIoManager::read_file(&canon_path)?;
 
         let buffer = Buffer::from(&file_content);
         let saved_hash = buffer.checksum();
@@ -133,7 +133,7 @@ impl DocumentManager {
             (path, content)
         };
 
-        FileIoManager::write(&path, &content)?;
+        FileIoManager::write_file(&path, &content)?;
 
         let document = self.documents.get_mut(&document_id).unwrap();
         document.modified = false;
@@ -171,7 +171,7 @@ impl DocumentManager {
             document.buffer.get_text()
         };
 
-        FileIoManager::write(&canon_new_path, &content)?;
+        FileIoManager::write_file(&canon_new_path, &content)?;
 
         let document = self.documents.get_mut(&document_id).unwrap();
         if let Some(old_path) = document.path.take() {

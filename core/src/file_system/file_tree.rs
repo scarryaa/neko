@@ -125,7 +125,7 @@ impl FileTree {
         // If the nodes for the given path aren't already loaded, add them.
         if !loaded_nodes.contains_key(&path) {
             let mut children = Vec::new();
-            for entry_res in FileIoManager::read_dir(&path)? {
+            for entry_res in FileIoManager::read_directory(&path)? {
                 let entry = entry_res?;
                 // Actual depth will be updated later.
                 let node = FileNode::from_entry(entry, 1)?;

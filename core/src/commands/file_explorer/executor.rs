@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{AppState, FileExplorerCommandResult, FileExplorerUiIntent, FileIoManager, FileTree};
 use std::{
-    fs, io,
+    io,
     path::{Path, PathBuf},
 };
 
@@ -144,7 +144,8 @@ pub fn run_file_explorer_command(
             }
 
             // Make the destination directory if it does not exist.
-            if !destination_path.as_ref().exists() && fs::create_dir_all(&destination_path).is_err()
+            if !destination_path.as_ref().exists()
+                && FileIoManager::create_directory_all(&destination_path).is_err()
             {
                 return Err(io::Error::other(
                     "Creating the destination directory failed",
@@ -152,7 +153,7 @@ pub fn run_file_explorer_command(
             }
 
             // Get the list of items in the source directory.
-            for entry in fs::read_dir(&source_path)? {
+            for entry in FileIoManager::read_directory(&source_path)? {
                 let entry = entry?;
                 let entry_file_name = entry.file_name();
 
@@ -170,7 +171,9 @@ pub fn run_file_explorer_command(
                             "Copying directory failed",
                         ));
                     }
-                } else if fs::copy(source_path.as_ref(), destination_path.as_ref()).is_err() {
+                } else if FileIoManager::copy_file(source_path.as_ref(), destination_path.as_ref())
+                    .is_err()
+                {
                     return Err(io::Error::new(
                         io::ErrorKind::IsADirectory,
                         "Copying file failed",
@@ -254,7 +257,7 @@ pub fn run_file_explorer_command(
                 }
             } else {
                 // Provided path is a file.
-                if fs::copy(item_path.clone(), &destination_path).is_err() {
+                if FileIoManager::copy_file(item_path.clone(), &destination_path).is_err() {
                     eprintln!("Failed to duplicate file: {item_path_string}");
                 }
             }
@@ -276,7 +279,7 @@ pub fn run_file_explorer_command(
 
             // Only create the file if it doesn't already exist.
             if !FileIoManager::file_exists(target_directory.join(&name)) {
-                FileIoManager::write(target_directory.join(name), "")
+                FileIoManager::write_file(target_directory.join(name), "")
                     .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?;
             }
 
@@ -296,7 +299,7 @@ pub fn run_file_explorer_command(
             );
 
             // Only create the directory if it doesn't already exist.
-            if !FileIoManager::dir_exists(target_directory.join(&name)) {
+            if !FileIoManager::directory_exists(target_directory.join(&name)) {
                 FileIoManager::create_directory(target_directory.join(name))
                     .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?;
             }
@@ -475,7 +478,9 @@ pub fn run_file_explorer_command(
                              -> Result<(), io::Error> {
                                 if is_cut_operation {
                                     // It's a cut operation on a directory.
-                                    if std::fs::rename(&source_path, &destination_path).is_err() {
+                                    if FileIoManager::rename(&source_path, &destination_path)
+                                        .is_err()
+                                    {
                                         // If the cut operation fails due to collision, duplicate it and delete the
                                         // original directory instead.
                                         duplicate(source_path)
@@ -488,14 +493,14 @@ pub fn run_file_explorer_command(
                             .map(|path| final_path = path)
                                     } else {
                                         // If it succeeded, delete the original directory.
-                                        fs::remove_dir_all(source_path)?;
+                                        FileIoManager::remove_directory_all(source_path)?;
                                         final_path = destination_path;
 
                                         return Ok(());
                                     }
                                 } else {
                                     // If the directory exists, treat it as a duplicate operation.
-                                    if fs::exists(&destination_path)? {
+                                    if FileIoManager::exists(&destination_path)? {
                                         duplicate(destination_path)
                                             .map_err(|_| {
                                                 io::Error::new(
@@ -539,7 +544,9 @@ pub fn run_file_explorer_command(
                              -> Result<(), io::Error> {
                                 if is_cut_operation {
                                     // It's a cut operation on a single file.
-                                    if std::fs::rename(&source_path, &destination_path).is_err() {
+                                    if FileIoManager::rename(&source_path, &destination_path)
+                                        .is_err()
+                                    {
                                         // If the cut operation fails due to collision, duplicate it and delete the
                                         // original file instead.
                                         duplicate(source_path)
@@ -552,14 +559,14 @@ pub fn run_file_explorer_command(
                             .map(|path| final_path = path)
                                     } else {
                                         // If it succeeded, delete the original file.
-                                        fs::remove_file(source_path)?;
+                                        FileIoManager::remove_file(source_path)?;
                                         final_path = destination_path;
 
                                         return Ok(());
                                     }
                                 } else {
                                     // If the file exists, treat it as a duplicate operation.
-                                    if fs::exists(&destination_path)? {
+                                    if FileIoManager::exists(&destination_path)? {
                                         duplicate(destination_path)
                                             .map_err(|_| {
                                                 io::Error::new(
@@ -570,7 +577,7 @@ pub fn run_file_explorer_command(
                                             .map(|path| final_path = path)
                                     } else {
                                         // Regular copy operation on a single file.
-                                        fs::copy(source_path, destination_path)
+                                        FileIoManager::copy_file(source_path, destination_path)
                                             .map_err(|_| {
                                                 io::Error::new(
                                                     io::ErrorKind::NotFound,
@@ -630,7 +637,7 @@ pub fn run_file_explorer_command(
             let new_path = parent_dir.join(&new_filename);
 
             // Check for naming collisions.
-            if FileIoManager::exists(&new_path) {
+            if FileIoManager::exists(&new_path).is_ok_and(|result| result) {
                 return Err(FileExplorerCommandError::IoError(
                     id.to_string(),
                     io::Error::new(
@@ -657,9 +664,9 @@ pub fn run_file_explorer_command(
 
             // Delete the file or directory, then refresh the parent.
             match ctx.item_path.is_dir() {
-                true => FileIoManager::delete_directory(&ctx.item_path)
+                true => FileIoManager::remove_directory_all(&ctx.item_path)
                     .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?,
-                false => FileIoManager::delete_file(&ctx.item_path)
+                false => FileIoManager::remove_file(&ctx.item_path)
                     .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?,
             }
 

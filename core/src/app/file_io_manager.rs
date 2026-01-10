@@ -13,15 +13,15 @@ pub type FileResult<T> = io::Result<T>;
 pub struct FileIoManager;
 
 impl FileIoManager {
-    pub fn write<P: AsRef<Path>>(path: P, content: &str) -> FileResult<()> {
+    pub fn write_file<P: AsRef<Path>>(path: P, content: &str) -> FileResult<()> {
         fs::write(path, content)
     }
 
-    pub fn read<P: AsRef<Path>>(path: P) -> FileResult<String> {
+    pub fn read_file<P: AsRef<Path>>(path: P) -> FileResult<String> {
         fs::read_to_string(path)
     }
 
-    pub fn read_dir<P: AsRef<Path>>(path: P) -> FileResult<ReadDir> {
+    pub fn read_directory<P: AsRef<Path>>(path: P) -> FileResult<ReadDir> {
         fs::read_dir(path)
     }
 
@@ -29,27 +29,35 @@ impl FileIoManager {
         fs::canonicalize(path)
     }
 
-    pub fn create_directory<P: AsRef<Path>>(path: P) -> FileResult<()> {
+    pub fn create_directory_all<P: AsRef<Path>>(path: P) -> FileResult<()> {
         fs::create_dir_all(path)
     }
 
-    pub fn delete_file<P: AsRef<Path>>(path: P) -> FileResult<()> {
+    pub fn create_directory<P: AsRef<Path>>(path: P) -> FileResult<()> {
+        fs::create_dir(path)
+    }
+
+    pub fn remove_file<P: AsRef<Path>>(path: P) -> FileResult<()> {
         fs::remove_file(path)
     }
 
-    pub fn delete_directory<P: AsRef<Path>>(path: P) -> FileResult<()> {
+    pub fn remove_directory_all<P: AsRef<Path>>(path: P) -> FileResult<()> {
         fs::remove_dir_all(path)
+    }
+
+    pub fn copy_file<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> FileResult<()> {
+        fs::copy(from, to).map(|_| ())
     }
 
     pub fn rename<P: AsRef<Path>, Q: AsRef<Path>>(from: P, to: Q) -> FileResult<()> {
         fs::rename(from, to)
     }
 
-    pub fn exists<P: AsRef<Path>>(path: P) -> bool {
-        path.as_ref().exists()
+    pub fn exists<P: AsRef<Path>>(path: P) -> FileResult<bool> {
+        fs::exists(path)
     }
 
-    pub fn dir_exists<P: AsRef<Path>>(path: P) -> bool {
+    pub fn directory_exists<P: AsRef<Path>>(path: P) -> bool {
         let path_ref = path.as_ref();
         path_ref.exists() && path_ref.is_dir()
     }

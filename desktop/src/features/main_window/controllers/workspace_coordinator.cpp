@@ -227,8 +227,6 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &key,
 
   auto result = commandExecutor->execute(rustKey, displayName, kind, argument);
 
-  // TODO(scarlet): Add intent for a successful paste  (so we can remove the
-  // file from the clipboard?)
   for (auto &intent : result.intents) {
     switch (intent.kind) {
     case neko::UiIntentKindFfi::ToggleFileExplorer:
@@ -241,7 +239,7 @@ void WorkspaceCoordinator::commandPaletteCommand(const QString &key,
       const int tabId = static_cast<int>(intent.argument_u64);
       const std::string &path = std::string(intent.argument_str);
 
-      // If config was already open, just activate it
+      // If config was already open, just activate it.
       for (const auto &tab : beforeSnapshot.tabs) {
         if (tab.path_present && tab.path == path) {
           tabBridge->setActiveTab(static_cast<int>(tab.id));
