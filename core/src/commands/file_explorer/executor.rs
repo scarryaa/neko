@@ -118,6 +118,10 @@ pub fn run_file_explorer_command(
     // E.g. just add the new item to the tree/update (or remove) the item instead of reloading the whole directory.
     // TODO(scarlet): Add escape handling to clear the current selection?
     match command {
+        // Handles the 'New File' event.
+        //
+        // Creates a new file with the specified name, but fails if the name is empty or if
+        // a file with that name already exists.
         NewFile => {
             let name = PathBuf::from(
                 new_or_rename_item_name
@@ -139,6 +143,10 @@ pub fn run_file_explorer_command(
                 path: target_directory,
             });
         }
+        // Handles the 'New Folder' event.
+        //
+        // Creates a new directory with the specified name, but fails if the name is empty or if
+        // a directory with that name already exists.
         NewFolder => {
             let name = PathBuf::from(
                 new_or_rename_item_name
@@ -160,6 +168,9 @@ pub fn run_file_explorer_command(
                 path: target_directory,
             });
         }
+        // Handles the 'Reveal' event.
+        //
+        // Attempts to show the current node in the OS file explorer.
         Reveal => {
             // Opens the native OS file explorer pointing to the file.
             let path = &ctx.item_path;
@@ -216,6 +227,8 @@ pub fn run_file_explorer_command(
         Copy => {
             // Implemented by UI.
         }
+        // Handles the 'Paste' event.
+        //
         // Pastes an item from the clipboard (in this case, receives a list of files to paste from
         // the UI).
         Paste => {
@@ -302,6 +315,9 @@ pub fn run_file_explorer_command(
         ShowHistory => {
             // TODO(scarlet): Implement this using git history.
         }
+        // Handles the 'Rename' event.
+        //
+        // Attempts to rename an item, but fails if an item with the new name already exists.
         Rename => {
             let new_filename = PathBuf::from(
                 &new_or_rename_item_name
@@ -336,6 +352,9 @@ pub fn run_file_explorer_command(
                 path: parent_dir.to_path_buf(),
             });
         }
+        // Handles the 'Delete' event.
+        //
+        // Deletes the specified node, removing it from the file system and the tree.
         Delete => {
             // Get the previous node ahead of time, since it should be removed later.
             let previous_node = tree.prev(ctx.item_path.clone());
@@ -361,14 +380,22 @@ pub fn run_file_explorer_command(
                 });
             }
         }
+        // Handles the 'Expand' event.
+        //
+        // Expands a directory if it is collapsed, and collapses a directory if it is already
+        // expanded.
         Expand => match ctx.item_is_directory && ctx.item_is_expanded {
             true => tree.set_collapsed(ctx.item_path.clone()),
             false => tree.set_expanded(ctx.item_path.clone()),
         },
+        // Handles the 'Collapse All' event.
+        //
+        // Collapses all directories in the tree.
         CollapseAll => {
             tree.collapse_all();
             ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed { path: root_path });
         }
+        // Navigation event handlers.
         Navigation(direction) => {
             select_first_node_if_current_empty();
 
