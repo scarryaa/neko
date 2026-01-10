@@ -15,11 +15,6 @@ void FileExplorerController::loadDirectory(const QString &rootDirectoryPath) {
   emit rootDirectoryChanged(rootDirectoryPath);
 }
 
-// Toggles the provided directory path expanded/collapsed state.
-void FileExplorerController::toggleExpanded(const QString &directoryPath) {
-  fileTreeBridge->toggleExpanded(directoryPath);
-}
-
 // Sets the current node to the provided path.
 void FileExplorerController::setCurrent(const QString &targetPath) {
   fileTreeBridge->setCurrent(targetPath);
@@ -28,37 +23,6 @@ void FileExplorerController::setCurrent(const QString &targetPath) {
 // Sets the provided directory path to expanded.
 void FileExplorerController::setExpanded(const QString &directoryPath) {
   fileTreeBridge->setExpanded(directoryPath);
-}
-
-// Sets the provided directory path to collapsed.
-void FileExplorerController::setCollapsed(const QString &directoryPath) {
-  fileTreeBridge->setCollapsed(directoryPath);
-}
-
-// Attempts to retrieve the first node in the tree.
-FileExplorerController::FileNodeInfo FileExplorerController::getFirstNode() {
-  auto maybeFirstNode = fileTreeBridge->getFirstNode();
-
-  // First node was found and is valid.
-  if (maybeFirstNode.found_node) {
-    return {.index = 0, .nodeSnapshot = maybeFirstNode.node};
-  }
-
-  // First node was not found.
-  return {.index = -1};
-}
-
-// Attempts to retrieve the last node in the tree.
-FileExplorerController::FileNodeInfo FileExplorerController::getLastNode() {
-  auto maybeLastNode = fileTreeBridge->getLastNode();
-
-  // Last node was found and is valid.
-  if (maybeLastNode.found_node) {
-    return {.index = getNodeCount() - 1, .nodeSnapshot = maybeLastNode.node};
-  }
-
-  // Last node was not found.
-  return {.index = -1};
 }
 
 // Returns the number of nodes in the tree.
@@ -71,11 +35,6 @@ int FileExplorerController::getNodeCount() {
 // Returns a snapshot of the current tree state.
 neko::FileTreeSnapshot FileExplorerController::getTreeSnapshot() {
   return fileTreeBridge->getTreeSnapshot();
-}
-
-// Clears the current selected/focused node.
-void FileExplorerController::clearSelection() {
-  fileTreeBridge->clearCurrent();
 }
 
 neko::FileExplorerContextFfi FileExplorerController::getCurrentContext() {
@@ -131,39 +90,4 @@ void FileExplorerController::handleCopy() {
   if (nodeInfo.foundNode()) {
     FileIoService::copy(nodeInfo.nodeSnapshot.path.c_str());
   }
-}
-
-FileExplorerController::SelectFirstTreeNodeResult
-FileExplorerController::selectFirstTreeNode() {
-  auto snapshot = fileTreeBridge->getTreeSnapshot();
-  int nodeCount = static_cast<int>(snapshot.nodes.size());
-
-  // If the tree is not empty, select the first node in the tree.
-  if (nodeCount > 0) {
-    fileTreeBridge->setCurrent(snapshot.nodes[0].path.c_str());
-
-    return {.nodeChanged = true, .nodePath = snapshot.nodes[0].path.c_str()};
-  }
-
-  // Otherwise, do nothing.
-  return {.nodeChanged = false};
-}
-
-FileExplorerController::CheckValidNodeResult
-FileExplorerController::checkForValidNode(
-    FileExplorerController::FileNodeInfo &nodeInfo) {
-  // Make sure the current node has a valid path/exists.
-  if (nodeInfo.foundNode()) {
-    return {.action = Action::None,
-            .validNode = true,
-            .nodePath = nodeInfo.nodeSnapshot.path.c_str()};
-  }
-
-  // Current node was not found or does not exist, so select the first node in
-  // the tree and exit.
-  auto selectResult = selectFirstTreeNode();
-
-  return {.action = Action::None,
-          .validNode = false,
-          .nodePath = selectResult.nodePath};
 }

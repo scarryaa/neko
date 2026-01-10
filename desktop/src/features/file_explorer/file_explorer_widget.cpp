@@ -166,10 +166,6 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
 
   // Handle node/navigation operations.
   switch (event->key()) {
-    using Direction = FileExplorerController::NavigationDirection;
-    using ActionKey = FileExplorerController::ActionKey;
-    using NewItemType = FileExplorerController::NewItemType;
-
   case Qt::Key_Up:
     triggerCommand("fileExplorer.navigateUp");
     shouldScroll = true;

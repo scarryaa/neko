@@ -365,6 +365,7 @@ pub fn run_file_explorer_command(
         Delete => {
             // Get the previous node ahead of time, since it should be removed later.
             let previous_node = tree.prev(ctx.item_path.clone());
+            let next_node = tree.next(ctx.item_path.clone());
 
             // Delete the file or directory, then refresh the parent.
             match ctx.item_path.is_dir() {
@@ -377,14 +378,20 @@ pub fn run_file_explorer_command(
             if let Some(parent) = ctx.item_path.parent() {
                 tree.refresh_dir(parent).ok();
 
-                // Select the previous node.
-                if let Some(previous_node) = previous_node {
-                    tree.set_current_path(previous_node.path);
-                }
-
                 ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed {
                     path: parent.to_path_buf(),
                 });
+            }
+
+            // Select the previous node.
+            //
+            // If there is no previous node, select the next node.
+            if let Some(previous_node) = previous_node
+                && previous_node.path != root_path
+            {
+                tree.set_current_path(previous_node.path);
+            } else if let Some(next_node) = next_node {
+                tree.set_current_path(next_node.path);
             }
         }
         // Handles the 'Expand' event.

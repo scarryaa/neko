@@ -3,7 +3,6 @@
 
 #include "features/file_explorer/bridge/file_tree_bridge.h"
 #include <QObject>
-#include <cstdint>
 #include <neko-core/src/ffi/bridge.rs.h>
 
 class FileTreeBridge;
@@ -12,7 +11,7 @@ class FileTreeBridge;
 /// \brief Handles high-level `FileExplorerWidget` operations.
 ///
 /// The purpose of FileExplorerController is to handle various file explorer
-/// operations -- e.g. cut/copy/paste, loading a directory, etc. -- so the file
+/// operations -- e.g. cut/copy, loading a directory, etc. -- so the file
 /// explorer widget can focus on UI-related concerns, and remain unaware of the
 /// specifics of the previously mentioned operations.
 ///
@@ -24,11 +23,6 @@ class FileExplorerController : QObject {
   Q_OBJECT
 
 public:
-  enum class Action : uint8_t { None, LayoutChanged, FileSelected };
-  enum class NavigationDirection : uint8_t { Left, Right, Up, Down };
-  enum class ActionKey : uint8_t { Space, Enter };
-  enum class NewItemType : uint8_t { File, Directory };
-
   struct FileExplorerControllerProps {
     FileTreeBridge *fileTreeBridge;
   };
@@ -38,22 +32,6 @@ public:
     neko::FileNodeSnapshot nodeSnapshot;
 
     [[nodiscard]] bool foundNode() const { return index != -1; }
-  };
-
-  struct SelectFirstTreeNodeResult {
-    bool nodeChanged;
-    QString nodePath;
-  };
-
-  struct CheckValidNodeResult {
-    Action action = Action::None;
-    bool validNode = false;
-    QString nodePath;
-  };
-
-  struct KeyboardResult {
-    Action action = Action::None;
-    QString filePath;
   };
 
   explicit FileExplorerController(const FileExplorerControllerProps &props,
@@ -91,21 +69,15 @@ public:
     return {};
   }
 
-  FileExplorerController::FileNodeInfo getFirstNode();
-  FileExplorerController::FileNodeInfo getLastNode();
   neko::FileTreeSnapshot getTreeSnapshot();
   int getNodeCount();
 
   void loadDirectory(const QString &rootDirectoryPath);
   void setExpanded(const QString &directoryPath);
-  void setCollapsed(const QString &directoryPath);
-  void toggleExpanded(const QString &directoryPath);
   void setCurrent(const QString &targetPath);
-  void clearSelection();
 
   void handleCut();
   void handleCopy();
-  void handlePaste();
 
   neko::FileExplorerContextFfi getCurrentContext();
 
@@ -113,10 +85,6 @@ signals:
   void rootDirectoryChanged(const QString &rootDirectoryPath);
 
 private:
-  SelectFirstTreeNodeResult selectFirstTreeNode();
-  CheckValidNodeResult
-  checkForValidNode(FileExplorerController::FileNodeInfo &nodeInfo);
-
   FileTreeBridge *fileTreeBridge;
 };
 
