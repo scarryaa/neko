@@ -43,6 +43,8 @@ set(SKIP_UIC_SOURCES
   src/features/main_window/flows/tab_flows.h
   src/features/main_window/flows/file_explorer_flows.cpp
   src/features/main_window/flows/file_explorer_flows.h
+  src/features/file_explorer/render/file_explorer_renderer.cpp
+  src/features/file_explorer/render/file_explorer_renderer.h
 )
 
 set_source_files_properties(
@@ -153,6 +155,11 @@ qt_add_executable(neko
     # File Explorer
     src/features/file_explorer/file_explorer_widget.cpp
     src/features/file_explorer/file_explorer_widget.h
+
+    # File Explorer Renderer
+    src/features/file_explorer/render/file_explorer_renderer.cpp
+    src/features/file_explorer/render/file_explorer_renderer.h
+    src/features/file_explorer/render/types/types.h
 
     # File Explorer Controllers
     src/features/file_explorer/controllers/file_explorer_controller.cpp

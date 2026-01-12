@@ -1,12 +1,14 @@
 #include "file_explorer_widget.h"
 #include "features/context_menu/context_menu_widget.h"
 #include "features/file_explorer/controllers/file_explorer_controller.h"
+#include "features/file_explorer/render/file_explorer_renderer.h"
 #include "features/main_window/services/dialog_service.h"
 #include "utils/ui_utils.h"
 #include <QApplication>
 #include <QClipboard>
 #include <QColor>
 #include <QDir>
+#include <QDrag>
 #include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
@@ -46,6 +48,8 @@ FileExplorerWidget::FileExplorerWidget(const FileExplorerProps &props,
   setFocusPolicy(Qt::StrongFocus);
   setFrameShape(QFrame::NoFrame);
   setAutoFillBackground(false);
+  setMouseTracking(true);
+  setAcceptDrops(true);
 
   directorySelectionButton = new QPushButton("Select a directory");
 
@@ -245,27 +249,73 @@ void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
   redraw();
 }
 
-void FileExplorerWidget::triggerCommand(const std::string &commandId,
-                                        bool bypassDeleteConfirmation,
-                                        int index) {
+void FileExplorerWidget::triggerCommand(
+    const std::string &commandId, bool bypassDeleteConfirmation, int index,
+    const std::string &targetNodePath, const std::string &destinationNodePath) {
   // Retreive the context.
   auto ctx = fileExplorerController->getCurrentContext();
   ctx.index = index;
+  ctx.move_target_node_path = targetNodePath;
+  ctx.move_destination_node_path = destinationNodePath;
 
   emit commandRequested(commandId, ctx, bypassDeleteConfirmation);
 }
 
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
+  if (event->button() != Qt::LeftButton) {
+    return;
+  }
+
+  dragStartPosition = event->pos();
+  event->accept();
+}
+
+void FileExplorerWidget::mouseMoveEvent(QMouseEvent *event) {
   const int row = convertMousePositionToRow(event->pos().y());
+  const auto targetNode = fileExplorerController->getNodeByIndex(row);
+
+  // Set the hovered node path for the hover effect.
+  if (targetNode.foundNode()) {
+    hoveredNodePath = QString::fromUtf8(targetNode.nodeSnapshot.path);
+  } else {
+    hoveredNodePath = nullptr;
+  }
+
+  // If the left mouse button is held, start a drag.
+  if (((event->buttons() & Qt::LeftButton) != 0U) && !isDragging) {
+    if ((event->pos() - dragStartPosition).manhattanLength() >=
+        QApplication::startDragDistance()) {
+
+      if (targetNode.foundNode()) {
+        isDragging = true;
+        draggedNode = targetNode.nodeSnapshot;
+
+        performDrag(row, targetNode.nodeSnapshot);
+
+        isDragging = false;
+        hoveredNodePath = nullptr;
+        redraw();
+      }
+    }
+  }
+
+  event->accept();
+  redraw();
+}
+
+void FileExplorerWidget::mouseReleaseEvent(QMouseEvent *event) {
+  const int row = convertMousePositionToRow(event->pos().y());
+  const auto targetNode = fileExplorerController->getNodeByIndex(row);
 
   // If the click was not the left mouse button, only select the target node.
   if (event->button() != Qt::LeftButton) {
-    const auto targetNode = fileExplorerController->getNodeByIndex(row);
     fileExplorerController->setCurrent(
         QString::fromUtf8(targetNode.nodeSnapshot.path));
 
     return;
   }
+
+  event->accept();
 
   // Trigger an action but do NOT focus the editor (if opening a file).
   triggerCommand("fileExplorer.actionIndex", false, row);
@@ -286,15 +336,148 @@ void FileExplorerWidget::mouseDoubleClickEvent(QMouseEvent *event) {
   redraw();
 }
 
-void FileExplorerWidget::paintEvent(QPaintEvent *event) {
-  QPainter painter(viewport());
-  auto snapshot = fileExplorerController->getTreeSnapshot();
+void FileExplorerWidget::performDrag(int row,
+                                     const neko::FileNodeSnapshot &node) {
+  auto *drag = new QDrag(this);
+  auto *mimeData = new QMimeData();
 
-  drawFiles(&painter, snapshot.nodes.size(), snapshot.nodes);
+  mimeData->setData("application/x-neko-file-explorer-node",
+                    QByteArray::fromStdString(std::string(node.path)));
+  drag->setMimeData(mimeData);
+
+  double lineHeight = fontMetrics.height();
+  int verticalOffset = verticalScrollBar()->value();
+  double nodeNameWidth = measureFileNameWidth(QString::fromUtf8(node.name));
+  int iconSize = static_cast<int>(lineHeight - ICON_ADJUSTMENT);
+  double iconX = ICON_EDGE_PADDING + 2;
+  double textX = iconX + iconSize + 4;
+  double yPos = (row * lineHeight) - verticalOffset;
+  double width =
+      EDGE_INSET + iconSize + ICON_SPACING + nodeNameWidth + EDGE_INSET;
+
+  QPixmap dragPixmap(static_cast<int>(width),
+                     static_cast<int>(lineHeight * 1.5));
+  dragPixmap.fill(Qt::transparent);
+
+  {
+    auto ctx = getViewportContext();
+    auto state = getRenderState();
+
+    QPainter painter(&dragPixmap);
+    painter.setOpacity(0.8);
+    FileExplorerRenderer::drawDragGhost(painter, state, ctx, row);
+  }
+
+  QPixmap fakePixmap(1, 1);
+  fakePixmap.fill(Qt::transparent);
+
+  {
+    QPainter painter(&fakePixmap);
+    painter.setOpacity(0);
+  }
+
+  drag->setPixmap(fakePixmap);
+  drag->setDragCursor(dragPixmap, Qt::MoveAction);
+  drag->setDragCursor(dragPixmap, Qt::CopyAction);
+  drag->setDragCursor(dragPixmap, Qt::LinkAction);
+  drag->setDragCursor(dragPixmap, Qt::IgnoreAction);
+
+  drag->exec(Qt::MoveAction);
 }
 
-void FileExplorerWidget::mouseMoveEvent(QMouseEvent *event) {
-  // TODO(scarlet): Add hover effects, drag and drop.
+void FileExplorerWidget::dragEnterEvent(QDragEnterEvent *event) {
+  if (event->mimeData()->hasFormat("application/x-neko-file-explorer-node")) {
+    event->acceptProposedAction();
+  }
+}
+
+void FileExplorerWidget::dragMoveEvent(QDragMoveEvent *event) {
+  if (event->mimeData()->hasFormat("application/x-neko-file-explorer-node")) {
+    // TODO(scarlet): Auto expand directories if hovering over them for a few
+    // seconds.
+    int row = convertMousePositionToRow(event->position().y());
+    const auto targetNode = fileExplorerController->getNodeByIndex(row);
+
+    if (targetNode.foundNode()) {
+      hoveredNodePath = QString::fromUtf8(targetNode.nodeSnapshot.path);
+    } else {
+      hoveredNodePath = nullptr;
+    }
+    redraw();
+
+    event->acceptProposedAction();
+  }
+}
+
+void FileExplorerWidget::dropEvent(QDropEvent *event) {
+  const int row = convertMousePositionToRow(event->position().y());
+  const auto targetNode = fileExplorerController->getNodeByIndex(row);
+
+  const QByteArray encodedData =
+      event->mimeData()->data("application/x-neko-file-explorer-node");
+  const std::string sourcePath = encodedData.toStdString();
+
+  // Pass an empty string to allow for moving an item to the root directory.
+  const std::string destinationPath =
+      targetNode.foundNode() ? std::string(targetNode.nodeSnapshot.path) : "";
+
+  triggerCommand("fileExplorer.move", false, -1, sourcePath, destinationPath);
+
+  event->acceptProposedAction();
+}
+
+FileExplorerRenderState FileExplorerWidget::getRenderState() {
+  auto snapshot = fileExplorerController->getTreeSnapshot();
+
+  FileExplorerRenderState state{
+      .snapshot = snapshot,
+      .font = font,
+      .fontAscent = fontMetrics.ascent(),
+      .theme = theme,
+      .hasFocus = hasFocus(),
+      .hoveredNodePath = hoveredNodePath,
+      .measureFileNameWidth = [this](const QString &string) {
+        return fontMetrics.horizontalAdvance(string);
+      }};
+
+  return state;
+}
+
+FileExplorerViewportContext FileExplorerWidget::getViewportContext() {
+  auto snapshot = fileExplorerController->getTreeSnapshot();
+
+  double lineHeight = fontMetrics.height();
+  double verticalOffset = verticalScrollBar()->value();
+  double horizontalOffset = horizontalScrollBar()->value();
+  double viewportHeight = viewport()->height();
+  double viewportWidth = viewport()->width();
+
+  int startRow = std::floor(verticalOffset / lineHeight);
+  int endRow = std::ceil((verticalOffset + viewportHeight) / lineHeight);
+
+  startRow = std::max(0, startRow);
+  endRow = std::min(static_cast<int>(snapshot.nodes.size()), endRow);
+
+  FileExplorerViewportContext ctx{
+      .lineHeight = lineHeight,
+      .firstVisibleLine = startRow,
+      .lastVisibleLine = endRow,
+      .verticalOffset = verticalOffset,
+      .horizontalOffset = horizontalOffset,
+      .width = viewportWidth,
+      .height = viewportHeight,
+  };
+
+  return ctx;
+}
+
+void FileExplorerWidget::paintEvent(QPaintEvent *event) {
+  QPainter painter(viewport());
+
+  auto state = getRenderState();
+  auto ctx = getViewportContext();
+
+  FileExplorerRenderer::paint(painter, state, ctx);
 }
 
 void FileExplorerWidget::wheelEvent(QWheelEvent *event) {
@@ -332,105 +515,13 @@ void FileExplorerWidget::applySelectedDirectory(const QString &path) {
 
 void FileExplorerWidget::redraw() { viewport()->update(); }
 
-void FileExplorerWidget::drawFiles(QPainter *painter, size_t count,
-                                   rust::Vec<neko::FileNodeSnapshot> nodes) {
-  double lineHeight = fontMetrics.height();
-  double verticalOffset = verticalScrollBar()->value();
-  double horizontalOffset = horizontalScrollBar()->value();
-  double viewportHeight = viewport()->height();
-
-  int startRow = std::floor(verticalOffset / lineHeight);
-  int endRow = std::ceil((verticalOffset + viewportHeight) / lineHeight);
-
-  startRow = std::max(0, startRow);
-  endRow = std::min(static_cast<int>(count), endRow);
-
-  for (int i = startRow; i < endRow; i++) {
-    double yPos = (i * lineHeight) - verticalOffset;
-    drawFile(painter, -horizontalOffset + ICON_EDGE_PADDING, yPos, nodes[i]);
-  }
-}
-
-void FileExplorerWidget::drawFile(QPainter *painter, double xPos, double yPos,
-                                  const neko::FileNodeSnapshot &node) {
-  painter->setFont(font);
-
-  double indent = static_cast<int>(node.depth) * NODE_INDENT;
-  double viewportWidth = viewport()->width();
-  double lineHeight = fontMetrics.height();
-  double horizontalOffset = horizontalScrollBar()->value();
-
-  auto accentColor = theme.selectionColor;
-  auto selectionColor = QColor(accentColor);
-  selectionColor.setAlpha(SELECTION_ALPHA);
-
-  auto fileTextColor = theme.fileForegroundColor;
-
-  // Selection background
-  if (node.is_selected) {
-    painter->setBrush(selectionColor);
-    painter->setPen(Qt::NoPen);
-    painter->drawRect(QRectF(
-        -horizontalOffset, yPos,
-        viewportWidth + ICON_EDGE_PADDING + horizontalOffset, lineHeight));
-  }
-
-  // Current item border
-  if (node.is_current && hasFocus()) {
-    painter->setBrush(Qt::NoBrush);
-    painter->setPen(accentColor);
-    painter->drawRect(QRectF(-horizontalOffset, yPos,
-                             viewportWidth - 1 + horizontalOffset,
-                             lineHeight - 1));
-  }
-
-  // Get appropriate icon
-  QIcon icon;
-  if (node.is_dir) {
-    icon = QApplication::style()->standardIcon(
-        node.is_expanded ? QStyle::SP_DirOpenIcon : QStyle::SP_DirIcon);
-  } else {
-    icon = QApplication::style()->standardIcon(QStyle::SP_FileIcon);
-  }
-
-  int iconSize = static_cast<int>(lineHeight - ICON_ADJUSTMENT);
-  QIcon colorizedIcon = UiUtils::createColorizedIcon(icon, accentColor,
-                                                     QSize(iconSize, iconSize));
-  QIcon normalIcon = UiUtils::createColorizedIcon(icon, fileTextColor,
-                                                  QSize(iconSize, iconSize));
-  QPixmap pixmap = colorizedIcon.pixmap(iconSize, iconSize);
-
-  if (node.is_hidden) {
-    pixmap = colorizedIcon.pixmap(iconSize, iconSize, QIcon::Mode::Disabled,
-                                  QIcon::State::Off);
-  }
-
-  if (!node.is_dir) {
-    pixmap = normalIcon.pixmap(iconSize, iconSize);
-  }
-
-  // Draw icon with indentation
-  double iconX = xPos + indent + 2;
-  double iconY = yPos + ((lineHeight - iconSize) / 2);
-  painter->drawPixmap(QPointF(iconX, iconY), pixmap);
-
-  // Draw text after icon
-  double textX = iconX + iconSize + 4;
-  if (node.is_hidden) {
-    QString foregroundVeryMuted = theme.fileHiddenColor;
-    painter->setBrush(foregroundVeryMuted);
-    painter->setPen(foregroundVeryMuted);
-  } else {
-    painter->setBrush(fileTextColor);
-    painter->setPen(fileTextColor);
-  }
-  painter->drawText(QPointF(textX, yPos + fontMetrics.ascent()),
-                    QString::fromUtf8(node.name));
-}
-
 void FileExplorerWidget::onRootDirectoryChanged() {
   updateDimensions();
   redraw();
+}
+
+double FileExplorerWidget::measureFileNameWidth(const QString &fileName) {
+  return fontMetrics.horizontalAdvance(fileName);
 }
 
 double FileExplorerWidget::measureContentWidth() {

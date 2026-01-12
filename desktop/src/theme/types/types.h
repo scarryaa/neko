@@ -71,6 +71,7 @@ struct ContextMenuTheme {
 
 struct FileExplorerTheme {
   QString backgroundColor;
+  QString ghostBackgroundColor;
   QString buttonBackgroundColor;
   QString buttonForegroundColor;
   QString buttonHoverColor;

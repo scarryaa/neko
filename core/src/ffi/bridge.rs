@@ -311,6 +311,8 @@ pub mod ffi {
         item_is_directory: bool,
         item_is_expanded: bool,
         paste_info: PasteInfoFfi,
+        move_target_node_path: String,
+        move_destination_node_path: String,
     }
 
     #[derive(Default)]
@@ -371,6 +373,7 @@ pub mod ffi {
         Action,
         ActionIndex,
         ClearSelected,
+        Move,
     }
 
     #[derive(Clone, Debug)]

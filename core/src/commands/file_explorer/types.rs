@@ -57,6 +57,7 @@ pub enum FileExplorerCommand {
     Action,
     ActionIndex,
     ClearSelected,
+    Move,
 }
 
 const ALL_IN_ORDER: &[FileExplorerCommand] = &[
@@ -81,32 +82,33 @@ const ALL_IN_ORDER: &[FileExplorerCommand] = &[
 impl FileExplorerCommand {
     pub fn as_str(&self) -> &'static str {
         match self {
-            FileExplorerCommand::NewFile => "fileExplorer.newFile",
-            FileExplorerCommand::NewFolder => "fileExplorer.newFolder",
-            FileExplorerCommand::Reveal => "fileExplorer.reveal",
-            FileExplorerCommand::OpenInTerminal => "fileExplorer.openInTerminal",
-            FileExplorerCommand::FindInFolder => "fileExplorer.findInFolder",
-            FileExplorerCommand::Cut => "fileExplorer.cut",
-            FileExplorerCommand::Copy => "fileExplorer.copy",
-            FileExplorerCommand::Duplicate => "fileExplorer.duplicate",
-            FileExplorerCommand::Paste => "fileExplorer.paste",
-            FileExplorerCommand::CopyPath => "fileExplorer.copyPath",
-            FileExplorerCommand::CopyRelativePath => "fileExplorer.copyRelativePath",
-            FileExplorerCommand::ShowHistory => "fileExplorer.showHistory",
-            FileExplorerCommand::Rename => "fileExplorer.rename",
-            FileExplorerCommand::Delete => "fileExplorer.delete",
-            FileExplorerCommand::Expand => "fileExplorer.expand",
-            FileExplorerCommand::CollapseAll => "fileExplorer.collapseAll",
-            FileExplorerCommand::Navigation(direction) => match direction {
+            Self::NewFile => "fileExplorer.newFile",
+            Self::NewFolder => "fileExplorer.newFolder",
+            Self::Reveal => "fileExplorer.reveal",
+            Self::OpenInTerminal => "fileExplorer.openInTerminal",
+            Self::FindInFolder => "fileExplorer.findInFolder",
+            Self::Cut => "fileExplorer.cut",
+            Self::Copy => "fileExplorer.copy",
+            Self::Duplicate => "fileExplorer.duplicate",
+            Self::Paste => "fileExplorer.paste",
+            Self::CopyPath => "fileExplorer.copyPath",
+            Self::CopyRelativePath => "fileExplorer.copyRelativePath",
+            Self::ShowHistory => "fileExplorer.showHistory",
+            Self::Rename => "fileExplorer.rename",
+            Self::Delete => "fileExplorer.delete",
+            Self::Expand => "fileExplorer.expand",
+            Self::CollapseAll => "fileExplorer.collapseAll",
+            Self::Navigation(direction) => match direction {
                 FileExplorerNavigationDirection::Left => "fileExplorer.navigateLeft",
                 FileExplorerNavigationDirection::Right => "fileExplorer.navigateRight",
                 FileExplorerNavigationDirection::Up => "fileExplorer.navigateUp",
                 FileExplorerNavigationDirection::Down => "fileExplorer.navigateDown",
             },
-            FileExplorerCommand::ToggleSelect => "fileExplorer.toggleSelect",
-            FileExplorerCommand::Action => "fileExplorer.action",
-            FileExplorerCommand::ActionIndex => "fileExplorer.actionIndex",
-            FileExplorerCommand::ClearSelected => "fileExplorer.clearSelected",
+            Self::ToggleSelect => "fileExplorer.toggleSelect",
+            Self::Action => "fileExplorer.action",
+            Self::ActionIndex => "fileExplorer.actionIndex",
+            Self::ClearSelected => "fileExplorer.clearSelected",
+            Self::Move => "fileExplorer.move",
         }
     }
 
@@ -168,6 +170,7 @@ impl FromStr for FileExplorerCommand {
             "fileExplorer.action" => Ok(Self::Action),
             "fileExplorer.actionIndex" => Ok(Self::ActionIndex),
             "fileExplorer.clearSelected" => Ok(Self::ClearSelected),
+            "fileExplorer.move" => Ok(Self::Move),
             _ => Err(()),
         }
     }
@@ -192,6 +195,8 @@ pub struct FileExplorerContext {
     pub item_is_directory: bool,
     pub item_is_expanded: bool,
     pub paste_info: PasteInfo,
+    pub move_target_node_path: PathBuf,
+    pub move_destination_node_path: PathBuf,
 }
 
 #[derive(Default)]

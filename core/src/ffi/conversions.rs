@@ -529,6 +529,7 @@ impl From<FileExplorerCommand> for FileExplorerCommandKindFfi {
             FileExplorerCommand::Action => Self::Action,
             FileExplorerCommand::ActionIndex => Self::ActionIndex,
             FileExplorerCommand::ClearSelected => Self::ClearSelected,
+            FileExplorerCommand::Move => Self::Move,
         }
     }
 }
@@ -574,6 +575,7 @@ impl From<FileExplorerCommandKindFfi> for FileExplorerCommand {
             FileExplorerCommandKindFfi::Action => Self::Action,
             FileExplorerCommandKindFfi::ActionIndex => Self::ActionIndex,
             FileExplorerCommandKindFfi::ClearSelected => Self::ClearSelected,
+            FileExplorerCommandKindFfi::Move => Self::Move,
             _ => unreachable!(
                 "All FileExplorerCommandKindFfi => FileExplorerCommand cases should be covered"
             ),
@@ -607,6 +609,8 @@ impl From<FileExplorerContextFfi> for FileExplorerContext {
                     .collect(),
                 is_cut_operation: ctx.paste_info.is_cut_operation,
             },
+            move_target_node_path: PathBuf::from(ctx.move_target_node_path),
+            move_destination_node_path: PathBuf::from(ctx.move_destination_node_path),
         }
     }
 }

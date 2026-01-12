@@ -577,6 +577,117 @@ pub fn run_file_explorer_command(
                 tree.clear_current_path();
             }
         }
+        // Handles the 'Move' event.
+        //
+        // Essentially a rename operation, but effectively moves the target node into
+        // (if a directory) or next to (if a file) the destination node.
+        FileExplorerCommand::Move => {
+            let adjusted_move_destination_node_path =
+                if ctx.move_destination_node_path.to_string_lossy().is_empty() {
+                    // Treat an empty destination path as the root directory.
+                    root_path
+                } else {
+                    ctx.move_destination_node_path.clone()
+                };
+
+            if adjusted_move_destination_node_path == ctx.move_target_node_path {
+                return Err(FileExplorerCommandError::IoError(
+                    id.to_string(),
+                    io::Error::new(io::ErrorKind::NotFound, "Cannot move a node onto itself"),
+                ));
+            }
+
+            if !FileIoManager::exists(&ctx.move_target_node_path).is_ok_and(|result| result)
+                || !FileIoManager::exists(&adjusted_move_destination_node_path)
+                    .is_ok_and(|result| result)
+            {
+                return Err(FileExplorerCommandError::IoError(
+                    id.to_string(),
+                    io::Error::new(
+                        io::ErrorKind::NotFound,
+                        "Target node to move and/or destination node to move to were not found",
+                    ),
+                ));
+            }
+
+            let destination_path = if let Some(target_file_name) =
+                ctx.move_target_node_path.file_name()
+            {
+                // Construct the destination path.
+                match adjusted_move_destination_node_path.is_dir() {
+                    true => {
+                        // If the destination node is a directory, append a separator and the target file name.
+                        adjusted_move_destination_node_path.to_string_lossy()
+                            + std::path::MAIN_SEPARATOR_STR
+                            + target_file_name.to_string_lossy()
+                    }
+                    false => {
+                        // If the destination node is a file, get the parent directory path, and
+                        // append a separator and the target file name.
+                        if let Some(parent_path) = adjusted_move_destination_node_path.parent() {
+                            parent_path.to_string_lossy()
+                                + std::path::MAIN_SEPARATOR_STR
+                                + target_file_name.to_string_lossy()
+                        } else {
+                            return Err(FileExplorerCommandError::IoError(
+                                id.to_string(),
+                                io::Error::new(
+                                    io::ErrorKind::NotFound,
+                                    "Unable to get destination node parent path",
+                                ),
+                            ));
+                        }
+                    }
+                }
+            } else {
+                return Err(FileExplorerCommandError::IoError(
+                    id.to_string(),
+                    io::Error::new(
+                        io::ErrorKind::NotFound,
+                        "Unable to get target node file name",
+                    ),
+                ));
+            };
+
+            let destination_path_buf = PathBuf::from(destination_path.as_ref());
+
+            // Check for naming collisions.
+            if FileIoManager::exists(destination_path.as_ref()).is_ok_and(|result| result) {
+                return Err(FileExplorerCommandError::IoError(
+                    id.to_string(),
+                    io::Error::new(
+                        io::ErrorKind::AlreadyExists,
+                        "A file with that name already exists",
+                    ),
+                ));
+            }
+
+            // Rename/move the target node.
+            FileIoManager::rename(&ctx.move_target_node_path, destination_path.as_ref())
+                .map_err(|error| FileExplorerCommandError::IoError(id.to_string(), error))?;
+
+            // Refresh the source and parent directories so the tree reflects the name change.
+            if let Some(parent_path) = destination_path_buf.parent() {
+                tree.refresh_dir(parent_path).ok();
+                tree.set_expanded(parent_path);
+
+                ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed {
+                    path: parent_path.to_path_buf(),
+                });
+            }
+
+            if let Some(parent_target_path) = ctx.move_target_node_path.parent() {
+                tree.refresh_dir(parent_target_path).ok();
+                tree.set_expanded(parent_target_path);
+
+                ui_intents.push(FileExplorerUiIntent::DirectoryRefreshed {
+                    path: parent_target_path.to_path_buf(),
+                });
+            }
+
+            // Select the renamed/moved node.
+            tree.set_current_path(destination_path.as_ref());
+        }
     }
 
     Ok(FileExplorerCommandResult {

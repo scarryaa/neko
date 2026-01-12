@@ -100,18 +100,20 @@ void ThemeProvider::refreshTitleBarTheme() {
 }
 
 void ThemeProvider::refreshFileExplorerTheme() {
-  auto [backgroundColor, buttonBackgroundColor, buttonForegroundColor,
-        buttonHoverColor, buttonPressColor, fileForegroundColor,
-        fileHiddenColor, selectionColor] =
+  auto [backgroundColor, ghostBackgroundColor, buttonBackgroundColor,
+        buttonForegroundColor, buttonHoverColor, buttonPressColor,
+        fileForegroundColor, fileHiddenColor, selectionColor] =
       UiUtils::getThemeColors(
-          *themeManager, "file_explorer.background", "ui.accent",
+          *themeManager, "file_explorer.background",
+          "file_explorer.drag_ghost.background", "ui.accent",
           "ui.accent.foreground", "ui.accent.hover", "ui.accent.pressed",
           "ui.foreground", "ui.foreground.very_muted", "ui.accent");
 
-  FileExplorerTheme newTheme{
-      backgroundColor,  buttonBackgroundColor, buttonForegroundColor,
-      buttonHoverColor, buttonPressColor,      fileForegroundColor,
-      fileHiddenColor,  selectionColor,        scrollBarTheme};
+  FileExplorerTheme newTheme{backgroundColor,       ghostBackgroundColor,
+                             buttonBackgroundColor, buttonForegroundColor,
+                             buttonHoverColor,      buttonPressColor,
+                             fileForegroundColor,   fileHiddenColor,
+                             selectionColor,        scrollBarTheme};
 
   fileExplorerTheme = newTheme;
   emit fileExplorerThemeChanged(fileExplorerTheme);

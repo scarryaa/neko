@@ -64,6 +64,7 @@ impl Theme {
             // Sidebar / File Explorer
             "sidebar.background"        => "#f5f5f5",
             "file_explorer.background"  => "#f5f5f5",
+            "file_explorer.drag_ghost.background"  => "#dddddd",
 
             // Command Palette
             "command_palette.background" => "#f5f5f5",
@@ -143,6 +144,7 @@ impl Theme {
             // Sidebar / File Explorer
             "sidebar.background"       => "#000000",
             "file_explorer.background" => "#000000",
+            "file_explorer.drag_ghost.background"  => "#3d3d3d",
 
             // Command Palette
             "command_palette.background" => "#000000",
