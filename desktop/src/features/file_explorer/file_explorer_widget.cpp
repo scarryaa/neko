@@ -428,6 +428,7 @@ void FileExplorerWidget::dragMoveEvent(QDragMoveEvent *event) {
 
 void FileExplorerWidget::dropEvent(QDropEvent *event) {
   dragHoverTimer.stop();
+  dragHoveredNodePath = nullptr;
 
   const int row = convertMousePositionToRow(event->position().y());
   const auto targetNode = fileExplorerController->getNodeByIndex(row);
