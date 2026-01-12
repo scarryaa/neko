@@ -13,6 +13,7 @@
 #include <QFontMetricsF>
 #include <QPoint>
 #include <QScrollArea>
+#include <QTimer>
 
 QT_FWD(QFocusEvent, QKeyEvent, QMouseEvent, QPaintEvent, QPushButton,
        QResizeEvent, QWheelEvent, QPainter, QString);
@@ -112,9 +113,13 @@ private:
   QFontMetricsF fontMetrics;
 
   QString hoveredNodePath;
+  QString dragHoveredNodePath;
   neko::FileNodeSnapshot draggedNode;
+  int draggedNodeRow;
   bool isDragging = false;
   QPoint dragStartPosition;
+  QTimer dragHoverTimer;
+  const int dragHoverMs = 500;
 
   static constexpr double FONT_STEP = 2.0;
   static constexpr double DEFAULT_FONT_SIZE = 15.0;

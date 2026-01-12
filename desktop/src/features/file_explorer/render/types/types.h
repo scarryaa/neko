@@ -32,6 +32,7 @@ struct FileExplorerRenderState {
   FileExplorerTheme theme;
   const bool hasFocus;
   QString hoveredNodePath;
+  QString dragHoveredNodePath;
   const std::function<const double(const QString &str)> measureFileNameWidth;
 };
 

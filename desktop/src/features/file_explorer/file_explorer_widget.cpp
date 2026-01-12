@@ -51,6 +51,7 @@ FileExplorerWidget::FileExplorerWidget(const FileExplorerProps &props,
   setMouseTracking(true);
   setAcceptDrops(true);
 
+  dragHoverTimer.setSingleShot(true);
   directorySelectionButton = new QPushButton("Select a directory");
 
   setAndApplyTheme(theme);
@@ -69,6 +70,13 @@ void FileExplorerWidget::connectSignals() {
           &FileExplorerWidget::redraw);
   connect(horizontalScrollBar(), &QScrollBar::valueChanged, this,
           &FileExplorerWidget::redraw);
+
+  connect(&dragHoverTimer, &QTimer::timeout, this, [this] {
+    if (dragHoveredNodePath != nullptr) {
+      fileExplorerController->setExpanded(dragHoveredNodePath);
+      redraw();
+    }
+  });
 }
 
 void FileExplorerWidget::setAndApplyTheme(const FileExplorerTheme &newTheme) {
@@ -266,8 +274,18 @@ void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
     return;
   }
 
+  const int row = convertMousePositionToRow(event->pos().y());
+  const auto targetNode = fileExplorerController->getNodeByIndex(row);
+
   dragStartPosition = event->pos();
   event->accept();
+
+  // Mark the dragged node ahead of time, to prevent selecting the wrong node
+  // later.
+  if (targetNode.foundNode()) {
+    draggedNode = targetNode.nodeSnapshot;
+    draggedNodeRow = row;
+  }
 }
 
 void FileExplorerWidget::mouseMoveEvent(QMouseEvent *event) {
@@ -286,16 +304,14 @@ void FileExplorerWidget::mouseMoveEvent(QMouseEvent *event) {
     if ((event->pos() - dragStartPosition).manhattanLength() >=
         QApplication::startDragDistance()) {
 
-      if (targetNode.foundNode()) {
-        isDragging = true;
-        draggedNode = targetNode.nodeSnapshot;
+      isDragging = true;
 
-        performDrag(row, targetNode.nodeSnapshot);
+      performDrag(draggedNodeRow, draggedNode);
 
-        isDragging = false;
-        hoveredNodePath = nullptr;
-        redraw();
-      }
+      isDragging = false;
+      hoveredNodePath = nullptr;
+      draggedNodeRow = 0;
+      redraw();
     }
   }
 
@@ -354,17 +370,18 @@ void FileExplorerWidget::performDrag(int row,
   double yPos = (row * lineHeight) - verticalOffset;
   double width =
       EDGE_INSET + iconSize + ICON_SPACING + nodeNameWidth + EDGE_INSET;
+  const double height = lineHeight * 1.5;
 
-  QPixmap dragPixmap(static_cast<int>(width),
-                     static_cast<int>(lineHeight * 1.5));
+  QPixmap dragPixmap(static_cast<int>(width), static_cast<int>(height));
   dragPixmap.fill(Qt::transparent);
 
   {
     auto ctx = getViewportContext();
     auto state = getRenderState();
+    const double opacity = 0.85;
 
     QPainter painter(&dragPixmap);
-    painter.setOpacity(0.8);
+    painter.setOpacity(opacity);
     FileExplorerRenderer::drawDragGhost(painter, state, ctx, row);
   }
 
@@ -393,23 +410,25 @@ void FileExplorerWidget::dragEnterEvent(QDragEnterEvent *event) {
 
 void FileExplorerWidget::dragMoveEvent(QDragMoveEvent *event) {
   if (event->mimeData()->hasFormat("application/x-neko-file-explorer-node")) {
-    // TODO(scarlet): Auto expand directories if hovering over them for a few
-    // seconds.
     int row = convertMousePositionToRow(event->position().y());
     const auto targetNode = fileExplorerController->getNodeByIndex(row);
 
     if (targetNode.foundNode()) {
-      hoveredNodePath = QString::fromUtf8(targetNode.nodeSnapshot.path);
+      dragHoveredNodePath = QString::fromUtf8(targetNode.nodeSnapshot.path);
+      dragHoverTimer.start(dragHoverMs);
     } else {
-      hoveredNodePath = nullptr;
+      dragHoveredNodePath = nullptr;
+      dragHoverTimer.stop();
     }
-    redraw();
 
+    redraw();
     event->acceptProposedAction();
   }
 }
 
 void FileExplorerWidget::dropEvent(QDropEvent *event) {
+  dragHoverTimer.stop();
+
   const int row = convertMousePositionToRow(event->position().y());
   const auto targetNode = fileExplorerController->getNodeByIndex(row);
 
@@ -436,6 +455,7 @@ FileExplorerRenderState FileExplorerWidget::getRenderState() {
       .theme = theme,
       .hasFocus = hasFocus(),
       .hoveredNodePath = hoveredNodePath,
+      .dragHoveredNodePath = dragHoveredNodePath,
       .measureFileNameWidth = [this](const QString &string) {
         return fontMetrics.horizontalAdvance(string);
       }};

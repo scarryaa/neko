@@ -100,6 +100,17 @@ void FileExplorerRenderer::drawFile(QPainter &painter,
                             ctx.lineHeight));
   }
 
+  // Draw the drag hover indicator.
+  if (state.dragHoveredNodePath == QString::fromUtf8(node.path)) {
+    painter.setBrush(selectionColor);
+    painter.setPen(Qt::NoPen);
+    painter.drawRect(QRectF(-ctx.horizontalOffset, yPosition,
+                            ctx.width +
+                                FileExplorerRenderConstants::iconEdgePadding +
+                                ctx.horizontalOffset,
+                            ctx.lineHeight));
+  }
+
   // Draw the current item border (if applicable).
   if (node.is_current && state.hasFocus) {
     painter.setBrush(Qt::NoBrush);
