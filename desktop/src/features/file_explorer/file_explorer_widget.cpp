@@ -270,12 +270,18 @@ void FileExplorerWidget::triggerCommand(
 }
 
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
-  if (event->button() != Qt::LeftButton) {
-    return;
-  }
-
   const int row = convertMousePositionToRow(event->pos().y());
   const auto targetNode = fileExplorerController->getNodeByIndex(row);
+
+  // If it was a non-left button click, just update the current node.
+  //
+  // Normally this is done on mouse release, but we do it here to ensure the
+  // context menu has the correct node.
+  if (event->button() != Qt::LeftButton) {
+    fileExplorerController->setCurrent(
+        QString::fromUtf8(targetNode.nodeSnapshot.path));
+    return;
+  }
 
   dragStartPosition = event->pos();
   event->accept();
@@ -615,31 +621,8 @@ int FileExplorerWidget::convertMousePositionToRow(double yPos) {
   return targetRow;
 }
 
-// TODO(scarlet): Change this to use getCurrentContext().
 void FileExplorerWidget::contextMenuEvent(QContextMenuEvent *event) {
-  auto pasteInfo = fileExplorerController->getCurrentContext().paste_info;
-  auto snapshot = fileExplorerController->getTreeSnapshot();
-  int row = convertMousePositionToRow(event->pos().y());
-
-  bool targetIsItem = false;
-  bool itemIsDirectory = false;
-  bool itemIsExpanded = false;
-  QString path = QString::fromUtf8(snapshot.root.c_str());
-  if (row < snapshot.nodes.size()) {
-    // Click was over an item.
-    const auto currentNode = snapshot.nodes[row];
-    path = QString::fromUtf8(currentNode.path);
-    targetIsItem = true;
-    itemIsDirectory = targetIsItem && currentNode.is_dir;
-    itemIsExpanded = currentNode.is_expanded;
-  }
-
-  neko::FileExplorerContextFfi ctx{.item_path = path.toStdString(),
-                                   .target_is_item = targetIsItem,
-                                   .item_is_directory = itemIsDirectory,
-                                   .item_is_expanded = itemIsExpanded,
-                                   .paste_info = pasteInfo};
-
+  auto ctx = fileExplorerController->getCurrentContext();
   const QVariant variant = QVariant::fromValue(ctx);
   const auto items = contextMenuRegistry.build("fileExplorer", variant);
 

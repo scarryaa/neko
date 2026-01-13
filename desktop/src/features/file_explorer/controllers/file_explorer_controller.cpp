@@ -51,6 +51,7 @@ neko::FileExplorerContextFfi FileExplorerController::getCurrentContext() {
   if (currentNode.foundNode()) {
     return neko::FileExplorerContextFfi{
         .item_path = currentNode.nodeSnapshot.path,
+        .target_is_item = true,
         .item_is_directory = currentNode.nodeSnapshot.is_dir,
         .item_is_expanded = currentNode.nodeSnapshot.is_expanded,
         .paste_info = {.items = rustPasteItems,
@@ -62,6 +63,9 @@ neko::FileExplorerContextFfi FileExplorerController::getCurrentContext() {
   // We still include the paste info/items, since pasting without a current node
   // is considered to be a paste into the root directory.
   return neko::FileExplorerContextFfi{
+      .item_path = fileTreeBridge->getRootPath().toStdString(),
+      .item_is_directory = true,
+      .item_is_expanded = true,
       .paste_info = {.items = rustPasteItems,
                      .is_cut_operation = pasteInfo.isCutOperation}};
 }
