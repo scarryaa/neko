@@ -273,6 +273,12 @@ void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
   const int row = convertMousePositionToRow(event->pos().y());
   const auto targetNode = fileExplorerController->getNodeByIndex(row);
 
+  // If clicking on an empty space, clear the current node.
+  if (!targetNode.foundNode()) {
+    fileExplorerController->setCurrent("");
+    return;
+  }
+
   // If it was a non-left button click, just update the current node.
   //
   // Normally this is done on mouse release, but we do it here to ensure the

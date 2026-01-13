@@ -97,7 +97,7 @@ pub fn run_file_explorer_command(
     };
 
     let mut select_first_node_if_current_empty = || {
-        if ctx.item_path.as_os_str().is_empty() {
+        if ctx.item_path.as_os_str().is_empty() || ctx.item_path == root_path {
             _ = ith_node_path(tree, NodePathOptions::First, root_path.clone()).map(
                 |first_node_path| {
                     first_node_path.map(|first_node_path| {
