@@ -77,6 +77,12 @@ void FileExplorerWidget::connectSignals() {
       redraw();
     }
   });
+
+  // FileExplorerController -> FileExplorerWidget
+  connect(fileExplorerController, &FileExplorerController::commandRequested,
+          this, &FileExplorerWidget::commandRequested);
+  connect(fileExplorerController, &FileExplorerController::requestFocusEditor,
+          this, &FileExplorerWidget::requestFocusEditor);
 }
 
 void FileExplorerWidget::setAndApplyTheme(const FileExplorerTheme &newTheme) {
@@ -114,189 +120,54 @@ void FileExplorerWidget::itemRevealRequested() {
   }
 }
 
-// TODO(scarlet): Add customizable keybindings/vim keybinds.
-// TODO(scarlet): Convert the switches to a map?
 void FileExplorerWidget::keyPressEvent(QKeyEvent *event) {
-  bool shouldScroll = false;
+  ChangeSet changeSet =
+      fileExplorerController->handleKeyPress(event->key(), event->modifiers());
 
-  const auto mods = event->modifiers();
-  const bool ctrl = mods.testFlag(Qt::ControlModifier);
-  const bool shift = mods.testFlag(Qt::ShiftModifier);
-  const bool alt = mods.testFlag(Qt::AltModifier);
+  if (changeSet.redraw) {
+    redraw();
+  }
 
-  if (ctrl) {
-    bool shouldRedraw = false;
+  if (changeSet.scroll) {
+    auto node = fileExplorerController->getNode(
+        [](const neko::FileNodeSnapshot &node) { return node.is_current; });
 
-    // Handle node or font operations.
-    switch (event->key()) {
-    case Qt::Key_C:
-      if (alt) {
-        if (shift) {
-          triggerCommand("fileExplorer.copyRelativePath");
-        } else {
-          triggerCommand("fileExplorer.copyPath");
-        }
-      } else {
-        fileExplorerController->handleCopy();
-      }
-      return;
-    case Qt::Key_V:
-      shouldRedraw = true;
-      triggerCommand("fileExplorer.paste");
-      break;
-    case Qt::Key_X:
-      triggerCommand("fileExplorer.cut");
-      return;
-    case Qt::Key_D:
-      shouldRedraw = true;
-      triggerCommand("fileExplorer.duplicate");
-      break;
-    case Qt::Key_Equal:
-      shouldRedraw = true;
-      increaseFontSize();
-      break;
-    case Qt::Key_Minus:
-      shouldRedraw = true;
-      decreaseFontSize();
-      break;
-    case Qt::Key_0:
-      shouldRedraw = true;
-      resetFontSize();
-      break;
-    case Qt::Key_Backslash:
-      triggerCommand("fileExplorer.findInFolder");
-      break;
-    default:
-      break;
-    }
-
-    if (shouldRedraw) {
-      redraw();
-      return;
+    if (node.foundNode()) {
+      scrollToNode(node.index);
     }
   }
 
-  // Handle node/navigation operations.
-  switch (event->key()) {
-  case Qt::Key_Up:
-    triggerCommand("fileExplorer.navigateUp");
-    shouldScroll = true;
+  switch (changeSet.fontSizeAdjustment) {
+  case FontSizeAdjustment::Increase:
+    increaseFontSize();
     break;
-  case Qt::Key_Down:
-    triggerCommand("fileExplorer.navigateDown");
-    shouldScroll = true;
+  case FontSizeAdjustment::Decrease:
+    decreaseFontSize();
     break;
-  case Qt::Key_Left:
-    triggerCommand("fileExplorer.navigateLeft");
-    shouldScroll = true;
+  case FontSizeAdjustment::Reset:
+    resetFontSize();
     break;
-  case Qt::Key_Right:
-    triggerCommand("fileExplorer.navigateRight");
-    shouldScroll = true;
-    break;
-  case Qt::Key_Space:
-    // Toggle select for this node.
-    // TODO(scarlet): Add support operations on multiple nodes.
-    triggerCommand("fileExplorer.toggleSelect");
-    break;
-  case Qt::Key_Enter:
-  case Qt::Key_Return:
-  case Qt::Key_E:
-    // Toggle expand/collapse for this node if it's a directory, or open it if
-    // it's a file.
-    emit requestFocusEditor(true);
-    triggerCommand("fileExplorer.action");
-    break;
-  case Qt::Key_Delete:
-    if (shift) {
-      // Delete and skip the delete confirmation dialog.
-      triggerCommand("fileExplorer.delete", true);
-    } else {
-      // Delete, but show the delete confirmation dialog.
-      triggerCommand("fileExplorer.delete");
-    }
-    break;
-  case Qt::Key_R:
-    if (shift) {
-      triggerCommand("fileExplorer.rename");
-    }
-    break;
-  case Qt::Key_X:
-    triggerCommand("fileExplorer.reveal");
-    break;
-  case Qt::Key_D:
-    if (shift) {
-      // Delete, but show the delete confirmation dialog.
-      triggerCommand("fileExplorer.delete");
-    } else {
-      triggerCommand("fileExplorer.newFolder");
-    }
-    break;
-  case Qt::Key_Percent:
-    triggerCommand("fileExplorer.newFile");
-    break;
-  case Qt::Key_C:
-    if (shift) {
-      triggerCommand("fileExplorer.collapseAll");
-    }
-  case Qt::Key_Escape:
-    triggerCommand("fileExplorer.clearSelected");
-  default:
+  case FontSizeAdjustment::NoChange:
     break;
   }
-
-  if (shouldScroll) {
-    auto nodeInfo = fileExplorerController->getNode(
-        [](const auto node) { return node.is_current; });
-
-    if (nodeInfo.foundNode()) {
-      scrollToNode(nodeInfo.index);
-    }
-  }
-
-  redraw();
-}
-
-void FileExplorerWidget::triggerCommand(
-    const std::string &commandId, bool bypassDeleteConfirmation, int index,
-    const std::string &targetNodePath, const std::string &destinationNodePath) {
-  // Retreive the context.
-  auto ctx = fileExplorerController->getCurrentContext();
-  ctx.index = index;
-  ctx.move_target_node_path = targetNodePath;
-  ctx.move_destination_node_path = destinationNodePath;
-
-  emit commandRequested(commandId, ctx, bypassDeleteConfirmation);
 }
 
 void FileExplorerWidget::mousePressEvent(QMouseEvent *event) {
   const int row = convertMousePositionToRow(event->pos().y());
-  const auto targetNode = fileExplorerController->getNodeByIndex(row);
+  bool wasLeftMouseButton = event->button() == Qt::LeftButton;
 
-  // If clicking on an empty space, clear the current node.
-  if (!targetNode.foundNode()) {
-    fileExplorerController->setCurrent("");
-    return;
-  }
+  auto node = fileExplorerController->handleNodeClick(row, wasLeftMouseButton);
 
-  // If it was a non-left button click, just update the current node.
-  //
-  // Normally this is done on mouse release, but we do it here to ensure the
-  // context menu has the correct node.
-  if (event->button() != Qt::LeftButton) {
-    fileExplorerController->setCurrent(
-        QString::fromUtf8(targetNode.nodeSnapshot.path));
-    return;
-  }
-
-  dragStartPosition = event->pos();
-  event->accept();
-
-  // Mark the dragged node ahead of time, to prevent selecting the wrong node
-  // later.
-  if (targetNode.foundNode()) {
-    draggedNode = targetNode.nodeSnapshot;
+  if (node.foundNode()) {
+    draggedNode = node.nodeSnapshot;
     draggedNodeRow = row;
+  } else {
+    draggedNodeRow = -1;
+  }
+
+  if (wasLeftMouseButton) {
+    dragStartPosition = event->pos();
+    event->accept();
   }
 }
 
@@ -312,7 +183,8 @@ void FileExplorerWidget::mouseMoveEvent(QMouseEvent *event) {
   }
 
   // If the left mouse button is held, start a drag.
-  if (((event->buttons() & Qt::LeftButton) != 0U) && !isDragging) {
+  if (((event->buttons() & Qt::LeftButton) != 0U) && !isDragging &&
+      draggedNodeRow != -1) {
     if ((event->pos() - dragStartPosition).manhattanLength() >=
         QApplication::startDragDistance()) {
 
@@ -333,34 +205,29 @@ void FileExplorerWidget::mouseMoveEvent(QMouseEvent *event) {
 
 void FileExplorerWidget::mouseReleaseEvent(QMouseEvent *event) {
   const int row = convertMousePositionToRow(event->pos().y());
-  const auto targetNode = fileExplorerController->getNodeByIndex(row);
+  bool wasLeftMouseButton = event->button() == Qt::LeftButton;
 
-  // If the click was not the left mouse button, only select the target node.
-  if (event->button() != Qt::LeftButton) {
-    fileExplorerController->setCurrent(
-        QString::fromUtf8(targetNode.nodeSnapshot.path));
+  fileExplorerController->handleNodeClickRelease(row, wasLeftMouseButton);
 
+  if (!wasLeftMouseButton) {
     return;
   }
 
   event->accept();
-
-  // Trigger an action but do NOT focus the editor (if opening a file).
-  triggerCommand("fileExplorer.actionIndex", false, row);
   redraw();
 }
 
 void FileExplorerWidget::mouseDoubleClickEvent(QMouseEvent *event) {
+  const int row = convertMousePositionToRow(event->pos().y());
+  bool wasLeftMouseButton = event->button() == Qt::LeftButton;
+
+  fileExplorerController->handleNodeDoubleClick(row, wasLeftMouseButton);
+
   // If the click was not the left mouse button, don't do anything.
-  if (event->button() != Qt::LeftButton) {
+  if (!wasLeftMouseButton) {
     return;
   }
 
-  const int row = convertMousePositionToRow(event->pos().y());
-
-  // Trigger an action AND focus the editor (if opening a file).
-  emit requestFocusEditor(true);
-  triggerCommand("fileExplorer.actionIndex", false, row);
   redraw();
 }
 
@@ -374,12 +241,8 @@ void FileExplorerWidget::performDrag(int row,
   drag->setMimeData(mimeData);
 
   double lineHeight = fontMetrics.height();
-  int verticalOffset = verticalScrollBar()->value();
   double nodeNameWidth = measureFileNameWidth(QString::fromUtf8(node.name));
   int iconSize = static_cast<int>(lineHeight - ICON_ADJUSTMENT);
-  double iconX = ICON_EDGE_PADDING + 2;
-  double textX = iconX + iconSize + 4;
-  double yPos = (row * lineHeight) - verticalOffset;
   double width =
       EDGE_INSET + iconSize + ICON_SPACING + nodeNameWidth + EDGE_INSET;
   const double height = lineHeight * 1.5;
@@ -443,18 +306,10 @@ void FileExplorerWidget::dropEvent(QDropEvent *event) {
   dragHoveredNodePath = nullptr;
 
   const int row = convertMousePositionToRow(event->position().y());
-  const auto targetNode = fileExplorerController->getNodeByIndex(row);
-
   const QByteArray encodedData =
       event->mimeData()->data("application/x-neko-file-explorer-node");
-  const std::string sourcePath = encodedData.toStdString();
 
-  // Pass an empty string to allow for moving an item to the root directory.
-  const std::string destinationPath =
-      targetNode.foundNode() ? std::string(targetNode.nodeSnapshot.path) : "";
-
-  triggerCommand("fileExplorer.move", false, -1, sourcePath, destinationPath);
-
+  fileExplorerController->handleNodeDrop(row, encodedData);
   event->acceptProposedAction();
 }
 
@@ -561,7 +416,6 @@ double FileExplorerWidget::measureContentWidth() {
   auto snapshot = fileExplorerController->getTreeSnapshot();
   double finalWidth = 0;
 
-  // TODO(scarlet): Make this faster if possible?
   for (auto &node : snapshot.nodes) {
     QString lineText = QString::fromUtf8(node.name.c_str());
     finalWidth = std::max(fontMetrics.horizontalAdvance(lineText), finalWidth);

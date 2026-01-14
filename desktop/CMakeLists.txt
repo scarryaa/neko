@@ -169,6 +169,9 @@ qt_add_executable(neko
     src/features/file_explorer/bridge/file_tree_bridge.cpp
     src/features/file_explorer/bridge/file_tree_bridge.h
 
+    # File Explorer Types
+    src/features/file_explorer/types/types.h
+
     # Tabs
     src/features/tabs/tab_bar_widget.cpp
     src/features/tabs/tab_bar_widget.h
